@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 2 (M3) — Implementation + Verification complete; PR open. Next: M4 (associations + include)
+**Current phase:** Cycle 3 (M4) — Planning complete; implementing T26
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -54,3 +54,12 @@
 ## Cycle 2 (M3) verification (2026-11-14)
 - unit 77, integration+compat 71 (compat 38 scenarios vs sequelize@6), types, build, docs — green locally.
 - Security: no new SQL surfaces (hooks/validators run user code by design; scope options flow through existing where/order compilers and allowlists). Validation errors may include offending values (`value`) — same as v6.
+
+## Cycle 3 (M4) tasks — spec `.10x/specs/2026-11-14-m4-associations-design.md`, ADR-009
+- [ ] T26 association definitions
+- [ ] T27 include normalization
+- [ ] T28 join SELECT builder
+- [ ] T29 row tree assembly
+- [ ] T30 subQuery / separate / count
+- [ ] T31 accessors
+- [ ] T32 tests
