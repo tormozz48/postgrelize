@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** MVP (M0–M5) — Delivery Complete. Next: 0.1.0 pre-release (owner approval), then P1 backlog
+**Current phase:** 0.1.0 released (GitHub Packages, 2026-11-14). Next: P1 cycle (PostgreSQL power features)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -80,3 +80,6 @@
 - Ops: CI/release/docs workflows unchanged (`decisions/devops`, `decisions/sre`).
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
+
+## Release 0.1.0 (2026-11-14)
+- Tag `v0.1.0` → release.yml: CI matrix green, published `@tormozz48/postgrelize@0.1.0` to npm.pkg.github.com (dist-tag `latest`, 46 files).
