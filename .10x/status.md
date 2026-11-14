@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); next: S1 README
+**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1 README done; next: S2 Sequelize issues
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -115,7 +115,7 @@
 - Tag `v0.5.0` → release.yml green, `@tormozz48/postgrelize@0.5.0` published. Contents: `returningOld` / `oldValues` (PG18), scopes of included models.
 
 ## Backlog 2 (roadmap `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`)
-- [ ] S1 README: badges, self-hosted coverage on Pages
+- [x] S1 README: badges, self-hosted coverage on Pages (92.8% lines at start)
 - [ ] S2 Sequelize PostgreSQL issues: classify, regression tests, fix inherited bugs
 - [ ] S3 VitePress documentation site
 - [ ] S4 Effect-based core + `postgrelize/effect`

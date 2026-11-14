@@ -1,15 +1,39 @@
-# postgrelize
+<h1 align="center">postgrelize</h1>
 
-PostgreSQL-only ORM for Node.js with a public API compatible with [Sequelize v6](https://sequelize.org/docs/v6/), plus first-class PostgreSQL features.
+<p align="center">
+  PostgreSQL-only ORM for Node.js with the <a href="https://sequelize.org/docs/v6/">Sequelize v6</a> API — plus the PostgreSQL features Sequelize can't express.
+</p>
 
-- **Drop-in:** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include` (scopes of included models applied like v6, incl. nested creation via `create`/`bulkCreate` with `include`), read replicas (`replication`, `useMaster`), transactions, `QueryInterface` and `sync` behave like Sequelize v6 — verified by differential tests that run every scenario on both libraries.
-- **PostgreSQL first:**
-  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `RETURNING` pre-statement values on PostgreSQL 18 (`returningOld`, `instance.oldValues`), `COPY FROM STDIN` / `COPY TO STDOUT` (`Model.copyFrom`, `Model.copyTo`), `DELETE ... RETURNING`;
-  - reads: CTEs incl. `WITH RECURSIVE` (`with` / `source` / `from`), subqueries (`Model.subquery`), `exists()`, `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `NOWAIT`;
-  - sessions: `LISTEN/NOTIFY`, `SET LOCAL` settings for RLS, advisory locks;
-  - schema: identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod/valibot/arktype) validation.
-- **Safe by default:** values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
-- TypeScript-first, fully typed and documented API ([docs](https://tormozz48.github.io/postgrelize/)). PostgreSQL 16+, Node.js 20+.
+<p align="center">
+  <a href="https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize"><img alt="version" src="https://img.shields.io/github/package-json/v/tormozz48/postgrelize?label=version"></a>
+  <a href="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://tormozz48.github.io/postgrelize/coverage/"><img alt="coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftormozz48.github.io%2Fpostgrelize%2Fcoverage%2Fbadge.json"></a>
+  <img alt="PostgreSQL 16–18" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017%20%7C%2018-336791?logo=postgresql&logoColor=white">
+  <img alt="Node.js 20+" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white">
+  <a href="https://tormozz48.github.io/postgrelize/"><img alt="docs" src="https://img.shields.io/badge/docs-API%20reference-blue"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/tormozz48/postgrelize"></a>
+</p>
+
+## Why postgrelize
+
+- **Drop-in for Sequelize v6.** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like v6. A differential test suite runs every scenario on both libraries and compares results.
+- **PostgreSQL first.** One dialect, so every feature can use PostgreSQL fully instead of the lowest common denominator.
+- **Safe by default.** Values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
+- **Typed and documented.** Strict TypeScript, TSDoc on every export, [API reference](https://tormozz48.github.io/postgrelize/).
+
+### What you get on top of Sequelize v6
+
+| Area | postgrelize | Sequelize v6 |
+|---|---|---|
+| Upserts | `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted` per row | `upsert` / `updateOnDuplicate` with fixed column lists |
+| Bulk writes | `MERGE` (`Model.merge`), `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT` (`Model.insertFrom`) | — |
+| Old values | `returningOld` → `instance.oldValues` (PostgreSQL 18 `RETURNING OLD`) | — |
+| Import / export | `COPY FROM STDIN` / `COPY TO STDOUT` streaming (`Model.copyFrom`, `Model.copyTo`) | — |
+| Queries | CTEs incl. `WITH RECURSIVE`, subqueries (`Model.subquery`, `exists()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists | literals only |
+| Sessions | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks | — |
+| Scaling | read replicas with round-robin readers (`replication`, `useMaster`) | read replicas |
+| Schema | identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation | — |
 
 ## Install
 
@@ -26,7 +50,7 @@ Install with an alias to keep `import ... from 'postgrelize'`:
 npm install postgrelize@npm:@tormozz48/postgrelize pg
 ```
 
-## Usage
+## Quick start
 
 ```ts
 import { DataTypes, Model, Op, Sequelize, excluded, literal } from 'postgrelize';
@@ -69,6 +93,18 @@ const rows = await Counter.insert([{ key: 'home', hits: 1, version: 2 }], {
 rows.forEach((row) => console.log(row.key, row.wasInserted ? 'inserted' : 'updated'));
 ```
 
+## Compatibility
+
+- PostgreSQL 16, 17 and 18 (tested in CI); some features need newer servers: `MERGE ... RETURNING` 17+, `returningOld` 18+.
+- Node.js 20+, `pg` driver.
+- A few behaviours intentionally differ from Sequelize v6 where v6 is wrong for PostgreSQL (e.g. `describeTable` defaults to `current_schema()` instead of `public`); a full list will be part of the documentation site.
+
+## Links
+
+- [API reference](https://tormozz48.github.io/postgrelize/)
+- [Coverage report](https://tormozz48.github.io/postgrelize/coverage/)
+- [Package versions](https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize) · [Tags](https://github.com/tormozz48/postgrelize/tags)
+
 ## Development
 
 ```bash
@@ -78,6 +114,7 @@ npm run lint && npm run format:check && npm run typecheck
 npm test             # unit + integration + differential (vs sequelize@6)
 npm run build && npm run test:build
 npm run docs         # API docs into docs-site/
+npm run test:coverage # coverage report into coverage/
 ```
 
 Design records, ADRs and reviews live in `.10x/`.
