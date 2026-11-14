@@ -31,6 +31,8 @@ export type ModelRuntime = Readonly<{
   ) => object;
   /** Schema API of the owning Sequelize instance. */
   queryInterface: () => QueryInterface;
+  /** `server_version_num` of the database (cached). */
+  serverVersion: () => Promise<number>;
   /** Registered models by name. */
   models: () => Readonly<Record<string, object>>;
   hooks: () => HookRegistry;

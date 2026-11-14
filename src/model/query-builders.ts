@@ -10,6 +10,7 @@ import {
   type ExprNode,
   type InsertNode,
   type LockNode,
+  type FromItem,
   type OnConflictNode,
   type OrderNode,
   type SelectNode,
@@ -364,12 +365,13 @@ const isAutoIncrementEmpty = (
 ): boolean => attribute?.autoIncrement === true && (value === null || value === undefined);
 
 /** Returning list: all stored columns aliased to attribute names. */
-export const returningAll = (definition: ModelDefinition): readonly ExprNode[] =>
-  storedAttributes(definition).map((attribute) =>
-    attribute.field === attribute.fieldName
-      ? ident(attribute.field)
-      : { kind: 'alias', expr: ident(attribute.field), alias: attribute.fieldName },
-  );
+export const returningAll = (definition: ModelDefinition, alias?: string): readonly ExprNode[] =>
+  storedAttributes(definition).map((attribute) => {
+    const column = alias === undefined ? ident(attribute.field) : ident(alias, attribute.field);
+    return attribute.field === attribute.fieldName && alias === undefined
+      ? column
+      : { kind: 'alias', expr: column, alias: attribute.fieldName };
+  });
 
 /** Builds a multi-row INSERT from attribute-keyed rows. */
 export const buildInsert = (
@@ -428,18 +430,22 @@ export const buildUpdate = (
   definition: ModelDefinition,
   set: readonly SetItem[],
   where: unknown,
-  options: Readonly<{ returning?: boolean; inAsAnyThreshold?: number }> = {},
+  options: Readonly<{
+    returning?: boolean;
+    inAsAnyThreshold?: number;
+    from?: readonly FromItem[];
+  }> = {},
 ): UpdateNode => {
-  const condition = whereClause(
-    where,
-    whereContext(definition, undefined, options.inAsAnyThreshold),
-  );
+  const alias =
+    options.from === undefined || options.from.length === 0 ? undefined : definition.name;
+  const condition = whereClause(where, whereContext(definition, alias, options.inAsAnyThreshold));
   return {
     kind: 'update',
-    table: tableOf(definition),
+    table: tableOf(definition, alias),
     set,
+    ...(alias === undefined ? {} : { from: options.from }),
     ...(condition === undefined ? {} : { where: condition }),
-    ...(options.returning === true ? { returning: returningAll(definition) } : {}),
+    ...(options.returning === true ? { returning: returningAll(definition, alias) } : {}),
   };
 };
 
@@ -447,9 +453,16 @@ export const buildUpdate = (
 export const buildDelete = (
   definition: ModelDefinition,
   where: unknown,
-  options: Readonly<{ returning?: boolean; inAsAnyThreshold?: number; limit?: number }> = {},
+  options: Readonly<{
+    returning?: boolean;
+    inAsAnyThreshold?: number;
+    limit?: number;
+    using?: readonly FromItem[];
+  }> = {},
 ): DeleteNode => {
-  const ctx = whereContext(definition, undefined, options.inAsAnyThreshold);
+  const alias =
+    options.using === undefined || options.using.length === 0 ? undefined : definition.name;
+  const ctx = whereContext(definition, alias, options.inAsAnyThreshold);
   const condition = whereClause(where, ctx);
   const limited: ExprNode | undefined =
     options.limit === undefined
@@ -466,9 +479,10 @@ export const buildDelete = (
         });
   return {
     kind: 'delete',
-    table: tableOf(definition),
+    table: tableOf(definition, alias),
+    ...(alias === undefined ? {} : { using: options.using }),
     ...(limited === undefined ? {} : { where: limited }),
-    ...(options.returning === true ? { returning: returningAll(definition) } : {}),
+    ...(options.returning === true ? { returning: returningAll(definition, alias) } : {}),
   };
 };
 

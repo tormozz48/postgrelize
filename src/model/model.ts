@@ -72,9 +72,12 @@ import {
   incrementItems,
   primaryKeyWhere,
   setItems,
+  tableOf,
+  whereContext,
   type SelectOptions,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
+import { buildMerge, joinSources, MERGE_ACTION, type MergeOptions } from './write-power.ts';
 import {
   buildOnConflict,
   INSERTED_FLAG,
@@ -101,6 +104,7 @@ import type {
   FindOrCreateOptions,
   IncrementOptions,
   InitOptions,
+  InsertFromOptions,
   InsertOptions,
   InstanceDestroyOptions,
   ModelStatic,
@@ -482,6 +486,94 @@ export class Model<
       );
       return includes.length === 0 ? base : withIncludes(definition, base, includes, query);
     });
+  }
+
+  /**
+   * `INSERT INTO ... SELECT`: inserts the rows produced by a subquery. Returns the inserted (or, with
+   * `onConflict`, updated) rows with `wasInserted`. PostgreSQL extension.
+   *
+   * @param source - Subquery from `Model.subquery()`; its columns must match `options.columns`.
+   * @param options - Target columns, `onConflict` and query options.
+   * @returns Written rows.
+   * @example
+   * ```ts
+   * await Archive.insertFrom(Post.subquery({ attributes: ['id', 'title'], where: { published: false } }), { columns: ['postId', 'title'] });
+   * ```
+   */
+  static async insertFrom<M extends AnyModel>(
+    this: ModelStatic<M>,
+    source: Subquery,
+    options: InsertFromOptions<Attributes<M>>,
+  ): Promise<M[]> {
+    const { definition, runtime } = stateOf(this);
+    const onConflict =
+      options.onConflict === undefined
+        ? undefined
+        : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
+    const node = {
+      kind: 'insert' as const,
+      table: tableOf(definition, onConflict === undefined ? undefined : definition.name),
+      columns: options.columns.map((name) => definition.attributes.get(name)?.field ?? name),
+      rows: [],
+      select: source.build(),
+      ...(onConflict === undefined ? {} : { onConflict }),
+      returning: [...returningAll(definition), insertedFlagColumn()],
+    };
+    const result = await runtime.execute(compile(node), options);
+    return result.rows.map((row) => {
+      const instance = fromRow(this, withoutFlag(row));
+      insertedFlags.set(instance, row[INSERTED_FLAG] === true);
+      return instance;
+    });
+  }
+
+  /**
+   * `MERGE INTO ... USING ...` (PostgreSQL 15+). With `returning: true` (PostgreSQL 17+) returns the
+   * written rows with the action taken. PostgreSQL extension.
+   *
+   * @param options - Source, join condition and WHEN clauses.
+   * @returns Affected row count and, with `returning`, `{ action, instance }` per row.
+   * @example
+   * ```ts
+   * await Stock.merge({
+   *   source: [{ sku: 'a', qty: 5 }],
+   *   on: { sku: col('source.sku') },
+   *   whenMatched: { update: { qty: literal('"Stock"."qty" + "source"."qty"') } },
+   *   whenNotMatched: { insert: true },
+   * });
+   * ```
+   */
+  static async merge<M extends AnyModel>(
+    this: ModelStatic<M>,
+    options: MergeOptions<Attributes<M>> & QueryOptionsBase & Readonly<{ returning?: boolean }>,
+  ): Promise<MergeResult<M>> {
+    const { definition, runtime } = stateOf(this);
+    const version = await runtime.serverVersion();
+    if (version < 150000) {
+      throw new Error('merge requires PostgreSQL 15 or newer');
+    }
+    if (
+      (options.returning === true || options.whenNotMatchedBySource !== undefined) &&
+      version < 170000
+    ) {
+      throw new Error(
+        'merge with returning or whenNotMatchedBySource requires PostgreSQL 17 or newer',
+      );
+    }
+    const result = await runtime.execute(
+      compile(buildMerge(definition, options as MergeOptions<unknown>, options.returning === true)),
+      options,
+    );
+    return {
+      rowCount: result.rowCount,
+      rows: result.rows.map((row) => ({
+        action: String(row[MERGE_ACTION]) as MergeActionName,
+        instance: fromRow(
+          this,
+          Object.fromEntries(Object.entries(row).filter(([key]) => key !== MERGE_ACTION)),
+        ),
+      })),
+    };
   }
 
   /**
@@ -1245,12 +1337,26 @@ export class Model<
       false,
       opts['silent'] === true,
     );
-    const node = buildUpdate(definition, setItems(definition, changes), where, {
-      ...(options.returning === true || individual ? { returning: true } : {}),
-      ...(runtime.inAsAnyThreshold === undefined
-        ? {}
-        : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
-    });
+    if (individual && options.from !== undefined) {
+      throw new Error('update: individualHooks cannot be combined with from');
+    }
+    const from = joinSources(options.from);
+    const node = buildUpdate(
+      definition,
+      setItems(
+        definition,
+        changes,
+        whereContext(definition, from.length === 0 ? undefined : definition.name),
+      ),
+      where,
+      {
+        ...(from.length === 0 ? {} : { from }),
+        ...(options.returning === true || individual ? { returning: true } : {}),
+        ...(runtime.inAsAnyThreshold === undefined
+          ? {}
+          : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
+      },
+    );
     const result = await runtime.execute(compile(node), options);
     const updated = result.rows.map((row) => fromRow(this, row));
     if (individual) {
@@ -1332,6 +1438,7 @@ export class Model<
               },
             )
           : buildDelete(definition, where, {
+              ...(options.using === undefined ? {} : { using: joinSources(options.using) }),
               ...(options.returning === true ? { returning: true } : {}),
               ...(options.limit === undefined ? {} : { limit: options.limit }),
               ...inAsAny,
@@ -2033,6 +2140,20 @@ const insertWithConflict = async <M extends AnyModel>(
 const sequelizes = new WeakMap<object, RuntimeOwner>();
 
 type MutableOptions = Record<string, unknown>;
+
+/** Action reported by `merge_action()`. */
+export type MergeActionName = 'INSERT' | 'UPDATE' | 'DELETE';
+
+/** Result of `Model.merge`. */
+export type MergeResult<M> = Readonly<{
+  /** Number of affected rows. */
+  rowCount: number;
+  /** Written rows (with `returning: true`). */
+  rows: readonly Readonly<{
+    /** Action taken. */ action: MergeActionName;
+    /** Row after the action. */ instance: M;
+  }>[];
+}>;
 
 /** Named hook method of a model class, e.g. `Model.beforeCreate`. */
 export type NamedHookAdder = {
