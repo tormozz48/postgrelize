@@ -127,6 +127,23 @@ export const defineAttributeAccessors = (prototype: object, definition: ModelDef
     );
 };
 
+/** Defines `instance.<alias>` for an association, holding included / nested instances (Sequelize v6). */
+export const defineAssociationAccessor = (prototype: object, alias: string): void => {
+  if (Object.prototype.hasOwnProperty.call(prototype, alias)) {
+    return;
+  }
+  Object.defineProperty(prototype, alias, {
+    configurable: true,
+    enumerable: false,
+    get(this: Readonly<{ dataValues: Record<string, unknown> }>) {
+      return this.dataValues[alias];
+    },
+    set(this: Readonly<{ dataValues: Record<string, unknown> }>, value: unknown) {
+      this.dataValues[alias] = value;
+    },
+  });
+};
+
 /** Rebuilds the definition of `model` with attributes contributed by associations. */
 export const addAssociationAttributes = (
   model: object,

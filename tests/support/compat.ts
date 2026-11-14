@@ -16,6 +16,27 @@ export type Scenario = (lib: Lib, sequelize: postgrelize.Sequelize) => Promise<u
 const isInstance = (value: object): value is { toJSON: () => unknown } =>
   'dataValues' in value && typeof (value as { toJSON?: unknown }).toJSON === 'function';
 
+const holdsInstances = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  (Array.isArray(value) ? value.some((item) => holdsInstances(item)) : isInstance(value));
+
+// Included associations are read through instance properties (`user.Posts`), like application code does.
+const normalizeInstance = (instance: { toJSON: () => unknown }): unknown => {
+  const dataValues = (instance as unknown as { dataValues: Record<string, unknown> }).dataValues;
+  const json = instance.toJSON() as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(json).map(([key, item]) => [
+      key,
+      normalize(
+        holdsInstances(dataValues[key])
+          ? (instance as unknown as Record<string, unknown>)[key]
+          : item,
+      ),
+    ]),
+  );
+};
+
 export const normalize = (value: unknown): unknown => {
   if (value instanceof Date) {
     return '<Date>';
@@ -29,7 +50,7 @@ export const normalize = (value: unknown): unknown => {
   }
   if (typeof value === 'object' && value !== null) {
     if (isInstance(value)) {
-      return normalize(value.toJSON());
+      return normalizeInstance(value);
     }
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalize(item)]));
   }
