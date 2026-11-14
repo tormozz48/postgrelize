@@ -1,7 +1,13 @@
 export { Sequelize, QueryTypes } from './sequelize.ts';
 export type { QueryOptions, QueryType, DefineOptions } from './sequelize.ts';
 export { Model } from './model/model.ts';
-export type { NamedHookAdder } from './model/model.ts';
+export type { MergeActionName, MergeResult, NamedHookAdder } from './model/model.ts';
+export type {
+  JoinSources,
+  MergeInsertAction,
+  MergeMatchedAction,
+  MergeOptions,
+} from './model/write-power.ts';
 export { HOOK_TYPES } from './hooks/hooks.ts';
 export type { Hook, HookFunction, HookRegistry, HookType, HooksOption } from './hooks/hooks.ts';
 export type { ValidateOptions } from './model/lifecycle.ts';
@@ -41,6 +47,7 @@ export type {
   FindOptions,
   FindOrCreateOptions,
   IncrementOptions,
+  InsertFromOptions,
   InsertOptions,
   InstanceDestroyOptions,
   InitOptions,

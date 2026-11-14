@@ -100,11 +100,14 @@ export type OnConflictNode = Readonly<{
     | Readonly<{ kind: 'update'; set: readonly SetItem[]; where?: ExprNode }>;
 }>;
 
+export type FromItem = TableRef | Readonly<{ subquery: SelectNode; alias: string }>;
+
 export type InsertNode = Readonly<{
   kind: 'insert';
   table: TableRef;
   columns: readonly string[];
   rows: readonly (readonly ExprNode[])[];
+  select?: SelectNode;
   onConflict?: OnConflictNode;
   returning?: readonly ExprNode[];
 }>;
@@ -113,6 +116,7 @@ export type UpdateNode = Readonly<{
   kind: 'update';
   table: TableRef;
   set: readonly SetItem[];
+  from?: readonly FromItem[];
   where?: ExprNode;
   returning?: readonly ExprNode[];
 }>;
@@ -120,6 +124,7 @@ export type UpdateNode = Readonly<{
 export type DeleteNode = Readonly<{
   kind: 'delete';
   table: TableRef;
+  using?: readonly FromItem[];
   where?: ExprNode;
   returning?: readonly ExprNode[];
 }>;
@@ -131,7 +136,41 @@ export type TruncateNode = Readonly<{
   restartIdentity?: boolean;
 }>;
 
-export type StatementNode = SelectNode | InsertNode | UpdateNode | DeleteNode | TruncateNode;
+export type MergeAction =
+  | Readonly<{ kind: 'update'; set: readonly SetItem[] }>
+  | Readonly<{ kind: 'delete' }>
+  | Readonly<{ kind: 'insert'; columns: readonly string[]; values: readonly ExprNode[] }>
+  | Readonly<{ kind: 'nothing' }>;
+
+export type MergeWhen = Readonly<{
+  match: 'MATCHED' | 'NOT MATCHED' | 'NOT MATCHED BY SOURCE';
+  condition?: ExprNode;
+  action: MergeAction;
+}>;
+
+export type MergeNode = Readonly<{
+  kind: 'merge';
+  table: TableRef;
+  source:
+    | Readonly<{ kind: 'query'; query: SelectNode; alias: string }>
+    | Readonly<{
+        kind: 'values';
+        columns: readonly string[];
+        rows: readonly (readonly ExprNode[])[];
+        alias: string;
+      }>;
+  on: ExprNode;
+  when: readonly MergeWhen[];
+  returning?: readonly ExprNode[];
+}>;
+
+export type StatementNode =
+  | SelectNode
+  | InsertNode
+  | UpdateNode
+  | DeleteNode
+  | TruncateNode
+  | MergeNode;
 
 export const param = (value: unknown): ParamNode => ({ kind: 'param', value });
 export const raw = (sql: string): RawNode => ({ kind: 'raw', sql });

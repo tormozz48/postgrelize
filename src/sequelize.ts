@@ -157,6 +157,7 @@ export class Sequelize {
   readonly #runtime: ModelRuntime;
   #hooks: HookRegistry;
   #queryInterface: QueryInterface | undefined;
+  #serverVersion: Promise<number> | undefined;
 
   /**
    * Creates an instance from a connection URI.
@@ -214,6 +215,13 @@ export class Sequelize {
         this.define(name, attributes as ModelAttributes, options as DefineOptions),
       models: () => this.models,
       queryInterface: () => this.getQueryInterface(),
+      serverVersion: () => {
+        this.#serverVersion ??= this.#execute(
+          { text: 'SHOW server_version_num', values: [] },
+          {},
+        ).then((result) => Number(result.rows[0]?.['server_version_num'] ?? 0));
+        return this.#serverVersion;
+      },
       defaults: this.options.define ?? {},
       inAsAnyThreshold: this.options.inAsAnyThreshold,
     };

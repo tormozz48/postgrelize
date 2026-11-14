@@ -4,6 +4,8 @@ import type {
   ExprNode,
   InsertNode,
   JoinNode,
+  MergeAction,
+  MergeNode,
   LockNode,
   OnConflictNode,
   OrderNode,
@@ -199,17 +201,19 @@ const onConflict = (node: OnConflictNode): Chunks => [
 ];
 
 const insertValues = (node: InsertNode): Chunks =>
-  node.columns.length === 0
-    ? [' DEFAULT VALUES']
-    : [
-        ' ',
-        ...wrap([node.columns.map(quoteIdent).join(', ')]),
-        ' VALUES ',
-        ...join(
-          node.rows.map((row) => wrap(exprList(row))),
-          ', ',
-        ),
-      ];
+  node.select !== undefined
+    ? [' ', ...wrap([node.columns.map(quoteIdent).join(', ')]), ' ', ...select(node.select)]
+    : node.columns.length === 0
+      ? [' DEFAULT VALUES']
+      : [
+          ' ',
+          ...wrap([node.columns.map(quoteIdent).join(', ')]),
+          ' VALUES ',
+          ...join(
+            node.rows.map((row) => wrap(exprList(row))),
+            ', ',
+          ),
+        ];
 
 const insert = (node: InsertNode): Chunks => [
   'INSERT INTO ',
@@ -224,6 +228,7 @@ const update = (node: UpdateNode): Chunks => [
   ...tableRef(node.table),
   ' SET ',
   ...setList(node.set),
+  ...nonEmpty(node.from, (items) => [' FROM ', ...join(items.map(fromItem), ', ')]),
   ...where(node.where),
   ...returning(node.returning),
 ];
@@ -231,6 +236,7 @@ const update = (node: UpdateNode): Chunks => [
 const remove = (node: DeleteNode): Chunks => [
   'DELETE FROM ',
   ...tableRef(node.table),
+  ...nonEmpty(node.using, (items) => [' USING ', ...join(items.map(fromItem), ', ')]),
   ...where(node.where),
   ...returning(node.returning),
 ];
@@ -240,6 +246,59 @@ const truncate = (node: TruncateNode): Chunks => [
   ...tableRef(node.table),
   node.restartIdentity === true ? ' RESTART IDENTITY' : '',
   node.cascade === true ? ' CASCADE' : '',
+];
+
+const mergeAction = (action: MergeAction): Chunks => {
+  switch (action.kind) {
+    case 'update':
+      return ['UPDATE SET ', ...setList(action.set)];
+    case 'delete':
+      return ['DELETE'];
+    case 'nothing':
+      return ['DO NOTHING'];
+    case 'insert':
+      return action.columns.length === 0
+        ? ['INSERT DEFAULT VALUES']
+        : [
+            'INSERT ',
+            ...wrap([action.columns.map(quoteIdent).join(', ')]),
+            ' VALUES ',
+            ...wrap(exprList(action.values)),
+          ];
+    default:
+      return assertNever(action);
+  }
+};
+
+const mergeSource = (source: MergeNode['source']): Chunks =>
+  source.kind === 'query'
+    ? [...wrap(select(source.query)), ` AS ${quoteIdent(source.alias)}`]
+    : [
+        ...wrap([
+          'VALUES ',
+          ...join(
+            source.rows.map((row) => wrap(exprList(row))),
+            ', ',
+          ),
+        ]),
+        ` AS ${quoteIdent(source.alias)} `,
+        ...wrap([source.columns.map(quoteIdent).join(', ')]),
+      ];
+
+const merge = (node: MergeNode): Chunks => [
+  'MERGE INTO ',
+  ...tableRef(node.table),
+  ' USING ',
+  ...mergeSource(node.source),
+  ' ON ',
+  ...expr(node.on),
+  ...node.when.flatMap((clause) => [
+    ` WHEN ${clause.match}`,
+    ...optional(clause.condition, (condition) => [' AND ', ...expr(condition)]),
+    ' THEN ',
+    ...mergeAction(clause.action),
+  ]),
+  ...returning(node.returning),
 ];
 
 const statement = (node: StatementNode): Chunks => {
@@ -254,6 +313,8 @@ const statement = (node: StatementNode): Chunks => {
       return remove(node);
     case 'truncate':
       return truncate(node);
+    case 'merge':
+      return merge(node);
     default:
       return assertNever(node);
   }

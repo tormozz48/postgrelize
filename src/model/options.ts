@@ -1,3 +1,4 @@
+import type { JoinSources } from './write-power.ts';
 import type { IncludeOption } from '../associations/include.ts';
 import type { HooksOption } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
@@ -194,6 +195,15 @@ export type BulkHookOptions = Readonly<{
   individualHooks?: boolean;
 }>;
 
+/** Options of `Model.insertFrom`. PostgreSQL extension. */
+export type InsertFromOptions<T = Values> = QueryOptionsBase &
+  Readonly<{
+    /** Target attributes, in the order of the subquery columns. */
+    columns: readonly (keyof T & string)[];
+    /** Advanced `ON CONFLICT` handling. */
+    onConflict?: OnConflictOptions<T>;
+  }>;
+
 /** Options of static `update`. */
 export type UpdateOptions<T = Values> = QueryOptionsBase &
   Readonly<{
@@ -209,6 +219,8 @@ export type UpdateOptions<T = Values> = QueryOptionsBase &
     validate?: boolean;
     /** For paranoid models: `false` also updates soft-deleted rows. */
     paranoid?: boolean;
+    /** Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension. */
+    from?: JoinSources;
   }> &
   BulkHookOptions;
 
@@ -229,6 +241,8 @@ export type DestroyOptions<T = Values> = QueryOptionsBase &
     returning?: boolean;
     /** For paranoid models: delete rows instead of setting `deletedAt`. */
     force?: boolean;
+    /** Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension. */
+    using?: JoinSources;
   }> &
   BulkHookOptions;
 
