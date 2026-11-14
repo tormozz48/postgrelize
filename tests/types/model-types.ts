@@ -4,6 +4,8 @@ import {
   Model,
   Op,
   Sequelize,
+  excluded,
+  literal,
   type CreationAttributes,
   type CreationOptional,
   type InferAttributes,
@@ -48,5 +50,18 @@ export const typeChecks = async (): Promise<void> => {
   await User.create({ email: 1 });
   // @ts-expect-error NonAttribute is not an attribute
   const fullName: InferAttributes<User>['fullName'] = '';
-  void [found, sure, all, count, affected, values, fullName];
+  const upserted: User[] = await User.insert([{ email: 'a' }], {
+    onConflict: {
+      target: ['email'],
+      action: {
+        update: { age: literal('"User"."age" + 1') },
+        where: { age: { [Op.lt]: excluded('age') } },
+      },
+    },
+  });
+  const flag: boolean | undefined = upserted[0]?.wasInserted;
+  const [instance, upsertCreated]: [User, boolean | null] = await User.upsert({ email: 'b' });
+  // @ts-expect-error unknown conflict target attribute
+  await User.insert({ email: 'c' }, { onConflict: { target: ['nope'], action: 'nothing' } });
+  void [found, sure, all, count, affected, values, fullName, flag, instance, upsertCreated];
 };

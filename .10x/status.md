@@ -2,16 +2,16 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Phase 4 — Implementation in progress (M0, M1 done; next M2: T16)
+**Current phase:** Cycle 1 (M0–M2) — Delivery Complete; next cycle: M3 (hooks, scopes, paranoid, validations)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
 - [x] Phase 1: Strategy (CTO + PM)
 - [x] Phase 2: Design (Architect + Staff Engineer + ADRs 001–005)
 - [x] Phase 3: Planning (EM + Senior Engineer)
-- [ ] Phase 4: Implementation — this cycle: M0–M2 (M0, M1 done)
-- [ ] Phase 5: Verification (QA + Security)
-- [ ] Phase 6: Delivery (DevOps + SRE)
+- [x] Phase 4: Implementation — this cycle: M0–M2 (M0, M1 done)
+- [x] Phase 5: Verification (QA + Security)
+- [x] Phase 6: Delivery (DevOps + SRE)
 
 ## Blockers
 - none
@@ -32,7 +32,13 @@
 - [x] T13 finders
 - [x] T14 writes
 - [x] T15 differential suite M1
-- [ ] T16 v6 conflict options
-- [ ] T17 onConflict normalize/compile
-- [ ] T18 onConflict wiring + Model.insert + wasInserted
-- [ ] T19 onConflict integration suite
+- [x] T16 v6 conflict options
+- [x] T17 onConflict normalize/compile
+- [x] T18 onConflict wiring + Model.insert + wasInserted
+- [x] T19 onConflict integration suite
+
+## Cycle 1 sign-off (2026-11-14)
+- Tests: 123 + build smoke + type checks — green locally; CI on PR.
+- QA: `.10x/reviews/2026-11-14-qa-report.md` — release-ready for 0.x.
+- Security: `.10x/reviews/2026-11-14-security-review.md` — no open High/Medium.
+- Ops: `decisions/devops/`, `decisions/sre/` (runbooks).

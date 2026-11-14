@@ -9,6 +9,7 @@ import {
   type ExprNode,
   type InsertNode,
   type LockNode,
+  type OnConflictNode,
   type OrderNode,
   type SelectNode,
   type SetItem,
@@ -209,6 +210,10 @@ const orderItem = (
   return { expr: orderTarget(definition, alias, ctx, item) };
 };
 
+const invalidOrder = (): never => {
+  throw new Error('Order must be type of array or instance of a valid sequelize method.');
+};
+
 const orderBy = (
   definition: ModelDefinition,
   alias: string,
@@ -219,7 +224,9 @@ const orderBy = (
     ? []
     : Array.isArray(order)
       ? order.map((item: unknown) => orderItem(definition, alias, ctx, item))
-      : [{ expr: isExpression(order) ? toExpr(order, ctx) : raw(String(order)) }];
+      : isExpression(order)
+        ? [{ expr: toExpr(order, ctx) }]
+        : invalidOrder();
 
 const groupBy = (
   definition: ModelDefinition,
@@ -379,7 +386,10 @@ export const returningAll = (definition: ModelDefinition): readonly ExprNode[] =
 export const buildInsert = (
   definition: ModelDefinition,
   rows: readonly Readonly<Record<string, unknown>>[],
-  options: Readonly<{ returning?: boolean | readonly ExprNode[] }> = {},
+  options: Readonly<{
+    returning?: boolean | readonly ExprNode[];
+    onConflict?: OnConflictNode;
+  }> = {},
 ): InsertNode => {
   const ctx = whereContext(definition, undefined);
   const attributes = insertableAttributes(definition, rows).filter(
@@ -394,7 +404,7 @@ export const buildInsert = (
         : options.returning;
   return {
     kind: 'insert',
-    table: tableOf(definition),
+    table: tableOf(definition, options.onConflict === undefined ? undefined : definition.name),
     columns: attributes.map((name) => definition.attributes.get(name)?.field ?? name),
     rows: rows.map((row) =>
       attributes.map((name) => {
@@ -405,6 +415,7 @@ export const buildInsert = (
           : valueExpr(attribute, value, ctx);
       }),
     ),
+    ...(options.onConflict === undefined ? {} : { onConflict: options.onConflict }),
     ...(returning === undefined ? {} : { returning }),
   };
 };
@@ -413,8 +424,8 @@ export const buildInsert = (
 export const setItems = (
   definition: ModelDefinition,
   values: Readonly<Record<string, unknown>>,
+  ctx: WhereContext = whereContext(definition, undefined),
 ): readonly SetItem[] => {
-  const ctx = whereContext(definition, undefined);
   return Object.entries(values)
     .filter(([, value]) => value !== undefined)
     .map(([name, value]) => {

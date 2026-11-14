@@ -47,3 +47,22 @@ Tech debt:
 - `count({ group })` returns array typed as `number` (v6 overload shape) — add overload.
 - `Model` static getters (`tableName`, `rawAttributes`) are getters, v6 has plain properties (assignment not supported).
 - model.ts coverage 80% — more instance-path tests in M3.
+
+## M2 — ON CONFLICT (T16–T19) — done 2026-11-14
+Built:
+- `src/model/on-conflict.ts`: `OnConflictOptions` (targets: attribute list, `{ columns, where }` partial index, `{ constraint }`, expression index via `fn`/`literal`; action `'nothing'` | `{ update: attrs[] | map, where }`), `buildOnConflict` (validates before any query), `insertedFlagColumn` (`(xmax = 0) AS "__pgz_inserted"`).
+- `Model.insert()` (returns only written rows, `wasInserted` per instance), `onConflict` in `create` / `bulkCreate` / `upsert`.
+- v6 options: `upsert` (target = `conflictFields` | unique key of an updated attribute | PK; returns `[instance, null]`), `bulkCreate` `updateOnDuplicate` / `conflictAttributes` / `conflictWhere` / `ignoreDuplicates` (rows mapped onto instances by index, like v6).
+- `excluded()` allowed only in onConflict (runtime guard via `WhereContext.allowExcluded`).
+- `ModelDefinition.uniqueKeys` (v6 naming `${table}_${attr}_unique`).
+
+Deviations:
+- Spec §5.1 said auto-adding `updatedAt` "matches v6 updateOnDuplicate" — it does not: v6 never adds it for `updateOnDuplicate`. Implemented: v6 options unchanged (no auto-add); `onConflict` update auto-adds `updatedAt = EXCLUDED.updatedAt` unless set explicitly.
+- `create` with `onConflict` that skips the row returns the unsaved instance (`isNewRecord: true`, `wasInserted: false`).
+- `wasInserted` stored in a module WeakMap (no extra instance state), exposed as a getter; added to `ModelBase` so it is not inferred as an attribute.
+
+Security fixes (from Phase 5 review):
+- `order` given as a plain string threw in v6 but was inlined here → now throws like v6.
+- `attr::type` cast types validated against v6 allowlist (+ `uuid`).
+- `where(attr, '<comparator>', value)` comparator validated.
+- `fn()` names and `cast()` types validated by pattern.
