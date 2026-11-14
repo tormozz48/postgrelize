@@ -26,3 +26,6 @@ GitHub Packages versions can't be overwritten; publish a fixed patch version. De
 ## Status (2026-11-14)
 - CI green on PRs #1 and #2 (Node 20/22, PG 16/17/18). No release tag pushed yet.
 - Pages: must be enabled by the owner (Settings → Pages → Source: GitHub Actions); the first `docs.yml` run on main failed until then.
+
+## Releases
+- 0.1.0 — 2026-11-14, via `npm version 0.1.0` + tag push; release.yml green, package published.
