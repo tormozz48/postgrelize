@@ -37,6 +37,8 @@ export type ModelRuntime = Readonly<{
     lines: AsyncIterable<string>,
     options: QueryOptionsBase,
   ) => Promise<number>;
+  /** Streams `COPY ... TO STDOUT` output. */
+  copyTo: (text: string, options: QueryOptionsBase) => AsyncGenerator<Buffer, void, undefined>;
   /** Starts an unmanaged transaction. */
   beginTransaction: (options?: TransactionOptions) => Promise<Transaction>;
   /** `server_version_num` of the database (cached). */

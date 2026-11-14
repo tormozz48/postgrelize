@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** 0.2.0 released (GitHub Packages, 2026-11-14). Next: backlog (CTE, copyTo, RETURNING old/new, read replicas, nested create via include)
+**Current phase:** Backlog — CTE + copyTo done; PR open
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`

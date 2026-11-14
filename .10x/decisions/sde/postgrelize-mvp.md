@@ -125,3 +125,9 @@ Deviations: `copyTo` not implemented (needs type OIDs for text parsing; YAGNI). 
 ## P1-D — Schema power — done 2026-11-14
 Built: attribute `identity` / `generated`; DDL rendering (identity type, `GENERATED ALWAYS AS (...) STORED|VIRTUAL`, no DEFAULT for generated), insert/update skip generated attributes, `OVERRIDING` in INSERT AST/compiler and create/bulkCreate/insert options, `DataTypes.INTERVAL` with raw server text (OID 1186 parser override), `addEnumValuesSql` in `sync({ alter })` (identity/generated columns not altered).
 Tests: integration +2 (identity always + overriding, generated recompute on update, INTERVAL, enum values added by alter).
+
+## Backlog — CTE + copyTo — done 2026-11-14
+Built: AST `WithClause`/`CteNode`/`UnionNode`/`SelectNode.extraFrom` (+ compiler); `src/model/cte.ts` (with/source/from options, source definition with attribute-named columns); `CopyToStdout` submittable with pause/resume backpressure and discard-on-early-exit; `ConnectionManager.copyTo`; `Model.copyTo` with validated COPY options and ADR-013 literal inlining.
+Tests: integration +4 (recursive tree walk returning instances, materialized CTE in count + IN subquery, extra FROM self-join, CSV export incl. quoting/NULL, option validation, 5k-row slow consumer integrity, early exit, error + pool health), unit +1 (CTE compile).
+Bugs found: pg-protocol reuses the socket buffer → CopyData chunks must be copied before queueing (data corruption with slow consumers).
+Note: `extraFrom` is rendered after joins so join conditions keep referencing the main table.

@@ -77,6 +77,8 @@ import {
   type SelectOptions,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
+import { escapeLiteral, inlineValues } from '../ddl/literals.ts';
+import { cteSelectOptions, sourceDefinition } from './cte.ts';
 import { encodeCopyRow } from '../connection/copy.ts';
 import { quoteIdent } from '../sql/compile.ts';
 import { randomUUID } from 'node:crypto';
@@ -100,6 +102,8 @@ import type {
   BuildOptions,
   BulkCreateOptions,
   CopyFromOptions,
+  CopyToFormatOptions,
+  CopyToOptions,
   CountOptions,
   CreateOptions,
   CreationAttributes,
@@ -483,8 +487,11 @@ export class Model<
       const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
       const includes = normalizeIncludes(this, query.include);
       const base = buildSelect(
-        definition,
-        (includes.length === 0 ? query : { ...query, order: undefined }) as SelectOptions,
+        sourceDefinition(definition, query.source),
+        {
+          ...(includes.length === 0 ? query : { ...query, order: undefined }),
+          ...cteSelectOptions(query),
+        } as SelectOptions,
         runtime.inAsAnyThreshold,
         undefined,
         as,
@@ -710,6 +717,48 @@ export class Model<
       }
     }
     return runtime.copyFrom(text, lines(), options);
+  }
+
+  /**
+   * Streams `COPY (SELECT ...) TO STDOUT` output — the fastest way to export rows (e.g. CSV). Default
+   * scope, paranoid filter, `with` / `source` and includes apply. Values of the query are inlined as
+   * escaped literals because COPY cannot take parameters (ADR-013). Stopping early drains the rest
+   * before the connection is released. PostgreSQL extension.
+   *
+   * @param options - Find options and output format.
+   * @returns Async iterator of raw output chunks.
+   * @example
+   * ```ts
+   * for await (const chunk of User.copyTo({ attributes: ['id', 'email'], format: 'csv', header: true })) {
+   *   response.write(chunk);
+   * }
+   * ```
+   */
+  static copyTo<M extends AnyModel>(
+    this: ModelStatic<M>,
+    options: CopyToOptions<Attributes<M>> = {},
+  ): AsyncGenerator<Buffer, void, undefined> {
+    const { definition, runtime, scopes } = stateOf(this);
+    const scoped = injectScope(
+      activeScope(this),
+      { ...options },
+      scopes.whereMergeStrategy,
+    ) as FindOptions;
+    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
+    const includes = normalizeIncludes(this, query.include);
+    const base = buildSelect(
+      sourceDefinition(definition, query.source),
+      {
+        ...(includes.length === 0 ? query : { ...query, order: undefined }),
+        ...cteSelectOptions(query),
+      } as SelectOptions,
+      runtime.inAsAnyThreshold,
+    );
+    const select = includes.length === 0 ? base : withIncludes(definition, base, includes, query);
+    return runtime.copyTo(
+      `COPY (${inlineValues(compile(select))}) TO STDOUT${copyFormatSql(options)}`,
+      options,
+    );
   }
 
   /**
@@ -1167,8 +1216,11 @@ export class Model<
     };
     const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
     const base = buildSelect(
-      definition,
-      (includes.length === 0 ? query : { ...query, order: undefined }) as SelectOptions,
+      sourceDefinition(definition, (query as FindOptions).source),
+      {
+        ...(includes.length === 0 ? query : { ...query, order: undefined }),
+        ...cteSelectOptions(query as FindOptions),
+      } as SelectOptions,
       runtime.inAsAnyThreshold,
     );
     const select =
@@ -1286,7 +1338,11 @@ export class Model<
             col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
           }
     ) as SelectOptions & CountOptions;
-    const counted = buildCount(definition, countQuery, runtime.inAsAnyThreshold);
+    const counted = buildCount(
+      sourceDefinition(definition, query.source),
+      { ...countQuery, ...cteSelectOptions(query) },
+      runtime.inAsAnyThreshold,
+    );
     const select =
       includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
     const result = await runtime.execute(compile(select), query);
@@ -2374,3 +2430,28 @@ const validateAll = async (instances: readonly Model[], hooks: boolean): Promise
 
 /** @internal Normalized definition of a model class. */
 export const definitionOf = (model: object): ModelDefinition => stateOf(model).definition;
+
+const COPY_FORMATS: ReadonlySet<string> = new Set(['text', 'csv', 'binary']);
+
+const singleCharacter = (value: string, name: string): string => {
+  if ([...value].length !== 1) {
+    throw new Error(`copyTo: ${name} must be a single character`);
+  }
+  return escapeLiteral(value);
+};
+
+const copyFormatSql = (options: CopyToFormatOptions): string => {
+  if (options.format !== undefined && !COPY_FORMATS.has(options.format)) {
+    throw new Error(`copyTo: unsupported format ${String(options.format)}`);
+  }
+  const parts = [
+    ...(options.format === undefined ? [] : [`FORMAT ${options.format}`]),
+    ...(options.header === undefined ? [] : [`HEADER ${options.header ? 'true' : 'false'}`]),
+    ...(options.delimiter === undefined
+      ? []
+      : [`DELIMITER ${singleCharacter(options.delimiter, 'delimiter')}`]),
+    ...(options.quote === undefined ? [] : [`QUOTE ${singleCharacter(options.quote, 'quote')}`]),
+    ...(options.nullString === undefined ? [] : [`NULL ${escapeLiteral(options.nullString)}`]),
+  ];
+  return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
+};

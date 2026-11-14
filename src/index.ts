@@ -40,6 +40,8 @@ export type {
   BulkCreateOptions,
   BulkHookOptions,
   CopyFromOptions,
+  CopyToFormatOptions,
+  CopyToOptions,
   CountOptions,
   CreateOptions,
   CreationAttributes,
@@ -227,3 +229,4 @@ export { Deferrable } from './ddl/ddl.ts';
 export type { ConstraintOptions, DeferrableValue, IndexField, IndexOptions } from './ddl/ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/literals.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
+export type { CteDefinition, CteFindOptions, WithOption } from './model/cte.ts';

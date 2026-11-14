@@ -102,6 +102,39 @@ describe('compile select', () => {
     );
   });
 
+  it('renders recursive CTEs and extra FROM relations', () => {
+    const base = { kind: 'select' as const, columns: [ident('id')], from: users };
+    expect(
+      compile({
+        kind: 'select',
+        with: {
+          recursive: true,
+          ctes: [
+            {
+              name: 'tree',
+              materialized: false,
+              query: {
+                kind: 'union',
+                all: true,
+                left: { ...base, where: binary('=', ident('id'), param(1)) },
+                right: {
+                  ...base,
+                  extraFrom: [{ name: 'tree' }],
+                  where: binary('=', ident('users', 'parent'), ident('tree', 'id')),
+                },
+              },
+            },
+          ],
+        },
+        columns: [{ kind: 'star' }],
+        from: { name: 'tree', alias: 'User' },
+      }),
+    ).toEqual({
+      text: 'WITH RECURSIVE "tree" AS NOT MATERIALIZED (SELECT "id" FROM "users" WHERE "id" = $1 UNION ALL SELECT "id" FROM "users", "tree" WHERE "users"."parent" = "tree"."id") SELECT * FROM "tree" AS "User"',
+      values: [1],
+    });
+  });
+
   it('selects from a subquery', () => {
     expect(
       compile({

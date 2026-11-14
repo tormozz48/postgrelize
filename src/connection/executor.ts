@@ -6,7 +6,7 @@ import {
   type PoolConfig,
   type QueryResultRow,
 } from 'pg';
-import { CopyFromStdin } from './copy.ts';
+import { CopyFromStdin, CopyToStdout } from './copy.ts';
 import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
 import { mapConnectionError, mapQueryError } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
@@ -43,6 +43,8 @@ export type ConnectionManager = Readonly<{
     lines: AsyncIterable<string>,
     options?: ExecuteOptions,
   ) => Promise<number>;
+  /** Runs `COPY ... TO STDOUT` and yields the output chunks. */
+  copyTo: (text: string, options?: ExecuteOptions) => AsyncGenerator<Buffer, void, undefined>;
   /** Opens a dedicated (non-pooled) client, e.g. for LISTEN. */
   dedicated: () => Promise<PgClient>;
   close: () => Promise<void>;
@@ -140,6 +142,35 @@ export const createConnectionManager = (
     }
   };
 
+  async function* copyTo(
+    text: string,
+    options: ExecuteOptions = {},
+  ): AsyncGenerator<Buffer, void, undefined> {
+    const client = options.client ?? (await acquireWith(pool));
+    const started = performance.now();
+    const copy = new CopyToStdout(text);
+    void (client as unknown as Readonly<{ query: (submittable: CopyToStdout) => unknown }>).query(
+      copy,
+    );
+    let completed = false;
+    try {
+      yield* copy.chunks();
+      await copy.done();
+      completed = true;
+      log({ text, values: [] }, options, defaults, performance.now() - started);
+    } catch (error) {
+      throw mapQueryError(error, { sql: text, parameters: [] });
+    } finally {
+      if (!completed) {
+        copy.discard();
+        await copy.done().catch(() => undefined);
+      }
+      if (options.client === undefined) {
+        client.release();
+      }
+    }
+  }
+
   const dedicated = async (): Promise<PgClient> => {
     const client = new PgClient({ ...config, types: typeParsers });
     try {
@@ -154,6 +185,7 @@ export const createConnectionManager = (
     execute,
     acquire: () => acquireWith(pool),
     copyFrom,
+    copyTo,
     dedicated,
     close: () => pool.end(),
   };

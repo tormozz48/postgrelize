@@ -224,6 +224,7 @@ export class Sequelize {
       queryInterface: () => this.getQueryInterface(),
       copyFrom: (text, lines, options) =>
         this.#connections.copyFrom(text, lines, this.#executeOptions(options)),
+      copyTo: (text, options) => this.#connections.copyTo(text, this.#executeOptions(options)),
       beginTransaction: (options) => this.transaction(options),
       serverVersion: () => {
         this.#serverVersion ??= this.#execute(

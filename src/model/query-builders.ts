@@ -11,6 +11,7 @@ import {
   type InsertNode,
   type LockNode,
   type FromItem,
+  type WithClause,
   type OnConflictNode,
   type OrderNode,
   type SelectNode,
@@ -85,6 +86,10 @@ export type SelectOptions = Readonly<{
   noWait?: boolean;
   /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
   distinctOn?: readonly unknown[];
+  /** @internal Resolved `WITH` clause. */
+  withClause?: WithClause;
+  /** @internal Resolved extra FROM relations. */
+  extraFrom?: readonly FromItem[];
 }>;
 
 /** Table reference of the model. */
@@ -270,6 +275,10 @@ export const buildSelect = (
   );
   return {
     kind: 'select',
+    ...(options.withClause === undefined ? {} : { with: options.withClause }),
+    ...(options.extraFrom === undefined || options.extraFrom.length === 0
+      ? {}
+      : { extraFrom: options.extraFrom }),
     ...(distinctOn.length === 0 ? {} : { distinctOn }),
     columns: columnsOverride ?? selectColumns(definition, alias, ctx, options.attributes),
     from: tableOf(definition, alias),
