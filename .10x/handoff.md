@@ -1,8 +1,8 @@
 # Handoff
 
-**From:** CTO + PM (Phase 1) → **To:** Architect + Staff Engineer (Phase 2)
+**From:** Architect + Staff Engineer (Phase 2) → **To:** EM + Senior Engineer (Phase 3)
 
-- Verdict: build clean-room TS, Sequelize v6 drop-in, PG-only (`decisions/cto/postgrelize-mvp.md`).
-- This cycle: M0–M2; user stories US1–US7 (`decisions/product-manager/postgrelize-mvp.md`).
-- Spec: `.10x/specs/2026-11-14-postgrelize-mvp-design.md` (approved by user 2026-11-14).
-- Architect: write ADRs for approach, driver/params, ON CONFLICT API, compat testing; define module boundaries & failure modes.
+- ADRs 001–005 accepted (`.10x/adrs/`). ADR-005: functional core / thin class shell, SOLID + YAGNI (user requirement).
+- Module map + failure modes: `decisions/architect/postgrelize-mvp.md`.
+- Coding standards: `decisions/staff-engineer/postgrelize-mvp.md`.
+- Plan M0–M2 into ≤ half-day tasks, ordered by dependency.
