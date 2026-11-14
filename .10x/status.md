@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog — CTE + copyTo done; PR open
+**Current phase:** 0.3.0 released (GitHub Packages, 2026-11-14). Next backlog: RETURNING old/new (PG18), read replicas, nested create via include, default scopes of included models
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -96,3 +96,6 @@
 
 ## Release 0.2.0 (2026-11-14)
 - Tag `v0.2.0` → release.yml green, `@tormozz48/postgrelize@0.2.0` published (50 files, dist-tag `latest`). Contents: P1 PostgreSQL power features.
+
+## Release 0.3.0 (2026-11-14)
+- Tag `v0.3.0` → release.yml green, `@tormozz48/postgrelize@0.3.0` published (51 files, `latest`). Contents: CTE options, `Model.copyTo`.
