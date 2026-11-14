@@ -22,3 +22,7 @@ GitHub Packages versions can't be overwritten; publish a fixed patch version. De
 
 ## Local parity
 `docker-compose.yml` (postgres:${PGZ_PG_VERSION:-16}, port 54329, tmpfs) mirrors CI service.
+
+## Status (2026-11-14)
+- CI green on PRs #1 and #2 (Node 20/22, PG 16/17/18). No release tag pushed yet.
+- Pages: must be enabled by the owner (Settings → Pages → Source: GitHub Actions); the first `docs.yml` run on main failed until then.

@@ -111,7 +111,7 @@ type OnConflict<M> = {
 - `col('x')` inside `action` refers to the existing target row; the insert uses table alias = model name so references are unambiguous.
 - `target` required when `action` is an update (PG rule) — validated before the query.
 - Unknown attribute names → `Error` before the query. Attribute names are mapped to `field` names.
-- `updatedAt` is added to the update set automatically when the model has timestamps, unless explicitly set (matches v6 `updateOnDuplicate` behaviour).
+- `updatedAt` is added to the update set automatically when the model has timestamps, unless explicitly set. (Note: v6 `updateOnDuplicate` does *not* do this; v6 options keep v6 behaviour.)
 - Result: instances from `RETURNING *`, plus `RETURNING (xmax = 0) AS "__pgz_inserted"`; the flag is removed from `dataValues` and exposed as `instance.wasInserted: boolean` (non-attribute). Skipped rows (DO NOTHING / WHERE false) are not returned.
 - `upsert()` with `onConflict` returns `[instance, created: boolean]` using the same flag.
 - v6 options (`updateOnDuplicate`, `conflictAttributes`, `conflictWhere`, `ignoreDuplicates`, `conflictFields`) keep v6 behaviour; combining any of them with `onConflict` throws.
