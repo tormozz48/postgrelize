@@ -86,7 +86,7 @@ describe('whereToAst', () => {
   it('supports nested JSON objects, dotted keys and casts by value type', () => {
     expect(sql({ meta: { a: { b: 1 } } })).toEqual({
       text: 'CAST("User"."meta" #>> $1 AS double precision) = $2',
-      values: ['{a,b}', '1'],
+      values: [['a', 'b'], '1'],
     });
     expect(sql({ 'meta.flag': true }).text).toBe('CAST("User"."meta" #>> $1 AS boolean) = $2');
     expect(sql({ 'meta.name': { [Op.iLike]: 'x%' } }).text).toBe('"User"."meta" #>> $1 ILIKE $2');
