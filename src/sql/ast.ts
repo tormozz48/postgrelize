@@ -24,6 +24,7 @@ export type BetweenNode = Readonly<{
 export type ExcludedNode = Readonly<{ kind: 'excluded'; column: string }>;
 export type SubqueryNode = Readonly<{ kind: 'subquery'; query: SelectNode }>;
 export type AliasNode = Readonly<{ kind: 'alias'; expr: ExprNode; alias: string }>;
+export type ValuesNode = Readonly<{ kind: 'values'; rows: readonly (readonly ExprNode[])[] }>;
 
 export type ExprNode =
   | ParamNode
@@ -40,7 +41,8 @@ export type ExprNode =
   | BetweenNode
   | ExcludedNode
   | SubqueryNode
-  | AliasNode;
+  | AliasNode
+  | ValuesNode;
 
 export type TableRef = Readonly<{ name: string; schema?: string; alias?: string }>;
 

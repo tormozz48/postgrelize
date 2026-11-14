@@ -78,7 +78,9 @@ const expr = (node: ExprNode): Chunks => {
     case 'or':
       return node.items.length === 0
         ? [node.kind === 'and' ? 'TRUE' : 'FALSE']
-        : wrap(join(node.items.map(expr), ` ${node.kind.toUpperCase()} `));
+        : node.items.length === 1 && node.items[0] !== undefined
+          ? expr(node.items[0])
+          : wrap(join(node.items.map(expr), ` ${node.kind.toUpperCase()} `));
     case 'list':
       return wrap(exprList(node.items));
     case 'between':
@@ -95,6 +97,14 @@ const expr = (node: ExprNode): Chunks => {
       return wrap(select(node.query));
     case 'alias':
       return [...expr(node.expr), ` AS ${quoteIdent(node.alias)}`];
+    case 'values':
+      return [
+        'VALUES ',
+        ...join(
+          node.rows.map((row) => wrap(exprList(row))),
+          ', ',
+        ),
+      ];
     default:
       return assertNever(node);
   }
