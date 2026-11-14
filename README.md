@@ -24,16 +24,16 @@
 
 ### What you get on top of Sequelize v6
 
-| Area | postgrelize | Sequelize v6 |
-|---|---|---|
-| Upserts | `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted` per row | `upsert` / `updateOnDuplicate` with fixed column lists |
-| Bulk writes | `MERGE` (`Model.merge`), `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT` (`Model.insertFrom`) | — |
-| Old values | `returningOld` → `instance.oldValues` (PostgreSQL 18 `RETURNING OLD`) | — |
-| Import / export | `COPY FROM STDIN` / `COPY TO STDOUT` streaming (`Model.copyFrom`, `Model.copyTo`) | — |
-| Queries | CTEs incl. `WITH RECURSIVE`, subqueries (`Model.subquery`, `exists()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists | literals only |
-| Sessions | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks | — |
-| Scaling | read replicas with round-robin readers (`replication`, `useMaster`) | read replicas |
-| Schema | identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation | — |
+| Area            | postgrelize                                                                                                                                                                                                              | Sequelize v6                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| Upserts         | `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted` per row                                                                                                     | `upsert` / `updateOnDuplicate` with fixed column lists |
+| Bulk writes     | `MERGE` (`Model.merge`), `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT` (`Model.insertFrom`)                                                                                                                 | —                                                      |
+| Old values      | `returningOld` → `instance.oldValues` (PostgreSQL 18 `RETURNING OLD`)                                                                                                                                                    | —                                                      |
+| Import / export | `COPY FROM STDIN` / `COPY TO STDOUT` streaming (`Model.copyFrom`, `Model.copyTo`)                                                                                                                                        | —                                                      |
+| Queries         | CTEs incl. `WITH RECURSIVE`, subqueries (`Model.subquery`, `exists()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists | literals only                                          |
+| Sessions        | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks                                                                                                                                                                     | —                                                      |
+| Scaling         | read replicas with round-robin readers (`replication`, `useMaster`)                                                                                                                                                      | read replicas                                          |
+| Schema          | identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation                                                                                            | —                                                      |
 
 ## Install
 
