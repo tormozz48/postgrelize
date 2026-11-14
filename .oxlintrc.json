@@ -51,6 +51,12 @@
       }
     },
     {
+      "files": ["docs/.vitepress/config.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
       "files": ["tests/**", "*.config.ts"],
       "rules": {
         "typescript/explicit-module-boundary-types": "off"
@@ -61,5 +67,5 @@
     "builtin": true,
     "node": true
   },
-  "ignorePatterns": ["dist", "coverage", "node_modules"]
+  "ignorePatterns": ["dist", "coverage", "node_modules", "docs/api", "docs/.vitepress/cache"]
 }

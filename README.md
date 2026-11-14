@@ -113,7 +113,7 @@ npm run db:up        # PostgreSQL 16 in Docker on port 54329
 npm run lint && npm run format:check && npm run typecheck
 npm test             # unit + integration + differential (vs sequelize@6)
 npm run build && npm run test:build
-npm run docs         # API docs into docs-site/
+npm run docs         # documentation site into docs/.vitepress/dist (npm run docs:dev to preview)
 npm run test:coverage # coverage report into coverage/
 ```
 

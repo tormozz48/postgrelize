@@ -148,5 +148,5 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
-# TypeDoc output
-docs-site/
+# TypeDoc / VitePress output
+docs/api/
