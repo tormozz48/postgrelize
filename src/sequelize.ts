@@ -14,7 +14,8 @@ import {
 import { DataTypes } from './data-types/data-types.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
-import { Model, parseModelRow, type AnyModel, type ModelStatic } from './model/model.ts';
+import { Model, parseModelRow } from './model/model.ts';
+import type { AnyModel, ModelStatic } from './model/options.ts';
 import type { DefinitionOptions, ModelAttributes } from './model/definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
 import { prepareRawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';

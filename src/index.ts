@@ -24,7 +24,7 @@ export type {
   UpdateOptions,
   UpsertOptions,
   Values,
-} from './model/model.ts';
+} from './model/options.ts';
 export type {
   AttributeDefinition,
   AttributeOptions,
@@ -119,7 +119,9 @@ export type {
 export type { Replacements, BindParameters } from './query/raw-query.ts';
 export {
   AccessDeniedError,
+  AggregateError,
   BaseError,
+  BulkRecordError,
   ConnectionAcquireTimeoutError,
   ConnectionError,
   ConnectionRefusedError,
@@ -132,6 +134,7 @@ export {
   HostNotReachableError,
   InstanceError,
   InvalidConnectionError,
+  OptimisticLockError,
   TimeoutError,
   UniqueConstraintError,
   ValidationError,

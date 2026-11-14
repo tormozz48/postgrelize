@@ -6,6 +6,7 @@ import {
   type DataTypeInput,
 } from '../data-types/data-types.ts';
 import type { ModelDefaults } from '../connection/options.ts';
+import type { AttributeValidateOptions } from '../validation/types.ts';
 
 /** Named unique constraint of an attribute. */
 export type UniqueOptions = Readonly<{
@@ -53,6 +54,8 @@ export type AttributeOptions = Readonly<{
   onDelete?: string;
   /** `ON UPDATE` action of the foreign key. */
   onUpdate?: string;
+  /** Validators run before INSERT / UPDATE. */
+  validate?: AttributeValidateOptions;
   /** Custom getter, called with the model instance as `this`. */
   get?: (this: never) => unknown;
   /** Custom setter, called with the model instance as `this`. */

@@ -1,4 +1,3 @@
-import { isDefaultValueGenerator } from '../data-types/data-types.ts';
 import { EmptyResultError, InstanceError } from '../errors/errors.ts';
 import { isExpression } from '../expressions/methods.ts';
 import { compile } from '../sql/compile.ts';
@@ -20,10 +19,8 @@ import {
   primaryKeyWhere,
   setItems,
   type SelectOptions,
-  whereContext,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
-import { isEmptyWhere, whereToAst } from '../where/where.ts';
 import {
   buildOnConflict,
   INSERTED_FLAG,
@@ -32,287 +29,52 @@ import {
 } from './on-conflict.ts';
 import { returningAll } from './query-builders.ts';
 import type { OnConflictNode } from '../sql/ast.ts';
+import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from './runtime.ts';
+import type { WhereOptions } from './types.ts';
+import type {
+  AggregateOptions,
+  AnyModel,
+  AttributeAmounts,
+  Attributes,
+  BuildOptions,
+  BulkCreateOptions,
+  CountOptions,
+  CreateOptions,
+  CreationAttributes,
+  DestroyOptions,
+  FindAndCountResult,
+  FindOptions,
+  FindOrCreateOptions,
+  IncrementOptions,
+  InitOptions,
+  InsertOptions,
+  ModelStatic,
+  QualifiedTableName,
+  SaveOptions,
+  UpdateOptions,
+  UpsertOptions,
+  Values,
+} from './options.ts';
+import { sequelizes, states, stateOf } from './state.ts';
 import {
-  runtimeKey,
-  type ModelRuntime,
-  type QueryOptionsBase,
-  type RuntimeOwner,
-} from './runtime.ts';
-import type { MakeNullishOptional, WhereOptions } from './types.ts';
-
-/** Plain attribute values of a model. */
-export type Values = Record<string, unknown>;
-
-/** Any model instance type. */
-// oxlint-disable-next-line typescript/no-explicit-any -- Sequelize v6 compat: attribute types are unknown here
-export type AnyModel = Model<any, any>;
-
-/** Attribute types of model instance type `M`. */
-export type Attributes<M extends AnyModel> = M['_attributes'];
-
-/** Creation attribute types of model instance type `M`. */
-export type CreationAttributes<M extends AnyModel> = MakeNullishOptional<M['_creationAttributes']>;
-
-/** A model class whose instances are `M` (Sequelize v6 `ModelStatic`). */
-export type ModelStatic<M extends AnyModel> = Omit<typeof Model, 'prototype'> & {
-  new (values?: Values, options?: BuildOptions): M;
-  /** Instance prototype. */
-  prototype: M;
-};
-
-/** Result of `findAndCountAll`. */
-export type FindAndCountResult<M> = {
-  /** Total number of matching rows, ignoring `limit` / `offset`. */
-  count: number;
-  /** Rows of the current page. */
-  rows: M[];
-};
-
-/** Schema-qualified table name returned by `getTableName`. */
-export type QualifiedTableName = Readonly<{
-  /** Table name. */
-  tableName: string;
-  /** Schema name. */
-  schema: string;
-  /** Separator between schema and table. */
-  delimiter: string;
-}>;
-
-/** Options of `Model.init`. */
-export type InitOptions = DefinitionOptions &
-  Readonly<{
-    /** Owning `Sequelize` instance. */
-    sequelize: RuntimeOwner;
-  }>;
-
-/** Options of `Model.build`. */
-export type BuildOptions = Readonly<{
-  /** Whether the instance represents a row that does not exist yet. Default true. */
-  isNewRecord?: boolean;
-  /** Set values without setters and without change tracking. */
-  raw?: boolean;
-}>;
-
-/** Options of finders (Sequelize v6 `FindOptions`, without `include`). */
-export type FindOptions<T = Values> = QueryOptionsBase &
-  Omit<SelectOptions, 'where'> &
-  Readonly<{
-    /** Filter. */
-    where?: WhereOptions<T>;
-    /** Return plain objects instead of instances. */
-    raw?: boolean;
-    /** With `raw`, build nested objects from dotted keys. */
-    nest?: boolean;
-    /** Return a single row (used by `findOne`). */
-    plain?: boolean;
-    /** Throw `EmptyResultError` (or the given error) when no row is found. */
-    rejectOnEmpty?: boolean | Error;
-  }>;
-
-/** Options of `count`. */
-export type CountOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Filter. */
-    where?: WhereOptions<T>;
-    /** Column to count. */
-    col?: string;
-    /** `count(DISTINCT ...)`. */
-    distinct?: boolean;
-    /** Group by attributes; the result becomes an array of `{ count, ...groups }`. */
-    group?: string | readonly string[];
-  }>;
-
-/** Options of `aggregate`, `max`, `min`, `sum`. */
-export type AggregateOptions<T = Values> = CountOptions<T> &
-  Readonly<{
-    /** Return all rows instead of one value. */
-    plain?: boolean;
-  }>;
-
-/** Options of `create` and `save`. */
-export type SaveOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Attributes to save; others are ignored. */
-    fields?: readonly (keyof T & string)[];
-    /** Do not update `updatedAt`. */
-    silent?: boolean;
-    /** Return all columns after insert/update (always enabled for PostgreSQL). */
-    returning?: boolean;
-  }>;
-
-/** Options of `create`. */
-export type CreateOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /** Advanced `ON CONFLICT` handling. PostgreSQL extension. */
-    onConflict?: OnConflictOptions<T>;
-  }>;
-
-/** Options of `bulkCreate`. */
-export type BulkCreateOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /** `ON CONFLICT DO NOTHING`. */
-    ignoreDuplicates?: boolean;
-    /** Attributes updated from the proposed row on conflict (`DO UPDATE SET a = EXCLUDED.a`). */
-    updateOnDuplicate?: readonly (keyof T & string)[];
-    /** Conflict target attributes for `updateOnDuplicate`. Default: first unique key, else primary key. */
-    conflictAttributes?: readonly (keyof T & string)[];
-    /** Predicate of a partial unique index used as conflict target. */
-    conflictWhere?: WhereOptions<T>;
-    /** Advanced `ON CONFLICT` handling; cannot be combined with the options above. PostgreSQL extension. */
-    onConflict?: OnConflictOptions<T>;
-  }>;
-
-/** Options of `upsert`. */
-export type UpsertOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /** Conflict target columns. Default: unique key of an updated attribute, else primary key. */
-    conflictFields?: readonly string[];
-    /** Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension. */
-    onConflict?: OnConflictOptions<T>;
-  }>;
-
-/** Options of `Model.insert`. PostgreSQL extension. */
-export type InsertOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Attributes to insert; others are ignored. */
-    fields?: readonly (keyof T & string)[];
-    /** Advanced `ON CONFLICT` handling. */
-    onConflict?: OnConflictOptions<T>;
-  }>;
-
-/** Options of static `update`. */
-export type UpdateOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Rows to update. */
-    where: WhereOptions<T>;
-    /** Attributes to update; others are ignored. */
-    fields?: readonly (keyof T & string)[];
-    /** Do not update `updatedAt`. */
-    silent?: boolean;
-    /** Return updated rows as the second element of the result. */
-    returning?: boolean;
-  }>;
-
-/** Options of static `destroy`. */
-export type DestroyOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Rows to delete. */
-    where?: WhereOptions<T>;
-    /** Delete at most this many rows. */
-    limit?: number;
-    /** Use `TRUNCATE` instead of `DELETE`. */
-    truncate?: boolean;
-    /** With `truncate`: `CASCADE`. */
-    cascade?: boolean;
-    /** With `truncate`: `RESTART IDENTITY`. */
-    restartIdentity?: boolean;
-    /** Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension. */
-    returning?: boolean;
-  }>;
-
-/** Options of `increment` / `decrement`. */
-export type IncrementOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Rows to change (static form). */
-    where?: WhereOptions<T>;
-    /** Amount, default 1. */
-    by?: number;
-    /** Do not update `updatedAt`. */
-    silent?: boolean;
-  }>;
-
-/** Options of `findOrCreate` / `findOrBuild`. */
-export type FindOrCreateOptions<T = Values> = FindOptions<T> &
-  Readonly<{
-    /** Values used in addition to `where` when creating. */
-    defaults?: Partial<T>;
-  }>;
-
-type ModelState = Readonly<{ definition: ModelDefinition; runtime: ModelRuntime }>;
-
-const states = new WeakMap<object, ModelState>();
+  initialValues,
+  isEqualValue,
+  nestRow,
+  parseAggregate,
+  pickFields,
+  pickQueryOptions,
+  plainWhereValues,
+  toAmounts,
+  withTimestamps,
+} from './values.ts';
+import {
+  V6_CONFLICT_OPTIONS,
+  v6BulkConflict,
+  v6UpsertConflict,
+  withoutGeneratedKey,
+} from './conflict.ts';
 
 const insertedFlags = new WeakMap<object, boolean>();
-
-const V6_CONFLICT_OPTIONS = [
-  'ignoreDuplicates',
-  'updateOnDuplicate',
-  'conflictAttributes',
-  'conflictWhere',
-] as const;
-
-const stateOf = (model: object): ModelState => {
-  const state = states.get(model);
-  if (state === undefined) {
-    throw new Error('Model is not initialized. Call Model.init() or sequelize.define() first.');
-  }
-  return state;
-};
-
-const isEqualValue = (left: unknown, right: unknown): boolean =>
-  left instanceof Date && right instanceof Date
-    ? left.getTime() === right.getTime()
-    : typeof left === 'object' && left !== null && typeof right === 'object' && right !== null
-      ? JSON.stringify(left) === JSON.stringify(right)
-      : left === right;
-
-const clone = <T>(value: T): T => (isExpression(value) ? value : structuredClone(value));
-
-const defaultValueOf = (attribute: AttributeDefinition): unknown =>
-  isDefaultValueGenerator(attribute.defaultValue)
-    ? attribute.defaultValue.generate()
-    : clone(attribute.defaultValue);
-
-const initialValues = (definition: ModelDefinition): Values =>
-  Object.fromEntries([
-    ...[...definition.attributes.values()]
-      .filter((attribute) => attribute.defaultValue !== undefined)
-      .map((attribute) => [attribute.fieldName, defaultValueOf(attribute)] as const),
-    ...definition.primaryKeys
-      .filter((name) => definition.attributes.get(name)?.defaultValue === undefined)
-      .map((name) => [name, null] as const),
-  ]);
-
-const nestRow = (row: Values): Values =>
-  Object.entries(row).reduce<Values>((result, [key, value]) => {
-    const path = key.split('.');
-    const leaf = path.pop() ?? key;
-    const parent = path.reduce<Values>((node, part) => {
-      const child = node[part];
-      return (typeof child === 'object' && child !== null ? child : (node[part] = {})) as Values;
-    }, result);
-    parent[leaf] = value;
-    return result;
-  }, {});
-
-const toNumber = (value: unknown): unknown =>
-  typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))
-    ? Number(value)
-    : value;
-
-const parseAggregate = (
-  attribute: AttributeDefinition | undefined,
-  aggregateFunction: string,
-  value: unknown,
-): unknown => {
-  if (value === null || value === undefined) {
-    return value;
-  }
-  const key = attribute?.type.key;
-  if (
-    aggregateFunction === 'count' ||
-    key === 'INTEGER' ||
-    key === 'SMALLINT' ||
-    key === 'FLOAT' ||
-    key === 'DOUBLE' ||
-    key === 'REAL' ||
-    key === 'DECIMAL' ||
-    key === 'BIGINT'
-  ) {
-    return toNumber(value);
-  }
-  return attribute?.type.parse === undefined ? value : attribute.type.parse(value);
-};
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -1429,67 +1191,6 @@ export class Model<
   }
 }
 
-/** Attribute name(s) or a map of attribute name to amount for `increment` / `decrement`. */
-export type AttributeAmounts<T> =
-  | (keyof T & string)
-  | readonly (keyof T & string)[]
-  | Partial<Record<keyof T & string, number>>;
-
-const sequelizes = new WeakMap<object, RuntimeOwner>();
-
-const toAmounts = (
-  fields: AttributeAmounts<Values>,
-  by: number,
-): Readonly<Record<string, number>> =>
-  typeof fields === 'string'
-    ? { [fields]: by }
-    : Array.isArray(fields)
-      ? Object.fromEntries(fields.map((name: string) => [name, by]))
-      : (fields as Readonly<Record<string, number>>);
-
-const pickFields = (values: Values, fields: readonly string[] | undefined): Values =>
-  fields === undefined
-    ? values
-    : Object.fromEntries(Object.entries(values).filter(([key]) => fields.includes(key)));
-
-const pickQueryOptions = (options: QueryOptionsBase): QueryOptionsBase => ({
-  ...(options.transaction === undefined ? {} : { transaction: options.transaction }),
-  ...(options.logging === undefined ? {} : { logging: options.logging }),
-  ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
-});
-
-const withTimestamps = (
-  definition: ModelDefinition,
-  values: Values,
-  now: Date,
-  creating: boolean,
-  silent: boolean,
-): Values => ({
-  ...values,
-  ...(creating &&
-  definition.createdAt !== undefined &&
-  (values[definition.createdAt] === undefined || values[definition.createdAt] === null)
-    ? { [definition.createdAt]: now }
-    : {}),
-  ...(definition.updatedAt !== undefined && (!silent || creating)
-    ? {
-        [definition.updatedAt]:
-          creating && values[definition.updatedAt] instanceof Date && silent
-            ? values[definition.updatedAt]
-            : now,
-      }
-    : {}),
-});
-
-const plainWhereValues = (where: unknown): Values =>
-  typeof where === 'object' && where !== null && !Array.isArray(where) && !isExpression(where)
-    ? Object.fromEntries(
-        Object.entries(where).filter(
-          ([, value]) => typeof value !== 'object' || value === null || value instanceof Date,
-        ),
-      )
-    : {};
-
 const defineAccessors = (prototype: object, definition: ModelDefinition): void => {
   [...definition.attributes.keys()]
     .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
@@ -1557,99 +1258,4 @@ const insertWithConflict = async <M extends AnyModel>(
     insertedFlags.set(instance, row[INSERTED_FLAG] === true);
     return instance;
   });
-};
-
-const fieldsOf = (definition: ModelDefinition, names: readonly string[]): readonly string[] =>
-  names.map((name) => definition.attributes.get(name)?.field ?? name);
-
-const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefined =>
-  [...definition.uniqueKeys.values()].find((fields) => fields.length > 0);
-
-const conflictUpdate = (
-  attributes: readonly string[],
-  target: readonly string[],
-  where?: unknown,
-): OnConflictNode => ({
-  target: {
-    kind: 'columns',
-    items: target.map((field) => ({ kind: 'ident', path: [field] }) as const),
-    ...(where === undefined ? {} : { where: where as never }),
-  },
-  action:
-    attributes.length === 0
-      ? { kind: 'nothing' }
-      : {
-          kind: 'update',
-          set: attributes.map((field) => ({
-            column: field,
-            value: { kind: 'excluded', column: field } as const,
-          })),
-        },
-});
-
-const v6BulkConflict = (
-  definition: ModelDefinition,
-  options: BulkCreateOptions,
-): Readonly<{ onConflict?: OnConflictNode }> => {
-  if (options.updateOnDuplicate !== undefined) {
-    if (options.updateOnDuplicate.length === 0) {
-      throw new Error('updateOnDuplicate option only supports non-empty array.');
-    }
-    const updatable = options.updateOnDuplicate.filter(
-      (name) => definition.attributes.has(name) && name !== definition.createdAt,
-    );
-    const target =
-      options.conflictAttributes ?? firstUniqueKey(definition) ?? definition.primaryKeys;
-    const where =
-      options.conflictWhere === undefined || isEmptyWhere(options.conflictWhere)
-        ? undefined
-        : whereToAst(options.conflictWhere, whereContext(definition, undefined));
-    return {
-      onConflict: conflictUpdate(
-        fieldsOf(definition, updatable),
-        fieldsOf(definition, target),
-        where,
-      ),
-    };
-  }
-  return options.ignoreDuplicates === true ? { onConflict: { action: { kind: 'nothing' } } } : {};
-};
-
-const v6UpsertConflict = (
-  definition: ModelDefinition,
-  insertValues: Values,
-  updatable: readonly string[],
-  conflictFields: readonly string[] | undefined,
-): OnConflictNode => {
-  const update = [
-    ...updatable,
-    ...(definition.updatedAt === undefined || updatable.includes(definition.updatedAt)
-      ? []
-      : [definition.updatedAt]),
-  ].filter((name) => name in insertValues);
-  const uniqueKey = [...definition.uniqueKeys.values()].find((fields) =>
-    fields.some((name) => update.includes(name)),
-  );
-  const target =
-    conflictFields ??
-    fieldsOf(
-      definition,
-      uniqueKey === undefined || update.some((name) => definition.primaryKeys.includes(name))
-        ? definition.primaryKeys
-        : uniqueKey,
-    );
-  return conflictUpdate(fieldsOf(definition, update), [...new Set(target)]);
-};
-
-const withoutGeneratedKey = (
-  definition: ModelDefinition,
-  provided: Values,
-  values: Values,
-): Values => {
-  const key = definition.primaryKeys[0];
-  return key !== undefined &&
-    !(key in provided) &&
-    definition.attributes.get(key)?.defaultValue === undefined
-    ? Object.fromEntries(Object.entries(values).filter(([name]) => name !== key))
-    : values;
 };
