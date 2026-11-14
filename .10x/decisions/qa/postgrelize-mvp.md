@@ -26,3 +26,7 @@
 
 ## Quality gates
 CI must pass: lint, format:check, typecheck (incl. type tests), unit, build + smoke, TypeDoc (no undocumented exports), integration + compat on PG 16/17/18.
+
+## Cycle 2 (M3) results
+- Differential coverage of v6 lifecycle: hook order for create/update/bulk/individual/destroy/find/count, validation messages and items (type/origin/validatorKey/args), scopes merge, paranoid, optimistic locking — 14 scenarios, all equal.
+- Bugs found: missing re-validation after `beforeUpdate` (v6 always re-validates) — fixed; scope error message — fixed; `schema` option name clash (PostgreSQL schema vs Standard Schema) found by type checks — renamed to `validationSchema`.

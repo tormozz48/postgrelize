@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 2 (M3) — Planning Complete; implementing T20
+**Current phase:** Cycle 2 (M3) — Implementation + Verification complete; PR open. Next: M4 (associations + include)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -44,9 +44,13 @@
 - Ops: `decisions/devops/`, `decisions/sre/` (runbooks).
 
 ## Cycle 2 (M3) tasks — spec `.10x/specs/2026-11-14-m3-model-lifecycle-design.md`, ADR-008
-- [ ] T20 hooks
-- [ ] T21 validation (validator.js + Standard Schema)
-- [ ] T22 scopes
-- [ ] T23 paranoid
-- [ ] T24 optimistic locking
-- [ ] T25 tests + docs
+- [x] T20 hooks
+- [x] T21 validation (validator.js + Standard Schema)
+- [x] T22 scopes
+- [x] T23 paranoid
+- [x] T24 optimistic locking
+- [x] T25 tests + docs
+
+## Cycle 2 (M3) verification (2026-11-14)
+- unit 77, integration+compat 71 (compat 38 scenarios vs sequelize@6), types, build, docs — green locally.
+- Security: no new SQL surfaces (hooks/validators run user code by design; scope options flow through existing where/order compilers and allowlists). Validation errors may include offending values (`value`) — same as v6.

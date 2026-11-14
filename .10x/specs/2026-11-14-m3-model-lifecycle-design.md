@@ -18,7 +18,7 @@ Sequelize v6 behaviour for hooks, validations, scopes, paranoid models and optim
    - Model-level validators (`validate` option) — errors with `path` = validator name.
    - `ValidationError` message `Validation error: <items>` joined by `,\n` (v6 format), `validationFailed` hook.
    - Only attributes being saved are validated (`fields`, `skip`).
-   - **Extension:** `validate: { schema }` on an attribute and `schema` on the model accept any Standard Schema v1 object; issues become `ValidationErrorItem`s (`type: 'Validation error'`, `validatorKey: 'schema'`).
+   - **Extension:** `validate: { schema }` on an attribute and `validationSchema` on the model (`schema` keeps its v6 meaning: PostgreSQL schema) accept any Standard Schema v1 object; issues become `ValidationErrorItem`s (`type: 'Validation error'`, `validatorKey: 'schema'`).
 3. **Scopes** — `defaultScope`, `scopes` (object or function), `Model.scope(...names | { method: [name, ...args] })` returning a subclass, `unscoped()`, `addScope(name, scope, { override })`; merge rules of v6 (`where`/`having` shallow-assign, `whereMergeStrategy: 'and'`, arrays union, finder options override scope).
 4. **Paranoid** — `paranoid: true` (requires timestamps): `deletedAt` attribute (`deletedAt` option renames/disables), finders/count/aggregates add `deletedAt IS NULL` unless `paranoid: false`; `destroy` → `UPDATE SET deletedAt = now()` unless `force: true`; `restore()` static and instance; `isSoftDeleted()`.
 5. **Optimistic locking** — `version: true | '<name>'`: INTEGER default 0; instance updates add `WHERE version = n` and `SET version = n + 1`; zero rows → `OptimisticLockError`.

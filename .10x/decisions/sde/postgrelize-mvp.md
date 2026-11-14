@@ -66,3 +66,19 @@ Security fixes (from Phase 5 review):
 - `attr::type` cast types validated against v6 allowlist (+ `uuid`).
 - `where(attr, '<comparator>', value)` comparator validated.
 - `fn()` names and `cast()` types validated by pattern.
+
+## M3 — Lifecycle (T20–T25) — done 2026-11-14
+Built: `src/hooks/hooks.ts` (immutable registry, proxies, runner), `src/validation/` (validator.js + v6 extras, instance validator port, Standard Schema), `src/model/scopes.ts` (v6 merge rules), `src/model/lifecycle.ts` (hook runner, validateWithHooks, paranoid where), `src/model/state.ts` (per-model state incl. hooks/scopes/validators, scoped subclasses share state), `model.ts` wiring in all CRUD paths, `Sequelize.addHook/removeHook/hasHook`, `beforeConnect` via pg password function.
+
+Tests: compat +14 scenarios (hook order, validation messages/items, AggregateError, scopes, paranoid, version), integration +5 (zod schema, global/define hooks, hook mutation, beforeConnect, whereMergeStrategy), unit +6, type checks for hooks/scopes/restore.
+
+Deviations:
+- Model-level Standard Schema option is `validationSchema` (v6 `schema` = PostgreSQL schema).
+- `hasHook` returns `false` (v6: `undefined`) when a type was never registered.
+- `bulkCreate({ individualHooks: true })` saves rows sequentially (v6: `Promise.all`) — deterministic ids.
+- Connection/sync/query/define hooks are accepted but only `beforeConnect` runs (password only).
+- Static `update` applies the paranoid filter unless `paranoid: false`.
+
+Tech debt:
+- model.ts still ~1.5k lines (mostly TSDoc); further split per operation in M4.
+- `beforeConnect` can only change the password (pg limitation via password function).
