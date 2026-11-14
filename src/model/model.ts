@@ -10,6 +10,8 @@ import {
   loadSeparate,
   normalizeIncludes,
   parseRawRow,
+  toIncludeOptions,
+  type IncludeNode,
   withIncludes,
   type IncludeOption,
 } from '../associations/include.ts';
@@ -240,6 +242,7 @@ export class Model<
   /** True until the instance is saved or when built from a query result. */
   isNewRecord: boolean;
   #changed: ReadonlySet<string> = new Set();
+  #includes: readonly IncludeNode[] = [];
 
   /**
    * Builds an instance without saving it. Prefer `Model.build`.
@@ -252,7 +255,22 @@ export class Model<
     this.isNewRecord = options.isNewRecord ?? true;
     this.dataValues = (this.isNewRecord ? initialValues(definition) : {}) as TAttributes;
     this._previousDataValues = {};
-    this.set(values as Values, options.raw === true ? { raw: true } : {});
+    const includes =
+      options.include === undefined
+        ? []
+        : normalizeIncludes(this.constructor as ModelStatic<AnyModel>, options.include);
+    const nested = new Set(includes.map((node) => node.as));
+    const own = Object.fromEntries(
+      Object.entries(values as Values).filter(([key]) => !nested.has(key)),
+    );
+    this.set(own, options.raw === true ? { raw: true } : {});
+    includes.forEach((node) => {
+      const value = (values as Values)[node.as];
+      if (value !== undefined) {
+        (this.dataValues as Values)[node.as] = buildNested(node, value);
+      }
+    });
+    this.#includes = includes;
     if (!this.isNewRecord || options.raw === true) {
       this._previousDataValues = { ...this.dataValues };
       this.#changed = new Set();
@@ -758,6 +776,7 @@ export class Model<
     return runtime.copyTo(
       `COPY (${inlineValues(compile(select))}) TO STDOUT${copyFormatSql(options)}`,
       options,
+      'read',
     );
   }
 
@@ -958,7 +977,10 @@ export class Model<
     values?: CreationAttributes<M>,
     options: CreateOptions<Attributes<M>> = {},
   ): Promise<M> {
-    const instance = new this(values as Values);
+    const instance = new this(
+      values as Values,
+      options.include === undefined ? {} : { include: options.include },
+    );
     if (options.onConflict === undefined) {
       return instance.save(options as SaveOptions);
     }
@@ -1126,10 +1148,16 @@ export class Model<
     const opts: MutableOptions = {
       hooks: true,
       validate: false,
-      individualHooks: false,
+      individualHooks: options.include !== undefined,
       ...options,
     };
-    const instances = records.map((values) => new this(values as Values));
+    const instances = records.map(
+      (values) =>
+        new this(
+          values as Values,
+          options.include === undefined ? {} : { include: options.include },
+        ),
+    );
     if (instances.length === 0) {
       return [];
     }
@@ -1145,6 +1173,7 @@ export class Model<
           fields: _fields,
           individualHooks: _individual,
           ignoreDuplicates: _ignore,
+          include: _include,
           ...saveOptions
         } = opts;
         await instances.reduce<Promise<unknown>>(
@@ -1225,7 +1254,7 @@ export class Model<
     );
     const select =
       includes.length === 0 ? base : withIncludes(definition, base, includes, query as FindOptions);
-    const result = await runtime.execute(compile(select), query);
+    const result = await runtime.execute(compile(select), query, 'read');
     const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
     const found =
       opts['raw'] === true
@@ -1345,7 +1374,7 @@ export class Model<
     );
     const select =
       includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
-    const result = await runtime.execute(compile(select), query);
+    const result = await runtime.execute(compile(select), query, 'read');
     if (query.group !== undefined) {
       return result.rows.map((row) => ({
         ...parseRow(definition, row),
@@ -1406,6 +1435,7 @@ export class Model<
         ),
       ),
       query,
+      'read',
     );
     const attribute = definition.attributes.get(name);
     if (options.plain === false) {
@@ -2034,6 +2064,7 @@ export class Model<
     })();
     const now = new Date();
     if (isNew) {
+      await saveBelongsTo(this, this.#includes, options);
       const values = pickFields(
         withTimestamps(definition, this.dataValues as Values, now, true, opts['silent'] === true),
         explicitFields,
@@ -2048,6 +2079,7 @@ export class Model<
         options,
       );
       this.#refresh(definition, result.rows[0]);
+      await saveChildren(this, this.#includes, options);
     } else {
       const version = definition.version;
       const current = this.dataValues as Values;
@@ -2454,4 +2486,116 @@ const copyFormatSql = (options: CopyToFormatOptions): string => {
     ...(options.nullString === undefined ? [] : [`NULL ${escapeLiteral(options.nullString)}`]),
   ];
   return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
+};
+
+const toArray = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : [value]);
+
+const buildNested = (node: IncludeNode, value: unknown): unknown => {
+  const build = (item: unknown): unknown => {
+    if (item instanceof Model) {
+      return item;
+    }
+    const child = new node.model(
+      item as Values,
+      node.children.length === 0 ? {} : { include: node.children.map(toIncludeOptions) },
+    );
+    const through = node.association.through?.model;
+    const throughName = node.through?.definition.name;
+    if (
+      through !== undefined &&
+      throughName !== undefined &&
+      typeof item === 'object' &&
+      item !== null &&
+      throughName in item
+    ) {
+      const throughValue = (item as Values)[throughName];
+      (child.dataValues as Values)[throughName] =
+        throughValue instanceof Model ? throughValue : new through(throughValue as Values);
+    }
+    return child;
+  };
+  return value === null
+    ? null
+    : node.association.isMultiAssociation
+      ? toArray(value).map(build)
+      : build(value);
+};
+
+const nestedInstances = (instance: AnyModel, node: IncludeNode): readonly AnyModel[] =>
+  toArray((instance.dataValues as Values)[node.as]).filter(
+    (item): item is AnyModel => item instanceof Model,
+  );
+
+const saveBelongsTo = async (
+  instance: AnyModel,
+  includes: readonly IncludeNode[],
+  options: SaveOptions,
+): Promise<void> => {
+  await includes
+    .filter((node) => node.association.associationType === 'BelongsTo')
+    .reduce<Promise<unknown>>(
+      (previous, node) =>
+        previous.then(async () => {
+          const [parent] = nestedInstances(instance, node);
+          if (parent !== undefined) {
+            await parent.save(pickQueryOptions(options));
+            instance.set(node.association.foreignKey, parent.get(node.association.targetKey));
+          }
+        }),
+      Promise.resolve(),
+    );
+};
+
+const throughValues = (child: AnyModel, node: IncludeNode): Values => {
+  const value =
+    node.through === undefined
+      ? undefined
+      : (child.dataValues as Values)[node.through.definition.name];
+  return value instanceof Model
+    ? (value.get({ plain: true }) as Values)
+    : typeof value === 'object' && value !== null
+      ? (value as Values)
+      : {};
+};
+
+const saveChild = async (
+  instance: AnyModel,
+  node: IncludeNode,
+  child: AnyModel,
+  options: SaveOptions,
+): Promise<void> => {
+  const { association } = node;
+  const childOptions = pickQueryOptions(options);
+  if (association.associationType === 'BelongsToMany' && association.through !== undefined) {
+    await child.save(childOptions);
+    await association.through.model.create(
+      {
+        ...throughValues(child, node),
+        ...association.through.scope,
+        [association.foreignKey]: instance.get(association.sourceKey),
+        [association.otherKey ?? '']: child.get(association.targetKey),
+      } as never,
+      childOptions as never,
+    );
+    return;
+  }
+  child.set({
+    ...association.scope,
+    [association.foreignKey]: instance.get(association.sourceKey),
+  });
+  await child.save(childOptions);
+};
+
+const saveChildren = async (
+  instance: AnyModel,
+  includes: readonly IncludeNode[],
+  options: SaveOptions,
+): Promise<void> => {
+  const pairs = includes
+    .filter((node) => node.association.associationType !== 'BelongsTo')
+    .flatMap((node) => nestedInstances(instance, node).map((child) => [node, child] as const));
+  await pairs.reduce<Promise<unknown>>(
+    (previous, [node, child]) => previous.then(() => saveChild(instance, node, child, options)),
+    Promise.resolve(),
+  );
 };

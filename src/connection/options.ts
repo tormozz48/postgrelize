@@ -36,6 +36,28 @@ export type ModelDefaults = Readonly<{
   hooks?: HooksOption;
 }>;
 
+/** Connection settings of one replication member. */
+export type ReplicationMember = Readonly<{
+  /** Host. */
+  host?: string;
+  /** Port. */
+  port?: number;
+  /** User name. */
+  username?: string;
+  /** Password. */
+  password?: string;
+  /** Database name. */
+  database?: string;
+}>;
+
+/** `replication` option: readers receive SELECTs outside transactions, the writer everything else. */
+export type ReplicationOptions = Readonly<{
+  /** Reader(s). */
+  read: ReplicationMember | readonly ReplicationMember[];
+  /** Writer; defaults to the top-level connection settings. */
+  write?: ReplicationMember;
+}>;
+
 /** Options of the {@link Sequelize} constructor (PostgreSQL subset of Sequelize v6 `Options`). */
 export type SequelizeOptions = Readonly<{
   /** Must be `'postgres'` when given. */
@@ -64,6 +86,8 @@ export type SequelizeOptions = Readonly<{
   timezone?: string;
   /** Defaults for all models. */
   define?: ModelDefaults;
+  /** Read replicas and writer (Sequelize v6 `replication`); entries inherit missing connection settings. */
+  replication?: ReplicationOptions;
   /** Sequelize-level hooks run for every model (and `beforeConnect`). */
   hooks?: HooksOption;
   /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
@@ -145,6 +169,34 @@ export const connectionConfig = (options: SequelizeOptions): ConnectionConfig =>
   host: options.host ?? 'localhost',
   port: options.port ?? 5432,
 });
+
+const withMember = (
+  options: SequelizeOptions,
+  member: ReplicationMember | undefined,
+): SequelizeOptions =>
+  member === undefined
+    ? options
+    : {
+        ...options,
+        ...Object.fromEntries(Object.entries(member).filter(([, value]) => value !== undefined)),
+      };
+
+/** Pool configurations of the writer and the readers (empty without `replication`). */
+export const replicationPoolConfigs = (
+  options: SequelizeOptions,
+): Readonly<{ write: PoolConfig; read: readonly PoolConfig[] }> => {
+  const replication = options.replication;
+  if (replication === undefined) {
+    return { write: poolConfig(options), read: [] };
+  }
+  const readers: readonly ReplicationMember[] = Array.isArray(replication.read)
+    ? replication.read
+    : [replication.read as ReplicationMember];
+  return {
+    write: poolConfig(withMember(options, replication.write)),
+    read: readers.map((member) => poolConfig(withMember(options, member))),
+  };
+};
 
 /** Builds the `pg` pool configuration from normalized options. */
 export const poolConfig = (options: SequelizeOptions): PoolConfig => {
