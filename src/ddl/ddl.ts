@@ -43,6 +43,8 @@ export type ColumnDefinition = Readonly<{
   references: AttributeDefinition['references'];
   onDelete: string | undefined;
   onUpdate: string | undefined;
+  identity: 'always' | 'byDefault' | undefined;
+  generated: AttributeDefinition['generated'];
 }>;
 
 const noContext: WhereContext = { resolve: () => undefined };
@@ -61,6 +63,8 @@ export const columnOf = (attribute: AttributeDefinition): ColumnDefinition => ({
   references: attribute.references,
   onDelete: attribute.onDelete,
   onUpdate: attribute.onUpdate,
+  identity: attribute.identity,
+  generated: attribute.generated,
 });
 
 /** Name of the PostgreSQL enum type of a column (`enum_<table>_<column>`, v6). */
@@ -75,6 +79,9 @@ const enumType = (table: TableName, field: string): string => {
 
 /** SQL type of a column (SERIAL for auto-increment integers, enum type names). */
 export const columnType = (table: TableName, column: ColumnDefinition): string => {
+  if (column.identity !== undefined) {
+    return `${column.type.sqlType} GENERATED ${column.identity === 'always' ? 'ALWAYS' : 'BY DEFAULT'} AS IDENTITY`;
+  }
   if (column.autoIncrement) {
     return column.type.key === 'BIGINT'
       ? 'BIGSERIAL'
@@ -94,7 +101,7 @@ export const columnType = (table: TableName, column: ColumnDefinition): string =
 /** `DEFAULT ...` clause value, or `undefined` for client-side defaults. */
 export const defaultSql = (column: ColumnDefinition): string | undefined => {
   const value = column.defaultValue;
-  if (value === undefined || column.autoIncrement) {
+  if (value === undefined || column.autoIncrement || column.generated !== undefined) {
     return undefined;
   }
   if (isDefaultValueGenerator(value)) {
@@ -169,6 +176,9 @@ export const columnSql = (
     `${quoteIdent(column.field)} ${columnType(table, column)}`,
     column.allowNull || column.primaryKey ? '' : ' NOT NULL',
     options.inlinePrimaryKey === true && column.primaryKey ? ' PRIMARY KEY' : '',
+    column.generated === undefined
+      ? ''
+      : ` GENERATED ALWAYS AS (${inlineExpr(toExpr(column.generated.as, noContext))}) ${column.generated.stored === false ? 'VIRTUAL' : 'STORED'}`,
     isUnnamedUnique(column.unique)
       ? nullsNotDistinct(column.unique)
         ? ' UNIQUE NULLS NOT DISTINCT'
@@ -267,6 +277,20 @@ export const createTableSql = (
           `COMMENT ON COLUMN ${qualified}.${quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
       ),
   ];
+};
+
+/** `ALTER TYPE ... ADD VALUE IF NOT EXISTS` for every enum value of a column. */
+export const addEnumValuesSql = (table: TableName, column: ColumnDefinition): readonly string[] => {
+  const values =
+    column.type.key === 'ENUM'
+      ? column.type.values
+      : column.type.subtype?.key === 'ENUM'
+        ? column.type.subtype.values
+        : undefined;
+  return (values ?? []).map(
+    (value) =>
+      `ALTER TYPE ${enumType(table, column.field)} ADD VALUE IF NOT EXISTS ${escapeLiteral(value)}`,
+  );
 };
 
 /** `ALTER TABLE ... ALTER COLUMN` statements bringing a column to its definition (v6 changeColumn). */

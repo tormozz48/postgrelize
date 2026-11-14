@@ -24,6 +24,8 @@ const column = (
   references: undefined,
   onDelete: undefined,
   onUpdate: undefined,
+  identity: undefined,
+  generated: undefined,
   ...overrides,
 });
 

@@ -139,6 +139,8 @@ export type SaveOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Run validations. Default true (false for `bulkCreate`). */
     validate?: boolean;
+    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension. */
+    overriding?: 'system' | 'user';
   }>;
 
 /** Options of `create`. */
@@ -185,6 +187,8 @@ export type InsertOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Validate rows before inserting. Default false. */
     validate?: boolean;
+    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
+    overriding?: 'system' | 'user';
   }>;
 
 /** Options shared by bulk `update`, `destroy` and `restore`. */

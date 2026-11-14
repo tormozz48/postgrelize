@@ -262,6 +262,8 @@ export const DataTypes = {
   DATEONLY: type('DATEONLY', 'DATE'),
   /** `TIME`. */
   TIME: type('TIME', 'TIME'),
+  /** `INTERVAL`; values are PostgreSQL interval strings (e.g. `'1 day 02:00:00'`). PostgreSQL extension. */
+  INTERVAL: type('INTERVAL', 'INTERVAL'),
   /** `JSON`. */
   JSON: type('JSON', 'JSON', { isJson: true, serialize: stringifyJson }),
   /** `JSONB`. */

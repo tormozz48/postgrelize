@@ -3,7 +3,11 @@
 PostgreSQL-only ORM for Node.js with a public API compatible with [Sequelize v6](https://sequelize.org/docs/v6/), plus first-class PostgreSQL features.
 
 - **Drop-in:** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like Sequelize v6 — verified by differential tests that run every scenario on both libraries.
-- **PostgreSQL first:** expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `DELETE ... RETURNING`, `NOWAIT`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod/valibot/arktype) validation.
+- **PostgreSQL first:**
+  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM STDIN` (`Model.copyFrom`), `DELETE ... RETURNING`;
+  - reads: subqueries (`Model.subquery`), `exists()`, `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `NOWAIT`;
+  - sessions: `LISTEN/NOTIFY`, `SET LOCAL` settings for RLS, advisory locks;
+  - schema: identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod/valibot/arktype) validation.
 - **Safe by default:** values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
 - TypeScript-first, fully typed and documented API ([docs](https://tormozz48.github.io/postgrelize/)). PostgreSQL 16+, Node.js 20+.
 
