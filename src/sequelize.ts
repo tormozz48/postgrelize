@@ -24,7 +24,15 @@ import {
 } from './hooks/hooks.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
-import { Model, parseModelRow } from './model/model.ts';
+import { Model, definitionOf, parseModelRow } from './model/model.ts';
+import { QueryInterface } from './query-interface/query-interface.ts';
+import {
+  dependencyOrder,
+  dropModel,
+  syncModel,
+  type DropOptions,
+  type SyncOptions,
+} from './query-interface/sync.ts';
 import type { AnyModel, InitOptions, ModelStatic } from './model/options.ts';
 import type { ModelAttributes } from './model/definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
@@ -148,6 +156,7 @@ export class Sequelize {
   readonly #connections: ConnectionManager;
   readonly #runtime: ModelRuntime;
   #hooks: HookRegistry;
+  #queryInterface: QueryInterface | undefined;
 
   /**
    * Creates an instance from a connection URI.
@@ -204,6 +213,7 @@ export class Sequelize {
       defineModel: (name, attributes, options) =>
         this.define(name, attributes as ModelAttributes, options as DefineOptions),
       models: () => this.models,
+      queryInterface: () => this.getQueryInterface(),
       defaults: this.options.define ?? {},
       inAsAnyThreshold: this.options.inAsAnyThreshold,
     };
@@ -399,6 +409,74 @@ export class Sequelize {
       ...(parent === undefined ? {} : { transaction: parent }),
     });
     return run === undefined ? transaction.begin() : runManagedTransaction(transaction, run);
+  }
+
+  /**
+   * Schema manipulation API (used by migrations).
+   *
+   * @returns The QueryInterface of this instance.
+   */
+  getQueryInterface(): QueryInterface {
+    this.#queryInterface ??= new QueryInterface(this);
+    return this.#queryInterface;
+  }
+
+  /**
+   * Creates (or alters / re-creates) the tables of all defined models in foreign-key order.
+   *
+   * @param options - `force`, `alter`, `match` and query options.
+   * @returns This instance.
+   */
+  async sync(options: SyncOptions = {}): Promise<this> {
+    if (options.match !== undefined && !options.match.test(this.config.database ?? '')) {
+      throw new Error(
+        `Database "${this.config.database ?? ''}" does not match sync match parameter "${String(options.match)}"`,
+      );
+    }
+    const definitions = dependencyOrder(
+      Object.values(this.models).map((model) => definitionOf(model)),
+    );
+    if (options.force === true) {
+      await definitions
+        .toReversed()
+        .reduce<Promise<unknown>>(
+          (previous, definition) =>
+            previous.then(() =>
+              dropModel(definition, this.getQueryInterface(), { ...options, cascade: true }),
+            ),
+          Promise.resolve(),
+        );
+    }
+    await definitions.reduce<Promise<unknown>>(
+      (previous, definition) =>
+        previous.then(() =>
+          syncModel(definition, this.#runtime, this.getQueryInterface(), {
+            ...options,
+            force: false,
+          }),
+        ),
+      Promise.resolve(),
+    );
+    return this;
+  }
+
+  /**
+   * Drops the tables of all defined models in reverse foreign-key order.
+   *
+   * @param options - `cascade` and query options.
+   * @returns Resolves when done.
+   */
+  async drop(options: DropOptions = {}): Promise<void> {
+    const definitions = dependencyOrder(
+      Object.values(this.models).map((model) => definitionOf(model)),
+    );
+    await definitions
+      .toReversed()
+      .reduce<Promise<unknown>>(
+        (previous, definition) =>
+          previous.then(() => dropModel(definition, this.getQueryInterface(), options)),
+        Promise.resolve(),
+      );
   }
 
   /**
