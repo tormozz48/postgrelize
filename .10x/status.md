@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog — read replicas + nested creation done; awaiting 0.4.0 release approval (spec `.10x/specs/2026-11-14-replication-nested-create-design.md`, ADR-014)
+**Current phase:** Released 0.4.0; next backlog: RETURNING old/new (PG18), default scopes of included models (spec `.10x/specs/2026-11-14-replication-nested-create-design.md`, ADR-014)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -103,3 +103,6 @@
 ## Backlog — read replicas + nested creation (2026-11-14)
 - [x] Replica routing (ADR-014), nested creation via `include`.
 - 204 tests green (compat + integration + unit); lint, types, build, docs green.
+
+## Release 0.4.0 (2026-11-14)
+- Tag `v0.4.0` → release.yml, `@tormozz48/postgrelize@0.4.0`. Contents: read replicas (`replication`, `useMaster`), nested creation via `include`.
