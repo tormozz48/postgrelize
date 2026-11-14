@@ -1,6 +1,7 @@
 import type { QueryResult } from '../connection/executor.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
+import type { HookRegistry } from '../hooks/hooks.ts';
 import type { Transaction } from '../transaction/transaction.ts';
 
 /** Options common to every query issued by a model. */
@@ -21,6 +22,7 @@ export type ModelRuntime = Readonly<{
     parent?: Transaction | null,
   ) => Promise<T>;
   register: (name: string, model: object) => void;
+  hooks: () => HookRegistry;
   defaults: ModelDefaults;
   inAsAnyThreshold: number | undefined;
 }>;

@@ -1,4 +1,31 @@
-import { EmptyResultError, InstanceError } from '../errors/errors.ts';
+import {
+  AggregateError,
+  BulkRecordError,
+  EmptyResultError,
+  InstanceError,
+  OptimisticLockError,
+} from '../errors/errors.ts';
+import {
+  addHook,
+  hasHook,
+  hooksFromOption,
+  removeHook,
+  type HookFunction,
+  type HookType,
+} from '../hooks/hooks.ts';
+import {
+  runModelHooks,
+  validateWithHooks,
+  withParanoid,
+  type ValidateOptions,
+} from './lifecycle.ts';
+import {
+  injectScope,
+  resolveScopes,
+  type ScopeDefinition,
+  type ScopeOptions,
+  type ScopeSelector,
+} from './scopes.ts';
 import { isExpression } from '../expressions/methods.ts';
 import { compile } from '../sql/compile.ts';
 import {
@@ -48,14 +75,16 @@ import type {
   IncrementOptions,
   InitOptions,
   InsertOptions,
+  InstanceDestroyOptions,
   ModelStatic,
   QualifiedTableName,
+  RestoreOptions,
   SaveOptions,
   UpdateOptions,
   UpsertOptions,
   Values,
 } from './options.ts';
-import { sequelizes, states, stateOf } from './state.ts';
+import { activeScope, initialState, selectScopes, states, stateOf, updateState } from './state.ts';
 import {
   initialValues,
   isEqualValue,
@@ -94,6 +123,63 @@ export class Model<
   TAttributes extends object = Values,
   TCreationAttributes extends object = TAttributes,
 > {
+  /** Adds a `beforeValidate` hook: `Model.beforeValidate(fn)` or `Model.beforeValidate(name, fn)`. */
+  declare static beforeValidate: NamedHookAdder;
+  /** Adds a `afterValidate` hook: `Model.afterValidate(fn)` or `Model.afterValidate(name, fn)`. */
+  declare static afterValidate: NamedHookAdder;
+  /** Adds a `validationFailed` hook: `Model.validationFailed(fn)` or `Model.validationFailed(name, fn)`. */
+  declare static validationFailed: NamedHookAdder;
+  /** Adds a `beforeCreate` hook: `Model.beforeCreate(fn)` or `Model.beforeCreate(name, fn)`. */
+  declare static beforeCreate: NamedHookAdder;
+  /** Adds a `afterCreate` hook: `Model.afterCreate(fn)` or `Model.afterCreate(name, fn)`. */
+  declare static afterCreate: NamedHookAdder;
+  /** Adds a `beforeUpdate` hook: `Model.beforeUpdate(fn)` or `Model.beforeUpdate(name, fn)`. */
+  declare static beforeUpdate: NamedHookAdder;
+  /** Adds a `afterUpdate` hook: `Model.afterUpdate(fn)` or `Model.afterUpdate(name, fn)`. */
+  declare static afterUpdate: NamedHookAdder;
+  /** Adds a `beforeSave` hook: `Model.beforeSave(fn)` or `Model.beforeSave(name, fn)`. */
+  declare static beforeSave: NamedHookAdder;
+  /** Adds a `afterSave` hook: `Model.afterSave(fn)` or `Model.afterSave(name, fn)`. */
+  declare static afterSave: NamedHookAdder;
+  /** Adds a `beforeDestroy` hook: `Model.beforeDestroy(fn)` or `Model.beforeDestroy(name, fn)`. */
+  declare static beforeDestroy: NamedHookAdder;
+  /** Adds a `afterDestroy` hook: `Model.afterDestroy(fn)` or `Model.afterDestroy(name, fn)`. */
+  declare static afterDestroy: NamedHookAdder;
+  /** Adds a `beforeRestore` hook: `Model.beforeRestore(fn)` or `Model.beforeRestore(name, fn)`. */
+  declare static beforeRestore: NamedHookAdder;
+  /** Adds a `afterRestore` hook: `Model.afterRestore(fn)` or `Model.afterRestore(name, fn)`. */
+  declare static afterRestore: NamedHookAdder;
+  /** Adds a `beforeUpsert` hook: `Model.beforeUpsert(fn)` or `Model.beforeUpsert(name, fn)`. */
+  declare static beforeUpsert: NamedHookAdder;
+  /** Adds a `afterUpsert` hook: `Model.afterUpsert(fn)` or `Model.afterUpsert(name, fn)`. */
+  declare static afterUpsert: NamedHookAdder;
+  /** Adds a `beforeBulkCreate` hook: `Model.beforeBulkCreate(fn)` or `Model.beforeBulkCreate(name, fn)`. */
+  declare static beforeBulkCreate: NamedHookAdder;
+  /** Adds a `afterBulkCreate` hook: `Model.afterBulkCreate(fn)` or `Model.afterBulkCreate(name, fn)`. */
+  declare static afterBulkCreate: NamedHookAdder;
+  /** Adds a `beforeBulkUpdate` hook: `Model.beforeBulkUpdate(fn)` or `Model.beforeBulkUpdate(name, fn)`. */
+  declare static beforeBulkUpdate: NamedHookAdder;
+  /** Adds a `afterBulkUpdate` hook: `Model.afterBulkUpdate(fn)` or `Model.afterBulkUpdate(name, fn)`. */
+  declare static afterBulkUpdate: NamedHookAdder;
+  /** Adds a `beforeBulkDestroy` hook: `Model.beforeBulkDestroy(fn)` or `Model.beforeBulkDestroy(name, fn)`. */
+  declare static beforeBulkDestroy: NamedHookAdder;
+  /** Adds a `afterBulkDestroy` hook: `Model.afterBulkDestroy(fn)` or `Model.afterBulkDestroy(name, fn)`. */
+  declare static afterBulkDestroy: NamedHookAdder;
+  /** Adds a `beforeBulkRestore` hook: `Model.beforeBulkRestore(fn)` or `Model.beforeBulkRestore(name, fn)`. */
+  declare static beforeBulkRestore: NamedHookAdder;
+  /** Adds a `afterBulkRestore` hook: `Model.afterBulkRestore(fn)` or `Model.afterBulkRestore(name, fn)`. */
+  declare static afterBulkRestore: NamedHookAdder;
+  /** Adds a `beforeFind` hook: `Model.beforeFind(fn)` or `Model.beforeFind(name, fn)`. */
+  declare static beforeFind: NamedHookAdder;
+  /** Adds a `beforeFindAfterExpandIncludeAll` hook: `Model.beforeFindAfterExpandIncludeAll(fn)` or `Model.beforeFindAfterExpandIncludeAll(name, fn)`. */
+  declare static beforeFindAfterExpandIncludeAll: NamedHookAdder;
+  /** Adds a `beforeFindAfterOptions` hook: `Model.beforeFindAfterOptions(fn)` or `Model.beforeFindAfterOptions(name, fn)`. */
+  declare static beforeFindAfterOptions: NamedHookAdder;
+  /** Adds a `afterFind` hook: `Model.afterFind(fn)` or `Model.afterFind(name, fn)`. */
+  declare static afterFind: NamedHookAdder;
+  /** Adds a `beforeCount` hook: `Model.beforeCount(fn)` or `Model.beforeCount(name, fn)`. */
+  declare static beforeCount: NamedHookAdder;
+
   /** Phantom type of attributes; not set at runtime. */
   declare _attributes: TAttributes;
   /** Phantom type of creation attributes; not set at runtime. */
@@ -196,7 +282,16 @@ export class Model<
     attributes: ModelAttributes,
     options: InitOptions,
   ): MS {
-    const { sequelize, ...definitionOptions } = options;
+    const {
+      sequelize,
+      hooks,
+      defaultScope,
+      scopes,
+      whereMergeStrategy,
+      validate,
+      validationSchema,
+      ...definitionOptions
+    } = options;
     const runtime = sequelize[runtimeKey];
     const definition = normalizeDefinition(
       this.name,
@@ -204,11 +299,154 @@ export class Model<
       definitionOptions,
       runtime.defaults,
     );
-    states.set(this, { definition, runtime });
+    states.set(
+      this,
+      initialState(definition, runtime, {
+        hooks: hooksFromOption(hooks, hooksFromOption(runtime.defaults.hooks)),
+        defaultScope,
+        scopes,
+        whereMergeStrategy,
+        validate,
+        schema: validationSchema,
+      }),
+    );
     sequelizes.set(this, sequelize);
     defineAccessors(this.prototype, definition);
     runtime.register(definition.name, this);
     return this;
+  }
+
+  /**
+   * Adds a lifecycle hook.
+   *
+   * @param type - Hook type, e.g. `'beforeCreate'`.
+   * @param nameOrFn - Hook name (to remove it later) or the hook function.
+   * @param fn - Hook function when a name is given.
+   * @returns The model class.
+   */
+  static addHook<MS extends ModelStatic<AnyModel>>(
+    this: MS,
+    type: HookType,
+    nameOrFn: string | HookFunction,
+    fn?: HookFunction,
+  ): MS {
+    updateState(this, (state) => ({
+      ...state,
+      hooks:
+        typeof nameOrFn === 'string'
+          ? addHook(state.hooks, type, fn ?? missingHook(), nameOrFn)
+          : addHook(state.hooks, type, nameOrFn),
+    }));
+    return this;
+  }
+
+  /**
+   * Removes hooks by name or function.
+   *
+   * @param type - Hook type.
+   * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
+   * @returns The model class.
+   */
+  static removeHook<MS extends ModelStatic<AnyModel>>(
+    this: MS,
+    type: HookType,
+    nameOrFn?: string | HookFunction,
+  ): MS {
+    updateState(this, (state) => ({ ...state, hooks: removeHook(state.hooks, type, nameOrFn) }));
+    return this;
+  }
+
+  /**
+   * Checks whether hooks of the type are registered on the model.
+   *
+   * @param type - Hook type.
+   * @returns True when at least one hook exists.
+   */
+  static hasHook(type: HookType): boolean {
+    return hasHook(stateOf(this).hooks, type);
+  }
+
+  /**
+   * Alias of {@link Model.hasHook}.
+   *
+   * @param type - Hook type.
+   * @returns True when at least one hook exists.
+   */
+  static hasHooks(type: HookType): boolean {
+    return this.hasHook(type);
+  }
+
+  /**
+   * Runs the hooks of a type with the given arguments (model hooks, then Sequelize-level hooks).
+   *
+   * @param type - Hook type.
+   * @param args - Hook arguments.
+   * @returns Resolves when all hooks finished.
+   */
+  static runHooks(type: HookType, ...args: readonly unknown[]): Promise<void> {
+    return runModelHooks(this, type, ...args);
+  }
+
+  /**
+   * Returns a model class using the given scopes instead of the default scope.
+   *
+   * @param selectors - Scope names, `{ method: [name, ...args] }`, inline options, `'defaultScope'`, or `null`.
+   * @returns Scoped model class (instances are instances of this model).
+   */
+  static scope<MS extends ModelStatic<AnyModel>>(
+    this: MS,
+    ...selectors: readonly (ScopeSelector | readonly ScopeSelector[])[]
+  ): MS {
+    const Scoped = { [this.name]: class extends (this as unknown as typeof Model) {} }[
+      this.name
+    ] as unknown as MS;
+    const flat = selectors.flatMap((selector) =>
+      Array.isArray(selector) ? selector : [selector],
+    ) as readonly ScopeSelector[];
+    resolveScopes(stateOf(this).scopes, flat);
+    selectScopes(Scoped, flat);
+    return Scoped;
+  }
+
+  /**
+   * Returns a model class without any scope (not even the default scope).
+   *
+   * @returns Unscoped model class.
+   */
+  static unscoped<MS extends ModelStatic<AnyModel>>(this: MS): MS {
+    return this.scope();
+  }
+
+  /**
+   * Adds a named scope (or replaces the default scope with name `'defaultScope'`).
+   *
+   * @param name - Scope name.
+   * @param scope - Options or a function returning options.
+   * @param options - `override: true` replaces an existing scope.
+   * @throws Error when the scope exists and `override` is not set.
+   */
+  static addScope(
+    name: string,
+    scope: ScopeDefinition,
+    options: Readonly<{ override?: boolean }> = {},
+  ): void {
+    const { scopes } = stateOf(this);
+    const exists =
+      name === 'defaultScope'
+        ? Object.keys(scopes.defaultScope).length > 0
+        : scopes.scopes.has(name);
+    if (exists && options.override !== true) {
+      throw new Error(
+        `The scope ${name} already exists. Pass { override: true } as options to silence this error`,
+      );
+    }
+    updateState(this, (state) => ({
+      ...state,
+      scopes:
+        name === 'defaultScope'
+          ? { ...state.scopes, defaultScope: scope as ScopeOptions }
+          : { ...state.scopes, scopes: new Map([...state.scopes.scopes, [name, scope]]) },
+    }));
   }
 
   /**
@@ -280,12 +518,19 @@ export class Model<
       return instance.save(options as SaveOptions);
     }
     const { definition } = stateOf(this);
+    const opts: MutableOptions = { hooks: true, validate: true, ...options };
+    if (opts['validate'] === true) {
+      await instance.validate({ hooks: opts['hooks'] === true });
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeCreate', instance, opts);
+    }
     const row = withTimestamps(
       definition,
       instance.dataValues as Values,
       new Date(),
       true,
-      options.silent === true,
+      opts['silent'] === true,
     );
     const [inserted] = await insertWithConflict(
       this,
@@ -296,6 +541,9 @@ export class Model<
     if (inserted === undefined) {
       insertedFlags.set(instance, false);
       return instance;
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterCreate', inserted, opts);
     }
     return inserted;
   }
@@ -327,9 +575,17 @@ export class Model<
     if (records.length === 0) {
       return [];
     }
-    const rows = records.map((record) =>
+    const opts: MutableOptions = { hooks: true, validate: false, ...options };
+    const instances = records.map((record) => new this(record));
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeBulkCreate', instances, opts);
+    }
+    if (opts['validate'] === true) {
+      await validateAll(instances, false);
+    }
+    const rows = instances.map((instance) =>
       pickFields(
-        withTimestamps(definition, new this(record).dataValues as Values, now, true, false),
+        withTimestamps(definition, instance.dataValues as Values, now, true, false),
         options.fields,
       ),
     );
@@ -337,7 +593,11 @@ export class Model<
       options.onConflict === undefined
         ? undefined
         : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
-    return insertWithConflict(this, rows, onConflict, options);
+    const inserted = await insertWithConflict(this, rows, onConflict, options);
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterBulkCreate', inserted, opts);
+    }
+    return inserted;
   }
 
   /**
@@ -353,6 +613,7 @@ export class Model<
     options: UpsertOptions<Attributes<M>> = {},
   ): Promise<[M, boolean | null]> {
     const { definition, runtime } = stateOf(this);
+    const opts: MutableOptions = { hooks: true, validate: true, returning: true, ...options };
     const instance = new this(values as Values);
     const now = new Date();
     const provided = Object.keys(values as Values).filter((name) =>
@@ -362,6 +623,12 @@ export class Model<
       options.fields === undefined
         ? provided
         : provided.filter((name) => options.fields?.includes(name as never));
+    if (opts['validate'] === true) {
+      await instance.validate({ hooks: opts['hooks'] === true, fields: updatable });
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeUpsert', values, opts);
+    }
     const insertValues = withoutGeneratedKey(
       definition,
       values as Values,
@@ -379,11 +646,17 @@ export class Model<
     const row = result.rows[0];
     const flag = row?.[INSERTED_FLAG];
     instance.#refresh(definition, row === undefined ? undefined : withoutFlag(row));
-    if (options.onConflict === undefined) {
-      return [instance, null];
+    if (options.onConflict !== undefined) {
+      insertedFlags.set(instance, flag === true);
     }
-    insertedFlags.set(instance, flag === true);
-    return [instance, flag === true];
+    const upserted: [M, boolean | null] = [
+      instance,
+      options.onConflict === undefined ? null : flag === true,
+    ];
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterUpsert', upserted, opts);
+    }
+    return upserted;
   }
 
   /**
@@ -405,42 +678,74 @@ export class Model<
     ) {
       throw new Error(`onConflict cannot be combined with ${V6_CONFLICT_OPTIONS.join(', ')}`);
     }
-    const now = new Date();
+    const opts: MutableOptions = {
+      hooks: true,
+      validate: false,
+      individualHooks: false,
+      ...options,
+    };
     const instances = records.map((values) => new this(values as Values));
     if (instances.length === 0) {
       return [];
     }
-    const rows = instances.map((instance) =>
-      pickFields(
-        withTimestamps(
-          definition,
-          instance.dataValues as Values,
-          now,
-          true,
-          options.silent === true,
-        ),
-        options.fields,
-      ),
-    );
-    if (options.onConflict !== undefined) {
-      return insertWithConflict(
-        this,
-        rows,
-        buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>),
-        options,
-      );
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeBulkCreate', instances, opts);
     }
-    const insert = buildInsert(definition, rows, {
-      returning: options.returning !== false,
-      ...v6BulkConflict(definition, options as BulkCreateOptions),
-    });
-    const result = await runtime.execute(compile(insert), options);
-    instances.forEach((instance, index) => instance.#refresh(definition, result.rows[index]));
-    return instances;
+    if (opts['validate'] === true) {
+      await validateAll(instances, opts['individualHooks'] === true);
+    }
+    const created = await (async (): Promise<M[]> => {
+      if (opts['individualHooks'] === true) {
+        const {
+          fields: _fields,
+          individualHooks: _individual,
+          ignoreDuplicates: _ignore,
+          ...saveOptions
+        } = opts;
+        await instances.reduce<Promise<unknown>>(
+          (previous, instance) =>
+            previous.then(() => instance.save({ ...saveOptions, validate: false, hooks: true })),
+          Promise.resolve(),
+        );
+        return instances;
+      }
+      const now = new Date();
+      const rows = instances.map((instance) =>
+        pickFields(
+          withTimestamps(
+            definition,
+            instance.dataValues as Values,
+            now,
+            true,
+            opts['silent'] === true,
+          ),
+          options.fields,
+        ),
+      );
+      if (options.onConflict !== undefined) {
+        return insertWithConflict(
+          this,
+          rows,
+          buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>),
+          options,
+        );
+      }
+      const insert = buildInsert(definition, rows, {
+        returning: options.returning !== false,
+        ...v6BulkConflict(definition, options as BulkCreateOptions),
+      });
+      const result = await runtime.execute(compile(insert), options);
+      instances.forEach((instance, index) => instance.#refresh(definition, result.rows[index]));
+      return instances;
+    })();
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterBulkCreate', created, opts);
+    }
+    return created;
   }
 
   /**
-   * Finds all rows matching the options.
+   * Finds all rows matching the options (default scope and paranoid filter applied).
    *
    * @param options - Query options.
    * @returns Instances, or plain objects with `raw: true`.
@@ -449,16 +754,33 @@ export class Model<
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
   ): Promise<M[]> {
-    const { definition, runtime } = stateOf(this);
-    const result = await runtime.execute(
-      compile(buildSelect(definition, options, runtime.inAsAnyThreshold)),
-      options,
-    );
-    if (options.raw === true) {
-      const rows = result.rows.map((row) => parseRow(definition, row));
-      return (options.nest === true ? rows.map(nestRow) : rows) as unknown as M[];
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      hooks: true,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+    };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeFind', opts);
+      await runModelHooks(this, 'beforeFindAfterExpandIncludeAll', opts);
+      await runModelHooks(this, 'beforeFindAfterOptions', opts);
     }
-    return result.rows.map((row) => fromRow(this, row) as M);
+    const query = {
+      ...(opts as FindOptions),
+      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
+    };
+    const result = await runtime.execute(
+      compile(buildSelect(definition, query as SelectOptions, runtime.inAsAnyThreshold)),
+      query,
+    );
+    const rows = result.rows.map((row) => parseRow(definition, row));
+    const found =
+      opts['raw'] === true
+        ? ((opts['nest'] === true ? rows.map(nestRow) : rows) as unknown as M[])
+        : result.rows.map((row) => fromRow(this, row));
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterFind', found, opts);
+    }
+    return found;
   }
 
   /**
@@ -517,7 +839,7 @@ export class Model<
   }
 
   /**
-   * Counts rows.
+   * Counts rows (default scope and paranoid filter applied).
    *
    * @param options - Count options.
    * @returns Count, or `{ count, ...groups }[]` with `group`.
@@ -526,14 +848,25 @@ export class Model<
     this: ModelStatic<M>,
     options: CountOptions<Attributes<M>> = {},
   ): Promise<number> {
-    const { definition, runtime } = stateOf(this);
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      hooks: true,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+    };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeCount', opts);
+    }
+    const query = {
+      ...(opts as CountOptions),
+      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
+    };
     const result = await runtime.execute(
       compile(
-        buildCount(definition, options as SelectOptions & CountOptions, runtime.inAsAnyThreshold),
+        buildCount(definition, query as SelectOptions & CountOptions, runtime.inAsAnyThreshold),
       ),
-      options,
+      query,
     );
-    if (options.group !== undefined) {
+    if (query.group !== undefined) {
       return result.rows.map((row) => ({
         ...parseRow(definition, row),
         count: Number(row['count']),
@@ -576,19 +909,21 @@ export class Model<
     aggregateFunction: string,
     options: AggregateOptions<Attributes<M>> = {},
   ): Promise<T> {
-    const { definition, runtime } = stateOf(this);
+    const { definition, runtime, scopes } = stateOf(this);
     const name = String(field);
+    const scoped = injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy);
+    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
     const result = await runtime.execute(
       compile(
         buildAggregate(
           definition,
           name,
           aggregateFunction,
-          options as SelectOptions,
+          query as SelectOptions,
           runtime.inAsAnyThreshold,
         ),
       ),
-      options,
+      query,
     );
     const attribute = definition.attributes.get(name);
     if (options.plain === false) {
@@ -672,24 +1007,66 @@ export class Model<
     values: Partial<Attributes<M>>,
     options: UpdateOptions<Attributes<M>>,
   ): Promise<[affectedCount: number, affectedRows?: M[]]> {
-    const { definition, runtime } = stateOf(this);
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      validate: true,
+      hooks: true,
+      individualHooks: false,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+      attributes: { ...(values as Values) },
+    };
+    if (opts['validate'] === true) {
+      const probe = new this(values as Values, { isNewRecord: false });
+      await probe.validate({
+        hooks: opts['hooks'] === true,
+        skip: [...definition.attributes.keys()].filter((name) => !(name in (values as Values))),
+      });
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeBulkUpdate', opts);
+    }
+    const where = withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined);
+    const individual = opts['individualHooks'] === true;
+    const targets = individual
+      ? await this.findAll({ where: where as never, ...pickQueryOptions(options), paranoid: false })
+      : [];
+    const attributes = opts['attributes'] as Values;
+    if (individual) {
+      await targets.reduce<Promise<unknown>>(
+        (previous, instance) =>
+          previous.then(() => {
+            instance.set(attributes);
+            return runModelHooks(this, 'beforeUpdate', instance, opts);
+          }),
+        Promise.resolve(),
+      );
+    }
     const changes = withTimestamps(
       definition,
-      pickFields(values as Values, options.fields),
+      pickFields(attributes, options.fields),
       new Date(),
       false,
-      options.silent === true,
+      opts['silent'] === true,
     );
-    const node = buildUpdate(definition, setItems(definition, changes), options.where, {
-      ...(options.returning === true ? { returning: true } : {}),
+    const node = buildUpdate(definition, setItems(definition, changes), where, {
+      ...(options.returning === true || individual ? { returning: true } : {}),
       ...(runtime.inAsAnyThreshold === undefined
         ? {}
         : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
     });
     const result = await runtime.execute(compile(node), options);
-    return options.returning === true
-      ? [result.rowCount, result.rows.map((row) => fromRow(this, row) as M)]
-      : [result.rowCount];
+    const updated = result.rows.map((row) => fromRow(this, row));
+    if (individual) {
+      await updated.reduce<Promise<unknown>>(
+        (previous, instance) =>
+          previous.then(() => runModelHooks(this, 'afterUpdate', instance, opts)),
+        Promise.resolve(),
+      );
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterBulkUpdate', opts);
+    }
+    return options.returning === true ? [result.rowCount, updated] : [result.rowCount];
   }
 
   /**
@@ -716,22 +1093,115 @@ export class Model<
     this: ModelStatic<M>,
     options: DestroyOptions<Attributes<M>> = {},
   ): Promise<number | M[]> {
-    const { definition, runtime } = stateOf(this);
-    if (options.truncate === true) {
-      await (this as unknown as typeof Model).truncate(options);
-      return 0;
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      hooks: true,
+      individualHooks: false,
+      force: false,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+    };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeBulkDestroy', opts);
     }
-    const node = buildDelete(definition, options.where, {
-      ...(options.returning === true ? { returning: true } : {}),
-      ...(options.limit === undefined ? {} : { limit: options.limit }),
-      ...(runtime.inAsAnyThreshold === undefined
-        ? {}
-        : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
-    });
-    const result = await runtime.execute(compile(node), options);
-    return options.returning === true
-      ? result.rows.map((row) => fromRow(this, row) as M)
-      : result.rowCount;
+    const soft = definition.deletedAt !== undefined && opts['force'] !== true;
+    const where = soft ? withParanoid(definition, opts['where'], true) : opts['where'];
+    const individual = opts['individualHooks'] === true;
+    const targets = individual
+      ? await this.findAll({ where: where as never, ...pickQueryOptions(options), paranoid: false })
+      : [];
+    await targets.reduce<Promise<unknown>>(
+      (previous, instance) =>
+        previous.then(() => runModelHooks(this, 'beforeDestroy', instance, opts)),
+      Promise.resolve(),
+    );
+    const deleted = await (async (): Promise<number | M[]> => {
+      if (options.truncate === true) {
+        await (this as unknown as typeof Model).truncate(options);
+        return 0;
+      }
+      const inAsAny =
+        runtime.inAsAnyThreshold === undefined
+          ? {}
+          : { inAsAnyThreshold: runtime.inAsAnyThreshold };
+      const node =
+        soft && definition.deletedAt !== undefined
+          ? buildUpdate(
+              definition,
+              setItems(definition, { [definition.deletedAt]: new Date() }),
+              where,
+              {
+                ...(options.returning === true ? { returning: true } : {}),
+                ...inAsAny,
+              },
+            )
+          : buildDelete(definition, where, {
+              ...(options.returning === true ? { returning: true } : {}),
+              ...(options.limit === undefined ? {} : { limit: options.limit }),
+              ...inAsAny,
+            });
+      const result = await runtime.execute(compile(node), options);
+      return options.returning === true
+        ? result.rows.map((row) => fromRow(this, row))
+        : result.rowCount;
+    })();
+    await targets.reduce<Promise<unknown>>(
+      (previous, instance) =>
+        previous.then(() => runModelHooks(this, 'afterDestroy', instance, opts)),
+      Promise.resolve(),
+    );
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterBulkDestroy', opts);
+    }
+    return deleted;
+  }
+
+  /**
+   * Restores soft-deleted rows of a paranoid model (`deletedAt = NULL`).
+   *
+   * @param options - Rows to restore and hook options.
+   * @returns Resolves when done.
+   * @throws Error when the model is not paranoid.
+   */
+  static async restore<M extends AnyModel>(
+    this: ModelStatic<M>,
+    options: RestoreOptions<Attributes<M>> = {},
+  ): Promise<void> {
+    const { definition, runtime } = stateOf(this);
+    if (definition.deletedAt === undefined) {
+      throw new Error('Model is not paranoid');
+    }
+    const opts: MutableOptions = { hooks: true, individualHooks: false, ...options };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeBulkRestore', opts);
+    }
+    const individual = opts['individualHooks'] === true;
+    const targets = individual
+      ? await this.findAll({
+          where: opts['where'] as never,
+          ...pickQueryOptions(options),
+          paranoid: false,
+        })
+      : [];
+    await targets.reduce<Promise<unknown>>(
+      (previous, instance) =>
+        previous.then(() => runModelHooks(this, 'beforeRestore', instance, opts)),
+      Promise.resolve(),
+    );
+    const node = buildUpdate(
+      definition,
+      setItems(definition, { [definition.deletedAt]: null }),
+      opts['where'],
+      runtime.inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold: runtime.inAsAnyThreshold },
+    );
+    await runtime.execute(compile(node), options);
+    await targets.reduce<Promise<unknown>>(
+      (previous, instance) =>
+        previous.then(() => runModelHooks(this, 'afterRestore', instance, opts)),
+      Promise.resolve(),
+    );
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterBulkRestore', opts);
+    }
   }
 
   /**
@@ -1023,43 +1493,96 @@ export class Model<
    * @returns This instance with values returned by the database.
    */
   async save(options: SaveOptions<TAttributes> = {}): Promise<this> {
-    const { definition, runtime } = stateOf(this.constructor);
+    const model = this.constructor as typeof Model;
+    const { definition, runtime } = stateOf(model);
+    const opts: MutableOptions = { hooks: true, validate: true, ...options };
+    const isNew = this.isNewRecord;
+    const attributes = [...definition.attributes.keys()];
+    const changedAttributes = (): readonly string[] =>
+      [...this.#changed].filter((name) => definition.attributes.has(name));
+    const explicitFields = options.fields as readonly string[] | undefined;
+    const fields = explicitFields ?? (isNew ? attributes : changedAttributes());
+    if (!isNew && fields.length === 0) {
+      return this;
+    }
+    if (opts['validate'] === true) {
+      await this.validate({ hooks: opts['hooks'] === true, fields });
+    }
+    const hookFields = await (async (): Promise<readonly string[]> => {
+      if (opts['hooks'] !== true) {
+        return fields;
+      }
+      const before = changedAttributes();
+      await runModelHooks(model, isNew ? 'beforeCreate' : 'beforeUpdate', this, opts);
+      const added =
+        explicitFields === undefined && !isNew
+          ? changedAttributes().filter((name) => !before.includes(name))
+          : [];
+      if (explicitFields === undefined && !isNew && opts['validate'] === true) {
+        await this.validate({
+          hooks: opts['hooks'] === true,
+          skip: attributes.filter((name) => !added.includes(name)),
+        });
+      }
+      return [...fields, ...added];
+    })();
     const now = new Date();
-    if (this.isNewRecord) {
+    if (isNew) {
       const values = pickFields(
-        withTimestamps(definition, this.dataValues as Values, now, true, options.silent === true),
-        options.fields,
+        withTimestamps(definition, this.dataValues as Values, now, true, opts['silent'] === true),
+        explicitFields,
       );
       const result = await runtime.execute(
         compile(buildInsert(definition, [values], { returning: true })),
         options,
       );
-      return this.#refresh(definition, result.rows[0]);
+      this.#refresh(definition, result.rows[0]);
+    } else {
+      const version = definition.version;
+      const current = this.dataValues as Values;
+      const changes = withTimestamps(
+        definition,
+        Object.fromEntries(
+          hookFields.filter((name) => name !== version).map((name) => [name, current[name]]),
+        ),
+        now,
+        false,
+        opts['silent'] === true,
+      );
+      const previousVersion =
+        version === undefined ? undefined : (this._previousDataValues as Values)[version];
+      const where = {
+        ...primaryKeyWhere(definition, this._previousDataValues as Values),
+        ...(version === undefined ? {} : { [version]: previousVersion }),
+      };
+      const set =
+        version === undefined
+          ? changes
+          : { ...changes, [version]: Number(previousVersion ?? 0) + 1 };
+      const result = await runtime.execute(
+        compile(buildUpdate(definition, setItems(definition, set), where, { returning: true })),
+        options,
+      );
+      if (version !== undefined && result.rowCount === 0) {
+        throw new OptimisticLockError({ modelName: definition.name, values: set, where });
+      }
+      this.#refresh(definition, result.rows[0]);
     }
-    const changed = [...this.#changed].filter(
-      (name) =>
-        definition.attributes.has(name) &&
-        (options.fields === undefined ||
-          options.fields.includes(name as keyof TAttributes & string)),
-    );
-    if (changed.length === 0) {
-      return this;
+    if (opts['hooks'] === true) {
+      await runModelHooks(model, isNew ? 'afterCreate' : 'afterUpdate', this, opts);
     }
-    const changes = withTimestamps(
-      definition,
-      Object.fromEntries(changed.map((name) => [name, (this.dataValues as Values)[name]])),
-      now,
-      false,
-      options.silent === true,
-    );
-    const node = buildUpdate(
-      definition,
-      setItems(definition, changes),
-      primaryKeyWhere(definition, this._previousDataValues as Values),
-      { returning: true },
-    );
-    const result = await runtime.execute(compile(node), options);
-    return this.#refresh(definition, result.rows[0]);
+    return this;
+  }
+
+  /**
+   * Validates the instance (Sequelize v6 `instance.validate()`).
+   *
+   * @param options - `hooks`, `skip`, `fields`.
+   * @returns Resolves when valid.
+   * @throws ValidationError with all failures.
+   */
+  async validate(options: ValidateOptions = {}): Promise<void> {
+    await validateWithHooks(this, options);
   }
 
   /**
@@ -1109,12 +1632,70 @@ export class Model<
    * @param options - Query options.
    * @returns Resolves when deleted.
    */
-  async destroy(options: QueryOptionsBase = {}): Promise<void> {
-    const { definition, runtime } = stateOf(this.constructor);
-    await runtime.execute(
-      compile(buildDelete(definition, primaryKeyWhere(definition, this.dataValues as Values))),
-      options,
+  async destroy(options: InstanceDestroyOptions = {}): Promise<void> {
+    const model = this.constructor as typeof Model;
+    const { definition, runtime } = stateOf(model);
+    const opts: MutableOptions = { hooks: true, force: false, ...options };
+    if (opts['hooks'] === true) {
+      await runModelHooks(model, 'beforeDestroy', this, opts);
+    }
+    if (definition.deletedAt !== undefined && opts['force'] !== true) {
+      this.setDataValue(
+        definition.deletedAt as keyof TAttributes,
+        new Date() as TAttributes[keyof TAttributes],
+      );
+      await this.save({ ...pickQueryOptions(options), hooks: false });
+    } else {
+      await runtime.execute(
+        compile(buildDelete(definition, primaryKeyWhere(definition, this.dataValues as Values))),
+        options,
+      );
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(model, 'afterDestroy', this, opts);
+    }
+  }
+
+  /**
+   * Restores this soft-deleted instance of a paranoid model.
+   *
+   * @param options - Query options; `hooks: false` skips restore hooks.
+   * @returns Resolves when restored.
+   * @throws Error when the model is not paranoid.
+   */
+  async restore(options: QueryOptionsBase & Readonly<{ hooks?: boolean }> = {}): Promise<void> {
+    const model = this.constructor as typeof Model;
+    const { definition } = stateOf(model);
+    if (definition.deletedAt === undefined) {
+      throw new Error('Model is not paranoid');
+    }
+    const hooks = options.hooks !== false;
+    if (hooks) {
+      await runModelHooks(model, 'beforeRestore', this, options);
+    }
+    this.setDataValue(
+      definition.deletedAt as keyof TAttributes,
+      null as TAttributes[keyof TAttributes],
     );
+    await this.save({ ...pickQueryOptions(options), hooks: false });
+    if (hooks) {
+      await runModelHooks(model, 'afterRestore', this, options);
+    }
+  }
+
+  /**
+   * Whether this instance of a paranoid model is soft-deleted.
+   *
+   * @returns True when `deletedAt` is set.
+   * @throws Error when the model is not paranoid.
+   */
+  isSoftDeleted(): boolean {
+    const { definition } = stateOf(this.constructor);
+    if (definition.deletedAt === undefined) {
+      throw new Error('Model is not paranoid');
+    }
+    const value = (this.dataValues as Values)[definition.deletedAt];
+    return value !== null && value !== undefined;
   }
 
   /**
@@ -1258,4 +1839,82 @@ const insertWithConflict = async <M extends AnyModel>(
     insertedFlags.set(instance, row[INSERTED_FLAG] === true);
     return instance;
   });
+};
+
+const sequelizes = new WeakMap<object, RuntimeOwner>();
+
+type MutableOptions = Record<string, unknown>;
+
+/** Named hook method of a model class, e.g. `Model.beforeCreate`. */
+export type NamedHookAdder = {
+  /**
+   * @param fn - Hook function.
+   */
+  (fn: HookFunction): void;
+  /**
+   * @param name - Hook name, used to remove it later.
+   * @param fn - Hook function.
+   */
+  (name: string, fn: HookFunction): void;
+};
+
+const NAMED_HOOKS = [
+  'beforeValidate',
+  'afterValidate',
+  'validationFailed',
+  'beforeCreate',
+  'afterCreate',
+  'beforeUpdate',
+  'afterUpdate',
+  'beforeSave',
+  'afterSave',
+  'beforeDestroy',
+  'afterDestroy',
+  'beforeRestore',
+  'afterRestore',
+  'beforeUpsert',
+  'afterUpsert',
+  'beforeBulkCreate',
+  'afterBulkCreate',
+  'beforeBulkUpdate',
+  'afterBulkUpdate',
+  'beforeBulkDestroy',
+  'afterBulkDestroy',
+  'beforeBulkRestore',
+  'afterBulkRestore',
+  'beforeFind',
+  'beforeFindAfterExpandIncludeAll',
+  'beforeFindAfterOptions',
+  'afterFind',
+  'beforeCount',
+] as const satisfies readonly HookType[];
+
+NAMED_HOOKS.forEach((type) => {
+  Object.defineProperty(Model, type, {
+    configurable: true,
+    writable: true,
+    value(this: typeof Model, nameOrFn: string | HookFunction, fn?: HookFunction): void {
+      this.addHook(type, nameOrFn, fn);
+    },
+  });
+});
+
+const missingHook = (): never => {
+  throw new Error('addHook: hook function is required');
+};
+
+const validateAll = async (instances: readonly Model[], hooks: boolean): Promise<void> => {
+  const failures = await Promise.all(
+    instances.map((instance) =>
+      instance.validate({ hooks }).then(
+        () => undefined,
+        (error: unknown) =>
+          new BulkRecordError(error instanceof Error ? error : new Error(String(error)), instance),
+      ),
+    ),
+  );
+  const errors = failures.filter((failure): failure is BulkRecordError => failure !== undefined);
+  if (errors.length > 0) {
+    throw new AggregateError(errors);
+  }
 };

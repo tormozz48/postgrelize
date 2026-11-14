@@ -63,5 +63,15 @@ export const typeChecks = async (): Promise<void> => {
   const [instance, upsertCreated]: [User, boolean | null] = await User.upsert({ email: 'b' });
   // @ts-expect-error unknown conflict target attribute
   await User.insert({ email: 'c' }, { onConflict: { target: ['nope'], action: 'nothing' } });
-  void [found, sure, all, count, affected, values, fullName, flag, instance, upsertCreated];
+  User.beforeCreate((user: User) => {
+    user.email = user.email.toLowerCase();
+  });
+  User.addHook('afterDestroy', 'audit', () => undefined);
+  const scoped: User[] = await User.scope('active', { method: ['byAge', 18] }).findAll();
+  await User.unscoped().destroy({ where: { id: 1 }, force: true, individualHooks: true });
+  await User.restore({ where: { id: 1 } });
+  await created.validate({ skip: ['age'] });
+  // @ts-expect-error unknown hook type
+  User.addHook('beforeNothing', () => undefined);
+  void [found, sure, all, count, affected, values, fullName, flag, instance, upsertCreated, scoped];
 };

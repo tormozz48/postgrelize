@@ -1,4 +1,7 @@
-/** Model lifecycle hook names (Sequelize v6). */
+/**
+ * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks and `beforeConnect` run;
+ * the other connection / sync / define hooks are accepted and not run yet.
+ */
 export const HOOK_TYPES = [
   'beforeValidate',
   'afterValidate',
@@ -28,6 +31,24 @@ export const HOOK_TYPES = [
   'beforeFindAfterOptions',
   'afterFind',
   'beforeCount',
+  'beforeConnect',
+  'afterConnect',
+  'beforeDisconnect',
+  'afterDisconnect',
+  'beforePoolAcquire',
+  'afterPoolAcquire',
+  'beforeQuery',
+  'afterQuery',
+  'beforeSync',
+  'afterSync',
+  'beforeBulkSync',
+  'afterBulkSync',
+  'beforeDefine',
+  'afterDefine',
+  'beforeInit',
+  'afterInit',
+  'beforeAssociate',
+  'afterAssociate',
 ] as const;
 
 /** One of {@link HOOK_TYPES}. */
@@ -37,7 +58,12 @@ export type HookType = (typeof HOOK_TYPES)[number];
 export type HookFunction = (...args: never[]) => unknown;
 
 /** Registered hook: a function, optionally named so it can be removed by name. */
-export type Hook = Readonly<{ name?: string; fn: HookFunction }>;
+export type Hook = Readonly<{
+  /** Hook name, used by `removeHook`. */
+  name?: string;
+  /** Hook function. */
+  fn: HookFunction;
+}>;
 
 /** Immutable hook registry. */
 export type HookRegistry = ReadonlyMap<HookType, readonly Hook[]>;

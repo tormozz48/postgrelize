@@ -4,7 +4,15 @@ import type { StandardSchemaV1 } from './standard-schema.ts';
 export type AttributeValidatorFunction = (value: unknown) => unknown;
 
 /** Built-in validator setting: `true`, arguments, or `{ args, msg }`. */
-export type BuiltinValidatorOption = boolean | unknown | Readonly<{ args?: unknown; msg?: string }>;
+export type BuiltinValidatorOption = boolean | unknown | ValidatorSetting;
+
+/** `{ args, msg }` form of a built-in validator setting. */
+export type ValidatorSetting = Readonly<{
+  /** Arguments passed to the validator. */
+  args?: unknown;
+  /** Custom error message. */
+  msg?: string;
+}>;
 
 /**
  * Attribute `validate` option: Sequelize v6 built-in validators (validator.js names plus `is`, `not`,
@@ -16,7 +24,7 @@ export type AttributeValidateOptions = Readonly<
     /** Standard Schema the value must satisfy. */
     schema?: StandardSchemaV1;
     /** Custom message for `allowNull: false` violations. */
-    notNull?: boolean | Readonly<{ msg?: string }>;
+    notNull?: boolean | ValidatorSetting;
   }
 >;
 
