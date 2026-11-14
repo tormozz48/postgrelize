@@ -77,6 +77,10 @@ import {
   type SelectOptions,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
+import { encodeCopyRow } from '../connection/copy.ts';
+import { quoteIdent } from '../sql/compile.ts';
+import { randomUUID } from 'node:crypto';
+import type { Transaction } from '../transaction/transaction.ts';
 import { buildMerge, joinSources, MERGE_ACTION, type MergeOptions } from './write-power.ts';
 import {
   buildOnConflict,
@@ -95,6 +99,7 @@ import type {
   Attributes,
   BuildOptions,
   BulkCreateOptions,
+  CopyFromOptions,
   CountOptions,
   CreateOptions,
   CreationAttributes,
@@ -574,6 +579,137 @@ export class Model<
         ),
       })),
     };
+  }
+
+  /**
+   * Streams rows with a server-side cursor (`DECLARE ... CURSOR` + `FETCH n`), so large result sets
+   * are not loaded at once. Runs inside `options.transaction` or its own transaction; the cursor is
+   * closed when iteration ends or is stopped early. Joined includes are not supported. PostgreSQL extension.
+   *
+   * @param options - Find options.
+   * @param cursor - `batchSize` (rows per FETCH, default 100).
+   * @returns Async iterator of instances.
+   * @example
+   * ```ts
+   * for await (const user of User.findEach({ where: { active: true } }, { batchSize: 500 })) {
+   *   await sendEmail(user);
+   * }
+   * ```
+   */
+  static async *findEach<M extends AnyModel>(
+    this: ModelStatic<M>,
+    options: FindOptions<Attributes<M>> = {},
+    cursor: Readonly<{ batchSize?: number }> = {},
+  ): AsyncGenerator<M, void, undefined> {
+    const { definition, runtime, scopes } = stateOf(this);
+    const scoped = injectScope(
+      activeScope(this),
+      { ...options },
+      scopes.whereMergeStrategy,
+    ) as FindOptions;
+    if (normalizeIncludes(this, scoped.include).some((node) => !node.separate)) {
+      throw new Error('findEach does not support joined includes');
+    }
+    const batchSize = cursor.batchSize ?? 100;
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+      throw new Error('findEach: batchSize must be a positive integer');
+    }
+    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
+    const compiled = compile(
+      buildSelect(definition, query as SelectOptions, runtime.inAsAnyThreshold),
+    );
+    const own =
+      options.transaction === undefined || options.transaction === null
+        ? await runtime.beginTransaction()
+        : undefined;
+    const transaction = own ?? (options.transaction as Transaction);
+    const name = quoteIdent(`pgz_cursor_${randomUUID().replaceAll('-', '')}`);
+    const run = (text: string, values: readonly unknown[] = []) =>
+      runtime.execute({ text, values }, { ...pickQueryOptions(options), transaction });
+    let failed = false;
+    try {
+      await run(`DECLARE ${name} NO SCROLL CURSOR FOR ${compiled.text}`, compiled.values);
+      for (;;) {
+        const batch = await run(`FETCH ${batchSize} FROM ${name}`);
+        if (batch.rows.length === 0) {
+          break;
+        }
+        for (const row of batch.rows) {
+          yield fromRow(this, row);
+        }
+      }
+    } catch (error) {
+      failed = true;
+      throw error;
+    } finally {
+      if (own === undefined) {
+        await run(`CLOSE ${name}`).catch(() => undefined);
+      } else if (failed) {
+        await own.rollback().catch(() => undefined);
+      } else {
+        await own.commit();
+      }
+    }
+  }
+
+  /**
+   * Bulk-loads rows with `COPY ... FROM STDIN` (text format) — much faster than INSERT for large
+   * volumes. No hooks or validation run; missing values are written as `NULL`. `createdAt` /
+   * `updatedAt` are filled when the model has timestamps. PostgreSQL extension.
+   *
+   * @param rows - Rows (array, iterable or async iterable of attribute values).
+   * @param options - `columns` (attribute names; default: keys of the first row of an array) and query options.
+   * @returns Number of copied rows.
+   * @example
+   * ```ts
+   * await Event.copyFrom(readEvents(), { columns: ['type', 'payload'] });
+   * ```
+   */
+  static async copyFrom<M extends AnyModel>(
+    this: ModelStatic<M>,
+    rows: Iterable<CreationAttributes<M>> | AsyncIterable<CreationAttributes<M>>,
+    options: CopyFromOptions<Attributes<M>> = {},
+  ): Promise<number> {
+    const { definition, runtime } = stateOf(this);
+    const listed =
+      options.columns ??
+      (Array.isArray(rows) && rows.length > 0
+        ? Object.keys(rows[0] as Values).filter((name) => definition.attributes.has(name))
+        : undefined);
+    if (listed === undefined || listed.length === 0) {
+      throw new Error('copyFrom: columns are required for non-array sources');
+    }
+    const stamps = [definition.createdAt, definition.updatedAt].filter(
+      (name): name is string => name !== undefined && !listed.includes(name as never),
+    );
+    const columns = [...(listed as readonly string[]), ...stamps];
+    columns.forEach((name) => {
+      if (!definition.attributes.has(name)) {
+        throw new Error(`copyFrom: unknown attribute "${name}" of model ${definition.name}`);
+      }
+    });
+    const attributes = columns.map(
+      (name) => definition.attributes.get(name) as AttributeDefinition,
+    );
+    const table = [definition.schema, definition.tableName]
+      .filter((part): part is string => part !== undefined)
+      .map(quoteIdent)
+      .join('.');
+    const text = `COPY ${table} (${attributes.map((attribute) => quoteIdent(attribute.field)).join(', ')}) FROM STDIN`;
+    const now = new Date();
+    async function* lines(): AsyncGenerator<string> {
+      for await (const row of rows as AsyncIterable<Values>) {
+        yield encodeCopyRow(
+          attributes.map((attribute) => {
+            const value = stamps.includes(attribute.fieldName) ? now : row[attribute.fieldName];
+            return value === undefined || value === null || attribute.type.serialize === undefined
+              ? value
+              : attribute.type.serialize(value);
+          }),
+        );
+      }
+    }
+    return runtime.copyFrom(text, lines(), options);
   }
 
   /**

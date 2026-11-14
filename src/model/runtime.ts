@@ -3,7 +3,7 @@ import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
-import type { Transaction } from '../transaction/transaction.ts';
+import type { Transaction, TransactionOptions } from '../transaction/transaction.ts';
 
 /** Options common to every query issued by a model. */
 export type QueryOptionsBase = Readonly<{
@@ -31,6 +31,14 @@ export type ModelRuntime = Readonly<{
   ) => object;
   /** Schema API of the owning Sequelize instance. */
   queryInterface: () => QueryInterface;
+  /** Streams encoded lines into `COPY ... FROM STDIN`. */
+  copyFrom: (
+    text: string,
+    lines: AsyncIterable<string>,
+    options: QueryOptionsBase,
+  ) => Promise<number>;
+  /** Starts an unmanaged transaction. */
+  beginTransaction: (options?: TransactionOptions) => Promise<Transaction>;
   /** `server_version_num` of the database (cached). */
   serverVersion: () => Promise<number>;
   /** Registered models by name. */

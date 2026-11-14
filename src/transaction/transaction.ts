@@ -54,9 +54,25 @@ export type TransactionOptions = Readonly<{
   readOnly?: boolean;
   /** Parent transaction: the new transaction becomes a savepoint inside it. */
   transaction?: Transaction | null;
+  /**
+   * Session settings applied with `SET LOCAL` semantics (`set_config(name, value, true)`), e.g.
+   * `{ 'app.user_id': '42', statement_timeout: '5s' }` for row-level security. PostgreSQL extension.
+   */
+  settings?: Readonly<Record<string, string | number | boolean>>;
   /** SQL logger for transaction statements. */
   logging?: LoggingFunction | false;
 }>;
+
+/** Advisory lock key: a 64-bit integer, or a string hashed by PostgreSQL. */
+export type AdvisoryLockKey = number | bigint | string;
+
+const advisoryLockQuery = (fn: string, key: AdvisoryLockKey, alias = 'lock') => ({
+  text:
+    typeof key === 'string'
+      ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
+      : `SELECT ${fn}($1::bigint) AS "${alias}"`,
+  values: [typeof key === 'string' ? key : String(key)],
+});
 
 const storage = new AsyncLocalStorage<Transaction>();
 
@@ -142,6 +158,16 @@ export class Transaction {
     await this.#run(
       this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
     );
+    await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
+      (previous, [name, value]) =>
+        previous.then(() =>
+          this.#connections.execute(
+            { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
+            this.executeOptions(),
+          ),
+        ),
+      Promise.resolve(),
+    );
     return this;
   }
 
@@ -183,6 +209,49 @@ export class Transaction {
     } finally {
       this.#release();
     }
+  }
+
+  /**
+   * Takes a transaction-level advisory lock (`pg_advisory_xact_lock`), waiting until it is free.
+   * The lock is released on commit or rollback. PostgreSQL extension.
+   *
+   * @param key - Integer key, or a string hashed with `hashtextextended`.
+   * @param options - `shared: true` for a shared lock.
+   * @returns Resolves when the lock is held.
+   */
+  async advisoryLock(
+    key: AdvisoryLockKey,
+    options: Readonly<{ shared?: boolean }> = {},
+  ): Promise<void> {
+    await this.#connections.execute(
+      advisoryLockQuery(
+        options.shared === true ? 'pg_advisory_xact_lock_shared' : 'pg_advisory_xact_lock',
+        key,
+      ),
+      this.executeOptions(),
+    );
+  }
+
+  /**
+   * Tries to take a transaction-level advisory lock without waiting. PostgreSQL extension.
+   *
+   * @param key - Integer key, or a string hashed with `hashtextextended`.
+   * @param options - `shared: true` for a shared lock.
+   * @returns True when the lock was acquired.
+   */
+  async tryAdvisoryLock(
+    key: AdvisoryLockKey,
+    options: Readonly<{ shared?: boolean }> = {},
+  ): Promise<boolean> {
+    const result = await this.#connections.execute(
+      advisoryLockQuery(
+        options.shared === true ? 'pg_try_advisory_xact_lock_shared' : 'pg_try_advisory_xact_lock',
+        key,
+        'locked',
+      ),
+      this.executeOptions(),
+    );
+    return result.rows[0]?.['locked'] === true;
   }
 
   /**

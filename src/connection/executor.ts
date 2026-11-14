@@ -1,4 +1,12 @@
-import { Pool, types, type PoolClient, type PoolConfig, type QueryResultRow } from 'pg';
+import {
+  Client as PgClient,
+  Pool,
+  types,
+  type PoolClient,
+  type PoolConfig,
+  type QueryResultRow,
+} from 'pg';
+import { CopyFromStdin } from './copy.ts';
 import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
 import { mapConnectionError, mapQueryError } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
@@ -29,6 +37,14 @@ export type Executor = (query: CompiledQuery, options?: ExecuteOptions) => Promi
 export type ConnectionManager = Readonly<{
   execute: Executor;
   acquire: () => Promise<Client>;
+  /** Streams `lines` into `COPY ... FROM STDIN`; resolves with the copied row count. */
+  copyFrom: (
+    text: string,
+    lines: AsyncIterable<string>,
+    options?: ExecuteOptions,
+  ) => Promise<number>;
+  /** Opens a dedicated (non-pooled) client, e.g. for LISTEN. */
+  dedicated: () => Promise<PgClient>;
   close: () => Promise<void>;
 }>;
 
@@ -96,9 +112,47 @@ export const createConnectionManager = (
     }
   };
 
+  const copyFrom = async (
+    text: string,
+    lines: AsyncIterable<string>,
+    options: ExecuteOptions = {},
+  ): Promise<number> => {
+    const client = options.client ?? (await acquireWith(pool));
+    const started = performance.now();
+    const copy = new CopyFromStdin(text, lines);
+    const done = copy.done();
+    try {
+      void (
+        client as unknown as Readonly<{ query: (submittable: CopyFromStdin) => unknown }>
+      ).query(copy);
+      const rowCount = await done;
+      log({ text, values: [] }, options, defaults, performance.now() - started);
+      return rowCount;
+    } catch (error) {
+      throw mapQueryError(error, { sql: text, parameters: [] });
+    } finally {
+      await copy.settled();
+      if (options.client === undefined) {
+        client.release();
+      }
+    }
+  };
+
+  const dedicated = async (): Promise<PgClient> => {
+    const client = new PgClient({ ...config, types: typeParsers });
+    try {
+      await client.connect();
+    } catch (error) {
+      throw mapConnectionError(error);
+    }
+    return client;
+  };
+
   return {
     execute,
     acquire: () => acquireWith(pool),
+    copyFrom,
+    dedicated,
     close: () => pool.end(),
   };
 };

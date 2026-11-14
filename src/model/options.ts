@@ -204,6 +204,13 @@ export type InsertFromOptions<T = Values> = QueryOptionsBase &
     onConflict?: OnConflictOptions<T>;
   }>;
 
+/** Options of `Model.copyFrom`. PostgreSQL extension. */
+export type CopyFromOptions<T = Values> = QueryOptionsBase &
+  Readonly<{
+    /** Attributes to copy, in row order; default: keys of the first row of an array source. */
+    columns?: readonly (keyof T & string)[];
+  }>;
+
 /** Options of static `update`. */
 export type UpdateOptions<T = Values> = QueryOptionsBase &
   Readonly<{
