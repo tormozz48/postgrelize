@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1, S2 done; next: S3 VitePress site
+**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1–S3 done; next: separate-include fixes, then S4 Effect core
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -117,7 +117,7 @@
 ## Backlog 2 (roadmap `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`)
 - [x] S1 README: badges, self-hosted coverage on Pages (92.8% lines at start)
 - [x] S2 Sequelize PostgreSQL issues: 73 classified, S2a parity regressions, S2b inherited bugs, public page `docs/sequelize-issues.md`
-- [ ] S3 VitePress documentation site
+- [x] S3 VitePress documentation site (12 guides, executed examples, API reference)
 - [ ] S4 Effect-based core + `postgrelize/effect`
 
 ## Release 0.6.0 (2026-11-14)
