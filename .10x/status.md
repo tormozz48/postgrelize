@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** P1 — P1-A, P1-B done; implementing P1-C
+**Current phase:** P1 — P1-A..C done; implementing P1-D
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -87,5 +87,5 @@
 ## P1 cycles — spec `.10x/specs/2026-11-14-p1-postgres-power-design.md`
 - [x] P1-A query power
 - [x] P1-B write power
-- [ ] P1-C connection power
+- [x] P1-C connection power
 - [ ] P1-D schema power

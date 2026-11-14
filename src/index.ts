@@ -39,6 +39,7 @@ export type {
   BuildOptions,
   BulkCreateOptions,
   BulkHookOptions,
+  CopyFromOptions,
   CountOptions,
   CreateOptions,
   CreationAttributes,
@@ -156,6 +157,7 @@ export {
   TRANSACTION_TYPES,
 } from './transaction/transaction.ts';
 export type {
+  AdvisoryLockKey,
   IsolationLevel,
   LockStrength,
   TransactionOptions,
@@ -224,3 +226,4 @@ export type { AlterOptions, DropOptions, SyncOptions } from './query-interface/s
 export { Deferrable } from './ddl/ddl.ts';
 export type { ConstraintOptions, DeferrableValue, IndexField, IndexOptions } from './ddl/ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/literals.ts';
+export type { NotificationHandler } from './connection/notifications.ts';

@@ -14,6 +14,11 @@ import {
 } from './connection/options.ts';
 import { DataTypes } from './data-types/data-types.ts';
 import {
+  createNotifier,
+  type NotificationHandler,
+  type Notifier,
+} from './connection/notifications.ts';
+import {
   addHook,
   hasHook,
   hooksFromOption,
@@ -42,6 +47,7 @@ import {
   currentTransaction,
   runManagedTransaction,
   Transaction,
+  type AdvisoryLockKey,
   type TransactionOptions,
 } from './transaction/transaction.ts';
 
@@ -158,6 +164,7 @@ export class Sequelize {
   #hooks: HookRegistry;
   #queryInterface: QueryInterface | undefined;
   #serverVersion: Promise<number> | undefined;
+  #notifier: Notifier | undefined;
 
   /**
    * Creates an instance from a connection URI.
@@ -215,6 +222,9 @@ export class Sequelize {
         this.define(name, attributes as ModelAttributes, options as DefineOptions),
       models: () => this.models,
       queryInterface: () => this.getQueryInterface(),
+      copyFrom: (text, lines, options) =>
+        this.#connections.copyFrom(text, lines, this.#executeOptions(options)),
+      beginTransaction: (options) => this.transaction(options),
       serverVersion: () => {
         this.#serverVersion ??= this.#execute(
           { text: 'SHOW server_version_num', values: [] },
@@ -488,6 +498,52 @@ export class Sequelize {
   }
 
   /**
+   * Subscribes to `NOTIFY` messages on a channel using one dedicated connection per instance (re-subscribed
+   * after connection loss). PostgreSQL extension.
+   *
+   * @param channel - Channel name.
+   * @param handler - Called with the payload and the channel.
+   * @returns Function that unsubscribes the handler.
+   */
+  listen(channel: string, handler: NotificationHandler): Promise<() => Promise<void>> {
+    this.#notifier ??= createNotifier(() => this.#connections.dedicated());
+    return this.#notifier.listen(channel, handler);
+  }
+
+  /**
+   * Sends a notification (`pg_notify`). PostgreSQL extension.
+   *
+   * @param channel - Channel name.
+   * @param payload - Payload text (objects are sent as JSON).
+   * @param options - Query options (inside a transaction the notification is sent on commit).
+   * @returns Resolves when sent.
+   */
+  async notify(channel: string, payload?: unknown, options: QueryOptionsBase = {}): Promise<void> {
+    const text =
+      payload === undefined ? '' : typeof payload === 'string' ? payload : JSON.stringify(payload);
+    await this.#execute({ text: 'SELECT pg_notify($1, $2)', values: [channel, text] }, options);
+  }
+
+  /**
+   * Runs `run` in a transaction holding a transaction-level advisory lock. PostgreSQL extension.
+   *
+   * @param key - Lock key (integer or string).
+   * @param run - Callback receiving the transaction.
+   * @param options - Transaction options.
+   * @returns Result of `run`.
+   */
+  withAdvisoryLock<T>(
+    key: AdvisoryLockKey,
+    run: (transaction: Transaction) => Promise<T>,
+    options: TransactionOptions = {},
+  ): Promise<T> {
+    return this.transaction(options, async (transaction) => {
+      await transaction.advisoryLock(key);
+      return run(transaction);
+    });
+  }
+
+  /**
    * Checks the connection by running `SELECT 1+1 AS result`.
    *
    * @param options - Query options.
@@ -515,21 +571,26 @@ export class Sequelize {
    * @returns Resolves when closed.
    */
   async close(): Promise<void> {
+    await this.#notifier?.close();
     await this.#connections.close();
   }
 
-  #execute(query: CompiledQuery, options: QueryOptionsBase): Promise<QueryResult> {
+  #executeOptions(options: QueryOptionsBase): ExecuteOptions {
     const transaction =
       options.transaction === undefined
         ? Sequelize.#cls
           ? currentTransaction()
           : undefined
         : (options.transaction ?? undefined);
-    return this.#connections.execute(query, {
+    return {
       ...(transaction === undefined ? {} : transaction.executeOptions()),
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
-    });
+    };
+  }
+
+  #execute(query: CompiledQuery, options: QueryOptionsBase): Promise<QueryResult> {
+    return this.#connections.execute(query, this.#executeOptions(options));
   }
 }
 

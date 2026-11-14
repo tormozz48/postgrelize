@@ -115,3 +115,9 @@ Tests: integration +5 (IN subquery, scalar subquery, EXISTS/NOT EXISTS correlate
 Built: AST `FromItem`, `UpdateNode.from`, `DeleteNode.using`, `InsertNode.select`, `MergeNode` (+ compiler); `src/model/write-power.ts` (join sources, MERGE builder with typed VALUES sources, timestamps via `now()`); `Model.insertFrom`, `Model.merge`, `update({ from })`, `destroy({ using })`; `runtime.serverVersion()` (cached `server_version_num`).
 Tests: integration +6 (update from, delete using, insertFrom ± onConflict, merge rows/subquery, merge returning + NOT MATCHED BY SOURCE on 17+ / clear error on 16, option validation); verified locally on PG16 and PG17.
 Limits: `individualHooks` with `from` rejected; no hooks/validation for merge/insertFrom (bulk SQL operations).
+
+## P1-C — Connection power — done 2026-11-14
+Built: `src/connection/copy.ts` (COPY text encoder + `CopyFromStdin` pg submittable), `src/connection/notifications.ts` (dedicated LISTEN client), ConnectionManager `copyFrom`/`dedicated`, Transaction `settings`/`advisoryLock`/`tryAdvisoryLock`, Sequelize `listen`/`notify`/`withAdvisoryLock`, Model `findEach`/`copyFrom`, runtime `copyFrom`/`beginTransaction`.
+Tests: integration +6 (COPY arrays/async iterables/escaping/errors/rollback + pool health after failure, findEach batching and early exit, LISTEN/NOTIFY incl. transactional notify and unlisten, SET LOCAL scope, advisory lock exclusion), unit +2 (COPY encoding).
+Bugs found: pg detaches the active query on ErrorResponse → COPY must report errors from `handleError` and stop pumping before the client is released (else hang / protocol mix-up).
+Deviations: `copyTo` not implemented (needs type OIDs for text parsing; YAGNI). findEach rejects joined includes; no hooks for findEach/copyFrom.
