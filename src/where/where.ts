@@ -258,10 +258,12 @@ const negation = (left: Operand, value: unknown, ctx: WhereContext): ExprNode =>
       ? { kind: 'prefix', op: 'NOT', expr: attributeCondition(left, value, ctx) }
       : comparison('<>', left, value, ctx);
 
+const KEY_OPERATORS: ReadonlySet<symbol> = new Set([Op.hasKey, Op.hasAnyKeys, Op.hasAllKeys]);
+
 const applyOperator = (op: symbol, left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
   const sqlOp = binaryOps.get(op);
   if (sqlOp !== undefined) {
-    return comparison(sqlOp, left, value, ctx);
+    return comparison(sqlOp, KEY_OPERATORS.has(op) ? { node: left.node } : left, value, ctx);
   }
   switch (op) {
     case Op.eq:

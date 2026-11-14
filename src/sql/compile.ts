@@ -17,9 +17,9 @@ import type {
 
 export type CompiledQuery = Readonly<{ text: string; values: readonly unknown[] }>;
 
-type ParamChunk = Readonly<{ param: unknown }>;
-type Chunk = string | ParamChunk;
-type Chunks = readonly Chunk[];
+export type ParamChunk = Readonly<{ param: unknown }>;
+export type Chunk = string | ParamChunk;
+export type Chunks = readonly Chunk[];
 
 export const quoteIdent = (name: string): string => `"${name.replaceAll('"', '""')}"`;
 
@@ -243,7 +243,7 @@ const statement = (node: StatementNode): Chunks => {
 
 const isParam = (chunk: Chunk): chunk is ParamChunk => typeof chunk !== 'string';
 
-const finalize = (chunks: Chunks): CompiledQuery => {
+export const finalize = (chunks: Chunks): CompiledQuery => {
   const params = [...new Set(chunks.filter(isParam))];
   const positions = new Map(params.map((chunk, index) => [chunk, index + 1]));
   return {

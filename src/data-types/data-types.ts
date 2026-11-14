@@ -44,7 +44,12 @@ export type DefaultValueGenerator = Readonly<{
 }>;
 
 /** Range bound as returned by Sequelize v6 for `RANGE` attributes. */
-export type RangeBound<T> = Readonly<{ value: T | null; inclusive: boolean }>;
+export type RangeBound<T> = Readonly<{
+  /** Bound value; `null` for an unbounded side. */
+  value: T | null;
+  /** Whether the bound itself is part of the range. */
+  inclusive: boolean;
+}>;
 
 const type = (key: string, sqlType: string, extra: Partial<DataType> = {}): DataType =>
   Object.freeze({ key, sqlType, ...extra });
@@ -297,12 +302,9 @@ export const DataTypes = {
   /** Attribute that is not stored in the database (computed by getters/setters). */
   VIRTUAL: callable(virtualType, virtualType()),
   /** Default value: current timestamp. */
-  NOW: Object.freeze({ key: 'NOW', generate: () => new Date() }) satisfies DefaultValueGenerator,
+  NOW: Object.freeze<DefaultValueGenerator>({ key: 'NOW', generate: () => new Date() }),
   /** Default value: random UUID v4 generated on the client. */
-  UUIDV4: Object.freeze({
-    key: 'UUIDV4',
-    generate: () => randomUUID(),
-  }) satisfies DefaultValueGenerator,
+  UUIDV4: Object.freeze<DefaultValueGenerator>({ key: 'UUIDV4', generate: () => randomUUID() }),
 } as const;
 
 /** @internal */

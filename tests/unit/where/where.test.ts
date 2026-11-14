@@ -92,6 +92,11 @@ describe('whereToAst', () => {
     expect(sql({ 'meta.name': { [Op.iLike]: 'x%' } }).text).toBe('"User"."meta" #>> $1 ILIKE $2');
   });
 
+  it('does not serialize jsonb key operator values', () => {
+    expect(sql({ meta: { [Op.hasKey]: 'a' } }).values).toEqual(['a']);
+    expect(sql({ meta: { [Op.hasAnyKeys]: ['a', 'b'] } }).values).toEqual([['a', 'b']]);
+  });
+
   it('serializes values for typed attributes', () => {
     expect(sql({ meta: { [Op.contains]: { a: 1 } } }).values).toEqual(['{"a":1}']);
   });

@@ -4,22 +4,75 @@ export const methodKind: unique symbol = Symbol.for('postgrelize.method');
 type Method<K extends string, T> = Readonly<{ [methodKind]: K } & T>;
 
 /** Raw SQL fragment inserted into a query as-is. Created by {@link literal}. */
-export type Literal = Method<'literal', { val: string }>;
+export type Literal = Method<
+  'literal',
+  {
+    /** SQL text. */
+    val: string;
+  }
+>;
 /** SQL function call. Created by {@link fn}. */
-export type Fn = Method<'fn', { fn: string; args: readonly unknown[] }>;
+export type Fn = Method<
+  'fn',
+  {
+    /** Function name. */
+    fn: string;
+    /** Arguments. */
+    args: readonly unknown[];
+  }
+>;
 /** Column reference. Created by {@link col}. */
-export type Col = Method<'col', { col: string | readonly string[] }>;
+export type Col = Method<
+  'col',
+  {
+    /** Column name or path. */
+    col: string | readonly string[];
+  }
+>;
 /** Type cast `CAST(value AS type)`. Created by {@link cast}. */
-export type Cast = Method<'cast', { val: unknown; type: string; json: boolean }>;
+export type Cast = Method<
+  'cast',
+  {
+    /** Value or expression to cast. */
+    val: unknown;
+    /** Target type. */
+    type: string;
+    /** Kept for Sequelize v6 compatibility. */
+    json: boolean;
+  }
+>;
 /** JSON path access or JSON conditions. Created by {@link json}. */
-export type Json = Method<'json', { path?: string; conditions?: object; value?: unknown }>;
+export type Json = Method<
+  'json',
+  {
+    /** Dot-separated path starting with the attribute name. */
+    path?: string;
+    /** Conditions object. */
+    conditions?: object;
+    /** Value compared with the path. */
+    value?: unknown;
+  }
+>;
 /** Comparison of an arbitrary expression with a value. Created by {@link where}. */
 export type Where = Method<
   'where',
-  { attribute: unknown; comparator: string | symbol; logic: unknown }
+  {
+    /** Left-hand expression. */
+    attribute: unknown;
+    /** Comparison operator. */
+    comparator: string | symbol;
+    /** Right-hand value. */
+    logic: unknown;
+  }
 >;
 /** Reference to a column of the row proposed for insertion in `ON CONFLICT DO UPDATE`. Created by {@link excluded}. */
-export type Excluded = Method<'excluded', { column: string }>;
+export type Excluded = Method<
+  'excluded',
+  {
+    /** Attribute name. */
+    column: string;
+  }
+>;
 
 /** Any SQL expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. */
 export type SqlExpression = Literal | Fn | Col | Cast | Json | Where | Excluded;
