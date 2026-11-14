@@ -131,3 +131,8 @@ Built: AST `WithClause`/`CteNode`/`UnionNode`/`SelectNode.extraFrom` (+ compiler
 Tests: integration +4 (recursive tree walk returning instances, materialized CTE in count + IN subquery, extra FROM self-join, CSV export incl. quoting/NULL, option validation, 5k-row slow consumer integrity, early exit, error + pool health), unit +1 (CTE compile).
 Bugs found: pg-protocol reuses the socket buffer → CopyData chunks must be copied before queueing (data corruption with slow consumers).
 Note: `extraFrom` is rendered after joins so join conditions keep referencing the main table.
+
+## Backlog — read replicas + nested creation — done 2026-11-14
+Built: `ReplicationOptions`/`ReplicationMember`, `replicationPoolConfigs` (members merged over top-level options), reader pools with round-robin in ConnectionManager (`route: 'read'`), Sequelize routes SELECT/model reads to readers unless in a transaction or `useMaster: true` (ADR-014); nested creation: `build`/`create`/`bulkCreate` with `include` build nested instances (through values as through-model instances), `save()` saves belongsTo parents first, then hasOne/hasMany/belongsToMany children (junction rows via through model `create`) sequentially in the same transaction options.
+Tests: compat +3 (nested create of all four association kinds incl. nested levels and through values, build+save, bulkCreate with include), integration +3 (reader role routing, `useMaster`/transaction on writer, round-robin).
+Bugs found: v6 keeps nested through values as a through-model instance (null PKs in JSON) — matched.

@@ -1,3 +1,3 @@
 # Handoff
 
-**From:** P1 (postgres-power) complete → **To:** owner: 0.2.0 release; next backlog candidates: CTE, copyTo, RETURNING old/new (PG18), read replicas, nested create via include, default scopes of included models.
+**From:** backlog (read replicas + nested creation) complete → **To:** owner: 0.4.0 release; remaining backlog: RETURNING old/new (PG18), default scopes of included models.

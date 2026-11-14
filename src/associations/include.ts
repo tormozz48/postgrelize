@@ -691,7 +691,8 @@ export const loadSeparate = async (
   );
 };
 
-const toIncludeOptions = (node: IncludeNode): IncludeOptions => ({
+/** @internal Converts an include node back to include options. */
+export const toIncludeOptions = (node: IncludeNode): IncludeOptions => ({
   association: node.association,
   required: node.required,
   separate: node.separate,

@@ -8,7 +8,7 @@ import {
 import {
   connectionConfig,
   parseConstructorArgs,
-  poolConfig,
+  replicationPoolConfigs,
   type ConnectionConfig,
   type SequelizeOptions,
 } from './connection/options.ts';
@@ -202,13 +202,18 @@ export class Sequelize {
       ...(this.options.benchmark === undefined ? {} : { benchmark: this.options.benchmark }),
     };
     this.#hooks = hooksFromOption(this.options.hooks);
-    const pool = poolConfig(this.options);
+    const pools = replicationPoolConfigs(this.options);
+    const withHookPassword = (config: PoolConfig): PoolConfig => ({
+      ...config,
+      password: () => this.#connectPassword(config.password),
+    });
     this.#connections = createConnectionManager(
-      { ...pool, password: () => this.#connectPassword(pool.password) },
+      withHookPassword(pools.write),
       defaults,
+      pools.read.map(withHookPassword),
     );
     this.#runtime = {
-      execute: (query, options) => this.#execute(query, options),
+      execute: (query, options, kind) => this.#execute(query, options, kind),
       transaction: (run, parent) =>
         this.transaction(
           parent === undefined || parent === null ? {} : { transaction: parent },
@@ -224,7 +229,8 @@ export class Sequelize {
       queryInterface: () => this.getQueryInterface(),
       copyFrom: (text, lines, options) =>
         this.#connections.copyFrom(text, lines, this.#executeOptions(options)),
-      copyTo: (text, options) => this.#connections.copyTo(text, this.#executeOptions(options)),
+      copyTo: (text, options, kind) =>
+        this.#connections.copyTo(text, this.#executeOptions(options, kind)),
       beginTransaction: (options) => this.transaction(options),
       serverVersion: () => {
         this.#serverVersion ??= this.#execute(
@@ -384,7 +390,11 @@ export class Sequelize {
       ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
       ...(options.bind === undefined ? {} : { bind: options.bind }),
     });
-    const result = await this.#execute(prepared, options);
+    const result = await this.#execute(
+      prepared,
+      options,
+      effectiveType(options) === QueryTypes.SELECT ? 'read' : 'write',
+    );
     return shapeResult(result, options);
   }
 
@@ -576,7 +586,7 @@ export class Sequelize {
     await this.#connections.close();
   }
 
-  #executeOptions(options: QueryOptionsBase): ExecuteOptions {
+  #executeOptions(options: QueryOptionsBase, kind: 'read' | 'write' = 'write'): ExecuteOptions {
     const transaction =
       options.transaction === undefined
         ? Sequelize.#cls
@@ -585,13 +595,20 @@ export class Sequelize {
         : (options.transaction ?? undefined);
     return {
       ...(transaction === undefined ? {} : transaction.executeOptions()),
+      ...(transaction === undefined && kind === 'read' && options.useMaster !== true
+        ? { route: 'read' as const }
+        : {}),
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
     };
   }
 
-  #execute(query: CompiledQuery, options: QueryOptionsBase): Promise<QueryResult> {
-    return this.#connections.execute(query, this.#executeOptions(options));
+  #execute(
+    query: CompiledQuery,
+    options: QueryOptionsBase,
+    kind: 'read' | 'write' = 'write',
+  ): Promise<QueryResult> {
+    return this.#connections.execute(query, this.#executeOptions(options, kind));
   }
 }
 

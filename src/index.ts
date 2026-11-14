@@ -169,6 +169,8 @@ export type {
   LoggingFunction,
   ModelDefaults,
   PoolOptions,
+  ReplicationMember,
+  ReplicationOptions,
   SequelizeOptions,
 } from './connection/options.ts';
 export type { Replacements, BindParameters } from './query/raw-query.ts';

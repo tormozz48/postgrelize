@@ -25,6 +25,8 @@ export type Client = Pick<PoolClient, 'query' | 'release'>;
 /** Per-call execution settings. */
 export type ExecuteOptions = Readonly<{
   client?: Client;
+  /** Run on a read replica when one is configured (ignored when `client` is set). */
+  route?: 'read' | 'write';
   logging?: LoggingFunction | false;
   benchmark?: boolean;
   transactionId?: string;
@@ -96,12 +98,27 @@ const acquireWith = async (pool: Pool): Promise<PoolClient> => {
 export const createConnectionManager = (
   config: PoolConfig,
   defaults: ExecuteOptions,
+  readConfigs: readonly PoolConfig[] = [],
 ): ConnectionManager => {
   const pool = new Pool({ ...config, types: typeParsers });
   pool.on('error', () => {});
+  const readers = readConfigs.map((readConfig) => {
+    const reader = new Pool({ ...readConfig, types: typeParsers });
+    reader.on('error', () => {});
+    return reader;
+  });
+  const cursor = { next: 0 };
+  const poolFor = (options: ExecuteOptions): Pool => {
+    if (options.route !== 'read' || readers.length === 0) {
+      return pool;
+    }
+    const reader = readers[cursor.next % readers.length] ?? pool;
+    cursor.next += 1;
+    return reader;
+  };
 
   const execute: Executor = async (query, options = {}) => {
-    const client = options.client ?? (await acquireWith(pool));
+    const client = options.client ?? (await acquireWith(poolFor(options)));
     const started = performance.now();
     try {
       const result = await client.query({ text: query.text, values: [...query.values] });
@@ -187,6 +204,8 @@ export const createConnectionManager = (
     copyFrom,
     copyTo,
     dedicated,
-    close: () => pool.end(),
+    close: async () => {
+      await Promise.all([pool.end(), ...readers.map((reader) => reader.end())]);
+    },
   };
 };

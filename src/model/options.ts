@@ -75,6 +75,8 @@ export type BuildOptions = Readonly<{
   isNewRecord?: boolean;
   /** Set values without setters and without change tracking. */
   raw?: boolean;
+  /** Build associated instances from nested values (Sequelize v6 nested creation). */
+  include?: IncludeOption;
 }>;
 
 /** Options of finders (Sequelize v6 `FindOptions`, without `include`). */
@@ -151,6 +153,8 @@ export type CreateOptions<T = Values> = SaveOptions<T> &
   Readonly<{
     /** Advanced `ON CONFLICT` handling. PostgreSQL extension. */
     onConflict?: OnConflictOptions<T>;
+    /** Create associated rows from nested values (Sequelize v6). */
+    include?: IncludeOption;
   }>;
 
 /** Options of `bulkCreate`. */
@@ -160,6 +164,8 @@ export type BulkCreateOptions<T = Values> = SaveOptions<T> &
     ignoreDuplicates?: boolean;
     /** Run per-instance `create` hooks (rows are then inserted one by one, like v6). */
     individualHooks?: boolean;
+    /** Create associated rows from nested values (rows are inserted one by one). */
+    include?: IncludeOption;
     /** Attributes updated from the proposed row on conflict (`DO UPDATE SET a = EXCLUDED.a`). */
     updateOnDuplicate?: readonly (keyof T & string)[];
     /** Conflict target attributes for `updateOnDuplicate`. Default: first unique key, else primary key. */

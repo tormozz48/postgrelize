@@ -13,11 +13,17 @@ export type QueryOptionsBase = Readonly<{
   logging?: LoggingFunction | false;
   /** Pass query duration to the logger. */
   benchmark?: boolean;
+  /** Force the writer even for SELECTs when read replicas are configured. */
+  useMaster?: boolean;
 }>;
 
 /** Services a `Sequelize` instance provides to its models. */
 export type ModelRuntime = Readonly<{
-  execute: (query: CompiledQuery, options: QueryOptionsBase) => Promise<QueryResult>;
+  execute: (
+    query: CompiledQuery,
+    options: QueryOptionsBase,
+    kind?: 'read' | 'write',
+  ) => Promise<QueryResult>;
   transaction: <T>(
     run: (transaction: Transaction) => Promise<T>,
     parent?: Transaction | null,
@@ -38,7 +44,11 @@ export type ModelRuntime = Readonly<{
     options: QueryOptionsBase,
   ) => Promise<number>;
   /** Streams `COPY ... TO STDOUT` output. */
-  copyTo: (text: string, options: QueryOptionsBase) => AsyncGenerator<Buffer, void, undefined>;
+  copyTo: (
+    text: string,
+    options: QueryOptionsBase,
+    kind?: 'read' | 'write',
+  ) => AsyncGenerator<Buffer, void, undefined>;
   /** Starts an unmanaged transaction. */
   beginTransaction: (options?: TransactionOptions) => Promise<Transaction>;
   /** `server_version_num` of the database (cached). */
