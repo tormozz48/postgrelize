@@ -1,3 +1,4 @@
+import type { IncludeOption } from '../associations/include.ts';
 import type { HooksOption } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
@@ -92,6 +93,10 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     paranoid?: boolean;
     /** Run `beforeFind` / `afterFind` hooks. Default true. */
     hooks?: boolean;
+    /** Eager-load associations. */
+    include?: IncludeOption;
+    /** `false` disables the sub-query used for `limit` with multi includes. */
+    subQuery?: boolean;
   }>;
 
 /** Options of `count`. */
@@ -109,6 +114,8 @@ export type CountOptions<T = Values> = QueryOptionsBase &
     paranoid?: boolean;
     /** Run `beforeCount` hooks. Default true. */
     hooks?: boolean;
+    /** Join associations (rows are counted per joined row unless `distinct`). */
+    include?: IncludeOption;
   }>;
 
 /** Options of `aggregate`, `max`, `min`, `sum`. */
