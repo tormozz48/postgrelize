@@ -46,7 +46,7 @@ Instances get the v6 accessor methods:
 Include options follow v6: `association` or `model` + `as`, `where`, `required`, `right`, `attributes`, nested `include`, `paranoid`, `through: { attributes, where }` for `belongsToMany`, and `all: true`.
 
 - **`limit` with multi-row includes.** As in v6, a `limit` on the main query together with a `hasMany` / `belongsToMany` include moves the main table into a subquery, so the limit counts parent rows. `subQuery: false` turns this off.
-- **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order`. This avoids row multiplication when a parent has many children.
+- **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order` and `limit` (applied per parent, as in Sequelize v6). This avoids row multiplication when a parent has many children.
 - **`$nested.attr$` keys** in the top-level `where` filter on included columns, as in v6.
 
 Counting with includes: `count({ include })` counts joined rows, as in v6; add `distinct: true` to count parent rows.

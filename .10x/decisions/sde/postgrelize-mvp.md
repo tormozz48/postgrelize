@@ -168,3 +168,8 @@ Tests: integration +11 (`sequelize-issues`), unit expectations for JSON path par
 - 12 guide pages; 14 example files in `docs/examples/` shown via snippet regions, type-checked (tsconfig `paths` maps `postgrelize`) and executed against PostgreSQL by the `docs` vitest project (version-gated examples via `minimumServerVersion`; verified on PG16 and PG18).
 - Found while writing examples (follow-up fixes): `limit` on `separate: true` includes is ignored (v6 applies a per-parent limit); `findEach` accepts separate includes but never loads them.
 - Doc gaps recorded on pages: `sequelize.query()` returns `unknown`, no association mixin types exported, non-lifecycle hooks (except `beforeConnect`) never run.
+
+### Follow-up fixes (2026-11-15)
+- separate include `limit` applied per parent (v6 parity; filtered after the per-association query, no SQL-side grouped limit yet).
+- `findEach` loads `separate: true` includes per batch inside the cursor transaction.
+Tests: compat +1 (per-parent limit vs v6), integration +1 (findEach separate include).

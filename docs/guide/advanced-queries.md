@@ -84,7 +84,7 @@ const parents = await Category.findAll({
 
 - The cursor needs a transaction. Pass `transaction`, or `findEach` opens one and commits it when the iteration ends.
 - Leaving the loop early (`break`, `return`, an exception) closes the cursor.
-- `batchSize` defaults to 100. `include` is not supported: load associations per batch if you need them.
+- `batchSize` defaults to 100. Includes must be `separate: true`; they are loaded with one extra query per batch. Joined includes are rejected.
 
 For exporting rows as text, [`copyTo`](./bulk-writes#export-with-copyto) is faster still.
 
