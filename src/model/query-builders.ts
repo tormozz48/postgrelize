@@ -9,6 +9,7 @@ import {
   type ExprNode,
   type InsertNode,
   type LockNode,
+  type OnConflictNode,
   type OrderNode,
   type SelectNode,
   type SetItem,
@@ -379,7 +380,10 @@ export const returningAll = (definition: ModelDefinition): readonly ExprNode[] =
 export const buildInsert = (
   definition: ModelDefinition,
   rows: readonly Readonly<Record<string, unknown>>[],
-  options: Readonly<{ returning?: boolean | readonly ExprNode[] }> = {},
+  options: Readonly<{
+    returning?: boolean | readonly ExprNode[];
+    onConflict?: OnConflictNode;
+  }> = {},
 ): InsertNode => {
   const ctx = whereContext(definition, undefined);
   const attributes = insertableAttributes(definition, rows).filter(
@@ -394,7 +398,7 @@ export const buildInsert = (
         : options.returning;
   return {
     kind: 'insert',
-    table: tableOf(definition),
+    table: tableOf(definition, options.onConflict === undefined ? undefined : definition.name),
     columns: attributes.map((name) => definition.attributes.get(name)?.field ?? name),
     rows: rows.map((row) =>
       attributes.map((name) => {
@@ -405,6 +409,7 @@ export const buildInsert = (
           : valueExpr(attribute, value, ctx);
       }),
     ),
+    ...(options.onConflict === undefined ? {} : { onConflict: options.onConflict }),
     ...(returning === undefined ? {} : { returning }),
   };
 };
@@ -413,8 +418,8 @@ export const buildInsert = (
 export const setItems = (
   definition: ModelDefinition,
   values: Readonly<Record<string, unknown>>,
+  ctx: WhereContext = whereContext(definition, undefined),
 ): readonly SetItem[] => {
-  const ctx = whereContext(definition, undefined);
   return Object.entries(values)
     .filter(([, value]) => value !== undefined)
     .map(([name, value]) => {

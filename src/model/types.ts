@@ -1,4 +1,13 @@
-import type { Cast, Col, Fn, Json, Literal, SqlExpression, Where } from '../expressions/methods.ts';
+import type {
+  Cast,
+  Col,
+  Excluded,
+  Fn,
+  Json,
+  Literal,
+  SqlExpression,
+  Where,
+} from '../expressions/methods.ts';
 import type { Op } from '../expressions/op.ts';
 
 declare const CreationAttributeBrand: unique symbol;
@@ -43,14 +52,14 @@ type IsBranded<T, Brand extends symbol> = [Extract<keyof NonNullable<T>, Brand>]
 type AnyFunction = (...args: any[]) => unknown;
 
 /** Options of {@link InferAttributes}. */
-export type InferAttributesOptions<Excluded> = Readonly<{
+export type InferAttributesOptions<OmittedKeys> = Readonly<{
   /** Attribute names to leave out. */
-  omit?: Excluded;
+  omit?: OmittedKeys;
 }>;
 
-type AttributeKey<M, K extends keyof M, Excluded> = K extends keyof ModelBase
+type AttributeKey<M, K extends keyof M, OmittedKeys> = K extends keyof ModelBase
   ? never
-  : K extends Excluded
+  : K extends OmittedKeys
     ? never
     : M[K] extends AnyFunction
       ? never
@@ -74,6 +83,8 @@ export type ModelBase = Readonly<{
   isNewRecord: unknown;
   /** Owning `Sequelize` instance. */
   sequelize: unknown;
+  /** Insert/update flag of `onConflict` results. */
+  wasInserted: unknown;
 }>;
 
 /** Infers attribute types from a model class declaration (Sequelize v6 `InferAttributes`). */
@@ -110,8 +121,8 @@ export type MakeNullishOptional<T> = {
 /** A value or an array of values. */
 export type AllowArray<T> = T | readonly T[];
 
-/** Expressions accepted in place of a value. */
-export type SqlValue = Literal | Fn | Col | Cast;
+/** Expressions accepted in place of a value (`Excluded` only inside `onConflict`). */
+export type SqlValue = Literal | Fn | Col | Cast | Excluded;
 
 type Comparable<V> = V | SqlValue;
 

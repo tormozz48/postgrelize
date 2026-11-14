@@ -13,6 +13,8 @@ export type WhereContext = Readonly<{
   tableAlias?: string;
   resolve: (attribute: string) => AttributeRef | undefined;
   inAsAnyThreshold?: number;
+  /** Allows `excluded()` (only inside `ON CONFLICT DO UPDATE`). */
+  allowExcluded?: boolean;
 }>;
 
 type JsonAccess = Readonly<{ base: ExprNode; path: readonly string[] }>;
@@ -72,6 +74,9 @@ const expressionToAst = (value: SqlExpression, ctx: WhereContext): ExprNode => {
     case 'where':
       return expressionCondition(value, ctx);
     case 'excluded':
+      if (ctx.allowExcluded !== true) {
+        throw new Error('excluded() can only be used inside onConflict');
+      }
       return { kind: 'excluded', column: ctx.resolve(value.column)?.field ?? value.column };
   }
 };

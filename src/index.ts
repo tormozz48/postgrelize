@@ -9,17 +9,20 @@ export type {
   BuildOptions,
   BulkCreateOptions,
   CountOptions,
+  CreateOptions,
   CreationAttributes,
   DestroyOptions,
   FindAndCountResult,
   FindOptions,
   FindOrCreateOptions,
   IncrementOptions,
+  InsertOptions,
   InitOptions,
   ModelStatic,
   QualifiedTableName,
   SaveOptions,
   UpdateOptions,
+  UpsertOptions,
   Values,
 } from './model/model.ts';
 export type {
@@ -41,6 +44,14 @@ export type {
   SelectOptions,
 } from './model/query-builders.ts';
 export type { QueryOptionsBase, RuntimeOwner } from './model/runtime.ts';
+export type {
+  OnConflictColumnsTarget,
+  OnConflictConstraintTarget,
+  OnConflictOptions,
+  OnConflictTarget,
+  OnConflictUpdate,
+  OnConflictUpdateAction,
+} from './model/on-conflict.ts';
 export type {
   AllowArray,
   AnyAll,

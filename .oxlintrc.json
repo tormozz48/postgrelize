@@ -32,7 +32,13 @@
     "vitest/expect-expect": [
       "error",
       {
-        "assertFunctionNames": ["expect", "expectSameResult", "expectSameError", "withUsers"]
+        "assertFunctionNames": [
+          "expect",
+          "expectSameResult",
+          "expectSameError",
+          "withUsers",
+          "withProducts"
+        ]
       }
     ]
   },

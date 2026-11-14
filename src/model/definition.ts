@@ -101,6 +101,8 @@ export type ModelDefinition = Readonly<{
   primaryKeys: readonly string[];
   createdAt: string | undefined;
   updatedAt: string | undefined;
+  /** Unique keys from attribute `unique` options: key name → attribute names (in definition order). */
+  uniqueKeys: ReadonlyMap<string, readonly string[]>;
   options: DefinitionOptions;
 }>;
 
@@ -145,6 +147,31 @@ const autoPrimaryKey = (attributes: ModelAttributes, tableName: string): ModelAt
   return {
     id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, autoIncrement: true },
   };
+};
+
+const uniqueKeyName = (tableName: string, attribute: AttributeDefinition): string | undefined =>
+  attribute.unique === undefined || attribute.unique === false
+    ? undefined
+    : typeof attribute.unique === 'string'
+      ? attribute.unique
+      : typeof attribute.unique === 'object' && attribute.unique.name !== undefined
+        ? attribute.unique.name
+        : `${tableName}_${attribute.fieldName}_unique`;
+
+const uniqueKeysOf = (
+  tableName: string,
+  attributes: readonly AttributeDefinition[],
+): ReadonlyMap<string, readonly string[]> => {
+  const named = attributes.flatMap((attribute) => {
+    const name = uniqueKeyName(tableName, attribute);
+    return name === undefined ? [] : [[name, attribute.fieldName] as const];
+  });
+  return new Map(
+    [...new Set(named.map(([name]) => name))].map((name) => [
+      name,
+      named.filter(([key]) => key === name).map(([, attribute]) => attribute),
+    ]),
+  );
 };
 
 const timestampAttributes = (
@@ -210,6 +237,7 @@ export const normalizeDefinition = (
       .map((attribute) => attribute.fieldName),
     createdAt,
     updatedAt,
+    uniqueKeys: uniqueKeysOf(tableName, [...normalized.values()]),
     options: merged,
   });
 };
