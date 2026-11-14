@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 1 (M0–M2) — Delivery Complete; next cycle: M3 (hooks, scopes, paranoid, validations)
+**Current phase:** Cycle 2 (M3) — Planning Complete; implementing T20
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -42,3 +42,11 @@
 - QA: `.10x/reviews/2026-11-14-qa-report.md` — release-ready for 0.x.
 - Security: `.10x/reviews/2026-11-14-security-review.md` — no open High/Medium.
 - Ops: `decisions/devops/`, `decisions/sre/` (runbooks).
+
+## Cycle 2 (M3) tasks — spec `.10x/specs/2026-11-14-m3-model-lifecycle-design.md`, ADR-008
+- [ ] T20 hooks
+- [ ] T21 validation (validator.js + Standard Schema)
+- [ ] T22 scopes
+- [ ] T23 paranoid
+- [ ] T24 optimistic locking
+- [ ] T25 tests + docs
