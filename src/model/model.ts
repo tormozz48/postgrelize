@@ -658,7 +658,8 @@ export class Model<
       { ...options },
       scopes.whereMergeStrategy,
     ) as FindOptions;
-    if (normalizeIncludes(this, scoped.include).some((node) => !node.separate)) {
+    const includes = normalizeIncludes(this, scoped.include);
+    if (includes.some((node) => !node.separate)) {
       throw new Error('findEach does not support joined includes');
     }
     const batchSize = cursor.batchSize ?? 100;
@@ -685,9 +686,11 @@ export class Model<
         if (batch.rows.length === 0) {
           break;
         }
-        for (const row of batch.rows) {
-          yield fromRow(this, row);
+        const instances = batch.rows.map((row) => fromRow(this, row));
+        if (includes.length > 0) {
+          await loadSeparate(instances, includes, { transaction });
         }
+        yield* instances;
       }
     } catch (error) {
       failed = true;

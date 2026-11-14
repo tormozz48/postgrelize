@@ -59,4 +59,32 @@ describe('compat: Sequelize issues fixed upstream', () => {
       const row = (await Event.findOne({ raw: true })) as Record<string, Date> | null;
       return [row?.['created_at']?.toISOString(), row?.['updated_at']?.toISOString()];
     }));
+
+  it('separate include with limit applies the limit per parent', () =>
+    expectSameResult('', async (lib, sequelize) => {
+      const { DataTypes } = lib;
+      const Author = sequelize.define('Author', { name: DataTypes.STRING });
+      const Post = sequelize.define('Post', { title: DataTypes.STRING });
+      Author.hasMany(Post, { as: 'posts' });
+      await sequelize.sync();
+      const authors = await Author.bulkCreate([{ name: 'a' }, { name: 'b' }]);
+      await Post.bulkCreate(
+        authors.flatMap((author) =>
+          ['1', '2', '3'].map((n) => ({
+            title: `${String(author.get('name'))}${n}`,
+            AuthorId: author.get('id'),
+          })),
+        ),
+      );
+      const found = await Author.findAll({
+        include: [{ association: 'posts', separate: true, limit: 2, order: [['title', 'DESC']] }],
+        order: [['id', 'ASC']],
+      });
+      return found.map((author) => [
+        author.get('name'),
+        (author.get('posts') as { get: (key: string) => unknown }[]).map((post) =>
+          post.get('title'),
+        ),
+      ]);
+    }));
 });

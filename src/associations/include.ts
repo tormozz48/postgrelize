@@ -746,9 +746,11 @@ export const loadSeparate = async (
         paranoid: node.paranoid,
       } as never)) as Instance[];
       parents.forEach((parent) => {
-        (parent.dataValues as Record<string, unknown>)[node.as] = rows.filter(
+        const own = rows.filter(
           (row) => row.get(node.association.foreignKey) === parent.get(node.association.sourceKey),
         );
+        (parent.dataValues as Record<string, unknown>)[node.as] =
+          node.limit === undefined ? own : own.slice(0, node.limit);
       });
     }),
   );

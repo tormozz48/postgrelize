@@ -347,4 +347,37 @@ describe('Sequelize issues fixed in postgrelize', () => {
       });
       expect(found.map((user) => user.get('name'))).toEqual(['b', 'c']);
     }));
+
+  it('findEach loads separate includes for every batch', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Author = sequelize.define('Author', { name: DataTypes.STRING });
+      const Post = sequelize.define('Post', { title: DataTypes.STRING });
+      Author.hasMany(Post, { as: 'posts' });
+      await sequelize.sync();
+      const authors = await Author.bulkCreate([{ name: 'a' }, { name: 'b' }, { name: 'c' }]);
+      await Post.bulkCreate(
+        authors.slice(0, 2).map((author) => ({
+          title: `${String(author.get('name'))}1`,
+          AuthorId: author.get('id'),
+        })),
+      );
+      const seen: unknown[] = [];
+      for await (const author of Author.findEach(
+        { include: [{ association: 'posts', separate: true }], order: [['id', 'ASC']] },
+        { batchSize: 2 },
+      )) {
+        seen.push([
+          author.get('name'),
+          (author.get('posts') as { get: (key: string) => unknown }[]).map((post) =>
+            post.get('title'),
+          ),
+        ]);
+      }
+      expect(seen).toEqual([
+        ['a', ['a1']],
+        ['b', ['b1']],
+        ['c', []],
+      ]);
+    }));
 });
