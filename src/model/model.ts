@@ -92,7 +92,7 @@ import {
   insertedFlagColumn,
   type OnConflictOptions,
 } from './on-conflict.ts';
-import { returningAll } from './query-builders.ts';
+import { OLD_PREFIX, returningAll, withReturningOld } from './query-builders.ts';
 import type { OnConflictNode } from '../sql/ast.ts';
 import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from './runtime.ts';
 import type { WhereOptions } from './types.ts';
@@ -154,6 +154,7 @@ import {
 } from './conflict.ts';
 
 const insertedFlags = new WeakMap<object, boolean>();
+const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null>();
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -289,6 +290,14 @@ export class Model<
    */
   get wasInserted(): boolean | undefined {
     return insertedFlags.get(this);
+  }
+
+  /**
+   * For instances returned with `returningOld: true`: attribute values of the row before the
+   * statement, or `null` when the row did not exist (inserted). `undefined` otherwise. PostgreSQL 18+.
+   */
+  get oldValues(): Readonly<Record<string, unknown>> | null | undefined {
+    return oldValuesOf.get(this);
   }
 
   /** `Sequelize` instance the model belongs to. */
@@ -549,9 +558,13 @@ export class Model<
       ...(onConflict === undefined ? {} : { onConflict }),
       returning: [...returningAll(definition), insertedFlagColumn()],
     };
-    const result = await runtime.execute(compile(node), options);
+    const old = await returningOld(runtime, options);
+    const result = await runtime.execute(
+      compile(old ? withReturningOld(definition, node) : node),
+      options,
+    );
     return result.rows.map((row) => {
-      const instance = fromRow(this, withoutFlag(row));
+      const instance = fromWrittenRow(this, row, old);
       insertedFlags.set(instance, row[INSERTED_FLAG] === true);
       return instance;
     });
@@ -575,7 +588,14 @@ export class Model<
    */
   static async merge<M extends AnyModel>(
     this: ModelStatic<M>,
-    options: MergeOptions<Attributes<M>> & QueryOptionsBase & Readonly<{ returning?: boolean }>,
+    options: MergeOptions<Attributes<M>> &
+      QueryOptionsBase &
+      Readonly<{
+        /** Return written rows (PostgreSQL 17+). */
+        returning?: boolean;
+        /** With `returning`: expose pre-statement values as `instance.oldValues` (PostgreSQL 18+). */
+        returningOld?: boolean;
+      }>,
   ): Promise<MergeResult<M>> {
     const { definition, runtime } = stateOf(this);
     const version = await runtime.serverVersion();
@@ -590,18 +610,24 @@ export class Model<
         'merge with returning or whenNotMatchedBySource requires PostgreSQL 17 or newer',
       );
     }
+    if (options.returningOld === true && options.returning !== true) {
+      throw new Error('merge: returningOld requires returning: true');
+    }
+    const old = await returningOld(runtime, options);
+    const node = buildMerge(
+      definition,
+      options as MergeOptions<unknown>,
+      options.returning === true,
+    );
     const result = await runtime.execute(
-      compile(buildMerge(definition, options as MergeOptions<unknown>, options.returning === true)),
+      compile(old ? withReturningOld(definition, node) : node),
       options,
     );
     return {
       rowCount: result.rowCount,
       rows: result.rows.map((row) => ({
         action: String(row[MERGE_ACTION]) as MergeActionName,
-        instance: fromRow(
-          this,
-          Object.fromEntries(Object.entries(row).filter(([key]) => key !== MERGE_ACTION)),
-        ),
+        instance: fromWrittenRow(this, row, old),
       })),
     };
   }
@@ -1563,6 +1589,10 @@ export class Model<
     if (individual && options.from !== undefined) {
       throw new Error('update: individualHooks cannot be combined with from');
     }
+    if (options.returningOld === true && options.returning !== true) {
+      throw new Error('update: returningOld requires returning: true');
+    }
+    const old = await returningOld(runtime, options);
     const from = joinSources(options.from);
     const node = buildUpdate(
       definition,
@@ -1580,8 +1610,11 @@ export class Model<
           : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
       },
     );
-    const result = await runtime.execute(compile(node), options);
-    const updated = result.rows.map((row) => fromRow(this, row));
+    const result = await runtime.execute(
+      compile(old ? withReturningOld(definition, node) : node),
+      options,
+    );
+    const updated = result.rows.map((row) => fromWrittenRow(this, row, old));
     if (individual) {
       await updated.reduce<Promise<unknown>>(
         (previous, instance) =>
@@ -2346,23 +2379,70 @@ export const parseModelRow = (
 ): Readonly<Record<string, unknown>> => parseRow(stateOf(model).definition, row);
 
 const withoutFlag = (row: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> =>
-  Object.fromEntries(Object.entries(row).filter(([key]) => key !== INSERTED_FLAG));
+  Object.fromEntries(
+    Object.entries(row).filter(
+      ([key]) => key !== INSERTED_FLAG && key !== MERGE_ACTION && !key.startsWith(OLD_PREFIX),
+    ),
+  );
+
+const returningOld = async (
+  runtime: Readonly<{ serverVersion: () => Promise<number> }>,
+  options: Readonly<{ returningOld?: boolean }>,
+): Promise<boolean> => {
+  if (options.returningOld !== true) {
+    return false;
+  }
+  if ((await runtime.serverVersion()) < 180000) {
+    throw new Error('returningOld requires PostgreSQL 18 or newer');
+  }
+  return true;
+};
+
+const previousValues = (
+  definition: ModelDefinition,
+  row: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> | null => {
+  const old = Object.fromEntries(
+    Object.entries(row)
+      .filter(([key]) => key.startsWith(OLD_PREFIX))
+      .map(([key, value]) => [key.slice(OLD_PREFIX.length), value]),
+  );
+  return definition.primaryKeys.every((name) => old[name] === null || old[name] === undefined)
+    ? null
+    : parseRow(definition, old);
+};
+
+const fromWrittenRow = <M extends AnyModel>(
+  model: ModelStatic<M>,
+  row: Readonly<Record<string, unknown>>,
+  old: boolean,
+): M => {
+  const instance = fromRow(model, withoutFlag(row));
+  if (old) {
+    oldValuesOf.set(instance, previousValues(stateOf(model).definition, row));
+  }
+  return instance;
+};
 
 const insertWithConflict = async <M extends AnyModel>(
   model: ModelStatic<M>,
   rows: readonly Values[],
   onConflict: OnConflictNode | undefined,
-  options: QueryOptionsBase & Readonly<{ overriding?: 'system' | 'user' }>,
+  options: QueryOptionsBase & Readonly<{ overriding?: 'system' | 'user'; returningOld?: boolean }>,
 ): Promise<M[]> => {
   const { definition, runtime } = stateOf(model);
+  const old = await returningOld(runtime, options);
   const insert = buildInsert(definition, rows, {
     ...(onConflict === undefined ? {} : { onConflict }),
     ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
     returning: [...returningAll(definition), insertedFlagColumn()],
   });
-  const result = await runtime.execute(compile(insert), options);
+  const result = await runtime.execute(
+    compile(old ? withReturningOld(definition, insert) : insert),
+    options,
+  );
   return result.rows.map((row) => {
-    const instance = fromRow(model, withoutFlag(row));
+    const instance = fromWrittenRow(model, row, old);
     insertedFlags.set(instance, row[INSERTED_FLAG] === true);
     return instance;
   });

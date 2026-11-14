@@ -198,6 +198,8 @@ export type InsertOptions<T = Values> = QueryOptionsBase &
     validate?: boolean;
     /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
     overriding?: 'system' | 'user';
+    /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL 18+. */
+    returningOld?: boolean;
   }>;
 
 /** Options shared by bulk `update`, `destroy` and `restore`. */
@@ -215,6 +217,8 @@ export type InsertFromOptions<T = Values> = QueryOptionsBase &
     columns: readonly (keyof T & string)[];
     /** Advanced `ON CONFLICT` handling. */
     onConflict?: OnConflictOptions<T>;
+    /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL 18+. */
+    returningOld?: boolean;
   }>;
 
 /** Options of `Model.copyFrom`. PostgreSQL extension. */
@@ -252,6 +256,8 @@ export type UpdateOptions<T = Values> = QueryOptionsBase &
     silent?: boolean;
     /** Return updated rows as the second element of the result. */
     returning?: boolean;
+    /** With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL 18+. */
+    returningOld?: boolean;
     /** Validate the new values. Default true. */
     validate?: boolean;
     /** For paranoid models: `false` also updates soft-deleted rows. */

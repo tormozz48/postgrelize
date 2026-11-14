@@ -161,8 +161,12 @@ const nonEmpty = <T>(
   render: (items: readonly T[]) => Chunks,
 ): Chunks => (items === undefined || items.length === 0 ? [] : render(items));
 
-const returning = (items: readonly ExprNode[] | undefined): Chunks =>
-  nonEmpty(items, (list) => [' RETURNING ', ...exprList(list)]);
+const returning = (items: readonly ExprNode[] | undefined, oldAlias?: string): Chunks =>
+  nonEmpty(items, (list) => [
+    ' RETURNING ',
+    oldAlias === undefined ? '' : `WITH (OLD AS ${quoteIdent(oldAlias)}) `,
+    ...exprList(list),
+  ]);
 
 const where = (node: ExprNode | undefined): Chunks =>
   optional(node, (cond) => [' WHERE ', ...expr(cond)]);
@@ -249,7 +253,7 @@ const insert = (node: InsertNode): Chunks => [
   ...tableRef(node.table),
   ...insertValues(node),
   ...optional(node.onConflict, onConflict),
-  ...returning(node.returning),
+  ...returning(node.returning, node.returningOld),
 ];
 
 const update = (node: UpdateNode): Chunks => [
@@ -259,7 +263,7 @@ const update = (node: UpdateNode): Chunks => [
   ...setList(node.set),
   ...nonEmpty(node.from, (items) => [' FROM ', ...join(items.map(fromItem), ', ')]),
   ...where(node.where),
-  ...returning(node.returning),
+  ...returning(node.returning, node.returningOld),
 ];
 
 const remove = (node: DeleteNode): Chunks => [
@@ -327,7 +331,7 @@ const merge = (node: MergeNode): Chunks => [
     ' THEN ',
     ...mergeAction(clause.action),
   ]),
-  ...returning(node.returning),
+  ...returning(node.returning, node.returningOld),
 ];
 
 const statement = (node: StatementNode): Chunks => {

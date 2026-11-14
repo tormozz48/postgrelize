@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Released 0.4.0; next backlog: RETURNING old/new (PG18), default scopes of included models (spec `.10x/specs/2026-11-14-replication-nested-create-design.md`, ADR-014)
+**Current phase:** Backlog — RETURNING old values + include scopes done (spec `.10x/specs/2026-11-14-returning-old-include-scopes-design.md`, ADR-015)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -106,3 +106,7 @@
 
 ## Release 0.4.0 (2026-11-14)
 - Tag `v0.4.0` → release.yml, `@tormozz48/postgrelize@0.4.0`. Contents: read replicas (`replication`, `useMaster`), nested creation via `include`.
+
+## Backlog — RETURNING old values + include scopes (2026-11-14)
+- [x] `returningOld` / `oldValues` (PG18), scopes of included models (v6 parity).
+- 213 tests green locally on PG16; integration + compat green on PG18; lint, types, build, docs green.
