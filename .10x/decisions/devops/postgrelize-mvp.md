@@ -30,3 +30,4 @@ GitHub Packages versions can't be overwritten; publish a fixed patch version. De
 ## Releases
 - 0.1.0 — 2026-11-14, via `npm version 0.1.0` + tag push; release.yml green, package published.
 - 0.2.0 — 2026-11-14, P1 features; release.yml green, package published.
+- 0.3.0 — 2026-11-14, CTE + copyTo; release.yml green, package published.
