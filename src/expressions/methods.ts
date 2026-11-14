@@ -77,6 +77,10 @@ export type Excluded = Method<
 /** Any SQL expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. */
 export type SqlExpression = Literal | Fn | Col | Cast | Json | Where | Excluded;
 
+const FUNCTION_NAME = /^[A-Za-z_][\w$]*(?:\.[A-Za-z_][\w$]*)?$/;
+
+const TYPE_NAME = /^[A-Za-z_][\w ]*(?:\(\s*\d+\s*(?:,\s*\d+\s*)?\))?(?:\[\])*$/;
+
 const make = <K extends string, T extends object>(kind: K, fields: T): Method<K, T> =>
   Object.freeze({ [methodKind]: kind, ...fields }) as Method<K, T>;
 
@@ -107,7 +111,12 @@ export const literal = (val: string): Literal => make('literal', { val });
  * await User.findAll({ where: where(fn('lower', col('email')), 'a@b.c') });
  * ```
  */
-export const fn = (name: string, ...args: readonly unknown[]): Fn => make('fn', { fn: name, args });
+export const fn = (name: string, ...args: readonly unknown[]): Fn => {
+  if (!FUNCTION_NAME.test(name)) {
+    throw new Error(`Invalid function name: ${name}`);
+  }
+  return make('fn', { fn: name, args });
+};
 
 /**
  * Creates a column reference. Dots separate table and column: `'user.id'`.
@@ -124,8 +133,12 @@ export const col = (name: string): Col => make('col', { col: name });
  * @param type - PostgreSQL type name, e.g. `'integer'`.
  * @returns Cast expression.
  */
-export const cast = (val: unknown, type: string): Cast =>
-  make('cast', { val, type: type.trim(), json: false });
+export const cast = (val: unknown, type: string): Cast => {
+  if (!TYPE_NAME.test(type.trim())) {
+    throw new Error(`Invalid cast type: ${type}`);
+  }
+  return make('cast', { val, type: type.trim(), json: false });
+};
 
 /**
  * Accesses a JSON(B) value by path (`json('meta.a.b')`) or builds JSON conditions

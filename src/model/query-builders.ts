@@ -210,6 +210,10 @@ const orderItem = (
   return { expr: orderTarget(definition, alias, ctx, item) };
 };
 
+const invalidOrder = (): never => {
+  throw new Error('Order must be type of array or instance of a valid sequelize method.');
+};
+
 const orderBy = (
   definition: ModelDefinition,
   alias: string,
@@ -220,7 +224,9 @@ const orderBy = (
     ? []
     : Array.isArray(order)
       ? order.map((item: unknown) => orderItem(definition, alias, ctx, item))
-      : [{ expr: isExpression(order) ? toExpr(order, ctx) : raw(String(order)) }];
+      : isExpression(order)
+        ? [{ expr: toExpr(order, ctx) }]
+        : invalidOrder();
 
 const groupBy = (
   definition: ModelDefinition,

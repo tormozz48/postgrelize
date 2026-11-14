@@ -100,7 +100,46 @@ const expressionCondition = (
   }
   return value.comparator === '='
     ? attributeCondition(left, value.logic, ctx)
-    : binary(value.comparator, left.node, toExpr(value.logic, ctx));
+    : binary(validComparator(value.comparator), left.node, toExpr(value.logic, ctx));
+};
+
+const ALLOWED_CAST_TYPES: ReadonlySet<string> = new Set([
+  'integer',
+  'int',
+  'smallint',
+  'bigint',
+  'float',
+  'real',
+  'double precision',
+  'decimal',
+  'numeric',
+  'boolean',
+  'text',
+  'char',
+  'varchar',
+  'date',
+  'timestamp',
+  'timestamptz',
+  'json',
+  'jsonb',
+  'uuid',
+]);
+
+const validCastType = (type: string): string => {
+  if (!ALLOWED_CAST_TYPES.has(type.trim().toLowerCase())) {
+    throw new Error(`Invalid cast type: ${type}`);
+  }
+  return type;
+};
+
+const SQL_COMPARATOR =
+  /^(?:[=<>!~*@&|?#+\-/%^]{1,3}|(?:NOT\s+)?(?:I?LIKE|IN|SIMILAR\s+TO)|IS(?:\s+NOT)?(?:\s+DISTINCT\s+FROM)?)$/i;
+
+const validComparator = (comparator: string): string => {
+  if (!SQL_COMPARATOR.test(comparator.trim())) {
+    throw new Error(`Invalid comparator: ${comparator}`);
+  }
+  return comparator.trim();
 };
 
 const withCast = (operand: Operand, type: string | undefined): Operand =>
@@ -121,7 +160,7 @@ const attributeOperand = (key: string, ctx: WhereContext): Operand => {
       : ref === undefined
         ? { node: column }
         : { node: column, ref };
-  return withCast(operand, castType);
+  return withCast(operand, castType === undefined ? undefined : validCastType(castType));
 };
 
 const jsonCastFor = (value: unknown): string | undefined =>
