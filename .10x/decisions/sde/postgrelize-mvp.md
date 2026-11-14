@@ -110,3 +110,8 @@ Deviations:
 ## P1-A — Query power — done 2026-11-14
 Built: expression kinds `subquery` (thunk built by `Model.subquery`, no model import in the where compiler), `exists`, `over`, `tuple`; AST `OverNode`, `SelectNode.distinctOn`; `buildSelect` alias override; `src/sql/order.ts` shared direction allowlist.
 Tests: integration +5 (IN subquery, scalar subquery, EXISTS/NOT EXISTS correlated, DISTINCT ON, window ranking, keyset row comparison, direction validation in windows), unit +1.
+
+## P1-B — Write power — done 2026-11-14
+Built: AST `FromItem`, `UpdateNode.from`, `DeleteNode.using`, `InsertNode.select`, `MergeNode` (+ compiler); `src/model/write-power.ts` (join sources, MERGE builder with typed VALUES sources, timestamps via `now()`); `Model.insertFrom`, `Model.merge`, `update({ from })`, `destroy({ using })`; `runtime.serverVersion()` (cached `server_version_num`).
+Tests: integration +6 (update from, delete using, insertFrom ± onConflict, merge rows/subquery, merge returning + NOT MATCHED BY SOURCE on 17+ / clear error on 16, option validation); verified locally on PG16 and PG17.
+Limits: `individualHooks` with `from` rejected; no hooks/validation for merge/insertFrom (bulk SQL operations).
