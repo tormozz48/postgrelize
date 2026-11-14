@@ -106,3 +106,7 @@ Deviations:
 - Indexes are created with `IF NOT EXISTS` instead of v6's `showIndex` diff.
 - `alter` does not compare/drop indexes or constraints other than adding missing FKs.
 - Not implemented: `createFunction`/`createTrigger`, `showIndex`, `getForeignKeysForTables`, `upsert` on QueryInterface, enum value migration on `alter` (v6 `ALTER TYPE ADD VALUE`).
+
+## P1-A — Query power — done 2026-11-14
+Built: expression kinds `subquery` (thunk built by `Model.subquery`, no model import in the where compiler), `exists`, `over`, `tuple`; AST `OverNode`, `SelectNode.distinctOn`; `buildSelect` alias override; `src/sql/order.ts` shared direction allowlist.
+Tests: integration +5 (IN subquery, scalar subquery, EXISTS/NOT EXISTS correlated, DISTINCT ON, window ranking, keyset row comparison, direction validation in windows), unit +1.
