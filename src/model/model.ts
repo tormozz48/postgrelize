@@ -1136,6 +1136,7 @@ export class Model<
         : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
     const insert = buildInsert(definition, [insertValues], {
       onConflict,
+      ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
       returning: [...returningAll(definition), insertedFlagColumn()],
     });
     const result = await runtime.execute(compile(insert), options);
@@ -1239,7 +1240,11 @@ export class Model<
         ...v6BulkConflict(definition, options as BulkCreateOptions),
       });
       const result = await runtime.execute(compile(insert), options);
-      instances.forEach((instance, index) => instance.#refresh(definition, result.rows[index]));
+      const returned =
+        options.ignoreDuplicates === true
+          ? insertedRowsOf(definition, rows, result.rows)
+          : result.rows;
+      instances.forEach((instance, index) => instance.#refresh(definition, returned[index]));
       return instances;
     })();
     if (opts['hooks'] === true) {
@@ -2387,6 +2392,44 @@ const withoutFlag = (row: Readonly<Record<string, unknown>>): Readonly<Record<st
       ([key]) => key !== INSERTED_FLAG && key !== MERGE_ACTION && !key.startsWith(OLD_PREFIX),
     ),
   );
+
+const sameValue = (left: unknown, right: unknown): boolean =>
+  left === right ||
+  (left instanceof Date && right instanceof Date
+    ? left.getTime() === right.getTime()
+    : JSON.stringify(left) === JSON.stringify(right) || String(left) === String(right));
+
+/**
+ * With `ON CONFLICT DO NOTHING` RETURNING has rows only for inserted records (in VALUES order).
+ * Aligns them with the input rows; skipped records get `undefined`.
+ */
+const insertedRowsOf = (
+  definition: ModelDefinition,
+  inputs: readonly Values[],
+  returned: readonly Readonly<Record<string, unknown>>[],
+): readonly (Readonly<Record<string, unknown>> | undefined)[] =>
+  inputs.reduce<
+    Readonly<{ aligned: readonly (Readonly<Record<string, unknown>> | undefined)[]; next: number }>
+  >(
+    (state, input) => {
+      const row = returned[state.next];
+      const parsed = row === undefined ? undefined : parseRow(definition, row);
+      const matches =
+        parsed !== undefined &&
+        Object.entries(input).every(
+          ([name, value]) =>
+            value === undefined ||
+            (value === null && definition.attributes.get(name)?.autoIncrement === true) ||
+            isExpression(value) ||
+            !(name in parsed) ||
+            sameValue(parsed[name], value),
+        );
+      return matches
+        ? { aligned: [...state.aligned, row], next: state.next + 1 }
+        : { aligned: [...state.aligned, undefined], next: state.next };
+    },
+    { aligned: [], next: 0 },
+  ).aligned;
 
 const returningOld = async (
   runtime: Readonly<{ serverVersion: () => Promise<number> }>,

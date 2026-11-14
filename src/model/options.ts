@@ -183,6 +183,8 @@ export type UpsertOptions<T = Values> = SaveOptions<T> &
     conflictFields?: readonly string[];
     /** Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension. */
     onConflict?: OnConflictOptions<T>;
+    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
+    overriding?: 'system' | 'user';
   }>;
 
 /** Options of `Model.insert`. PostgreSQL extension. */
