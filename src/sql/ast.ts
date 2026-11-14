@@ -71,8 +71,25 @@ export type LockNode = Readonly<{
   wait?: 'NOWAIT' | 'SKIP LOCKED';
 }>;
 
+export type UnionNode = Readonly<{
+  kind: 'union';
+  left: SelectNode;
+  right: SelectNode;
+  all: boolean;
+}>;
+
+export type CteNode = Readonly<{
+  name: string;
+  query: SelectNode | UnionNode;
+  materialized?: boolean;
+}>;
+
+export type WithClause = Readonly<{ recursive: boolean; ctes: readonly CteNode[] }>;
+
 export type SelectNode = Readonly<{
   kind: 'select';
+  with?: WithClause;
+  extraFrom?: readonly FromItem[];
   distinct?: boolean;
   distinctOn?: readonly ExprNode[];
   columns: readonly ExprNode[];

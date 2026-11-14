@@ -16,17 +16,19 @@ import { stateOf } from './state.ts';
 import type { WhereOptions } from './types.ts';
 
 /** Extra relations for `UPDATE ... FROM` / `DELETE ... USING`, keyed by alias. PostgreSQL extension. */
-export type JoinSources = Readonly<Record<string, ModelStatic<AnyModel> | Subquery>>;
+export type JoinSources = Readonly<Record<string, ModelStatic<AnyModel> | Subquery | string>>;
 
 const isSubquery = (value: unknown): value is Subquery =>
   isExpression(value) && value[methodKind] === 'subquery';
 
 /** Converts `from` / `using` options into FROM items. */
 export const joinSources = (sources: JoinSources | undefined): readonly FromItem[] =>
-  Object.entries(sources ?? {}).map(([alias, source]) =>
-    isSubquery(source)
-      ? { subquery: source.build(), alias }
-      : tableOf(stateOf(source).definition, alias),
+  Object.entries(sources ?? {}).map(([alias, source]): FromItem =>
+    typeof source === 'string'
+      ? { name: source, ...(alias === source ? {} : { alias }) }
+      : isSubquery(source)
+        ? { subquery: source.build(), alias }
+        : tableOf(stateOf(source).definition, alias),
   );
 
 /** One `WHEN MATCHED` / `WHEN NOT MATCHED BY SOURCE` action of `merge`. */

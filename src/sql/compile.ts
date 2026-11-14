@@ -6,6 +6,8 @@ import type {
   JoinNode,
   MergeAction,
   MergeNode,
+  UnionNode,
+  WithClause,
   LockNode,
   OnConflictNode,
   OrderNode,
@@ -165,13 +167,37 @@ const returning = (items: readonly ExprNode[] | undefined): Chunks =>
 const where = (node: ExprNode | undefined): Chunks =>
   optional(node, (cond) => [' WHERE ', ...expr(cond)]);
 
+const queryExpr = (node: SelectNode | UnionNode): Chunks =>
+  node.kind === 'union'
+    ? [...select(node.left), node.all ? ' UNION ALL ' : ' UNION ', ...select(node.right)]
+    : select(node);
+
+const withClause = (clause: WithClause): Chunks => [
+  clause.recursive ? 'WITH RECURSIVE ' : 'WITH ',
+  ...join(
+    clause.ctes.map((cte) => [
+      `${quoteIdent(cte.name)} AS `,
+      cte.materialized === undefined
+        ? ''
+        : cte.materialized
+          ? 'MATERIALIZED '
+          : 'NOT MATERIALIZED ',
+      ...wrap(queryExpr(cte.query)),
+    ]),
+    ', ',
+  ),
+  ' ',
+];
+
 const select = (node: SelectNode): Chunks => [
+  ...optional(node.with, withClause),
   node.distinct === true || (node.distinctOn ?? []).length > 0 ? 'SELECT DISTINCT ' : 'SELECT ',
   ...nonEmpty(node.distinctOn, (items) => ['ON ', ...wrap(exprList(items)), ' ']),
   ...exprList(node.columns),
   ' FROM ',
   ...fromItem(node.from),
   ...(node.joins ?? []).flatMap(joinClause),
+  ...(node.extraFrom ?? []).flatMap((item) => [', ', ...fromItem(item)]),
   ...where(node.where),
   ...nonEmpty(node.groupBy, (items) => [' GROUP BY ', ...exprList(items)]),
   ...optional(node.having, (cond) => [' HAVING ', ...expr(cond)]),

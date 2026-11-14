@@ -1,3 +1,4 @@
+import type { CteFindOptions } from './cte.ts';
 import type { JoinSources } from './write-power.ts';
 import type { IncludeOption } from '../associations/include.ts';
 import type { HooksOption } from '../hooks/hooks.ts';
@@ -98,7 +99,8 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     include?: IncludeOption;
     /** `false` disables the sub-query used for `limit` with multi includes. */
     subQuery?: boolean;
-  }>;
+  }> &
+  CteFindOptions;
 
 /** Options of `count`. */
 export type CountOptions<T = Values> = QueryOptionsBase &
@@ -117,7 +119,8 @@ export type CountOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Join associations (rows are counted per joined row unless `distinct`). */
     include?: IncludeOption;
-  }>;
+  }> &
+  CteFindOptions;
 
 /** Options of `aggregate`, `max`, `min`, `sum`. */
 export type AggregateOptions<T = Values> = CountOptions<T> &
@@ -214,6 +217,23 @@ export type CopyFromOptions<T = Values> = QueryOptionsBase &
     /** Attributes to copy, in row order; default: keys of the first row of an array source. */
     columns?: readonly (keyof T & string)[];
   }>;
+
+/** Output format options of `Model.copyTo`. PostgreSQL extension. */
+export type CopyToFormatOptions = Readonly<{
+  /** `text` (default), `csv` or `binary`. */
+  format?: 'text' | 'csv' | 'binary';
+  /** Emit a header line (text / csv). */
+  header?: boolean;
+  /** Single-character field delimiter. */
+  delimiter?: string;
+  /** String written for NULL values. */
+  nullString?: string;
+  /** Single-character quote (csv). */
+  quote?: string;
+}>;
+
+/** Options of `Model.copyTo`. */
+export type CopyToOptions<T = Values> = FindOptions<T> & CopyToFormatOptions;
 
 /** Options of static `update`. */
 export type UpdateOptions<T = Values> = QueryOptionsBase &
