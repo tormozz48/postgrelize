@@ -52,6 +52,8 @@ export type ConnectionEffects = Readonly<{
   ) => Effect.Effect<QueryResult, BaseError>;
   /** A pooled client of the primary, released when the surrounding scope closes. */
   client: Effect.Effect<Client, ConnectionError, Scope.Scope>;
+  /** A pooled client of the primary that the caller releases (transactions). */
+  acquire: Effect.Effect<Client, ConnectionError>;
   /** Streams `lines` into `COPY ... FROM STDIN`; succeeds with the copied row count. */
   copyFrom: (
     text: string,
@@ -262,7 +264,14 @@ export const createConnectionManager = (
   }
 
   return {
-    effects: { execute, client: scopedClient(pool), copyFrom, dedicated, close },
+    effects: {
+      execute,
+      client: scopedClient(pool),
+      acquire: connect(pool),
+      copyFrom,
+      dedicated,
+      close,
+    },
     execute: (query, options) => Effect.runPromise(execute(query, options)),
     acquire: () => Effect.runPromise(connect(pool)),
     copyFrom: (text, lines, options) => Effect.runPromise(copyFrom(text, lines, options)),
