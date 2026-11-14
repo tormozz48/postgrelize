@@ -16,7 +16,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "paths": { "postgrelize": ["./src/index.ts"] }
   },
-  "include": ["src", "tests", "*.config.ts"]
+  "include": ["src", "tests", "docs/examples", "*.config.ts"]
 }
