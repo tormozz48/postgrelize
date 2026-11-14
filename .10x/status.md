@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1–S3 done; next: separate-include fixes, then S4 Effect core
+**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1–S3 done; S4 Effect core in progress (spec `2026-11-15-s4-effect-core-design.md`, ADR-017)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
