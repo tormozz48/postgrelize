@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog — RETURNING old values + include scopes done (spec `.10x/specs/2026-11-14-returning-old-include-scopes-design.md`, ADR-015)
+**Current phase:** Released 0.5.0; gap-analysis backlog done — next work needs a new brainstorm
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -110,3 +110,6 @@
 ## Backlog — RETURNING old values + include scopes (2026-11-14)
 - [x] `returningOld` / `oldValues` (PG18), scopes of included models (v6 parity).
 - 213 tests green locally on PG16; integration + compat green on PG18; lint, types, build, docs green.
+
+## Release 0.5.0 (2026-11-14)
+- Tag `v0.5.0` → release.yml green, `@tormozz48/postgrelize@0.5.0` published. Contents: `returningOld` / `oldValues` (PG18), scopes of included models.
