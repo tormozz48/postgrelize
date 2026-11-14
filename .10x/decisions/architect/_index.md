@@ -1,1 +1,1 @@
- · 010 DDL with escaped literals
+ · 011 subquery expressions · 012 connection features
