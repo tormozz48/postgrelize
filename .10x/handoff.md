@@ -1,3 +1,3 @@
 # Handoff
 
-**From:** backlog (RETURNING old values + include scopes) complete → **To:** 0.5.0 released. Backlog from the gap analysis is exhausted; next candidates need a new brainstorm.
+**From:** Backlog 2 brainstorm (owner-approved roadmap) → **To:** S1 README (Staff Engineer + DevOps): detailed spec, coverage job, badges.
