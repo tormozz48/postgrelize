@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 3 (M4) — Implementation + Verification complete; PR open. Next: M5 (QueryInterface + sync)
+**Current phase:** Cycle 4 (M5) — Planning complete; implementing T33
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -67,3 +67,10 @@
 ## Cycle 3 (M4) verification (2026-11-14)
 - 159 tests green locally (compat 49 scenarios vs sequelize@6), types, build, docs.
 - Security: include `where`/`order`/attributes go through existing where/order compilers (identifiers quoted, values bound); include aliases come from association definitions, quoted.
+
+## Cycle 4 (M5) tasks — spec `.10x/specs/2026-11-14-m5-query-interface-design.md`, ADR-010
+- [ ] T33 DDL builders
+- [ ] T34 QueryInterface
+- [ ] T35 FK/indexes/Deferrable/NULLS NOT DISTINCT
+- [ ] T36 sync/drop
+- [ ] T37 tests
