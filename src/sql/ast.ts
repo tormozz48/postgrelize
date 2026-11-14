@@ -24,6 +24,12 @@ export type BetweenNode = Readonly<{
 export type ExcludedNode = Readonly<{ kind: 'excluded'; column: string }>;
 export type SubqueryNode = Readonly<{ kind: 'subquery'; query: SelectNode }>;
 export type AliasNode = Readonly<{ kind: 'alias'; expr: ExprNode; alias: string }>;
+export type OverNode = Readonly<{
+  kind: 'over';
+  expr: ExprNode;
+  partitionBy: readonly ExprNode[];
+  orderBy: readonly OrderNode[];
+}>;
 export type ValuesNode = Readonly<{ kind: 'values'; rows: readonly (readonly ExprNode[])[] }>;
 
 export type ExprNode =
@@ -42,7 +48,8 @@ export type ExprNode =
   | ExcludedNode
   | SubqueryNode
   | AliasNode
-  | ValuesNode;
+  | ValuesNode
+  | OverNode;
 
 export type TableRef = Readonly<{ name: string; schema?: string; alias?: string }>;
 
@@ -67,6 +74,7 @@ export type LockNode = Readonly<{
 export type SelectNode = Readonly<{
   kind: 'select';
   distinct?: boolean;
+  distinctOn?: readonly ExprNode[];
   columns: readonly ExprNode[];
   from: TableRef | Readonly<{ subquery: SelectNode; alias: string }>;
   joins?: readonly JoinNode[];

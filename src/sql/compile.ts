@@ -97,6 +97,23 @@ const expr = (node: ExprNode): Chunks => {
       return wrap(select(node.query));
     case 'alias':
       return [...expr(node.expr), ` AS ${quoteIdent(node.alias)}`];
+    case 'over':
+      return [
+        ...expr(node.expr),
+        ' OVER (',
+        ...join(
+          [
+            ...(node.partitionBy.length === 0
+              ? []
+              : [['PARTITION BY ', ...exprList(node.partitionBy)]]),
+            ...(node.orderBy.length === 0
+              ? []
+              : [['ORDER BY ', ...join(node.orderBy.map(orderItem), ', ')]]),
+          ],
+          ' ',
+        ),
+        ')',
+      ];
     case 'values':
       return [
         'VALUES ',
@@ -147,7 +164,8 @@ const where = (node: ExprNode | undefined): Chunks =>
   optional(node, (cond) => [' WHERE ', ...expr(cond)]);
 
 const select = (node: SelectNode): Chunks => [
-  node.distinct === true ? 'SELECT DISTINCT ' : 'SELECT ',
+  node.distinct === true || (node.distinctOn ?? []).length > 0 ? 'SELECT DISTINCT ' : 'SELECT ',
+  ...nonEmpty(node.distinctOn, (items) => ['ON ', ...wrap(exprList(items)), ' ']),
   ...exprList(node.columns),
   ' FROM ',
   ...fromItem(node.from),

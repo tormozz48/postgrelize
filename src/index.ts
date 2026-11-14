@@ -113,17 +113,34 @@ export type {
 } from './data-types/data-types.ts';
 export { Op } from './expressions/op.ts';
 export type { OpSymbol } from './expressions/op.ts';
-export { cast, col, excluded, fn, json, literal, where } from './expressions/methods.ts';
+export {
+  cast,
+  col,
+  excluded,
+  exists,
+  fn,
+  json,
+  literal,
+  notExists,
+  over,
+  tuple,
+  where,
+} from './expressions/methods.ts';
 export type {
   Cast,
   Col,
   Excluded,
+  Exists,
   Fn,
   Json,
   Literal,
+  Over,
   SqlExpression,
+  Subquery,
+  Tuple,
   Where,
   WhereFactory,
+  WindowOptions,
 } from './expressions/methods.ts';
 export {
   Transaction,

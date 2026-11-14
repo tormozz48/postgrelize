@@ -53,7 +53,7 @@ import {
   type ScopeOptions,
   type ScopeSelector,
 } from './scopes.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { isExpression, subqueryExpression, type Subquery } from '../expressions/methods.ts';
 import { compile } from '../sql/compile.ts';
 import {
   normalizeDefinition,
@@ -445,6 +445,43 @@ export class Model<
   static async drop(options: DropOptions = {}): Promise<void> {
     const { definition, runtime } = stateOf(this);
     await dropModel(definition, runtime.queryInterface(), options);
+  }
+
+  /**
+   * Builds a SELECT that can be embedded in another query: in `where` (`[Op.in]`, `=`, `exists()`),
+   * in `attributes` (scalar subquery) and as a source of `insertFrom` / `merge`. Default scope and
+   * paranoid filter apply; values stay bound parameters of the outer statement. PostgreSQL extension.
+   *
+   * @param options - Find options (`attributes`, `where`, `order`, `limit`, `include`, ...) and `as` (table alias).
+   * @returns Subquery expression.
+   * @example
+   * ```ts
+   * await User.findAll({ where: { id: { [Op.in]: Post.subquery({ attributes: ['userId'], where: { published: true } }) } } });
+   * ```
+   */
+  static subquery<M extends AnyModel>(
+    this: ModelStatic<M>,
+    options: FindOptions<Attributes<M>> & Readonly<{ as?: string }> = {},
+  ): Subquery {
+    return subqueryExpression(() => {
+      const { definition, runtime, scopes } = stateOf(this);
+      const { as, ...findOptions } = options;
+      const scoped = injectScope(
+        activeScope(this),
+        { ...findOptions },
+        scopes.whereMergeStrategy,
+      ) as FindOptions;
+      const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
+      const includes = normalizeIncludes(this, query.include);
+      const base = buildSelect(
+        definition,
+        (includes.length === 0 ? query : { ...query, order: undefined }) as SelectOptions,
+        runtime.inAsAnyThreshold,
+        undefined,
+        as,
+      );
+      return includes.length === 0 ? base : withIncludes(definition, base, includes, query);
+    });
   }
 
   /**

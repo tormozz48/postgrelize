@@ -52,3 +52,6 @@ type ModelDefinition = Readonly<{ name; tableName; schema?; attributes: Readonly
 | `model/version.ts` | version where / increment set items | yes |
 
 Failure modes: hook throws → operation aborted, error propagated unchanged (transaction rollback is caller's / managed tx's job); validation fails → `ValidationError` before any SQL; version mismatch → `OptimisticLockError`.
+
+## P1 (postgres-power)
+See spec `.10x/specs/2026-11-14-p1-postgres-power-design.md`, ADR-011 (subquery expressions), ADR-012 (connection features).

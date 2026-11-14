@@ -68,3 +68,11 @@ M0 → T05..T09 (T08, T09 parallelizable with T05–T07) → T10 → T11/T12 →
 | T35 | FK references from associations, model `indexes`, `Deferrable`, NULLS NOT DISTINCT |
 | T36 | `Model.sync/drop`, `sequelize.sync/drop` (dependency order, force, alter) |
 | T37 | differential (describeTable) + integration + migration smoke tests |
+
+## P1 cycles (2026-11-14)
+| Cycle | Scope | PR |
+|---|---|---|
+| P1-A | subquery, exists, distinctOn, over, tuple | feat/p1a-query-power |
+| P1-B | update from, destroy using, insertFrom, merge | feat/p1b-write-power |
+| P1-C | findEach, listen/notify, settings, advisory locks, copy | feat/p1c-connection |
+| P1-D | identity, generated, INTERVAL, overriding, enum alter | feat/p1d-schema |

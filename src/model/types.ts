@@ -2,10 +2,13 @@ import type {
   Cast,
   Col,
   Excluded,
+  Exists,
   Fn,
   Json,
   Literal,
   SqlExpression,
+  Subquery,
+  Tuple,
   Where,
 } from '../expressions/methods.ts';
 import type { Op } from '../expressions/op.ts';
@@ -122,7 +125,7 @@ export type MakeNullishOptional<T> = {
 export type AllowArray<T> = T | readonly T[];
 
 /** Expressions accepted in place of a value (`Excluded` only inside `onConflict`). */
-export type SqlValue = Literal | Fn | Col | Cast | Excluded;
+export type SqlValue = Literal | Fn | Col | Cast | Excluded | Subquery | Tuple;
 
 type Comparable<V> = V | SqlValue;
 
@@ -145,9 +148,9 @@ export type WhereOperators<V = unknown> = {
   /** See `Op.lte`. */
   [Op.lte]?: Comparable<V> | AnyAll<V>;
   /** See `Op.in`. */
-  [Op.in]?: readonly V[] | Literal;
+  [Op.in]?: readonly V[] | Literal | Subquery;
   /** See `Op.notIn`. */
-  [Op.notIn]?: readonly V[] | Literal;
+  [Op.notIn]?: readonly V[] | Literal | Subquery;
   /** See `Op.between`. */
   [Op.between]?: readonly [Comparable<V>, Comparable<V>];
   /** See `Op.notBetween`. */
@@ -261,7 +264,8 @@ export type WhereOptions<T = Record<string, unknown>> =
   | Where
   | Literal
   | Fn
-  | Json;
+  | Json
+  | Exists;
 
 /** Any expression builder value. */
 export type Expression = SqlExpression;

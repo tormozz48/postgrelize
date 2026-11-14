@@ -82,6 +82,26 @@ describe('compile select', () => {
     });
   });
 
+  it('renders DISTINCT ON and window functions', () => {
+    expect(
+      compile({
+        kind: 'select',
+        distinctOn: [ident('u')],
+        columns: [
+          {
+            kind: 'over',
+            expr: raw('row_number()'),
+            partitionBy: [ident('u')],
+            orderBy: [{ expr: ident('r'), direction: 'DESC' }],
+          },
+        ],
+        from: users,
+      }).text,
+    ).toBe(
+      'SELECT DISTINCT ON ("u") row_number() OVER (PARTITION BY "u" ORDER BY "r" DESC) FROM "users"',
+    );
+  });
+
   it('selects from a subquery', () => {
     expect(
       compile({
