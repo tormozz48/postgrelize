@@ -12,7 +12,7 @@
   "gitRevision": "main",
   "sourceLinkExternal": true,
   "validation": {
-    "notExported": true,
+    "notExported": false,
     "invalidLink": true,
     "notDocumented": true
   },
