@@ -1,6 +1,6 @@
 # Handoff
 
-**From:** M3 (lifecycle) done → **To:** M4 (associations + include)
+**From:** M4 (associations) done → **To:** M5 (QueryInterface + sync + UNIQUE NULLS NOT DISTINCT)
 
-- M3 details/deviations: `decisions/sde/postgrelize-mvp.md` (M3 section). User asked to proceed between stages without approval (2026-11-14).
-- M4 entry points: `src/model/query-builders.ts` (`buildSelect` — add joins/include), `src/model/model.ts` (findAll result assembly), `src/sql/ast.ts` (`JoinNode` exists; `LATERAL` not yet).
+- M4 details/limits: `decisions/sde/postgrelize-mvp.md` (M4 section).
+- M5 entry points: DDL AST/compiler (new statements in `src/sql`), `src/query-interface/`, `Sequelize.sync`/`Model.sync`/`drop`, FK constraints from associations (`onDelete`/`onUpdate` defaults like v6), `Deferrable`.
