@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:${PGZ_PG_VERSION:-16}
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgrelize
+    ports:
+      - '54329:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgrelize']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql

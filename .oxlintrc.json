@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "eqeqeq": "error",
+    "no-param-reassign": "error",
+    "import/no-cycle": "error",
+    "import/no-default-export": "error",
+    "typescript/explicit-module-boundary-types": "error"
+  },
+  "overrides": [
+    {
+      "files": ["*.config.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
+      "files": ["src/index.ts"],
+      "rules": {
+        "unicorn/no-empty-file": "off"
+      }
+    },
+    {
+      "files": ["tests/**", "*.config.ts"],
+      "rules": {
+        "typescript/explicit-module-boundary-types": "off"
+      }
+    }
+  ],
+  "env": {
+    "builtin": true,
+    "node": true
+  },
+  "ignorePatterns": ["dist", "coverage", "node_modules"]
+}
