@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { parseArrayLiteral } from './array-literal.ts';
 
 /**
  * Description of a column type: its SQL type and conversions between JavaScript values and the
@@ -159,6 +160,7 @@ const arrayType = (subtype: DataTypeInput): DataType => {
   const element = toDataType(subtype);
   return type('ARRAY', `${element.sqlType}[]`, {
     subtype: element,
+    parse: (value: unknown) => (typeof value === 'string' ? parseArrayLiteral(value) : value),
     ...(element.serialize === undefined
       ? {}
       : {

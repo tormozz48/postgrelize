@@ -32,6 +32,8 @@ import { Op } from './expressions/op.ts';
 import { Model, definitionOf, parseModelRow } from './model/model.ts';
 import { QueryInterface } from './query-interface/query-interface.ts';
 import {
+  addDeferredReferences,
+  deferredReferences,
   dependencyOrder,
   dropModel,
   syncModel,
@@ -476,13 +478,30 @@ export class Sequelize {
           Promise.resolve(),
         );
     }
+    const deferred = deferredReferences(definitions);
     await definitions.reduce<Promise<unknown>>(
       (previous, definition) =>
         previous.then(() =>
-          syncModel(definition, this.#runtime, this.getQueryInterface(), {
-            ...options,
-            force: false,
-          }),
+          syncModel(
+            definition,
+            this.#runtime,
+            this.getQueryInterface(),
+            { ...options, force: false },
+            deferred.get(definition),
+          ),
+        ),
+      Promise.resolve(),
+    );
+    await definitions.reduce<Promise<unknown>>(
+      (previous, definition) =>
+        previous.then(() =>
+          addDeferredReferences(
+            definition,
+            deferred.get(definition) ?? [],
+            this.#runtime,
+            this.getQueryInterface(),
+            options,
+          ),
         ),
       Promise.resolve(),
     );

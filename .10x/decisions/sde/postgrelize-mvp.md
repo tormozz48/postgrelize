@@ -140,3 +140,15 @@ Bugs found: v6 keeps nested through values as a through-model instance (null PKs
 ## Backlog — RETURNING old values + include scopes — done 2026-11-14
 Built: AST `returningOld` alias on insert/update/merge (`RETURNING WITH (OLD AS "__pgz_old") ...`), `withReturningOld` builder, `returningOld` option on `update` / `insert` (+ `create`-free paths) / `insertFrom` / `merge`, `instance.oldValues` (null when no previous row, detected by NULL primary key), PG18 version gate; include normalization injects the scope of the included model (scoped class or target default scope) with v6 merge rules before computing `required`; scoped classes resolve as association targets; separate includes select all stored attributes when none given (v6 parity).
 Tests: compat +7 (default scope on hasMany/belongsTo includes incl. required side effect, include where merge, `unscoped()`/named scope as include model, nested + separate, count), integration +2 (returningOld for update/upsert/insertFrom/merge on 18, version error below 18, missing `returning`). Verified locally on PG16 and PG18 (temporary container).
+
+## Backlog 2 / S2a — v6 parity regressions — done 2026-11-14
+Fixed (found by the Sequelize issue review, `.10x/reviews/2026-11-14-sequelize-issues.md`):
+- included associations / junction rows exposed as instance properties (`defineAssociationAccessor`); the differential helper now reads included associations through instance properties, so the suite catches this class of gap (15 scenarios failed without the fix);
+- #13734 upsert / updateOnDuplicate conflict targets use unique `indexes` with v6 rules (`conflict.ts`);
+- #10419 user-declared `createdAt`/`updatedAt` attributes keep their definition;
+- #17486 upsert keeps supplied `updatedAt` (also for attributes mapped to another field — v6 overwrites those: divergence);
+- #15466/#11100 ARRAY(ENUM) parsed (`src/data-types/array-literal.ts`, unknown-OID arrays arrive as text);
+- #15522 sync with FK cycles: back-references created after all tables (`deferredReferences`); v6 silently creates no FK at all — divergence;
+- #17118 `addColumn` and `sync({ alter })` added columns emit `COMMENT ON COLUMN`;
+- #9040 `order: ['json.path']` orders by `#>` jsonb value (numbers numerically; v6 orders as text — divergence).
+Tests: compat +3 (`issue-parity`), integration +5 (`sequelize-issues`), unit +1 (array literal). 222 green.

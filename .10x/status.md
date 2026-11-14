@@ -116,6 +116,6 @@
 
 ## Backlog 2 (roadmap `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`)
 - [x] S1 README: badges, self-hosted coverage on Pages (92.8% lines at start)
-- [ ] S2 Sequelize PostgreSQL issues: classify, regression tests, fix inherited bugs
+- [ ] S2 Sequelize PostgreSQL issues: classify ✓ (73 issues), S2a parity regressions ✓, S2b inherited bugs, public page
 - [ ] S3 VitePress documentation site
 - [ ] S4 Effect-based core + `postgrelize/effect`

@@ -172,6 +172,27 @@ export const selectColumns = (
   );
 };
 
+/** `'jsonAttr.a.b'` orders by the jsonb value at that path (numbers sort numerically). */
+const jsonPathOrder = (
+  definition: ModelDefinition,
+  alias: string,
+  target: string,
+): ExprNode | undefined => {
+  const [name = '', ...path] = target.split('.');
+  const attribute = definition.attributes.get(name);
+  return attribute === undefined ||
+    path.length === 0 ||
+    (attribute.type.key !== 'JSON' && attribute.type.key !== 'JSONB')
+    ? undefined
+    : binary(
+        '#>',
+        attribute.type.key === 'JSON'
+          ? { kind: 'cast', expr: ident(alias, attribute.field), type: 'JSONB' }
+          : ident(alias, attribute.field),
+        param(path),
+      );
+};
+
 const orderTarget = (
   definition: ModelDefinition,
   alias: string,
@@ -181,7 +202,7 @@ const orderTarget = (
   typeof target === 'string'
     ? definition.attributes.has(target)
       ? ident(alias, definition.attributes.get(target)?.field ?? target)
-      : ident(...target.split('.'))
+      : (jsonPathOrder(definition, alias, target) ?? ident(...target.split('.')))
     : toExpr(target, ctx);
 
 export const orderItem = (

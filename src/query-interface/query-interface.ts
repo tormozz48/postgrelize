@@ -2,6 +2,7 @@ import type { DataTypeInput } from '../data-types/data-types.ts';
 import {
   addConstraintSql,
   changeColumnSql,
+  columnCommentSql,
   columnOf,
   columnSql,
   createEnumSql,
@@ -322,6 +323,7 @@ export class QueryInterface {
       [
         ...(enumSql === undefined ? [] : [enumSql]),
         `ALTER TABLE ${quoteTable(table)} ADD COLUMN ${columnSql(table, definition, { inlinePrimaryKey: true })}`,
+        ...columnCommentSql(table, definition),
       ],
       options,
     );

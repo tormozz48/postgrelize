@@ -266,7 +266,11 @@ export const normalizeDefinition = (
   const all: ModelAttributes = {
     ...autoPrimaryKey(declared, tableName),
     ...attributes,
-    ...timestampAttributes(createdAt, updatedAt, deletedAt, version),
+    ...Object.fromEntries(
+      Object.entries(timestampAttributes(createdAt, updatedAt, deletedAt, version)).filter(
+        ([key]) => !(key in attributes),
+      ),
+    ),
     ...Object.fromEntries(
       Object.entries(associationAttributes).filter(([key]) => !(key in attributes)),
     ),

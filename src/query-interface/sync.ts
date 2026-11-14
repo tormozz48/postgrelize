@@ -1,6 +1,7 @@
 import {
   addEnumValuesSql,
   changeColumnSql,
+  columnCommentSql,
   columnOf,
   columnSql,
   createEnumSql,
@@ -9,7 +10,7 @@ import {
   referencesSql,
 } from '../ddl/ddl.ts';
 import { quoteTable, type TableName } from '../ddl/literals.ts';
-import type { ModelDefinition } from '../model/definition.ts';
+import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
 import { quoteIdent } from '../sql/compile.ts';
 import type { QueryInterface } from './query-interface.ts';
@@ -30,6 +31,13 @@ export type SyncOptions = QueryOptionsBase &
     /** Only sync when the database name matches this pattern. */
     match?: RegExp;
   }>;
+
+type ColumnDefinition = ReturnType<typeof columnOf>;
+
+const withoutReferences = (column: ColumnDefinition): ColumnDefinition =>
+  Object.fromEntries(
+    Object.entries(column).filter(([key]) => key !== 'references'),
+  ) as ColumnDefinition;
 
 /** Options of `drop()`. */
 export type DropOptions = QueryOptionsBase &
@@ -82,6 +90,7 @@ const alterStatements = async (
       return [
         ...(enumSql === undefined ? [] : [enumSql]),
         `ALTER TABLE ${qualified} ADD COLUMN ${columnSql(table, column)}`,
+        ...columnCommentSql(table, column),
       ];
     });
   const changed = columns
@@ -119,6 +128,7 @@ export const syncModel = async (
   runtime: ModelRuntime,
   queryInterface: QueryInterface,
   options: SyncOptions = {},
+  deferred: readonly string[] = [],
 ): Promise<void> => {
   const table = tableOf(definition);
   if (options.force === true) {
@@ -132,7 +142,9 @@ export const syncModel = async (
         ? []
         : createTableSql(
             table,
-            storedColumns(definition),
+            storedColumns(definition).map((column) =>
+              deferred.includes(column.field) ? withoutReferences(column) : column,
+            ),
             definition.options.comment === undefined ? {} : { comment: definition.options.comment },
           );
   const indexes = (definition.options.indexes ?? []).map((index) =>
@@ -163,20 +175,71 @@ export const dropModel = async (
   await queryInterface.dropEnumsOf(table, enumFields, options);
 };
 
+const referencedTable = (references: AttributeDefinition['references']): string | undefined =>
+  references === undefined
+    ? undefined
+    : typeof references === 'string'
+      ? references
+      : typeof references.model === 'string'
+        ? references.model
+        : references.model.tableName;
+
 const referencedTables = (definition: ModelDefinition): readonly string[] =>
   [...definition.attributes.values()].flatMap((attribute) => {
-    const references = attribute.references;
-    if (references === undefined) {
-      return [];
-    }
-    return [
-      typeof references === 'string'
-        ? references
-        : typeof references.model === 'string'
-          ? references.model
-          : references.model.tableName,
-    ];
+    const table = referencedTable(attribute.references);
+    return table === undefined ? [] : [table];
   });
+
+/**
+ * Columns (by field) of each definition whose foreign key points to a table created later in
+ * `ordered` — a reference cycle. Their tables are created without these constraints, which are
+ * added once every table exists.
+ */
+export const deferredReferences = (
+  ordered: readonly ModelDefinition[],
+): ReadonlyMap<ModelDefinition, readonly string[]> => {
+  const position = new Map(ordered.map((definition, index) => [definition.tableName, index]));
+  return new Map(
+    ordered.map((definition, index) => [
+      definition,
+      [...definition.attributes.values()]
+        .filter((attribute) => {
+          const target = position.get(referencedTable(attribute.references) ?? '');
+          return target !== undefined && target > index;
+        })
+        .map((attribute) => attribute.field),
+    ]),
+  );
+};
+
+/** Adds the deferred foreign keys of a table that are not there yet. */
+export const addDeferredReferences = async (
+  definition: ModelDefinition,
+  fields: readonly string[],
+  runtime: ModelRuntime,
+  queryInterface: QueryInterface,
+  options: QueryOptionsBase,
+): Promise<void> => {
+  if (fields.length === 0) {
+    return;
+  }
+  const table = tableOf(definition);
+  const existing = new Set(
+    (await queryInterface.getForeignKeyReferencesForTable(table, options)).map(
+      (reference) => reference.columnName,
+    ),
+  );
+  await run(
+    runtime,
+    storedColumns(definition)
+      .filter((column) => fields.includes(column.field) && !existing.has(column.field))
+      .map(
+        (column) =>
+          `ALTER TABLE ${quoteTable(table)} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column) ?? ''}`,
+      ),
+    options,
+  );
+};
 
 /** Orders definitions so that referenced tables come first. */
 export const dependencyOrder = (
