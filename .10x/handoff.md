@@ -1,8 +1,8 @@
 # Handoff
 
-**From:** Brainstorming (all roles) → **To:** CTO + PM (Phase 1), after user approves spec.
+**From:** CTO + PM (Phase 1) → **To:** Architect + Staff Engineer (Phase 2)
 
-- Approved decisions D1–D9 are in spec §2 (v6 drop-in, clean-room TS, `pg`, PG16+, bound params, additive PG extensions, differential tests vs sequelize@6, Node 20+ ESM+CJS, vite/vitest/oxlint/oxfmt).
-- Scope: MVP = M0–M5; this implementation cycle = M0–M2 (tooling, core, ON CONFLICT).
-- P0 PG extensions list: spec §5; full PG-vs-v6 gap with P1/P2 backlog: gap analysis doc.
-- Reference Sequelize version for compat: 6.37.x.
+- Verdict: build clean-room TS, Sequelize v6 drop-in, PG-only (`decisions/cto/postgrelize-mvp.md`).
+- This cycle: M0–M2; user stories US1–US7 (`decisions/product-manager/postgrelize-mvp.md`).
+- Spec: `.10x/specs/2026-11-14-postgrelize-mvp-design.md` (approved by user 2026-11-14).
+- Architect: write ADRs for approach, driver/params, ON CONFLICT API, compat testing; define module boundaries & failure modes.
