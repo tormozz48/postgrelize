@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** P1 complete (A–D). Next: 0.2.0 release (owner approval)
+**Current phase:** 0.2.0 released (GitHub Packages, 2026-11-14). Next: backlog (CTE, copyTo, RETURNING old/new, read replicas, nested create via include)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -93,3 +93,6 @@
 ## P1 sign-off (2026-11-14)
 - 193 tests green (unit 108, integration + differential 85); v6 differential suite unchanged and green.
 - QA: `.10x/reviews/2026-11-14-p1-qa-report.md`; Security: `.10x/reviews/2026-11-14-p1-security-review.md`.
+
+## Release 0.2.0 (2026-11-14)
+- Tag `v0.2.0` → release.yml green, `@tormozz48/postgrelize@0.2.0` published (50 files, dist-tag `latest`). Contents: P1 PostgreSQL power features.
