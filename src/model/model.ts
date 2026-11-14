@@ -1128,6 +1128,7 @@ export class Model<
       }
       const insert = buildInsert(definition, rows, {
         returning: options.returning !== false,
+        ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
         ...v6BulkConflict(definition, options as BulkCreateOptions),
       });
       const result = await runtime.execute(compile(insert), options);
@@ -1982,7 +1983,12 @@ export class Model<
         explicitFields,
       );
       const result = await runtime.execute(
-        compile(buildInsert(definition, [values], { returning: true })),
+        compile(
+          buildInsert(definition, [values], {
+            returning: true,
+            ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
+          }),
+        ),
         options,
       );
       this.#refresh(definition, result.rows[0]);
@@ -2258,11 +2264,12 @@ const insertWithConflict = async <M extends AnyModel>(
   model: ModelStatic<M>,
   rows: readonly Values[],
   onConflict: OnConflictNode | undefined,
-  options: QueryOptionsBase,
+  options: QueryOptionsBase & Readonly<{ overriding?: 'system' | 'user' }>,
 ): Promise<M[]> => {
   const { definition, runtime } = stateOf(model);
   const insert = buildInsert(definition, rows, {
     ...(onConflict === undefined ? {} : { onConflict }),
+    ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
     returning: [...returningAll(definition), insertedFlagColumn()],
   });
   const result = await runtime.execute(compile(insert), options);

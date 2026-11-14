@@ -108,6 +108,7 @@ export type InsertNode = Readonly<{
   columns: readonly string[];
   rows: readonly (readonly ExprNode[])[];
   select?: SelectNode;
+  overriding?: 'system' | 'user';
   onConflict?: OnConflictNode;
   returning?: readonly ExprNode[];
 }>;

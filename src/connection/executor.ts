@@ -49,10 +49,12 @@ export type ConnectionManager = Readonly<{
 }>;
 
 const DATE_OID = 1082;
+const INTERVAL_OID = 1186;
+const RAW_TEXT_OIDS: ReadonlySet<number> = new Set([DATE_OID, INTERVAL_OID]);
 
 const typeParsers: NonNullable<PoolConfig['types']> = {
   getTypeParser: ((oid: number, format?: 'text' | 'binary') =>
-    oid === DATE_OID && format !== 'binary'
+    RAW_TEXT_OIDS.has(oid) && format !== 'binary'
       ? (value: string) => value
       : types.getTypeParser(oid, format)) as NonNullable<PoolConfig['types']>['getTypeParser'],
 };

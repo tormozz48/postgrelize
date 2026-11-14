@@ -1,4 +1,5 @@
 import {
+  addEnumValuesSql,
   changeColumnSql,
   columnOf,
   columnSql,
@@ -84,8 +85,14 @@ const alterStatements = async (
       ];
     });
   const changed = columns
-    .filter((column) => described[column.field] !== undefined && !column.primaryKey)
-    .flatMap((column) => changeColumnSql(table, column));
+    .filter(
+      (column) =>
+        described[column.field] !== undefined &&
+        !column.primaryKey &&
+        column.generated === undefined &&
+        column.identity === undefined,
+    )
+    .flatMap((column) => [...addEnumValuesSql(table, column), ...changeColumnSql(table, column)]);
   const references = columns
     .filter(
       (column) =>

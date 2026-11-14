@@ -356,6 +356,7 @@ const insertableAttributes = (
   rows: readonly Readonly<Record<string, unknown>>[],
 ): readonly string[] =>
   storedAttributes(definition)
+    .filter((attribute) => attribute.generated === undefined)
     .map((attribute) => attribute.fieldName)
     .filter((name) => rows.some((row) => row[name] !== undefined));
 
@@ -380,6 +381,7 @@ export const buildInsert = (
   options: Readonly<{
     returning?: boolean | readonly ExprNode[];
     onConflict?: OnConflictNode;
+    overriding?: 'system' | 'user';
   }> = {},
 ): InsertNode => {
   const ctx = whereContext(definition, undefined);
@@ -407,6 +409,7 @@ export const buildInsert = (
       }),
     ),
     ...(options.onConflict === undefined ? {} : { onConflict: options.onConflict }),
+    ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
     ...(returning === undefined ? {} : { returning }),
   };
 };
@@ -418,7 +421,10 @@ export const setItems = (
   ctx: WhereContext = whereContext(definition, undefined),
 ): readonly SetItem[] => {
   return Object.entries(values)
-    .filter(([, value]) => value !== undefined)
+    .filter(
+      ([name, value]) =>
+        value !== undefined && definition.attributes.get(name)?.generated === undefined,
+    )
     .map(([name, value]) => {
       const attribute = definition.attributes.get(name);
       return { column: attribute?.field ?? name, value: valueExpr(attribute, value, ctx) };

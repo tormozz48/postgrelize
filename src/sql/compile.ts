@@ -208,6 +208,9 @@ const insertValues = (node: InsertNode): Chunks =>
       : [
           ' ',
           ...wrap([node.columns.map(quoteIdent).join(', ')]),
+          node.overriding === undefined
+            ? ''
+            : ` OVERRIDING ${node.overriding === 'system' ? 'SYSTEM' : 'USER'} VALUE`,
           ' VALUES ',
           ...join(
             node.rows.map((row) => wrap(exprList(row))),
