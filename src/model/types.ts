@@ -88,6 +88,8 @@ export type ModelBase = Readonly<{
   sequelize: unknown;
   /** Insert/update flag of `onConflict` results. */
   wasInserted: unknown;
+  /** Pre-statement values of `returningOld` results. */
+  oldValues: unknown;
 }>;
 
 /** Infers attribute types from a model class declaration (Sequelize v6 `InferAttributes`). */

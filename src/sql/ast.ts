@@ -128,6 +128,8 @@ export type InsertNode = Readonly<{
   overriding?: 'system' | 'user';
   onConflict?: OnConflictNode;
   returning?: readonly ExprNode[];
+  /** Alias of the pre-statement row in RETURNING (`WITH (OLD AS ...)`, PostgreSQL 18+). */
+  returningOld?: string;
 }>;
 
 export type UpdateNode = Readonly<{
@@ -137,6 +139,8 @@ export type UpdateNode = Readonly<{
   from?: readonly FromItem[];
   where?: ExprNode;
   returning?: readonly ExprNode[];
+  /** Alias of the pre-statement row in RETURNING (`WITH (OLD AS ...)`, PostgreSQL 18+). */
+  returningOld?: string;
 }>;
 
 export type DeleteNode = Readonly<{
@@ -180,6 +184,8 @@ export type MergeNode = Readonly<{
   on: ExprNode;
   when: readonly MergeWhen[];
   returning?: readonly ExprNode[];
+  /** Alias of the pre-statement row in RETURNING (`WITH (OLD AS ...)`, PostgreSQL 18+). */
+  returningOld?: string;
 }>;
 
 export type StatementNode =

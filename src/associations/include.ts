@@ -7,12 +7,14 @@ import {
   directionOf,
   orderItem,
   selectColumns,
+  storedAttributes,
   tableOf,
   whereClause,
   whereContext,
   type FindAttributeOptions,
 } from '../model/query-builders.ts';
-import { stateOf } from '../model/state.ts';
+import { injectScope } from '../model/scopes.ts';
+import { activeScope, stateOf } from '../model/state.ts';
 import {
   and,
   binary,
@@ -106,6 +108,8 @@ export type IncludeNode = Readonly<{
 
 const isModel = (value: unknown): value is Model => typeof value === 'function';
 
+const sameModel = (left: Model, right: Model): boolean => stateOf(left) === stateOf(right);
+
 const resolveAssociation = (source: Model, item: IncludeOptions): Association => {
   const associations = associationsOf(source);
   const sourceName = stateOf(source).definition.name;
@@ -123,7 +127,7 @@ const resolveAssociation = (source: Model, item: IncludeOptions): Association =>
     const association = associations.get(item.as);
     if (
       association === undefined ||
-      (item.model !== undefined && association.target !== item.model)
+      (item.model !== undefined && !sameModel(association.target, item.model))
     ) {
       const targetName = item.model === undefined ? item.as : stateOf(item.model).definition.name;
       throw new Error(
@@ -133,7 +137,7 @@ const resolveAssociation = (source: Model, item: IncludeOptions): Association =>
     return association;
   }
   const candidates = [...associations.values()].filter(
-    (association) => association.target === item.model,
+    (association) => item.model !== undefined && sameModel(association.target, item.model),
   );
   const targetName = item.model === undefined ? '?' : stateOf(item.model).definition.name;
   if (candidates.length === 0) {
@@ -157,6 +161,20 @@ const expandAll = (source: Model, items: readonly IncludeOptions[]): readonly In
       : [item],
   );
 
+/**
+ * Merges the scope of the included model into the include options like Sequelize v6
+ * `_injectScope`: a scoped class given as `model` brings its scopes, otherwise the target's
+ * default scope applies. Include options win.
+ */
+const withTargetScope = (item: IncludeOptions, target: Model): IncludeOptions => {
+  const scoped = item.model ?? target;
+  return injectScope(
+    activeScope(scoped),
+    item as Readonly<Record<string, unknown>>,
+    stateOf(scoped).scopes.whereMergeStrategy,
+  ) as IncludeOptions;
+};
+
 /** Normalizes the `include` option of `source` into an include tree. */
 export const normalizeIncludes = (
   source: Model,
@@ -168,9 +186,10 @@ export const normalizeIncludes = (
     return [];
   }
   const items = expandAll(source, (Array.isArray(option) ? option : [option]).map(toOptions));
-  return items.map((item) => {
-    const association = resolveAssociation(source, item);
+  return items.map((unscoped) => {
+    const association = resolveAssociation(source, unscoped);
     const model = association.target;
+    const item = withTargetScope(unscoped, model);
     const alias = parentAlias === '' ? association.as : `${parentAlias}->${association.as}`;
     const path = parentPath === '' ? association.as : `${parentPath}.${association.as}`;
     const through =
@@ -677,7 +696,9 @@ export const loadSeparate = async (
             ...(node.where === undefined ? [] : [node.where]),
           ],
         },
-        ...(node.attributes === undefined ? {} : { attributes: node.attributes }),
+        attributes:
+          node.attributes ??
+          storedAttributes(node.definition).map((attribute) => attribute.fieldName),
         ...(node.order === undefined ? {} : { order: node.order }),
         ...(node.children.length === 0 ? {} : { include: node.children.map(toIncludeOptions) }),
         paranoid: node.paranoid,

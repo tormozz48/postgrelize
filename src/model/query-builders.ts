@@ -383,6 +383,29 @@ export const returningAll = (definition: ModelDefinition, alias?: string): reado
       : { kind: 'alias', expr: column, alias: attribute.fieldName };
   });
 
+/** Alias of the pre-statement row in `RETURNING WITH (OLD AS ...)`. */
+export const OLD_ALIAS = '__pgz_old';
+
+/** Prefix of returned columns carrying pre-statement values. */
+export const OLD_PREFIX = `${OLD_ALIAS}.`;
+
+/** Adds the pre-statement row (all stored columns) to the RETURNING list of a write. PostgreSQL 18+. */
+export const withReturningOld = <N extends Readonly<{ returning?: readonly ExprNode[] }>>(
+  definition: ModelDefinition,
+  node: N,
+): N & Readonly<{ returningOld: string }> => ({
+  ...node,
+  returningOld: OLD_ALIAS,
+  returning: [
+    ...(node.returning ?? []),
+    ...storedAttributes(definition).map((attribute): ExprNode => ({
+      kind: 'alias',
+      expr: ident(OLD_ALIAS, attribute.field),
+      alias: `${OLD_PREFIX}${attribute.fieldName}`,
+    })),
+  ],
+});
+
 /** Builds a multi-row INSERT from attribute-keyed rows. */
 export const buildInsert = (
   definition: ModelDefinition,

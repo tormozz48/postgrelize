@@ -2,9 +2,9 @@
 
 PostgreSQL-only ORM for Node.js with a public API compatible with [Sequelize v6](https://sequelize.org/docs/v6/), plus first-class PostgreSQL features.
 
-- **Drop-in:** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include` (incl. nested creation via `create`/`bulkCreate` with `include`), read replicas (`replication`, `useMaster`), transactions, `QueryInterface` and `sync` behave like Sequelize v6 — verified by differential tests that run every scenario on both libraries.
+- **Drop-in:** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include` (scopes of included models applied like v6, incl. nested creation via `create`/`bulkCreate` with `include`), read replicas (`replication`, `useMaster`), transactions, `QueryInterface` and `sync` behave like Sequelize v6 — verified by differential tests that run every scenario on both libraries.
 - **PostgreSQL first:**
-  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM STDIN` / `COPY TO STDOUT` (`Model.copyFrom`, `Model.copyTo`), `DELETE ... RETURNING`;
+  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `RETURNING` pre-statement values on PostgreSQL 18 (`returningOld`, `instance.oldValues`), `COPY FROM STDIN` / `COPY TO STDOUT` (`Model.copyFrom`, `Model.copyTo`), `DELETE ... RETURNING`;
   - reads: CTEs incl. `WITH RECURSIVE` (`with` / `source` / `from`), subqueries (`Model.subquery`), `exists()`, `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `NOWAIT`;
   - sessions: `LISTEN/NOTIFY`, `SET LOCAL` settings for RLS, advisory locks;
   - schema: identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod/valibot/arktype) validation.
