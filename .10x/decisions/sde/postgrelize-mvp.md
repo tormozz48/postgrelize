@@ -94,3 +94,15 @@ Deviations / limits:
 - Default scopes of included models are not applied (v6 applies them) — tech debt.
 - belongsToMany join uses two flat joins (through, then target) instead of v6's parenthesized nested join — same results for tested cases.
 - Not implemented: nested create via `include` in `create`/`bulkCreate`, `include` in `update`/`destroy`, association hooks, `LATERAL`/json strategy (P1).
+
+## M5 — QueryInterface & sync (T33–T37) — done 2026-11-14
+Built: `src/ddl/literals.ts` (escapeLiteral, inlineValues, table refs), `src/ddl/ddl.ts` (columns, enums, create/alter, indexes, constraints, Deferrable), `src/query-interface/query-interface.ts`, `src/query-interface/sync.ts` (sync/drop, alter diff, dependency order); association FKs with v6 referential defaults; model `indexes`/`comment` options.
+
+Tests: compat +4 (sync create incl. describeTable/indexes/FKs, force/alter, drop order, QI operations), integration +3 (NULLS NOT DISTINCT, FK cascades, umzug-style migration), unit +5 (literals, DDL builders, injection).
+
+Deviations:
+- `showAllTables` / `describeTable` / `tableExists` default to `current_schema()`; v6 hard-codes `public` (breaks with `search_path`).
+- `renameTable` with a schema-qualified target emits valid SQL (v6 emits invalid `RENAME TO "schema"."table"`).
+- Indexes are created with `IF NOT EXISTS` instead of v6's `showIndex` diff.
+- `alter` does not compare/drop indexes or constraints other than adding missing FKs.
+- Not implemented: `createFunction`/`createTrigger`, `showIndex`, `getForeignKeysForTables`, `upsert` on QueryInterface, enum value migration on `alter` (v6 `ALTER TYPE ADD VALUE`).

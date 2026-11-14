@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 4 (M5) — Planning complete; implementing T33
+**Current phase:** MVP (M0–M5) — Delivery Complete. Next: 0.1.0 pre-release (owner approval), then P1 backlog
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -69,8 +69,14 @@
 - Security: include `where`/`order`/attributes go through existing where/order compilers (identifiers quoted, values bound); include aliases come from association definitions, quoted.
 
 ## Cycle 4 (M5) tasks — spec `.10x/specs/2026-11-14-m5-query-interface-design.md`, ADR-010
-- [ ] T33 DDL builders
-- [ ] T34 QueryInterface
-- [ ] T35 FK/indexes/Deferrable/NULLS NOT DISTINCT
-- [ ] T36 sync/drop
-- [ ] T37 tests
+- [x] T33 DDL builders
+- [x] T34 QueryInterface
+- [x] T35 FK/indexes/Deferrable/NULLS NOT DISTINCT
+- [x] T36 sync/drop
+- [x] T37 tests
+
+## MVP sign-off (2026-11-14)
+- QA: `.10x/reviews/2026-11-14-mvp-qa-report.md`; Security: `.10x/reviews/2026-11-14-mvp-security-review.md`.
+- Ops: CI/release/docs workflows unchanged (`decisions/devops`, `decisions/sre`).
+- Open: owner to enable GitHub Pages; first release tag needs owner approval.
+- P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
