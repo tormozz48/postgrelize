@@ -119,3 +119,6 @@
 - [x] S2 Sequelize PostgreSQL issues: 73 classified, S2a parity regressions, S2b inherited bugs, public page `docs/sequelize-issues.md`
 - [ ] S3 VitePress documentation site
 - [ ] S4 Effect-based core + `postgrelize/effect`
+
+## Release 0.6.0 (2026-11-14)
+- Tag `v0.6.0` → release.yml green, `@tormozz48/postgrelize@0.6.0` published. Contents: README + coverage, Sequelize issue review fixes (S2a parity, S2b inherited bugs), fixed-issues page.
