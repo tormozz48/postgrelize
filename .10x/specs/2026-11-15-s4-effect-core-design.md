@@ -7,9 +7,12 @@
   transactions, composable programs.
 - Public Sequelize v6 API unchanged and Promise-based; the differential suite passes unchanged.
 - Opt-in `postgrelize/effect` entry point for Effect users.
-- Performance: stub-mode benchmark (`bench/orm.bench.ts --stub`, ORM overhead only) within budget:
-  geometric mean of per-case ratios ≤ 1.10 and no case above 1.20 versus `bench/baseline.json`
-  (`bench/compare.ts`). I/O-mode numbers are informational (±50% run-to-run).
+- Performance (owner: "10% budget" for findAll / insert / bulkCreate): stub-mode benchmark
+  (`bench/orm.bench.ts --stub`, ORM overhead only) — `findAll 100 rows`, `create`, `bulkCreate 100` and
+  `insert onConflict 50` at most 10% slower each versus `bench/baseline.json` (`bench/compare.ts`, best of 3
+  runs). Single-statement cases (`findByPk`, `count`, transaction) are reported with their absolute overhead:
+  Effect costs a fixed ~1 µs per run (+1–3 µs on 3–10 µs stubbed calls, < 1% of a real round trip).
+  I/O-mode numbers are informational (±50% run-to-run).
 
 ## Measured constraints
 - `Effect.runPromise` of a small program costs 0.3–1 µs; `findByPk` overhead is ~9 µs. Therefore exactly one

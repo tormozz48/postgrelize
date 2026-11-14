@@ -5,7 +5,7 @@
 // the ORM's own overhead (query building, execution pipeline, row mapping) — the budget gate.
 import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
-import pg from 'pg';
+import { Pool } from 'pg';
 import { DataTypes, Op, Sequelize } from '../src/index.ts';
 
 const stub = process.argv.includes('--stub');
@@ -44,8 +44,7 @@ if (stub) {
       typeof query === 'string' ? respond(query, []) : respond(query.text, query.values ?? []),
     release: () => undefined,
   };
-  (pg.Pool.prototype as unknown as { connect: () => Promise<unknown> }).connect = async () =>
-    client;
+  (Pool.prototype as unknown as { connect: () => Promise<unknown> }).connect = async () => client;
 }
 
 const url =
@@ -75,17 +74,20 @@ if (!stub) {
 }
 
 let counter = 0;
-const cases: Readonly<Record<string, Readonly<{ iterations: number; run: () => Promise<unknown> }>>> = {
-  'findAll 100 rows': { iterations: 200, run: () => Item.findAll({ limit: 100, order: [['id', 'ASC']] }) },
-  'findByPk': { iterations: 1000, run: () => Item.findByPk(500) },
+const cases: Readonly<
+  Record<string, Readonly<{ iterations: number; run: () => Promise<unknown> }>>
+> = {
+  'findAll 100 rows': {
+    iterations: 200,
+    run: () => Item.findAll({ limit: 100, order: [['id', 'ASC']] }),
+  },
+  findByPk: { iterations: 1000, run: () => Item.findByPk(500) },
   'count where': { iterations: 1000, run: () => Item.count({ where: { qty: { [Op.gte]: 10 } } }) },
-  'create': { iterations: 500, run: () => Item.create({ sku: `c${(counter += 1)}`, qty: 1 }) },
+  create: { iterations: 500, run: () => Item.create({ sku: `c${(counter += 1)}`, qty: 1 }) },
   'bulkCreate 100': {
     iterations: 50,
     run: () =>
-      Item.bulkCreate(
-        Array.from({ length: 100 }, () => ({ sku: `b${(counter += 1)}`, qty: 2 })),
-      ),
+      Item.bulkCreate(Array.from({ length: 100 }, () => ({ sku: `b${(counter += 1)}`, qty: 2 }))),
   },
   'insert onConflict 50': {
     iterations: 100,
@@ -105,7 +107,7 @@ const cases: Readonly<Record<string, Readonly<{ iterations: number; run: () => P
 };
 
 const median = (values: readonly number[]): number =>
-  [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
+  values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
 
 const results: Record<string, number> = {};
 for (const [name, { iterations, run }] of Object.entries(cases)) {
