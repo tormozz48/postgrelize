@@ -1,6 +1,30 @@
 export { Sequelize, QueryTypes } from './sequelize.ts';
 export type { QueryOptions, QueryType, DefineOptions } from './sequelize.ts';
 export { Model } from './model/model.ts';
+export type { NamedHookAdder } from './model/model.ts';
+export { HOOK_TYPES } from './hooks/hooks.ts';
+export type { Hook, HookFunction, HookRegistry, HookType, HooksOption } from './hooks/hooks.ts';
+export type { ValidateOptions } from './model/lifecycle.ts';
+export type {
+  ScopeDefinition,
+  ScopeOptions,
+  ScopeSelector,
+  WhereMergeStrategy,
+} from './model/scopes.ts';
+export type {
+  AttributeValidateOptions,
+  AttributeValidatorFunction,
+  BuiltinValidatorOption,
+  ModelValidatorFunction,
+  ValidatorSetting,
+} from './validation/types.ts';
+export type {
+  StandardSchemaIssue,
+  StandardSchemaPathSegment,
+  StandardSchemaProps,
+  StandardSchemaResult,
+  StandardSchemaV1,
+} from './validation/standard-schema.ts';
 export type {
   AggregateOptions,
   AnyModel,
@@ -8,6 +32,7 @@ export type {
   Attributes,
   BuildOptions,
   BulkCreateOptions,
+  BulkHookOptions,
   CountOptions,
   CreateOptions,
   CreationAttributes,
@@ -17,14 +42,16 @@ export type {
   FindOrCreateOptions,
   IncrementOptions,
   InsertOptions,
+  InstanceDestroyOptions,
   InitOptions,
   ModelStatic,
   QualifiedTableName,
+  RestoreOptions,
   SaveOptions,
   UpdateOptions,
   UpsertOptions,
   Values,
-} from './model/model.ts';
+} from './model/options.ts';
 export type {
   AttributeDefinition,
   AttributeOptions,
@@ -119,7 +146,9 @@ export type {
 export type { Replacements, BindParameters } from './query/raw-query.ts';
 export {
   AccessDeniedError,
+  AggregateError,
   BaseError,
+  BulkRecordError,
   ConnectionAcquireTimeoutError,
   ConnectionError,
   ConnectionRefusedError,
@@ -132,6 +161,7 @@ export {
   HostNotReachableError,
   InstanceError,
   InvalidConnectionError,
+  OptimisticLockError,
   TimeoutError,
   UniqueConstraintError,
   ValidationError,

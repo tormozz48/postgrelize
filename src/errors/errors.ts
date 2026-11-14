@@ -30,43 +30,70 @@ export class BaseError extends Error {
 /** Origin of a validation error item. */
 export type ValidationErrorItemOrigin = 'CORE' | 'DB' | 'FUNCTION';
 
+const ORIGIN_BY_TYPE: Readonly<Record<string, ValidationErrorItemOrigin>> = {
+  'notnull violation': 'CORE',
+  'string violation': 'CORE',
+  'unique violation': 'DB',
+  'validation error': 'FUNCTION',
+};
+
+const ORIGINS: ReadonlySet<string> = new Set(['CORE', 'DB', 'FUNCTION']);
+
 /** One failed validation (Sequelize v6 `ValidationErrorItem`). */
 export class ValidationErrorItem {
   /** Human-readable message. */
   readonly message: string;
-  /** Validation type, e.g. `'unique violation'`, `'notNull Violation'`. */
+  /** Validation type, e.g. `'unique violation'`, `'notNull Violation'`, `'Validation error'`. */
   readonly type: string | null;
-  /** Attribute name. */
+  /** Attribute name (or model validator name). */
   readonly path: string | null;
   /** Offending value. */
-  readonly value: string | null;
-  /** Where the error was raised. */
+  readonly value: unknown;
+  /** Where the error was raised, derived from `type`. */
   readonly origin: ValidationErrorItemOrigin | null;
-  /** Validator key, e.g. `'not_unique'`. */
+  /** Instance being validated. */
+  readonly instance: object | null;
+  /** Validator key, e.g. `'not_unique'`, `'is_null'`, `'isEmail'`. */
   readonly validatorKey: string | null;
+  /** Built-in validator name. */
+  readonly validatorName: string | null;
+  /** Built-in validator arguments. */
+  readonly validatorArgs: readonly unknown[];
 
   /**
    * @param message - Human-readable message.
-   * @param type - Validation type.
+   * @param type - Validation type or origin.
    * @param path - Attribute name.
    * @param value - Offending value.
-   * @param origin - Where the error was raised.
+   * @param instance - Instance being validated.
    * @param validatorKey - Validator key.
+   * @param validatorName - Built-in validator name.
+   * @param validatorArgs - Built-in validator arguments.
    */
   constructor(
     message: string,
-    type: string | null = null,
-    path: string | null = null,
-    value: string | null = null,
-    origin: ValidationErrorItemOrigin | null = null,
-    validatorKey: string | null = null,
+    type?: string | null,
+    path?: string | null,
+    value?: unknown,
+    instance?: object | null,
+    validatorKey?: string | null,
+    validatorName?: string | null,
+    validatorArgs?: readonly unknown[],
   ) {
     this.message = message;
-    this.type = type;
-    this.path = path;
-    this.value = value;
-    this.origin = origin;
-    this.validatorKey = validatorKey;
+    this.path = path ?? null;
+    this.value = value === undefined ? null : value;
+    this.instance = instance ?? null;
+    this.validatorKey = validatorKey ?? null;
+    this.validatorName = validatorName ?? null;
+    this.validatorArgs = validatorArgs ?? [];
+    const origin =
+      type === undefined || type === null ? undefined : ORIGIN_BY_TYPE[type.toLowerCase().trim()];
+    this.origin =
+      type !== undefined && type !== null && ORIGINS.has(type)
+        ? (type as ValidationErrorItemOrigin)
+        : (origin ?? null);
+    this.type = origin === undefined ? null : (type ?? null);
   }
 }
 
@@ -76,12 +103,82 @@ export class ValidationError extends BaseError {
   readonly errors: readonly ValidationErrorItem[];
 
   /**
-   * @param message - Error message.
+   * @param message - Error message; when empty it is built from the items like Sequelize v6.
    * @param errors - Individual validation failures.
    */
-  constructor(message: string, errors: readonly ValidationErrorItem[] = []) {
-    super(message);
+  constructor(message: string | null | undefined, errors: readonly ValidationErrorItem[] = []) {
+    super(
+      message !== null && message !== undefined && message !== ''
+        ? message
+        : errors.length > 0
+          ? errors.map((item) => `${item.type ?? item.origin ?? ''}: ${item.message}`).join(',\n')
+          : 'Validation Error',
+    );
     this.name = 'SequelizeValidationError';
+    this.errors = errors;
+  }
+}
+
+/** A row could not be updated because its version changed (optimistic locking). */
+export class OptimisticLockError extends BaseError {
+  /** Model name. */
+  readonly modelName: string | undefined;
+  /** Primary key values of the row. */
+  readonly where: unknown;
+  /** Expected version values. */
+  readonly values: unknown;
+
+  /**
+   * @param options - Model name, values and where of the failed update.
+   */
+  constructor(
+    options: Readonly<{
+      message?: string;
+      modelName?: string;
+      values?: unknown;
+      where?: unknown;
+    }> = {},
+  ) {
+    super(
+      options.message ?? `Attempting to update a stale model instance: ${options.modelName ?? ''}`,
+    );
+    this.name = 'SequelizeOptimisticLockError';
+    this.modelName = options.modelName;
+    this.values = options.values;
+    this.where = options.where;
+  }
+}
+
+/** Error of one record in a bulk operation. */
+export class BulkRecordError extends BaseError {
+  /** Underlying error. */
+  readonly errors: Error;
+  /** Record that failed. */
+  readonly record: object;
+
+  /**
+   * @param error - Underlying error.
+   * @param record - Record that failed.
+   */
+  constructor(error: Error, record: object) {
+    super(error.message);
+    this.name = 'SequelizeBulkRecordError';
+    this.errors = error;
+    this.record = record;
+  }
+}
+
+/** Several errors raised by one bulk operation (Sequelize v6 `AggregateError`). */
+export class AggregateError extends BaseError {
+  /** Collected errors. */
+  readonly errors: readonly Error[];
+
+  /**
+   * @param errors - Collected errors.
+   */
+  constructor(errors: readonly Error[]) {
+    super(errors.map((error) => error.message).join('\n'));
+    this.name = 'AggregateError';
     this.errors = errors;
   }
 }

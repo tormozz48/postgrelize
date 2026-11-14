@@ -41,3 +41,14 @@ type ModelDefinition = Readonly<{ name; tableName; schema?; attributes: Readonly
 ## Trade-offs
 - Simplicity over generality: no dialect abstraction (YAGNI).
 - Correctness over SQL parity with v6 (bound params).
+
+## M3 additions (ADR-008)
+| Module | Responsibility | Pure? |
+|---|---|---|
+| `hooks/` | hook types, registry ops (add/remove/has), `runHooks(registries, type, ...args)` | registry pure; runner effectful (user code) |
+| `validation/` | `validateInstance(definition, values, options)` → `ValidationErrorItem[]` (notNull, validator.js, custom, model-level, Standard Schema) | async, no DB |
+| `scopes/` | scope registry, `resolveScopes(names)`, `mergeFindOptions(scope, options)` (v6 merge rules) | yes |
+| `model/paranoid.ts` | paranoid where / soft-delete set items | yes |
+| `model/version.ts` | version where / increment set items | yes |
+
+Failure modes: hook throws → operation aborted, error propagated unchanged (transaction rollback is caller's / managed tx's job); validation fails → `ValidationError` before any SQL; version mismatch → `OptimisticLockError`.

@@ -23,3 +23,10 @@ vite 8.3.x, vitest 5.1.x, @vitest/coverage-v8 5.1.x, oxlint 1.93.x, oxfmt 0.78.0
 - Param typing in `fn()`/`cast()` args: emit `$n::<type>` when value bound against a known attribute type.
 - v6 `upsert` return `[instance, created]` on PG — verify via differential test (v6 returns `created` = null or boolean depending on version).
 - `bulkCreate` with `returning` + `ignoreDuplicates`: skipped rows absent — match v6 instance list behaviour exactly (v6 returns all built instances).
+
+## M3 approach
+- Hooks: `type HookFn = (...args) => unknown | Promise<unknown>`; registry `ReadonlyMap<HookType, readonly Hook[]>` kept in model state (WeakMap) — `addHook` replaces the map. Run: model hooks then Sequelize-level (v6 runs permanent sequelize hooks for all models). Clone options shallowly at public entry points before hooks see them.
+- Validation: port v6 `instance-validator` semantics; validator.js call `validator[name](String(value), ...args)`; v6 extras (`is`, `not`, `isIn`, `notIn`, `len`, `notEmpty`, `min`, `max`, `isImmutable`) implemented locally. Standard Schema: `await schema['~standard'].validate(value)`; `issues[].path` → item path.
+- Scopes: `Model.scope()` creates `class extends this` with `Symbol` state for selected scopes; `stateOf` must resolve scoped subclasses to base model state (walk prototype chain).
+- Paranoid in `buildSelect`/`buildCount`/`buildAggregate`/`buildUpdate` via an extra where AND-ed; `destroy` → update.
+- Version: save update path adds where + set `version = version + 1`, then checks `rowCount`.

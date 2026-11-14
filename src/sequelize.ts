@@ -1,3 +1,4 @@
+import type { PoolConfig } from 'pg';
 import {
   createConnectionManager,
   type ConnectionManager,
@@ -12,10 +13,20 @@ import {
   type SequelizeOptions,
 } from './connection/options.ts';
 import { DataTypes } from './data-types/data-types.ts';
+import {
+  addHook,
+  hasHook,
+  hooksFromOption,
+  removeHook,
+  runHooks,
+  type HookFunction,
+  type HookRegistry,
+} from './hooks/hooks.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
-import { Model, parseModelRow, type AnyModel, type ModelStatic } from './model/model.ts';
-import type { DefinitionOptions, ModelAttributes } from './model/definition.ts';
+import { Model, parseModelRow } from './model/model.ts';
+import type { AnyModel, InitOptions, ModelStatic } from './model/options.ts';
+import type { ModelAttributes } from './model/definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
 import { prepareRawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
 import type { CompiledQuery } from './sql/compile.ts';
@@ -79,7 +90,7 @@ export type QueryOptions = QueryOptionsBase &
   }>;
 
 /** Options of `sequelize.define`. */
-export type DefineOptions = DefinitionOptions;
+export type DefineOptions = Omit<InitOptions, 'sequelize'>;
 
 /**
  * Entry point, API-compatible with Sequelize v6 `Sequelize` for PostgreSQL.
@@ -136,6 +147,7 @@ export class Sequelize {
 
   readonly #connections: ConnectionManager;
   readonly #runtime: ModelRuntime;
+  #hooks: HookRegistry;
 
   /**
    * Creates an instance from a connection URI.
@@ -172,7 +184,12 @@ export class Sequelize {
       logging,
       ...(this.options.benchmark === undefined ? {} : { benchmark: this.options.benchmark }),
     };
-    this.#connections = createConnectionManager(poolConfig(this.options), defaults);
+    this.#hooks = hooksFromOption(this.options.hooks);
+    const pool = poolConfig(this.options);
+    this.#connections = createConnectionManager(
+      { ...pool, password: () => this.#connectPassword(pool.password) },
+      defaults,
+    );
     this.#runtime = {
       execute: (query, options) => this.#execute(query, options),
       transaction: (run, parent) =>
@@ -183,6 +200,7 @@ export class Sequelize {
       register: (name, model) => {
         this.models[name] = model as ModelStatic<AnyModel>;
       },
+      hooks: () => this.#hooks,
       defaults: this.options.define ?? {},
       inAsAnyThreshold: this.options.inAsAnyThreshold,
     };
@@ -199,6 +217,64 @@ export class Sequelize {
   static useCLS(_namespace?: unknown): typeof Sequelize {
     Sequelize.#cls = true;
     return Sequelize;
+  }
+
+  /**
+   * Adds a hook run for every model (or `beforeConnect`).
+   *
+   * @param type - Hook type, e.g. `'beforeCreate'`.
+   * @param nameOrFn - Hook name (to remove it later) or the hook function.
+   * @param hook - Hook function when a name is given.
+   * @returns This instance.
+   */
+  addHook(type: string, nameOrFn: string | HookFunction, hook?: HookFunction): this {
+    this.#hooks =
+      typeof nameOrFn === 'string'
+        ? addHook(this.#hooks, type, hook ?? missingHook(), nameOrFn)
+        : addHook(this.#hooks, type, nameOrFn);
+    return this;
+  }
+
+  /**
+   * Removes hooks by name or function.
+   *
+   * @param type - Hook type.
+   * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
+   * @returns This instance.
+   */
+  removeHook(type: string, nameOrFn?: string | HookFunction): this {
+    this.#hooks = removeHook(this.#hooks, type, nameOrFn);
+    return this;
+  }
+
+  /**
+   * Checks whether hooks of the type are registered.
+   *
+   * @param type - Hook type.
+   * @returns True when at least one hook exists.
+   */
+  hasHook(type: string): boolean {
+    return hasHook(this.#hooks, type);
+  }
+
+  /**
+   * Alias of {@link Sequelize.hasHook}.
+   *
+   * @param type - Hook type.
+   * @returns True when at least one hook exists.
+   */
+  hasHooks(type: string): boolean {
+    return this.hasHook(type);
+  }
+
+  async #connectPassword(configured: PoolConfig['password']): Promise<string> {
+    const password = typeof configured === 'function' ? await configured() : (configured ?? '');
+    if (!hasHook(this.#hooks, 'beforeConnect')) {
+      return password;
+    }
+    const config = { ...this.config, password };
+    await runHooks([this.#hooks], 'beforeConnect', this, config);
+    return config.password ?? '';
   }
 
   /** @internal */
@@ -401,4 +477,8 @@ const shapeResult = (result: QueryResult, options: QueryOptions): unknown => {
     default:
       return options.plain === true ? (rows[0] ?? null) : [rows, result];
   }
+};
+
+const missingHook = (): never => {
+  throw new Error('addHook: hook function is required');
 };

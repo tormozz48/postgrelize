@@ -55,7 +55,7 @@ const uniqueViolation = (error: DriverError, context: QueryErrorContext): Unique
               'unique violation',
               field,
               value,
-              'DB',
+              null,
               'not_unique',
             ),
         ),

@@ -38,3 +38,13 @@ M0 → T05..T09 (T08, T09 parallelizable with T05–T07) → T10 → T11/T12 →
 | oxfmt pre-1.0 (0.78) | Pin exact version; if blocking → ask user |
 | v6 TS type compat is large | Port types incrementally per task; full type-compat check deferred to end of M4 |
 | Differential tests flakiness | Fresh schema per scenario, normalized timestamps/ids |
+
+## Cycle 2: M3 (2026-11-14)
+| ID | Task | Est | Depends |
+|---|---|---|---|
+| T20 | hooks registry + runner; wire into save/create/update/destroy/upsert/bulk*/find/count; Sequelize-level hooks | 5h | — |
+| T21 | validation: notNull, validator.js, custom, model-level, Standard Schema, validationFailed | 5h | T20 |
+| T22 | scopes: defaultScope, scope(), unscoped(), addScope, merge rules | 4h | T20 |
+| T23 | paranoid: deletedAt, soft destroy, force, restore, paranoid:false | 3h | T22 |
+| T24 | optimistic locking (version) | 2h | — |
+| T25 | differential + integration + type tests, docs | 4h | all |

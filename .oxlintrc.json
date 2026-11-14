@@ -37,7 +37,8 @@
           "expectSameResult",
           "expectSameError",
           "withUsers",
-          "withProducts"
+          "withProducts",
+          "run"
         ]
       }
     ]

@@ -1,4 +1,5 @@
 import type { PoolConfig } from 'pg';
+import type { HooksOption } from '../hooks/hooks.ts';
 
 /** Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms. */
 export type LoggingFunction = (sql: string, timingOrOptions?: unknown) => void;
@@ -29,6 +30,10 @@ export type ModelDefaults = Readonly<{
   freezeTableName?: boolean;
   /** PostgreSQL schema of the tables. */
   schema?: string;
+  /** Soft-delete rows (`deletedAt`) instead of deleting them. */
+  paranoid?: boolean;
+  /** Hooks added to every model. */
+  hooks?: HooksOption;
 }>;
 
 /** Options of the {@link Sequelize} constructor (PostgreSQL subset of Sequelize v6 `Options`). */
@@ -59,6 +64,8 @@ export type SequelizeOptions = Readonly<{
   timezone?: string;
   /** Defaults for all models. */
   define?: ModelDefaults;
+  /** Sequelize-level hooks run for every model (and `beforeConnect`). */
+  hooks?: HooksOption;
   /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
   inAsAnyThreshold?: number;
 }>;

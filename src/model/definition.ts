@@ -6,6 +6,7 @@ import {
   type DataTypeInput,
 } from '../data-types/data-types.ts';
 import type { ModelDefaults } from '../connection/options.ts';
+import type { AttributeValidateOptions } from '../validation/types.ts';
 
 /** Named unique constraint of an attribute. */
 export type UniqueOptions = Readonly<{
@@ -53,6 +54,8 @@ export type AttributeOptions = Readonly<{
   onDelete?: string;
   /** `ON UPDATE` action of the foreign key. */
   onUpdate?: string;
+  /** Validators run before INSERT / UPDATE. */
+  validate?: AttributeValidateOptions;
   /** Custom getter, called with the model instance as `this`. */
   get?: (this: never) => unknown;
   /** Custom setter, called with the model instance as `this`. */
@@ -89,6 +92,10 @@ export type DefinitionOptions = ModelDefaults &
     createdAt?: string | boolean;
     /** Name of the updated-at attribute, or `false` to disable it. */
     updatedAt?: string | boolean;
+    /** Name of the deleted-at attribute of paranoid models. */
+    deletedAt?: string | boolean;
+    /** Optimistic locking: `true` adds a `version` attribute, a string names it. */
+    version?: boolean | string;
   }>;
 
 /** Immutable normalized model definition. */
@@ -101,6 +108,10 @@ export type ModelDefinition = Readonly<{
   primaryKeys: readonly string[];
   createdAt: string | undefined;
   updatedAt: string | undefined;
+  /** Deleted-at attribute when the model is paranoid. */
+  deletedAt: string | undefined;
+  /** Version attribute when optimistic locking is enabled. */
+  version: string | undefined;
   /** Unique keys from attribute `unique` options: key name → attribute names (in definition order). */
   uniqueKeys: ReadonlyMap<string, readonly string[]>;
   options: DefinitionOptions;
@@ -177,12 +188,18 @@ const uniqueKeysOf = (
 const timestampAttributes = (
   createdAt: string | undefined,
   updatedAt: string | undefined,
+  deletedAt: string | undefined,
+  version: string | undefined,
 ): ModelAttributes =>
-  Object.fromEntries(
-    [createdAt, updatedAt]
+  Object.fromEntries([
+    ...[createdAt, updatedAt]
       .filter((name): name is string => name !== undefined)
-      .map((name) => [name, { type: DataTypes.DATE, allowNull: false }]),
-  );
+      .map((name) => [name, { type: DataTypes.DATE, allowNull: false }] as const),
+    ...(deletedAt === undefined ? [] : [[deletedAt, { type: DataTypes.DATE }] as const]),
+    ...(version === undefined
+      ? []
+      : [[version, { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 }] as const]),
+  ]);
 
 /** Normalizes `Model.init` arguments into an immutable definition, applying Sequelize v6 defaults. */
 export const normalizeDefinition = (
@@ -203,15 +220,27 @@ export const normalizeDefinition = (
     merged.timestamps === true ? timestampName(merged.createdAt, 'createdAt') : undefined;
   const updatedAt =
     merged.timestamps === true ? timestampName(merged.updatedAt, 'updatedAt') : undefined;
+  const deletedAt =
+    merged.timestamps === true && merged.paranoid === true
+      ? timestampName(merged.deletedAt, 'deletedAt')
+      : undefined;
+  const version =
+    merged.version === undefined || merged.version === false
+      ? undefined
+      : typeof merged.version === 'string'
+        ? merged.version
+        : 'version';
   const generated = new Set([
     ...Object.keys(autoPrimaryKey(attributes, tableName)),
     createdAt,
     updatedAt,
+    deletedAt,
+    version,
   ]);
   const all: ModelAttributes = {
     ...autoPrimaryKey(attributes, tableName),
     ...attributes,
-    ...timestampAttributes(createdAt, updatedAt),
+    ...timestampAttributes(createdAt, updatedAt, deletedAt, version),
   };
   const normalized = new Map(
     Object.entries(all).map(([attribute, input]) => {
@@ -237,6 +266,8 @@ export const normalizeDefinition = (
       .map((attribute) => attribute.fieldName),
     createdAt,
     updatedAt,
+    deletedAt,
+    version,
     uniqueKeys: uniqueKeysOf(tableName, [...normalized.values()]),
     options: merged,
   });
