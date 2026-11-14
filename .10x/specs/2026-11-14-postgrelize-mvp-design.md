@@ -23,7 +23,7 @@ npm package `postgrelize`: a TypeScript ORM that is a **drop-in replacement for 
 - `sequelize-cli` reimplementation (QueryInterface must be compatible enough for it and umzug to run migrations).
 - Byte-identical generated SQL or `logging` output vs Sequelize.
 - P1/P2 features from the gap analysis (MERGE, CTE, COPY, LISTEN/NOTIFY, etc.).
-- npm publishing pipeline.
+- ~~npm publishing pipeline~~ — superseded: publish to GitHub Packages is in scope (ADR-006).
 
 ## 2. Key decisions
 

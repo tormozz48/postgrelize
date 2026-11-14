@@ -22,3 +22,9 @@
 ## Cross-cutting
 - Logging: v6 `logging` option (function | false), called with SQL text + `{ bind }` — in shell only.
 - Security: values always bound (ADR-002); identifiers always quoted via one `quoteIdent` function.
+
+## Public API typing & docs (ADR-007, user requirement 2026-11-14)
+- Every export of `src/index.ts` (functions, classes, methods, types, constants) has TSDoc: summary, `@param` per parameter, `@returns`, `@throws` for v6 error classes, `@example` for non-trivial API.
+- Explicit parameter/return types on all exported functions (`typescript/explicit-module-boundary-types`). Internal helpers may rely on inference.
+- `npm run docs` must pass (TypeDoc fails on undocumented exports).
+- `@internal` for exports needed across modules but not part of the public API (excluded from docs).
