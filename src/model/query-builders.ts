@@ -1,3 +1,4 @@
+import { directionOf } from '../sql/order.ts';
 import { isDefaultValueGenerator } from '../data-types/data-types.ts';
 import { isExpression } from '../expressions/methods.ts';
 import {
@@ -81,18 +82,9 @@ export type SelectOptions = Readonly<{
   skipLocked?: boolean;
   /** `NOWAIT`. PostgreSQL extension. */
   noWait?: boolean;
+  /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
+  distinctOn?: readonly unknown[];
 }>;
-
-const DIRECTIONS: ReadonlyMap<string, Pick<OrderNode, 'direction' | 'nulls'>> = new Map([
-  ['ASC', { direction: 'ASC' }],
-  ['DESC', { direction: 'DESC' }],
-  ['ASC NULLS FIRST', { direction: 'ASC', nulls: 'FIRST' }],
-  ['ASC NULLS LAST', { direction: 'ASC', nulls: 'LAST' }],
-  ['DESC NULLS FIRST', { direction: 'DESC', nulls: 'FIRST' }],
-  ['DESC NULLS LAST', { direction: 'DESC', nulls: 'LAST' }],
-  ['NULLS FIRST', { nulls: 'FIRST' }],
-  ['NULLS LAST', { nulls: 'LAST' }],
-] as const);
 
 /** Table reference of the model. */
 export const tableOf = (definition: ModelDefinition, alias?: string): TableRef => ({
@@ -172,14 +164,6 @@ export const selectColumns = (
   return (attributes as readonly (string | readonly [unknown, string])[]).map((item) =>
     attributeItem(definition, alias, ctx, item),
   );
-};
-
-export const directionOf = (value: unknown): Pick<OrderNode, 'direction' | 'nulls'> => {
-  const direction = DIRECTIONS.get(String(value).trim().toUpperCase());
-  if (direction === undefined) {
-    throw new Error(`Invalid order direction: ${String(value)}`);
-  }
-  return direction;
 };
 
 const orderTarget = (
@@ -270,8 +254,9 @@ export const buildSelect = (
   options: SelectOptions,
   inAsAnyThreshold?: number,
   columnsOverride?: readonly ExprNode[],
+  aliasOverride?: string,
 ): SelectNode => {
-  const alias = definition.name;
+  const alias = aliasOverride ?? definition.name;
   const ctx = whereContext(definition, alias, inAsAnyThreshold);
   const where = whereClause(options.where, ctx);
   const having = whereClause(options.having, ctx);
@@ -279,8 +264,12 @@ export const buildSelect = (
   const offset = definedNumber(options.offset);
   const lock = lockOf(options);
   const group = groupBy(definition, alias, ctx, options.group);
+  const distinctOn = (options.distinctOn ?? []).map((item) =>
+    orderTarget(definition, alias, ctx, item),
+  );
   return {
     kind: 'select',
+    ...(distinctOn.length === 0 ? {} : { distinctOn }),
     columns: columnsOverride ?? selectColumns(definition, alias, ctx, options.attributes),
     from: tableOf(definition, alias),
     ...(where === undefined ? {} : { where }),
@@ -500,3 +489,5 @@ export const primaryKeyWhere = (
   values: Readonly<Record<string, unknown>>,
 ): Readonly<Record<string, unknown>> =>
   Object.fromEntries(definition.primaryKeys.map((name) => [name, values[name]]));
+
+export { directionOf };

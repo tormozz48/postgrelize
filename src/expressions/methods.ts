@@ -1,3 +1,5 @@
+import type { SelectNode } from '../sql/ast.ts';
+
 /** @internal */
 export const methodKind: unique symbol = Symbol.for('postgrelize.method');
 
@@ -74,8 +76,58 @@ export type Excluded = Method<
   }
 >;
 
-/** Any SQL expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. */
-export type SqlExpression = Literal | Fn | Col | Cast | Json | Where | Excluded;
+/** SELECT embedded in another statement. Created by `Model.subquery()`. PostgreSQL extension. */
+export type Subquery = Method<
+  'subquery',
+  {
+    /** Builds the SELECT AST (called when the outer statement is compiled). */
+    build: () => SelectNode;
+  }
+>;
+/** `EXISTS (subquery)` / `NOT EXISTS (subquery)`. Created by {@link exists} / {@link notExists}. */
+export type Exists = Method<
+  'exists',
+  {
+    /** Subquery. */
+    subquery: Subquery;
+    /** `NOT EXISTS`. */
+    negated: boolean;
+  }
+>;
+/** Window function call `fn OVER (...)`. Created by {@link over}. */
+export type Over = Method<
+  'over',
+  {
+    /** Window function, e.g. `fn('row_number')`. */
+    fn: Fn | Literal;
+    /** `PARTITION BY` attributes or expressions. */
+    partitionBy: readonly unknown[];
+    /** `ORDER BY` items: attribute, `[attribute, direction]` or expression. */
+    orderBy: readonly unknown[];
+  }
+>;
+/** Row constructor `(a, b, ...)` for row comparisons. Created by {@link tuple}. */
+export type Tuple = Method<
+  'tuple',
+  {
+    /** Row items. */
+    items: readonly unknown[];
+  }
+>;
+
+/** Any expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. */
+export type SqlExpression =
+  | Literal
+  | Fn
+  | Col
+  | Cast
+  | Json
+  | Where
+  | Excluded
+  | Subquery
+  | Exists
+  | Over
+  | Tuple;
 
 const FUNCTION_NAME = /^[A-Za-z_][\w$]*(?:\.[A-Za-z_][\w$]*)?$/;
 
@@ -199,3 +251,60 @@ export const where: WhereFactory = (
  * ```
  */
 export const excluded = (attribute: string): Excluded => make('excluded', { column: attribute });
+
+/** @internal Creates a subquery expression; use `Model.subquery()`. */
+export const subqueryExpression = (build: () => SelectNode): Subquery =>
+  make('subquery', { build });
+
+/**
+ * `EXISTS (subquery)`. PostgreSQL extension.
+ *
+ * @param subquery - Subquery from `Model.subquery()`.
+ * @returns Condition usable as `where`.
+ * @example
+ * ```ts
+ * await User.findAll({ where: exists(Post.subquery({ where: { userId: col('User.id') } })) });
+ * ```
+ */
+export const exists = (subquery: Subquery): Exists => make('exists', { subquery, negated: false });
+
+/**
+ * `NOT EXISTS (subquery)`. PostgreSQL extension.
+ *
+ * @param subquery - Subquery from `Model.subquery()`.
+ * @returns Condition usable as `where`.
+ */
+export const notExists = (subquery: Subquery): Exists =>
+  make('exists', { subquery, negated: true });
+
+/** Window definition of {@link over}. */
+export type WindowOptions = Readonly<{
+  /** `PARTITION BY` attributes or expressions. */
+  partitionBy?: readonly unknown[];
+  /** `ORDER BY` items: attribute, `[attribute, direction]` or expression. */
+  orderBy?: readonly unknown[];
+}>;
+
+/**
+ * Window function call: `over(fn('row_number'), { partitionBy: ['userId'], orderBy: [['createdAt', 'DESC']] })`.
+ * PostgreSQL extension.
+ *
+ * @param windowFunction - Function call, e.g. `fn('rank')`.
+ * @param window - Partition and order.
+ * @returns Expression usable in `attributes` and `order`.
+ */
+export const over = (windowFunction: Fn | Literal, window: WindowOptions = {}): Over =>
+  make('over', {
+    fn: windowFunction,
+    partitionBy: window.partitionBy ?? [],
+    orderBy: window.orderBy ?? [],
+  });
+
+/**
+ * Row constructor for row comparisons: `where(tuple(col('createdAt'), col('id')), Op.lt, tuple(date, id))`.
+ * PostgreSQL extension.
+ *
+ * @param items - Row items (values or expressions).
+ * @returns Row expression.
+ */
+export const tuple = (...items: readonly unknown[]): Tuple => make('tuple', { items });

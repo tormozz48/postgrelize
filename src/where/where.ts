@@ -1,4 +1,15 @@
-import { and, binary, fnCall, ident, or, param, raw, type ExprNode } from '../sql/ast.ts';
+import {
+  and,
+  binary,
+  fnCall,
+  ident,
+  or,
+  param,
+  raw,
+  type ExprNode,
+  type OrderNode,
+} from '../sql/ast.ts';
+import { directionOf } from '../sql/order.ts';
 import { isExpression, methodKind, type SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
 
@@ -73,12 +84,43 @@ const expressionToAst = (value: SqlExpression, ctx: WhereContext): ExprNode => {
         : whereToAst(value.conditions, ctx);
     case 'where':
       return expressionCondition(value, ctx);
+    case 'subquery':
+      return { kind: 'subquery', query: value.build() };
+    case 'exists':
+      return {
+        kind: 'prefix',
+        op: value.negated ? 'NOT EXISTS' : 'EXISTS',
+        expr: { kind: 'subquery', query: value.subquery.build() },
+      };
+    case 'tuple':
+      return { kind: 'list', items: value.items.map((item) => toExpr(item, ctx)) };
+    case 'over':
+      return {
+        kind: 'over',
+        expr: toExpr(value.fn, ctx),
+        partitionBy: value.partitionBy.map((item) => windowTarget(item, ctx)),
+        orderBy: value.orderBy.map((item) => windowOrder(item, ctx)),
+      };
     case 'excluded':
       if (ctx.allowExcluded !== true) {
         throw new Error('excluded() can only be used inside onConflict');
       }
       return { kind: 'excluded', column: ctx.resolve(value.column)?.field ?? value.column };
   }
+};
+
+const windowTarget = (item: unknown, ctx: WhereContext): ExprNode =>
+  typeof item === 'string' ? attributeOperand(item, ctx).node : toExpr(item, ctx);
+
+const windowOrder = (item: unknown, ctx: WhereContext): OrderNode => {
+  if (Array.isArray(item)) {
+    const [target, direction]: readonly unknown[] = item;
+    return {
+      expr: windowTarget(target, ctx),
+      ...(direction === undefined ? {} : directionOf(direction)),
+    };
+  }
+  return { expr: windowTarget(item, ctx) };
 };
 
 const jsonPathExpression = (
