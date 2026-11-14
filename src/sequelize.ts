@@ -201,6 +201,9 @@ export class Sequelize {
         this.models[name] = model as ModelStatic<AnyModel>;
       },
       hooks: () => this.#hooks,
+      defineModel: (name, attributes, options) =>
+        this.define(name, attributes as ModelAttributes, options as DefineOptions),
+      models: () => this.models,
       defaults: this.options.define ?? {},
       inAsAnyThreshold: this.options.inAsAnyThreshold,
     };

@@ -48,3 +48,14 @@ M0 → T05..T09 (T08, T09 parallelizable with T05–T07) → T10 → T11/T12 →
 | T23 | paranoid: deletedAt, soft destroy, force, restore, paranoid:false | 3h | T22 |
 | T24 | optimistic locking (version) | 2h | — |
 | T25 | differential + integration + type tests, docs | 4h | all |
+
+## Cycle 3: M4 (2026-11-14)
+| ID | Task | Depends |
+|---|---|---|
+| T26 | association definitions + defaults + FK attributes + registry | — |
+| T27 | include normalization (tree, as resolution, all:true) | T26 |
+| T28 | SELECT with joins, aliases, include where/required/attributes, order by include | T27 |
+| T29 | row tree assembly, plain/toJSON recursion, raw/nest | T28 |
+| T30 | subQuery for limit + multi includes; separate:true; findAndCountAll/count with include | T29 |
+| T31 | instance accessors (get/set/create/add/remove/has/count) | T26 |
+| T32 | differential + integration + type tests | all |

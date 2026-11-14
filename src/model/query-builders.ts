@@ -121,10 +121,10 @@ export const whereContext = (
   },
 });
 
-const whereClause = (where: unknown, ctx: WhereContext): ExprNode | undefined =>
+export const whereClause = (where: unknown, ctx: WhereContext): ExprNode | undefined =>
   isEmptyWhere(where) ? undefined : whereToAst(where, ctx);
 
-const storedAttributes = (definition: ModelDefinition): readonly AttributeDefinition[] =>
+export const storedAttributes = (definition: ModelDefinition): readonly AttributeDefinition[] =>
   [...definition.attributes.values()].filter((attribute) => attribute.type.isVirtual !== true);
 
 const columnFor = (definition: ModelDefinition, alias: string, name: string): ExprNode => {
@@ -152,7 +152,7 @@ const attributeItem = (
   return { kind: 'alias', expr, alias: name };
 };
 
-const selectColumns = (
+export const selectColumns = (
   definition: ModelDefinition,
   alias: string,
   ctx: WhereContext,
@@ -174,7 +174,7 @@ const selectColumns = (
   );
 };
 
-const directionOf = (value: unknown): Pick<OrderNode, 'direction' | 'nulls'> => {
+export const directionOf = (value: unknown): Pick<OrderNode, 'direction' | 'nulls'> => {
   const direction = DIRECTIONS.get(String(value).trim().toUpperCase());
   if (direction === undefined) {
     throw new Error(`Invalid order direction: ${String(value)}`);
@@ -194,7 +194,7 @@ const orderTarget = (
       : ident(...target.split('.'))
     : toExpr(target, ctx);
 
-const orderItem = (
+export const orderItem = (
   definition: ModelDefinition,
   alias: string,
   ctx: WhereContext,

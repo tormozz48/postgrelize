@@ -1,4 +1,25 @@
 import {
+  assembleInstances,
+  countJoins,
+  loadSeparate,
+  normalizeIncludes,
+  parseRawRow,
+  withIncludes,
+  type IncludeOption,
+} from '../associations/include.ts';
+import {
+  associationsOf,
+  belongsTo as defineBelongsTo,
+  belongsToMany as defineBelongsToMany,
+  hasMany as defineHasMany,
+  hasOne as defineHasOne,
+} from '../associations/associate.ts';
+import type {
+  Association,
+  AssociationOptions,
+  BelongsToManyOptions,
+} from '../associations/types.ts';
+import {
   AggregateError,
   BulkRecordError,
   EmptyResultError,
@@ -84,7 +105,15 @@ import type {
   UpsertOptions,
   Values,
 } from './options.ts';
-import { activeScope, initialState, selectScopes, states, stateOf, updateState } from './state.ts';
+import {
+  activeScope,
+  defineAttributeAccessors,
+  initialState,
+  selectScopes,
+  states,
+  stateOf,
+  updateState,
+} from './state.ts';
 import {
   initialValues,
   isEqualValue,
@@ -301,19 +330,89 @@ export class Model<
     );
     states.set(
       this,
-      initialState(definition, runtime, {
-        hooks: hooksFromOption(hooks, hooksFromOption(runtime.defaults.hooks)),
-        defaultScope,
-        scopes,
-        whereMergeStrategy,
-        validate,
-        schema: validationSchema,
-      }),
+      initialState(
+        definition,
+        runtime,
+        { className: this.name, attributes, options: definitionOptions, extra: {} },
+        {
+          hooks: hooksFromOption(hooks, hooksFromOption(runtime.defaults.hooks)),
+          defaultScope,
+          scopes,
+          whereMergeStrategy,
+          validate,
+          schema: validationSchema,
+        },
+      ),
     );
     sequelizes.set(this, sequelize);
-    defineAccessors(this.prototype, definition);
+    defineAttributeAccessors(this.prototype, definition);
     runtime.register(definition.name, this);
     return this;
+  }
+
+  /** Associations of the model by alias (Sequelize v6 `Model.associations`). */
+  static get associations(): Readonly<Record<string, Association>> {
+    return Object.fromEntries(associationsOf(this));
+  }
+
+  /**
+   * Adds a belongsTo association: the foreign key is stored on this model.
+   *
+   * @param target - Associated model.
+   * @param options - Association options.
+   * @returns The association.
+   */
+  static belongsTo<M extends AnyModel, T extends AnyModel>(
+    this: ModelStatic<M>,
+    target: ModelStatic<T>,
+    options?: AssociationOptions,
+  ): Association {
+    return defineBelongsTo(this, target, options);
+  }
+
+  /**
+   * Adds a hasOne association: the foreign key is stored on the target.
+   *
+   * @param target - Associated model.
+   * @param options - Association options.
+   * @returns The association.
+   */
+  static hasOne<M extends AnyModel, T extends AnyModel>(
+    this: ModelStatic<M>,
+    target: ModelStatic<T>,
+    options?: AssociationOptions,
+  ): Association {
+    return defineHasOne(this, target, options);
+  }
+
+  /**
+   * Adds a hasMany association: the foreign key is stored on the target.
+   *
+   * @param target - Associated model.
+   * @param options - Association options.
+   * @returns The association.
+   */
+  static hasMany<M extends AnyModel, T extends AnyModel>(
+    this: ModelStatic<M>,
+    target: ModelStatic<T>,
+    options?: AssociationOptions,
+  ): Association {
+    return defineHasMany(this, target, options);
+  }
+
+  /**
+   * Adds a belongsToMany association through a junction model.
+   *
+   * @param target - Associated model.
+   * @param options - Association options with `through`.
+   * @returns The association.
+   */
+  static belongsToMany<M extends AnyModel, T extends AnyModel>(
+    this: ModelStatic<M>,
+    target: ModelStatic<T>,
+    options: BelongsToManyOptions,
+  ): Association {
+    return defineBelongsToMany(this, target, options);
   }
 
   /**
@@ -768,15 +867,35 @@ export class Model<
       ...(opts as FindOptions),
       where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
-    const result = await runtime.execute(
-      compile(buildSelect(definition, query as SelectOptions, runtime.inAsAnyThreshold)),
-      query,
+    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const base = buildSelect(
+      definition,
+      (includes.length === 0 ? query : { ...query, order: undefined }) as SelectOptions,
+      runtime.inAsAnyThreshold,
     );
-    const rows = result.rows.map((row) => parseRow(definition, row));
+    const select =
+      includes.length === 0 ? base : withIncludes(definition, base, includes, query as FindOptions);
+    const result = await runtime.execute(compile(select), query);
+    const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
     const found =
       opts['raw'] === true
-        ? ((opts['nest'] === true ? rows.map(nestRow) : rows) as unknown as M[])
-        : result.rows.map((row) => fromRow(this, row));
+        ? (result.rows
+            .map((row) =>
+              includes.length === 0 ? parseMain(row) : parseRawRow(includes, row, parseMain),
+            )
+            .map((row) => (opts['nest'] === true ? nestRow(row as Values) : row)) as unknown as M[])
+        : includes.length === 0
+          ? result.rows.map((row) => fromRow(this, row))
+          : (assembleInstances(
+              this,
+              includes,
+              result.rows,
+              parseMain,
+              (model, values) => new model(values, { isNewRecord: false, raw: true }),
+            ) as M[]);
+    if (opts['raw'] !== true && includes.length > 0) {
+      await loadSeparate(found, includes, query);
+    }
     if (opts['hooks'] === true) {
       await runModelHooks(this, 'afterFind', found, opts);
     }
@@ -860,12 +979,19 @@ export class Model<
       ...(opts as CountOptions),
       where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
-    const result = await runtime.execute(
-      compile(
-        buildCount(definition, query as SelectOptions & CountOptions, runtime.inAsAnyThreshold),
-      ),
-      query,
-    );
+    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const countQuery = (
+      includes.length === 0 || query.col !== undefined
+        ? query
+        : {
+            ...query,
+            col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
+          }
+    ) as SelectOptions & CountOptions;
+    const counted = buildCount(definition, countQuery, runtime.inAsAnyThreshold);
+    const select =
+      includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
+    const result = await runtime.execute(compile(select), query);
     if (query.group !== undefined) {
       return result.rows.map((row) => ({
         ...parseRow(definition, row),
@@ -888,6 +1014,8 @@ export class Model<
     const [count, rows] = await Promise.all([
       this.count({
         ...(options.where === undefined ? {} : { where: options.where }),
+        ...(options.include === undefined ? {} : { include: options.include }),
+        ...(options.paranoid === undefined ? {} : { paranoid: options.paranoid }),
         ...pickQueryOptions(options),
       }),
       this.findAll(options),
@@ -1345,10 +1473,19 @@ export class Model<
         : (this.dataValues as Values)[keyOrOptions];
     }
     const raw = typeof keyOrOptions === 'object' && keyOrOptions.raw === true;
+    const plain = typeof keyOrOptions === 'object' && keyOrOptions.plain === true;
+    const toPlain = (value: unknown): unknown =>
+      !plain
+        ? value
+        : value instanceof Model
+          ? value.get({ plain: true })
+          : Array.isArray(value) && value.some((item) => item instanceof Model)
+            ? value.map(toPlain)
+            : value;
     return Object.fromEntries(
       Object.keys(this.dataValues).map((key) => [
         key,
-        raw ? (this.dataValues as Values)[key] : this.get(key as keyof TAttributes),
+        toPlain(raw ? (this.dataValues as Values)[key] : this.get(key as keyof TAttributes)),
       ]),
     );
   }
@@ -1771,23 +1908,6 @@ export class Model<
     return this;
   }
 }
-
-const defineAccessors = (prototype: object, definition: ModelDefinition): void => {
-  [...definition.attributes.keys()]
-    .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
-    .forEach((name) =>
-      Object.defineProperty(prototype, name, {
-        configurable: true,
-        enumerable: false,
-        get(this: Model) {
-          return this.get(name as never);
-        },
-        set(this: Model, value: unknown) {
-          this.set(name as never, value as never);
-        },
-      }),
-    );
-};
 
 const fromRow = <M extends AnyModel>(
   model: ModelStatic<M>,

@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Cycle 2 (M3) — Implementation + Verification complete; PR open. Next: M4 (associations + include)
+**Current phase:** Cycle 3 (M4) — Implementation + Verification complete; PR open. Next: M5 (QueryInterface + sync)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -54,3 +54,16 @@
 ## Cycle 2 (M3) verification (2026-11-14)
 - unit 77, integration+compat 71 (compat 38 scenarios vs sequelize@6), types, build, docs — green locally.
 - Security: no new SQL surfaces (hooks/validators run user code by design; scope options flow through existing where/order compilers and allowlists). Validation errors may include offending values (`value`) — same as v6.
+
+## Cycle 3 (M4) tasks — spec `.10x/specs/2026-11-14-m4-associations-design.md`, ADR-009
+- [x] T26 association definitions
+- [x] T27 include normalization
+- [x] T28 join SELECT builder
+- [x] T29 row tree assembly
+- [x] T30 subQuery / separate / count
+- [x] T31 accessors
+- [x] T32 tests
+
+## Cycle 3 (M4) verification (2026-11-14)
+- 159 tests green locally (compat 49 scenarios vs sequelize@6), types, build, docs.
+- Security: include `where`/`order`/attributes go through existing where/order compilers (identifiers quoted, values bound); include aliases come from association definitions, quoted.

@@ -383,3 +383,25 @@ export class InstanceError extends BaseError {
     this.name = 'SequelizeInstanceError';
   }
 }
+
+/** Invalid `include` (unknown or ambiguous association). */
+export class EagerLoadingError extends BaseError {
+  /**
+   * @param message - Error message.
+   */
+  constructor(message: string) {
+    super(message);
+    this.name = 'SequelizeEagerLoadingError';
+  }
+}
+
+/** Invalid association definition. */
+export class AssociationError extends BaseError {
+  /**
+   * @param message - Error message.
+   */
+  constructor(message: string) {
+    super(message);
+    this.name = 'SequelizeAssociationError';
+  }
+}

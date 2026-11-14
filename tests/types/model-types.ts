@@ -71,6 +71,15 @@ export const typeChecks = async (): Promise<void> => {
   await User.unscoped().destroy({ where: { id: 1 }, force: true, individualHooks: true });
   await User.restore({ where: { id: 1 } });
   await created.validate({ skip: ['age'] });
+  const Post = sequelize.define('Post', { title: DataTypes.STRING });
+  const association = User.hasMany(Post, { as: 'posts', foreignKey: 'authorId' });
+  const kind: 'HasMany' | 'HasOne' | 'BelongsTo' | 'BelongsToMany' = association.associationType;
+  await User.findAll({
+    include: [{ model: Post, as: 'posts', where: { title: 'x' }, required: false, include: [] }],
+    subQuery: false,
+  });
+  await User.count({ include: ['posts'] });
+  void kind;
   // @ts-expect-error unknown hook type
   User.addHook('beforeNothing', () => undefined);
   void [found, sure, all, count, affected, values, fullName, flag, instance, upsertCreated, scoped];

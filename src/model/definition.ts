@@ -207,6 +207,7 @@ export const normalizeDefinition = (
   attributes: ModelAttributes,
   options: DefinitionOptions,
   defaults: ModelDefaults = {},
+  associationAttributes: ModelAttributes = {},
 ): ModelDefinition => {
   const merged: DefinitionOptions = { timestamps: true, ...defaults, ...options };
   const name = merged.modelName ?? className;
@@ -230,17 +231,21 @@ export const normalizeDefinition = (
       : typeof merged.version === 'string'
         ? merged.version
         : 'version';
+  const declared: ModelAttributes = { ...associationAttributes, ...attributes };
   const generated = new Set([
-    ...Object.keys(autoPrimaryKey(attributes, tableName)),
+    ...Object.keys(autoPrimaryKey(declared, tableName)),
     createdAt,
     updatedAt,
     deletedAt,
     version,
   ]);
   const all: ModelAttributes = {
-    ...autoPrimaryKey(attributes, tableName),
+    ...autoPrimaryKey(declared, tableName),
     ...attributes,
     ...timestampAttributes(createdAt, updatedAt, deletedAt, version),
+    ...Object.fromEntries(
+      Object.entries(associationAttributes).filter(([key]) => !(key in attributes)),
+    ),
   };
   const normalized = new Map(
     Object.entries(all).map(([attribute, input]) => {

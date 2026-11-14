@@ -147,6 +147,7 @@ export type { Replacements, BindParameters } from './query/raw-query.ts';
 export {
   AccessDeniedError,
   AggregateError,
+  AssociationError,
   BaseError,
   BulkRecordError,
   ConnectionAcquireTimeoutError,
@@ -154,6 +155,7 @@ export {
   ConnectionRefusedError,
   ConnectionTimedOutError,
   DatabaseError,
+  EagerLoadingError,
   EmptyResultError,
   ExclusionConstraintError,
   ForeignKeyConstraintError,
@@ -173,3 +175,18 @@ export type {
   QueryErrorContext,
   ValidationErrorItemOrigin,
 } from './errors/errors.ts';
+export type {
+  Association,
+  AssociationName,
+  AssociationOptions,
+  AssociationThrough,
+  AssociationType,
+  BelongsToManyOptions,
+  ForeignKeyOptions,
+  ThroughOptions,
+} from './associations/types.ts';
+export type {
+  IncludeOption,
+  IncludeOptions,
+  IncludeThroughOptions,
+} from './associations/include.ts';

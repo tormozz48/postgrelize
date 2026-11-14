@@ -82,3 +82,15 @@ Deviations:
 Tech debt:
 - model.ts still ~1.5k lines (mostly TSDoc); further split per operation in M4.
 - `beforeConnect` can only change the password (pg limitation via password function).
+
+## M4 — Associations (T26–T32) — done 2026-11-14
+Built: `src/associations/types.ts`, `associate.ts` (definitions, v6 naming, FK injection via definition rebuild, implicit through model through `runtime.defineModel`, accessor mixins), `include.ts` (normalization, joins/aliases, sub-query, EXISTS filters for required includes, row-tree assembly, raw parsing, separate loading). `ModelState` keeps `init` input and associations; `normalizeDefinition` accepts association attributes (appended after timestamps like v6).
+
+Tests: compat +11 (definitions/accessor names, include variants, where/required/attributes/through, order + limit sub-query, separate, raw/nest, count/findAndCountAll, all:true, eager loading errors, accessors for all four types); type checks for associations/include.
+
+Deviations / limits:
+- Rows without selected primary keys are de-duplicated by all selected values.
+- `required` include + `limit` uses `EXISTS (...)` in the sub-query (v6: `(SELECT fk ... LIMIT 1) IS NOT NULL`) — same rows.
+- Default scopes of included models are not applied (v6 applies them) — tech debt.
+- belongsToMany join uses two flat joins (through, then target) instead of v6's parenthesized nested join — same results for tested cases.
+- Not implemented: nested create via `include` in `create`/`bulkCreate`, `include` in `update`/`destroy`, association hooks, `LATERAL`/json strategy (P1).

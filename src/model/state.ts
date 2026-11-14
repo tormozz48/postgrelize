@@ -1,7 +1,12 @@
 import { emptyHooks, type HookRegistry } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
-import type { ModelDefinition } from './definition.ts';
+import {
+  normalizeDefinition,
+  type DefinitionOptions,
+  type ModelAttributes,
+  type ModelDefinition,
+} from './definition.ts';
 import type { ModelRuntime } from './runtime.ts';
 import {
   resolveScopes,
@@ -19,6 +24,15 @@ export type ModelState = Readonly<{
   scopes: ScopeRegistry;
   validators: Readonly<Record<string, ModelValidatorFunction>>;
   schema: StandardSchemaV1 | undefined;
+  /** `init` input, kept to rebuild the definition when associations add attributes. */
+  input: Readonly<{
+    className: string;
+    attributes: ModelAttributes;
+    options: DefinitionOptions;
+    extra: ModelAttributes;
+  }>;
+  /** Associations by alias. */
+  associations: ReadonlyMap<string, unknown>;
 }>;
 
 /** @internal */
@@ -56,6 +70,7 @@ export const updateState = (model: object, change: (state: ModelState) => ModelS
 export const initialState = (
   definition: ModelDefinition,
   runtime: ModelRuntime,
+  input: ModelState['input'],
   options: Readonly<{
     hooks: HookRegistry | undefined;
     defaultScope: ScopeOptions | undefined;
@@ -73,6 +88,8 @@ export const initialState = (
   scopes: scopeRegistry(options.defaultScope, options.scopes, options.whereMergeStrategy),
   validators: options.validate ?? {},
   schema: options.schema,
+  input,
+  associations: new Map(),
 });
 
 /** Marks `model` (a scoped subclass) as using the given scopes. */
@@ -85,4 +102,51 @@ export const activeScope = (model: object): ScopeOptions => {
   const state = stateOf(model);
   const selected = selections.get(model);
   return selected === undefined ? state.scopes.defaultScope : resolveScopes(state.scopes, selected);
+};
+
+type AttributeHost = Readonly<{
+  get: (name: string) => unknown;
+  set: (name: string, value: unknown) => unknown;
+}>;
+
+/** Defines `instance.<attribute>` getters/setters on the model prototype (once per attribute). */
+export const defineAttributeAccessors = (prototype: object, definition: ModelDefinition): void => {
+  [...definition.attributes.keys()]
+    .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
+    .forEach((name) =>
+      Object.defineProperty(prototype, name, {
+        configurable: true,
+        enumerable: false,
+        get(this: AttributeHost) {
+          return this.get(name);
+        },
+        set(this: AttributeHost, value: unknown) {
+          this.set(name, value);
+        },
+      }),
+    );
+};
+
+/** Rebuilds the definition of `model` with attributes contributed by associations. */
+export const addAssociationAttributes = (
+  model: object,
+  attributes: ModelAttributes,
+): ModelDefinition => {
+  updateState(model, (state) => {
+    const extra = { ...state.input.extra, ...attributes };
+    return {
+      ...state,
+      input: { ...state.input, extra },
+      definition: normalizeDefinition(
+        state.input.className,
+        state.input.attributes,
+        state.input.options,
+        state.runtime.defaults,
+        extra,
+      ),
+    };
+  });
+  const { definition } = stateOf(model);
+  defineAttributeAccessors((model as { prototype: object }).prototype, definition);
+  return definition;
 };

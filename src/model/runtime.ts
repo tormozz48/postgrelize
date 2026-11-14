@@ -22,6 +22,14 @@ export type ModelRuntime = Readonly<{
     parent?: Transaction | null,
   ) => Promise<T>;
   register: (name: string, model: object) => void;
+  /** Defines a model through the owning Sequelize instance (used for implicit through models). */
+  defineModel: (
+    name: string,
+    attributes: Readonly<Record<string, unknown>>,
+    options: Readonly<Record<string, unknown>>,
+  ) => object;
+  /** Registered models by name. */
+  models: () => Readonly<Record<string, object>>;
   hooks: () => HookRegistry;
   defaults: ModelDefaults;
   inAsAnyThreshold: number | undefined;
