@@ -270,14 +270,20 @@ export const createTableSql = (
     ...(options.comment === undefined
       ? []
       : [`COMMENT ON TABLE ${qualified} IS ${escapeLiteral(options.comment)}`]),
-    ...columns
-      .filter((column) => column.comment !== undefined)
-      .map(
-        (column) =>
-          `COMMENT ON COLUMN ${qualified}.${quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
-      ),
+    ...columns.flatMap((column) => columnCommentSql(table, column)),
   ];
 };
+
+/** `COMMENT ON COLUMN` for a column with a comment (empty otherwise). */
+export const columnCommentSql = (
+  table: TableName,
+  column: Readonly<{ field: string; comment?: string }>,
+): readonly string[] =>
+  column.comment === undefined
+    ? []
+    : [
+        `COMMENT ON COLUMN ${quoteTable(table)}.${quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
+      ];
 
 /** `ALTER TYPE ... ADD VALUE IF NOT EXISTS` for every enum value of a column. */
 export const addEnumValuesSql = (table: TableName, column: ColumnDefinition): readonly string[] => {
@@ -309,11 +315,7 @@ export const changeColumnSql = (
     value === undefined ? `${target} DROP DEFAULT` : `${target} SET DEFAULT ${value}`,
     ...(enumSql === undefined ? [] : [enumSql]),
     `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${quoteIdent(column.field)}::${type})` : ''}`,
-    ...(column.comment === undefined
-      ? []
-      : [
-          `COMMENT ON COLUMN ${qualified}.${quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
-        ]),
+    ...columnCommentSql(table, column),
   ];
 };
 

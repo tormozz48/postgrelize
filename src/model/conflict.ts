@@ -19,6 +19,18 @@ export const fieldsOf = (
 export const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefined =>
   [...definition.uniqueKeys.values()].find((fields) => fields.length > 0);
 
+/** Attribute names of each unique index declared in `indexes` (optionally without partial ones). */
+const uniqueIndexKeys = (
+  definition: ModelDefinition,
+  withPartial: boolean,
+): readonly (readonly string[])[] =>
+  (definition.options.indexes ?? [])
+    .filter((index) => index.unique === true && (withPartial || index.where === undefined))
+    .map((index) =>
+      (index.fields ?? []).map((field) => (typeof field === 'string' ? field : field.name)),
+    )
+    .filter((fields) => fields.length > 0);
+
 export const conflictUpdate = (
   attributes: readonly string[],
   target: readonly string[],
@@ -52,8 +64,12 @@ export const v6BulkConflict = (
     const updatable = options.updateOnDuplicate.filter(
       (name) => definition.attributes.has(name) && name !== definition.createdAt,
     );
+    const indexed = [
+      ...uniqueIndexKeys(definition, false).flat(),
+      ...(firstUniqueKey(definition) ?? []),
+    ];
     const target =
-      options.conflictAttributes ?? firstUniqueKey(definition) ?? definition.primaryKeys;
+      options.conflictAttributes ?? (indexed.length > 0 ? indexed : definition.primaryKeys);
     const where =
       options.conflictWhere === undefined || isEmptyWhere(options.conflictWhere)
         ? undefined
@@ -81,9 +97,15 @@ export const v6UpsertConflict = (
       ? []
       : [definition.updatedAt]),
   ].filter((name) => name in insertValues);
-  const uniqueKey = [...definition.uniqueKeys.values()].find((fields) =>
-    fields.some((name) => update.includes(name)),
-  );
+  const uniqueKeys = [...definition.uniqueKeys.values()].filter((fields) => fields.length > 0);
+  const indexKeys = uniqueIndexKeys(definition, true);
+  const uniqueKey = update
+    .map(
+      (name) =>
+        uniqueKeys.find((fields) => fields.includes(name)) ??
+        indexKeys.find((fields) => fields.includes(name)),
+    )
+    .find((fields) => fields !== undefined);
   const target =
     conflictFields ??
     fieldsOf(

@@ -1122,11 +1122,14 @@ export class Model<
     if (opts['hooks'] === true) {
       await runModelHooks(this, 'beforeUpsert', values, opts);
     }
-    const insertValues = withoutGeneratedKey(
-      definition,
-      values as Values,
-      withTimestamps(definition, instance.dataValues as Values, now, true, false),
-    );
+    const insertValues = withoutGeneratedKey(definition, values as Values, {
+      ...withTimestamps(definition, instance.dataValues as Values, now, true, false),
+      ...(definition.updatedAt !== undefined &&
+      (values as Values)[definition.updatedAt] !== undefined &&
+      (values as Values)[definition.updatedAt] !== null
+        ? { [definition.updatedAt]: instance.dataValues[definition.updatedAt] }
+        : {}),
+    });
     const onConflict =
       options.onConflict === undefined
         ? v6UpsertConflict(definition, insertValues, updatable, options.conflictFields)

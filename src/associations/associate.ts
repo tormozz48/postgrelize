@@ -3,7 +3,12 @@ import { AssociationError } from '../errors/errors.ts';
 import { Op } from '../expressions/op.ts';
 import type { AttributeDefinition, ModelAttributes } from '../model/definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { addAssociationAttributes, stateOf, updateState } from '../model/state.ts';
+import {
+  addAssociationAttributes,
+  defineAssociationAccessor,
+  stateOf,
+  updateState,
+} from '../model/state.ts';
 import type {
   Association,
   AssociationName,
@@ -132,6 +137,16 @@ const register = (association: Association): Association => {
     };
   });
   mixin(association);
+  defineAssociationAccessor(
+    (association.source as { prototype: object }).prototype,
+    association.as,
+  );
+  if (association.through !== undefined) {
+    defineAssociationAccessor(
+      (association.target as { prototype: object }).prototype,
+      stateOf(association.through.model).definition.name,
+    );
+  }
   return association;
 };
 
