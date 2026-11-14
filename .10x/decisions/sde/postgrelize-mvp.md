@@ -121,3 +121,7 @@ Built: `src/connection/copy.ts` (COPY text encoder + `CopyFromStdin` pg submitta
 Tests: integration +6 (COPY arrays/async iterables/escaping/errors/rollback + pool health after failure, findEach batching and early exit, LISTEN/NOTIFY incl. transactional notify and unlisten, SET LOCAL scope, advisory lock exclusion), unit +2 (COPY encoding).
 Bugs found: pg detaches the active query on ErrorResponse → COPY must report errors from `handleError` and stop pumping before the client is released (else hang / protocol mix-up).
 Deviations: `copyTo` not implemented (needs type OIDs for text parsing; YAGNI). findEach rejects joined includes; no hooks for findEach/copyFrom.
+
+## P1-D — Schema power — done 2026-11-14
+Built: attribute `identity` / `generated`; DDL rendering (identity type, `GENERATED ALWAYS AS (...) STORED|VIRTUAL`, no DEFAULT for generated), insert/update skip generated attributes, `OVERRIDING` in INSERT AST/compiler and create/bulkCreate/insert options, `DataTypes.INTERVAL` with raw server text (OID 1186 parser override), `addEnumValuesSql` in `sync({ alter })` (identity/generated columns not altered).
+Tests: integration +2 (identity always + overriding, generated recompute on update, INTERVAL, enum values added by alter).
