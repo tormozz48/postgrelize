@@ -190,3 +190,13 @@ export type {
   IncludeOptions,
   IncludeThroughOptions,
 } from './associations/include.ts';
+export { QueryInterface } from './query-interface/query-interface.ts';
+export type {
+  ColumnDescription,
+  CreateTableOptions,
+  DropTableOptions,
+} from './query-interface/query-interface.ts';
+export type { AlterOptions, DropOptions, SyncOptions } from './query-interface/sync.ts';
+export { Deferrable } from './ddl/ddl.ts';
+export type { ConstraintOptions, DeferrableValue, IndexField, IndexOptions } from './ddl/ddl.ts';
+export type { QualifiedTable, TableName } from './ddl/literals.ts';

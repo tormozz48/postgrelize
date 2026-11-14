@@ -1,1 +1,1 @@
- · 009 eager loading JOIN strategy
+ · 010 DDL with escaped literals

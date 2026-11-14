@@ -59,3 +59,12 @@ M0 → T05..T09 (T08, T09 parallelizable with T05–T07) → T10 → T11/T12 →
 | T30 | subQuery for limit + multi includes; separate:true; findAndCountAll/count with include | T29 |
 | T31 | instance accessors (get/set/create/add/remove/has/count) | T26 |
 | T32 | differential + integration + type tests | all |
+
+## Cycle 4: M5 (2026-11-14)
+| ID | Task |
+|---|---|
+| T33 | `src/ddl/` — escapeLiteral, column definition, create/drop/alter table, enums, indexes, constraints (pure) |
+| T34 | QueryInterface class shell over runtime executor |
+| T35 | FK references from associations, model `indexes`, `Deferrable`, NULLS NOT DISTINCT |
+| T36 | `Model.sync/drop`, `sequelize.sync/drop` (dependency order, force, alter) |
+| T37 | differential (describeTable) + integration + migration smoke tests |

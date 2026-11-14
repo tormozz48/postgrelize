@@ -33,3 +33,6 @@ No auth logic in the library. Passwords are passed to `pg` only; not logged. `se
 
 ## Dependencies
 Runtime: `inflection` (no network/IO), peer `pg`. `npm audit`: 0 vulnerabilities at review time.
+
+## MVP (M3–M5) review
+See `.10x/reviews/2026-11-14-mvp-security-review.md` — no open High/Medium findings.

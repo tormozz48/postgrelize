@@ -7,6 +7,7 @@ import {
 } from '../data-types/data-types.ts';
 import type { ModelDefaults } from '../connection/options.ts';
 import type { AttributeValidateOptions } from '../validation/types.ts';
+import type { DeferrableValue, IndexOptions } from '../ddl/ddl.ts';
 
 /** Named unique constraint of an attribute. */
 export type UniqueOptions = Readonly<{
@@ -14,12 +15,16 @@ export type UniqueOptions = Readonly<{
   name?: string;
   /** Validation message used when the constraint is violated. */
   msg?: string;
+  /** `UNIQUE NULLS NOT DISTINCT`: treat NULLs as equal. PostgreSQL extension. */
+  nullsNotDistinct?: boolean;
 }>;
 
 /** Table referenced by a foreign key. */
 export type ReferencedTable = Readonly<{
   /** Referenced table name. */
   tableName: string;
+  /** Referenced table schema. */
+  schema?: string;
 }>;
 
 /** Foreign key target of an attribute. */
@@ -28,6 +33,8 @@ export type ReferenceOptions = Readonly<{
   model: string | ReferencedTable;
   /** Referenced column. Default: primary key. */
   key?: string;
+  /** Deferrable mode of the foreign key constraint. */
+  deferrable?: DeferrableValue;
 }>;
 
 /** Column definition of a model attribute (Sequelize v6 `ModelAttributeColumnOptions`). */
@@ -96,6 +103,10 @@ export type DefinitionOptions = ModelDefaults &
     deletedAt?: string | boolean;
     /** Optimistic locking: `true` adds a `version` attribute, a string names it. */
     version?: boolean | string;
+    /** Indexes created by `sync()`. */
+    indexes?: readonly IndexOptions[];
+    /** Table comment. */
+    comment?: string;
   }>;
 
 /** Immutable normalized model definition. */
@@ -129,7 +140,7 @@ const timestampName = (
 const underscoredIf = (name: string, underscored: boolean): string =>
   underscored ? inflection.underscore(name) : name;
 
-const normalizeAttribute = (
+export const normalizeAttribute = (
   name: string,
   input: DataTypeInput | AttributeOptions,
   underscored: boolean,

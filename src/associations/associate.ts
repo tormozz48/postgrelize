@@ -53,6 +53,38 @@ const aliasNames = (
         : { singular: as, plural: inflection.pluralize(as) }
       : as;
 
+type ReferenceSpec = Readonly<{
+  model: Model;
+  key: string;
+  onDelete: string | undefined;
+  onUpdate: string | undefined;
+  constraints: boolean | undefined;
+}>;
+
+const referenceOf = (
+  spec: ReferenceSpec,
+  allowNull: boolean,
+  defaults: Readonly<{ onDelete: string; onUpdate: string }>,
+): Values => {
+  if (spec.constraints === false) {
+    return {};
+  }
+  const definition = stateOf(spec.model).definition;
+  return {
+    references: {
+      model: {
+        tableName: definition.tableName,
+        ...(definition.schema === undefined ? {} : { schema: definition.schema }),
+      },
+      key: definition.attributes.get(spec.key)?.field ?? spec.key,
+    },
+    onDelete:
+      spec.onDelete ??
+      (defaults.onDelete === 'auto' ? (allowNull ? 'SET NULL' : 'NO ACTION') : defaults.onDelete),
+    onUpdate: spec.onUpdate ?? defaults.onUpdate,
+  };
+};
+
 const keyAttribute = (
   type: AttributeDefinition | undefined,
   extras: ForeignKeyOptions,
@@ -139,6 +171,20 @@ export const belongsTo = (
     [foreignKey]: keyAttribute(
       attributeOf(target, targetKey),
       foreignKeyExtras(options.foreignKey),
+      referenceOf(
+        {
+          model: target,
+          key: targetKey,
+          onDelete: options.onDelete,
+          onUpdate: options.onUpdate,
+          constraints: options.constraints,
+        },
+        foreignKeyExtras(options.foreignKey).allowNull !== false,
+        {
+          onDelete: 'auto',
+          onUpdate: 'CASCADE',
+        },
+      ),
     ),
   } as ModelAttributes);
   return register({
@@ -173,6 +219,20 @@ const hasKey = (
     [foreignKey]: keyAttribute(
       attributeOf(source, sourceKey),
       foreignKeyExtras(options.foreignKey),
+      referenceOf(
+        {
+          model: source,
+          key: sourceKey,
+          onDelete: options.onDelete,
+          onUpdate: options.onUpdate,
+          constraints: options.constraints,
+        },
+        foreignKeyExtras(options.foreignKey).allowNull !== false,
+        {
+          onDelete: 'auto',
+          onUpdate: 'CASCADE',
+        },
+      ),
     ),
   } as ModelAttributes);
   return register({
@@ -247,11 +307,36 @@ export const belongsToMany = (
     [foreignKey]: keyAttribute(
       attributeOf(source, sourceKey),
       foreignKeyExtras(options.foreignKey),
-      { primaryKey: true, allowNull: false },
+      {
+        primaryKey: true,
+        allowNull: false,
+        ...referenceOf(
+          {
+            model: source,
+            key: sourceKey,
+            onDelete: options.onDelete,
+            onUpdate: options.onUpdate,
+            constraints: options.constraints,
+          },
+          false,
+          { onDelete: 'CASCADE', onUpdate: 'CASCADE' },
+        ),
+      },
     ),
     [otherKey]: keyAttribute(attributeOf(target, targetKey), foreignKeyExtras(options.otherKey), {
       primaryKey: true,
       allowNull: false,
+      ...referenceOf(
+        {
+          model: target,
+          key: targetKey,
+          onDelete: options.onDelete,
+          onUpdate: options.onUpdate,
+          constraints: options.constraints,
+        },
+        false,
+        { onDelete: 'CASCADE', onUpdate: 'CASCADE' },
+      ),
     }),
   } as ModelAttributes);
   return register({

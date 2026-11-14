@@ -2,6 +2,7 @@ import type { QueryResult } from '../connection/executor.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';
+import type { QueryInterface } from '../query-interface/query-interface.ts';
 import type { Transaction } from '../transaction/transaction.ts';
 
 /** Options common to every query issued by a model. */
@@ -28,6 +29,8 @@ export type ModelRuntime = Readonly<{
     attributes: Readonly<Record<string, unknown>>,
     options: Readonly<Record<string, unknown>>,
   ) => object;
+  /** Schema API of the owning Sequelize instance. */
+  queryInterface: () => QueryInterface;
   /** Registered models by name. */
   models: () => Readonly<Record<string, object>>;
   hooks: () => HookRegistry;

@@ -1,4 +1,10 @@
 import {
+  dropModel,
+  syncModel,
+  type DropOptions,
+  type SyncOptions,
+} from '../query-interface/sync.ts';
+import {
   assembleInstances,
   countJoins,
   loadSeparate,
@@ -413,6 +419,32 @@ export class Model<
     options: BelongsToManyOptions,
   ): Association {
     return defineBelongsToMany(this, target, options);
+  }
+
+  /**
+   * Creates (or alters / re-creates) the table of this model.
+   *
+   * @param options - `force`, `alter` and query options.
+   * @returns The model class.
+   */
+  static async sync<MS extends ModelStatic<AnyModel>>(
+    this: MS,
+    options: SyncOptions = {},
+  ): Promise<MS> {
+    const { definition, runtime } = stateOf(this);
+    await syncModel(definition, runtime, runtime.queryInterface(), options);
+    return this;
+  }
+
+  /**
+   * Drops the table of this model and its enum types.
+   *
+   * @param options - `cascade` and query options.
+   * @returns Resolves when done.
+   */
+  static async drop(options: DropOptions = {}): Promise<void> {
+    const { definition, runtime } = stateOf(this);
+    await dropModel(definition, runtime.queryInterface(), options);
   }
 
   /**
@@ -2038,3 +2070,6 @@ const validateAll = async (instances: readonly Model[], hooks: boolean): Promise
     throw new AggregateError(errors);
   }
 };
+
+/** @internal Normalized definition of a model class. */
+export const definitionOf = (model: object): ModelDefinition => stateOf(model).definition;
