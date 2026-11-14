@@ -38,6 +38,7 @@
     "test:integration": "vitest run --project integration",
     "test:compat": "vitest run --project compat",
     "test:db": "vitest run --project integration --project compat",
+    "test:coverage": "vitest run --project unit --project integration --project compat --coverage && node scripts/coverage-badge.mjs",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down -v",
     "prepublishOnly": "npm run build",
