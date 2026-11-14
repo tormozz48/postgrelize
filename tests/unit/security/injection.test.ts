@@ -28,7 +28,7 @@ describe('injection surfaces', () => {
   it('binds where values and JSON path segments', () => {
     const json = normalizeDefinition('Doc', { meta: DataTypes.JSONB }, {});
     const query = compile(buildSelect(json, { where: { "meta.a') OR 1=1 --": "'; DROP" } }));
-    expect(query.values).toEqual(["{a') OR 1=1 --}", "'; DROP"]);
+    expect(query.values).toEqual([["a') OR 1=1 --"], "'; DROP"]);
   });
 
   it('rejects order directions, string order, cast types, comparators and function names outside allowlists', () => {

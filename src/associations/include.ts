@@ -448,11 +448,29 @@ const orderNodes = (
 };
 
 /** True when `include` with `limit` requires the v6 sub-query form. */
+const aliasesOf = (nodes: readonly IncludeNode[]): readonly string[] =>
+  nodes.flatMap((node) => [node.alias, ...aliasesOf(node.children)]);
+
+/** True when a condition references a joined include (`$Include.attr$`) as a table. */
+const referencesIncludes = (where: ExprNode | undefined, includes: readonly IncludeNode[]) => {
+  if (where === undefined) {
+    return false;
+  }
+  const text = JSON.stringify(where);
+  return aliasesOf(includes).some((alias) => text.includes(`"path":[${JSON.stringify(alias)},`));
+};
+
+/**
+ * Whether `limit`/`offset` must go into a subquery of the main table (v6 rules). A top-level
+ * `where` that references a joined include cannot run inside that subquery, so it disables it.
+ */
 export const needsSubQuery = (
   includes: readonly IncludeNode[],
   options: Readonly<{ limit?: number | null; offset?: number | null; subQuery?: boolean }>,
+  where?: ExprNode,
 ): boolean =>
   options.subQuery !== false &&
+  !referencesIncludes(where, includes) &&
   ((options.limit !== undefined && options.limit !== null) ||
     (options.offset !== undefined && options.offset !== null)) &&
   includes.some(
@@ -498,7 +516,7 @@ export const withIncludes = (
   const alias = definition.name;
   const joined = includes.filter((node) => !node.separate);
   const order = orderNodes(definition, joined, options.order, alias);
-  if (!needsSubQuery(joined, options)) {
+  if (!needsSubQuery(joined, options, base.where)) {
     return {
       ...base,
       columns: [...base.columns, ...joined.flatMap(columnsFor)],
@@ -511,6 +529,7 @@ export const withIncludes = (
     .map((node) => existsFilter(definition, alias, node));
   const inner: SelectNode = {
     ...base,
+    columns: [...base.columns, ...missingKeyColumns(definition, alias, base.columns, joined)],
     ...(base.where === undefined && requiredFilters.length === 0
       ? {}
       : { where: and([...(base.where === undefined ? [] : [base.where]), ...requiredFilters]) }),
@@ -525,6 +544,29 @@ export const withIncludes = (
     ...(base.lock === undefined ? {} : { lock: base.lock }),
   };
 };
+
+const parentKey = (node: IncludeNode): string =>
+  node.association.associationType === 'BelongsTo'
+    ? node.association.foreignKey
+    : node.association.sourceKey;
+
+const selectsField = (column: ExprNode, name: string, fieldName: string): boolean =>
+  column.kind === 'star' ||
+  (column.kind === 'ident' && column.path.at(-1) === fieldName) ||
+  (column.kind === 'alias' && column.alias === name);
+
+/** Join keys of the main table that the subquery must expose for the outer joins. */
+const missingKeyColumns = (
+  definition: ModelDefinition,
+  alias: string,
+  columns: readonly ExprNode[],
+  joined: readonly IncludeNode[],
+): readonly ExprNode[] =>
+  [...new Set(joined.map(parentKey))]
+    .filter(
+      (name) => !columns.some((column) => selectsField(column, name, field(definition, name))),
+    )
+    .map((name) => ident(alias, field(definition, name)));
 
 /** Joins for `count` with includes (no include columns). */
 export const countJoins = (

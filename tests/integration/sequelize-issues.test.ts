@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DataTypes, Sequelize } from '../../src/index.ts';
+import { DataTypes, Op, Sequelize } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
 
@@ -124,5 +124,227 @@ describe('Sequelize issues fixed in postgrelize', () => {
       await Event.upsert({ key: 'b', createdAt: stamp, updatedAt: stamp });
       const row = await Event.findOne();
       expect([row?.get('createdAt'), row?.get('updatedAt')]).toEqual([stamp, stamp]);
+    }));
+
+  it('#18617 JSON keys with commas, quotes and backslashes', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Doc = sequelize.define('Doc', { meta: DataTypes.JSONB });
+      await sequelize.sync();
+      await Doc.create({ meta: { 'a,b': 2, 'C:\\tmp': 1, 'say "hi"': 4, n: { 'x,y': 5 } } });
+      const count = (where: unknown) => Doc.count({ where: { meta: where } as never });
+      expect([
+        await count({ 'a,b': 2 }),
+        await count({ 'C:\\tmp': 1 }),
+        await count({ 'say "hi"': 4 }),
+        await count({ n: { 'x,y': 5 } }),
+      ]).toEqual([1, 1, 1, 1]);
+    }));
+
+  it('#5173 jsonb operators on nested paths', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Doc = sequelize.define('Doc', { doc: DataTypes.JSONB });
+      await sequelize.sync();
+      await Doc.create({ doc: { browsers: ['chrome', 'ff'], meta: { tags: { a: 1 } } } });
+      const count = (where: unknown) => Doc.count({ where: { doc: where } as never });
+      expect([
+        await count({ browsers: { [Op.contains]: ['chrome'] } }),
+        await count({ browsers: { [Op.contains]: ['safari'] } }),
+        await count({ browsers: { [Op.contained]: ['chrome', 'ff', 'x'] } }),
+        await count({ meta: { tags: { [Op.hasKey]: 'a' } } }),
+        await count({ meta: { [Op.contains]: { tags: { a: 1 } } } }),
+      ]).toEqual([1, 0, 1, 1, 1]);
+    }));
+
+  it('#16043 Op.any shorthand', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Item = sequelize.define('Item', { userId: DataTypes.INTEGER });
+      await sequelize.sync();
+      await Item.bulkCreate([{ userId: 1 }, { userId: 2 }, { userId: 3 }]);
+      expect(await Item.count({ where: { userId: { [Op.any]: [1, 3] } } })).toBe(2);
+    }));
+
+  it('#14497 upsert with overriding on a GENERATED ALWAYS identity', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Item = sequelize.define('Item', {
+        id: { type: DataTypes.INTEGER, primaryKey: true, identity: 'always' },
+        name: DataTypes.TEXT,
+      });
+      await sequelize.sync();
+      await Item.create({ name: 'x' });
+      await Item.upsert({ id: 1, name: 'y' }, { overriding: 'system' });
+      await Item.upsert({ id: 5, name: 'z' }, { overriding: 'system' });
+      expect(
+        await Item.findAll({ attributes: ['id', 'name'], order: [['id', 'ASC']], raw: true }),
+      ).toEqual([
+        { id: 1, name: 'y' },
+        { id: 5, name: 'z' },
+      ]);
+    }));
+
+  it('#12595 upsert targets a partial unique index with its predicate', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Pair = sequelize.define(
+        'Pair',
+        {
+          firstId: DataTypes.INTEGER,
+          secondId: DataTypes.INTEGER,
+          stampedAt: DataTypes.DATE,
+          value: DataTypes.INTEGER,
+        },
+        {
+          indexes: [{ unique: true, fields: ['firstId', 'secondId'], where: { stampedAt: null } }],
+        },
+      );
+      await sequelize.sync();
+      await Pair.upsert({ firstId: 1, secondId: 1, value: 1 });
+      await Pair.upsert({ firstId: 1, secondId: 1, value: 2 });
+      expect(await Pair.findAll({ attributes: ['firstId', 'value'], raw: true })).toEqual([
+        { firstId: 1, value: 2 },
+      ]);
+    }));
+
+  it('bulkCreate({ ignoreDuplicates }) assigns returned rows to the inserted records', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Key = sequelize.define('Key', { k: { type: DataTypes.STRING, unique: true } });
+      await sequelize.sync();
+      await Key.create({ k: 'a' });
+      const created = await Key.bulkCreate([{ k: 'a' }, { k: 'b' }, { k: 'c' }], {
+        ignoreDuplicates: true,
+      });
+      expect(created.map((key) => [key.get('k'), key.get('id') === null])).toEqual([
+        ['a', true],
+        ['b', false],
+        ['c', false],
+      ]);
+      const stored = await Key.findAll({ order: [['k', 'ASC']] });
+      expect(created.slice(1).map((key) => key.get('id'))).toEqual(
+        stored.slice(1).map((key) => key.get('id')),
+      );
+    }));
+
+  it('#16787 describeTable unquotes literal defaults', () =>
+    withSchema(async ({ schema, client }) => {
+      await client.query(
+        `CREATE TABLE d (a text DEFAULT 'it''s', c text DEFAULT 'x::y', e varchar(5) DEFAULT 'q'::character varying, f timestamptz DEFAULT now())`,
+      );
+      const sequelize = connect(schema);
+      const described = await sequelize
+        .getQueryInterface()
+        .describeTable({ tableName: 'd', schema });
+      expect(Object.values(described).map((column) => column.defaultValue)).toEqual([
+        "it's",
+        'x::y',
+        'q',
+        'now()',
+      ]);
+    }));
+
+  it('#13167 sync({ alter }) keeps the sequence of non-key autoIncrement columns', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Order = sequelize.define('Order', {
+        id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+        seqNo: { type: DataTypes.INTEGER, autoIncrement: true },
+        description: DataTypes.STRING,
+      });
+      await sequelize.sync();
+      await sequelize.sync({ alter: true });
+      const first = await Order.create({ description: 'x' });
+      const second = await Order.create({ description: 'y' });
+      expect([first.get('seqNo'), second.get('seqNo')]).toEqual([1, 2]);
+    }));
+
+  it('#18423 sync / drop with schema work in that schema only', () =>
+    withSchema(async ({ schema, client }) => {
+      const tenant = `${schema}_tenant`;
+      await client.query(`CREATE SCHEMA "${tenant}"`);
+      try {
+        const sequelize = connect(schema);
+        const User = sequelize.define('User', { name: DataTypes.STRING });
+        const Post = sequelize.define('Post', { kind: DataTypes.ENUM('a', 'b') });
+        User.hasMany(Post);
+        Post.belongsTo(User);
+        await sequelize.sync();
+        await User.create({ name: 'keep' });
+        await sequelize.sync({ force: true, schema: tenant });
+        const tables = await select<{ schema: string; name: string }>(
+          sequelize,
+          `SELECT table_schema AS schema, table_name AS name FROM information_schema.tables WHERE table_schema IN ('${schema}', '${tenant}') ORDER BY 1, 2`,
+        );
+        const references = await select<{ definition: string }>(
+          sequelize,
+          `SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE contype = 'f' AND connamespace = '"${tenant}"'::regnamespace`,
+        );
+        const kept = await User.count();
+        await sequelize.drop({ schema: tenant });
+        const left = await select<{ n: number }>(
+          sequelize,
+          `SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = '${tenant}'`,
+        );
+        expect([
+          tables,
+          references.map((row) => row.definition.split(' ON ')[0]),
+          kept,
+          left,
+        ]).toEqual([
+          [
+            { schema, name: 'Posts' },
+            { schema, name: 'Users' },
+            { schema: tenant, name: 'Posts' },
+            { schema: tenant, name: 'Users' },
+          ],
+          [`FOREIGN KEY ("UserId") REFERENCES ${tenant}."Users"(id)`],
+          1,
+          [{ n: 0 }],
+        ]);
+      } finally {
+        await client.query(`DROP SCHEMA IF EXISTS "${tenant}" CASCADE`);
+      }
+    }));
+
+  it('#18256 belongsToMany with custom sourceKey and limit', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const User = sequelize.define('User', { uuid: { type: DataTypes.STRING, unique: true } });
+      const Tag = sequelize.define('Tag', { label: DataTypes.STRING });
+      const tags = User.belongsToMany(Tag, { through: 'UserTags', sourceKey: 'uuid' });
+      await sequelize.sync();
+      const user = await User.create({ uuid: 'u1' });
+      await User.create({ uuid: 'u2' });
+      const tag = await Tag.create({ label: 'x' });
+      await (user as unknown as { addTag: (tag: unknown) => Promise<void> }).addTag(tag);
+      const found = await User.findAll({
+        attributes: ['id'],
+        include: [
+          { association: tags, attributes: [], through: { attributes: [] }, required: true },
+        ],
+        limit: 10,
+      });
+      expect(found.map((row) => row.get('id'))).toEqual([user.get('id')]);
+    }));
+
+  it('#12971 top-level $include.attr$ condition with a hasMany include and limit', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const User = sequelize.define('User', { name: DataTypes.STRING });
+      const Tool = sequelize.define('Tool', { name: DataTypes.STRING });
+      User.hasMany(Tool, { as: 'Instruments' });
+      await sequelize.sync();
+      const owner = await User.create({ name: 'a' });
+      await User.bulkCreate([{ name: 'b' }, { name: 'c' }]);
+      await Tool.create({ name: 't', UserId: owner.get('id') });
+      const found = await User.findAll({
+        where: { '$Instruments.id$': { [Op.is]: null } },
+        include: { model: Tool, as: 'Instruments' },
+        limit: 2,
+        order: [['id', 'ASC']],
+      });
+      expect(found.map((user) => user.get('name'))).toEqual(['b', 'c']);
     }));
 });

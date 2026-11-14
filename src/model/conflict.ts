@@ -19,17 +19,17 @@ export const fieldsOf = (
 export const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefined =>
   [...definition.uniqueKeys.values()].find((fields) => fields.length > 0);
 
-/** Attribute names of each unique index declared in `indexes` (optionally without partial ones). */
-const uniqueIndexKeys = (
-  definition: ModelDefinition,
-  withPartial: boolean,
-): readonly (readonly string[])[] =>
+type UniqueKey = Readonly<{ fields: readonly string[]; where?: unknown }>;
+
+/** Attribute names (and partial-index predicate) of each unique index declared in `indexes`. */
+const uniqueIndexKeys = (definition: ModelDefinition, withPartial: boolean): readonly UniqueKey[] =>
   (definition.options.indexes ?? [])
     .filter((index) => index.unique === true && (withPartial || index.where === undefined))
-    .map((index) =>
-      (index.fields ?? []).map((field) => (typeof field === 'string' ? field : field.name)),
-    )
-    .filter((fields) => fields.length > 0);
+    .map((index) => ({
+      fields: (index.fields ?? []).map((field) => (typeof field === 'string' ? field : field.name)),
+      ...(index.where === undefined ? {} : { where: index.where }),
+    }))
+    .filter((key) => key.fields.length > 0);
 
 export const conflictUpdate = (
   attributes: readonly string[],
@@ -65,7 +65,7 @@ export const v6BulkConflict = (
       (name) => definition.attributes.has(name) && name !== definition.createdAt,
     );
     const indexed = [
-      ...uniqueIndexKeys(definition, false).flat(),
+      ...uniqueIndexKeys(definition, false).flatMap((key) => key.fields),
       ...(firstUniqueKey(definition) ?? []),
     ];
     const target =
@@ -97,24 +97,29 @@ export const v6UpsertConflict = (
       ? []
       : [definition.updatedAt]),
   ].filter((name) => name in insertValues);
-  const uniqueKeys = [...definition.uniqueKeys.values()].filter((fields) => fields.length > 0);
+  const uniqueKeys = [...definition.uniqueKeys.values()]
+    .filter((fields) => fields.length > 0)
+    .map((fields): UniqueKey => ({ fields }));
   const indexKeys = uniqueIndexKeys(definition, true);
-  const uniqueKey = update
+  const found = update
     .map(
       (name) =>
-        uniqueKeys.find((fields) => fields.includes(name)) ??
-        indexKeys.find((fields) => fields.includes(name)),
+        uniqueKeys.find((key) => key.fields.includes(name)) ??
+        indexKeys.find((key) => key.fields.includes(name)),
     )
-    .find((fields) => fields !== undefined);
+    .find((key) => key !== undefined);
+  const uniqueKey =
+    found === undefined || update.some((name) => definition.primaryKeys.includes(name))
+      ? undefined
+      : found;
   const target =
-    conflictFields ??
-    fieldsOf(
-      definition,
-      uniqueKey === undefined || update.some((name) => definition.primaryKeys.includes(name))
-        ? definition.primaryKeys
-        : uniqueKey,
-    );
-  return conflictUpdate(fieldsOf(definition, update), [...new Set(target)]);
+    conflictFields ?? fieldsOf(definition, uniqueKey?.fields ?? definition.primaryKeys);
+  const where =
+    conflictFields !== undefined || uniqueKey?.where === undefined || isEmptyWhere(uniqueKey.where)
+      ? undefined
+      : whereToAst(uniqueKey.where, whereContext(definition, undefined));
+  const assigned = update.filter((name) => definition.attributes.get(name)?.identity !== 'always');
+  return conflictUpdate(fieldsOf(definition, assigned), [...new Set(target)], where);
 };
 
 export const withoutGeneratedKey = (

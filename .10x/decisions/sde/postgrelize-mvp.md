@@ -152,3 +152,13 @@ Fixed (found by the Sequelize issue review, `.10x/reviews/2026-11-14-sequelize-i
 - #17118 `addColumn` and `sync({ alter })` added columns emit `COMMENT ON COLUMN`;
 - #9040 `order: ['json.path']` orders by `#>` jsonb value (numbers numerically; v6 orders as text — divergence).
 Tests: compat +3 (`issue-parity`), integration +5 (`sequelize-issues`), unit +1 (array literal). 222 green.
+
+## Backlog 2 / S2b — inherited v6 bugs fixed by default (ADR-016) — done 2026-11-14
+- where: JSON path bound as `text[]` param (#18617), jsonb operators on nested paths use `#>` and JSON operands (#5173), `{ [Op.any]: [...] }` shorthand (#16043).
+- writes: `upsert({ overriding })` (#14497), partial unique index predicate in v6 upsert target (#12595), identity-always columns excluded from `DO UPDATE SET`, `bulkCreate({ ignoreDuplicates })` aligns RETURNING rows with inputs.
+- DDL: `describeTable` parses quoted literal defaults (#16787), alter keeps `autoIncrement` sequence default (#13167), `sync`/`drop` `schema` option incl. references in that schema (#18423).
+- include: limit subquery exposes join keys (#18256), `$include.attr$` in top-level where disables the limit subquery (#12971).
+- nested-create differential test made independent of sibling insert order (v6 saves siblings in parallel; was a flake).
+- Public page `docs/sequelize-issues.md` (moves into the VitePress site in S3); README links it.
+Not fixed (documented): #16929, #11968, #11288, #12948, #11146 duplicate alias variant.
+Tests: integration +11 (`sequelize-issues`), unit expectations for JSON path params updated.

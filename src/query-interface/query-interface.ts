@@ -87,6 +87,10 @@ const cleanDefault = (type: string, value: unknown): unknown => {
   if (typeof value !== 'string') {
     return value;
   }
+  const literal = /^'((?:[^']|'')*)'(?:::[\w ."[\]]+)*$/.exec(value);
+  if (literal !== null) {
+    return (literal[1] ?? '').replaceAll("''", "'");
+  }
   const unquoted = value.replaceAll("'", '');
   const [head, tail] = unquoted.split('::');
   return tail !== undefined && tail.toLowerCase() !== 'regclass)' ? head : unquoted;

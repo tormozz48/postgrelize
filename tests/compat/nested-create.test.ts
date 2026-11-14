@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { expectSameResult, type Lib } from '../support/compat.ts';
+import { expectSameResult, normalize, type Lib } from '../support/compat.ts';
 import type { Sequelize } from '../../src/index.ts';
 
 const SCHEMA = `
@@ -30,28 +30,35 @@ const defineModels = (lib: Lib, sequelize: Sequelize) => {
 
 type Models = ReturnType<typeof defineModels>;
 
-const plain = (
-  model: { findAll: (options: object) => Promise<unknown[]> },
-  attributes: string[],
-  order: string[],
-) => model.findAll({ attributes, order: order.map((key) => [key, 'ASC']), raw: true });
+// Sequelize v6 saves sibling children in parallel, so generated ids are not deterministic: rows are
+// compared by content, and relations by the content of the referenced row.
+const CONTENTS = `
+  SELECT 'company' AS kind, c.name AS value, NULL AS parent FROM "Companies" c
+  UNION ALL SELECT 'user', u.name, c.name FROM "Users" u LEFT JOIN "Companies" c ON c.id = u."CompanyId"
+  UNION ALL SELECT 'profile', p.bio, u.name FROM "Profiles" p LEFT JOIN "Users" u ON u.id = p."UserId"
+  UNION ALL SELECT 'post', p.title, u.name FROM "Posts" p LEFT JOIN "Users" u ON u.id = p."UserId"
+  UNION ALL SELECT 'comment', c.body, p.title FROM "Comments" c LEFT JOIN "Posts" p ON p.id = c."PostId"
+  UNION ALL SELECT 'role', r.label, NULL FROM "Roles" r
+  UNION ALL SELECT 'userRole', u.name || '/' || r.label, ur.level FROM "UserRoles" ur
+    JOIN "Users" u ON u.id = ur."UserId" JOIN "Roles" r ON r.id = ur."RoleId"
+  ORDER BY 1, 2, 3`;
 
-const tables = async ({ Company, User, Profile, Post, Comment, Role, UserRoles }: Models) =>
-  Promise.all([
-    plain(Company, ['id', 'name'], ['id']),
-    plain(User, ['id', 'name', 'CompanyId'], ['id']),
-    plain(Profile, ['id', 'bio', 'UserId'], ['id']),
-    plain(Post, ['id', 'title', 'UserId'], ['id']),
-    plain(Comment, ['id', 'body', 'PostId'], ['id']),
-    plain(Role, ['id', 'label'], ['id']),
-    plain(UserRoles, ['UserId', 'RoleId', 'level'], ['UserId', 'RoleId']),
-  ]);
+const withoutIds = (value: unknown): unknown =>
+  Array.isArray(value)
+    ? value.map(withoutIds)
+    : typeof value === 'object' && value !== null
+      ? Object.fromEntries(
+          Object.entries(value)
+            .filter(([key]) => key !== 'id' && !key.endsWith('Id'))
+            .map(([key, item]) => [key, withoutIds(item)]),
+        )
+      : value;
 
 const run = (scenario: (models: Models) => Promise<unknown>) =>
   expectSameResult(SCHEMA, async (lib, sequelize) => {
     const models = defineModels(lib, sequelize);
     const result = await scenario(models);
-    return [result, await tables(models)];
+    return [withoutIds(normalize(result)), await sequelize.query(CONTENTS, { type: 'SELECT' })];
   });
 
 describe('compat: nested creation', () => {

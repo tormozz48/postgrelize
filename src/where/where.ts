@@ -56,10 +56,14 @@ const columnPath = (path: string): ExprNode =>
 const serializeWith = (ref: AttributeRef | undefined, value: unknown): unknown =>
   ref?.serialize === undefined ? value : ref.serialize(value);
 
+// The path is bound as a text[] parameter, so keys with `,`, `"` or a backslash need no escaping.
 const jsonOperand = (json: JsonAccess): Operand => ({
-  node: binary('#>>', json.base, param(`{${json.path.join(',')}}`)),
+  node: binary('#>>', json.base, param(json.path)),
   json,
 });
+
+/** jsonb value at the path of a JSON operand (`#>`), for jsonb operators. */
+const jsonbAt = (json: JsonAccess): ExprNode => binary('#>', json.base, param(json.path));
 
 /** Converts an expression builder or a plain value into an AST node. */
 export const toExpr = (value: unknown, ctx: WhereContext, ref?: AttributeRef): ExprNode =>
@@ -346,8 +350,32 @@ const negation = (left: Operand, value: unknown, ctx: WhereContext): ExprNode =>
 
 const KEY_OPERATORS: ReadonlySet<symbol> = new Set([Op.hasKey, Op.hasAnyKeys, Op.hasAllKeys]);
 
+const CONTAINMENT_OPERATORS: ReadonlySet<symbol> = new Set([Op.contains, Op.contained]);
+
+const jsonbOperator = (
+  sqlOp: string,
+  op: symbol,
+  json: JsonAccess,
+  value: unknown,
+  ctx: WhereContext,
+): ExprNode =>
+  binary(
+    sqlOp,
+    jsonbAt(json),
+    CONTAINMENT_OPERATORS.has(op) && !isExpression(value)
+      ? param(JSON.stringify(value))
+      : toExpr(value, ctx),
+  );
+
 const applyOperator = (op: symbol, left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
   const sqlOp = binaryOps.get(op);
+  if (
+    sqlOp !== undefined &&
+    left.json !== undefined &&
+    (KEY_OPERATORS.has(op) || CONTAINMENT_OPERATORS.has(op))
+  ) {
+    return jsonbOperator(sqlOp, op, left.json, value, ctx);
+  }
   if (sqlOp !== undefined) {
     return comparison(sqlOp, KEY_OPERATORS.has(op) ? { node: left.node } : left, value, ctx);
   }
@@ -382,6 +410,9 @@ const applyOperator = (op: symbol, left: Operand, value: unknown, ctx: WhereCont
     case Op.and:
     case Op.or:
       return logical(op, left, value, ctx);
+    case Op.any:
+    case Op.all:
+      return comparison('=', left, { [op]: value }, ctx);
     default:
       throw new Error(`Unsupported operator: ${String(op)}`);
   }
