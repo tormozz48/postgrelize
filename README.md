@@ -4,8 +4,8 @@ PostgreSQL-only ORM for Node.js with a public API compatible with [Sequelize v6]
 
 - **Drop-in:** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like Sequelize v6 — verified by differential tests that run every scenario on both libraries.
 - **PostgreSQL first:**
-  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM STDIN` (`Model.copyFrom`), `DELETE ... RETURNING`;
-  - reads: subqueries (`Model.subquery`), `exists()`, `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `NOWAIT`;
+  - writes: expression-based `INSERT ... ON CONFLICT` (`onConflict`, `Model.insert()`, `wasInserted`), `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM STDIN` / `COPY TO STDOUT` (`Model.copyFrom`, `Model.copyTo`), `DELETE ... RETURNING`;
+  - reads: CTEs incl. `WITH RECURSIVE` (`with` / `source` / `from`), subqueries (`Model.subquery`), `exists()`, `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `IS DISTINCT FROM`, jsonb key operators, `= ANY($1)` for large `IN` lists, `NOWAIT`;
   - sessions: `LISTEN/NOTIFY`, `SET LOCAL` settings for RLS, advisory locks;
   - schema: identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod/valibot/arktype) validation.
 - **Safe by default:** values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
