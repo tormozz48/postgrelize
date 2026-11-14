@@ -312,7 +312,9 @@ export const changeColumnSql = (
   const type = columnType(table, { ...column, autoIncrement: false });
   return [
     `${target} ${column.allowNull ? 'DROP NOT NULL' : 'SET NOT NULL'}`,
-    value === undefined ? `${target} DROP DEFAULT` : `${target} SET DEFAULT ${value}`,
+    ...(column.autoIncrement === true && value === undefined
+      ? []
+      : [value === undefined ? `${target} DROP DEFAULT` : `${target} SET DEFAULT ${value}`]),
     ...(enumSql === undefined ? [] : [enumSql]),
     `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${quoteIdent(column.field)}::${type})` : ''}`,
     ...columnCommentSql(table, column),

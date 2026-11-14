@@ -30,6 +30,8 @@ export type SyncOptions = QueryOptionsBase &
     alter?: boolean | AlterOptions;
     /** Only sync when the database name matches this pattern. */
     match?: RegExp;
+    /** Create the tables in this schema instead of the models' schema (references stay in it too). */
+    schema?: string;
   }>;
 
 type ColumnDefinition = ReturnType<typeof columnOf>;
@@ -44,7 +46,12 @@ export type DropOptions = QueryOptionsBase &
   Readonly<{
     /** `DROP TABLE ... CASCADE`. */
     cascade?: boolean;
+    /** Drop the tables in this schema instead of the models' schema. */
+    schema?: string;
   }>;
+
+const inSchema = (definition: ModelDefinition, schema: string | undefined): ModelDefinition =>
+  schema === undefined ? definition : { ...definition, schema };
 
 const tableOf = (definition: ModelDefinition): TableName =>
   definition.schema === undefined
@@ -71,8 +78,9 @@ const alterStatements = async (
   definition: ModelDefinition,
   queryInterface: QueryInterface,
   alter: boolean | Readonly<{ drop?: boolean }>,
-  options: QueryOptionsBase,
+  options: QueryOptionsBase & Readonly<{ schema?: string }>,
 ): Promise<readonly string[]> => {
+  const { schema } = options;
   const table = tableOf(definition);
   const qualified = quoteTable(table);
   const described = await queryInterface.describeTable(table, options);
@@ -111,7 +119,7 @@ const alterStatements = async (
     )
     .map(
       (column) =>
-        `ALTER TABLE ${qualified} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column) ?? ''}`,
+        `ALTER TABLE ${qualified} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
     );
   const dropped =
     typeof alter === 'object' && alter.drop === false
@@ -124,12 +132,13 @@ const alterStatements = async (
 
 /** Creates (or alters / re-creates) the table of a model and its indexes. */
 export const syncModel = async (
-  definition: ModelDefinition,
+  model: ModelDefinition,
   runtime: ModelRuntime,
   queryInterface: QueryInterface,
   options: SyncOptions = {},
   deferred: readonly string[] = [],
 ): Promise<void> => {
+  const definition = inSchema(model, options.schema);
   const table = tableOf(definition);
   if (options.force === true) {
     await dropModel(definition, queryInterface, { ...options, cascade: true });
@@ -145,7 +154,12 @@ export const syncModel = async (
             storedColumns(definition).map((column) =>
               deferred.includes(column.field) ? withoutReferences(column) : column,
             ),
-            definition.options.comment === undefined ? {} : { comment: definition.options.comment },
+            {
+              ...(definition.options.comment === undefined
+                ? {}
+                : { comment: definition.options.comment }),
+              ...(options.schema === undefined ? {} : { defaultSchema: options.schema }),
+            },
           );
   const indexes = (definition.options.indexes ?? []).map((index) =>
     createIndexSql(table, {
@@ -163,10 +177,11 @@ export const syncModel = async (
 
 /** Drops the table of a model and its enum types. */
 export const dropModel = async (
-  definition: ModelDefinition,
+  model: ModelDefinition,
   queryInterface: QueryInterface,
   options: DropOptions = {},
 ): Promise<void> => {
+  const definition = inSchema(model, options.schema);
   const table = tableOf(definition);
   await queryInterface.dropTable(table, options);
   const enumFields = [...definition.attributes.values()]
@@ -214,15 +229,17 @@ export const deferredReferences = (
 
 /** Adds the deferred foreign keys of a table that are not there yet. */
 export const addDeferredReferences = async (
-  definition: ModelDefinition,
+  model: ModelDefinition,
   fields: readonly string[],
   runtime: ModelRuntime,
   queryInterface: QueryInterface,
-  options: QueryOptionsBase,
+  options: QueryOptionsBase & Readonly<{ schema?: string }>,
 ): Promise<void> => {
   if (fields.length === 0) {
     return;
   }
+  const { schema } = options;
+  const definition = inSchema(model, schema);
   const table = tableOf(definition);
   const existing = new Set(
     (await queryInterface.getForeignKeyReferencesForTable(table, options)).map(
@@ -235,7 +252,7 @@ export const addDeferredReferences = async (
       .filter((column) => fields.includes(column.field) && !existing.has(column.field))
       .map(
         (column) =>
-          `ALTER TABLE ${quoteTable(table)} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column) ?? ''}`,
+          `ALTER TABLE ${quoteTable(table)} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
       ),
     options,
   );
