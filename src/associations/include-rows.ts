@@ -1,5 +1,6 @@
 import type { AttributeDefinition, ModelDefinition } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
+import { ValuesWriter } from '../model/values-writer.ts';
 import type { IncludeNode } from './include.ts';
 
 type Model = ModelStatic<AnyModel>;
@@ -12,6 +13,15 @@ export type InstanceBuilder = (model: Model, values: Readonly<Record<string, unk
 
 /** Reads and parses the values of included models out of joined result rows. */
 export class IncludeRows {
+  readonly #writer = new ValuesWriter();
+  // Which attribute of an include a result column belongs to depends on its name only, so it is
+  // worked out once per column name instead of once per row.
+  readonly #directNames = new Map<string, Map<string, string | null>>();
+  readonly #rawAttributes = new WeakMap<
+    readonly IncludeNode[],
+    Map<string, AttributeDefinition | null>
+  >();
+
   /**
    * Value parsed with an attribute's data type.
    *
@@ -34,14 +44,15 @@ export class IncludeRows {
    * @returns Attribute values.
    */
   valuesAt(definition: ModelDefinition, row: IncludeRow, path: string): Record<string, unknown> {
-    return Object.fromEntries(
-      Object.entries(row)
-        .filter(([key]) => key.startsWith(`${path}.`) && !key.slice(path.length + 1).includes('.'))
-        .map(([key, value]) => {
-          const name = key.slice(path.length + 1);
-          return [name, this.parseValue(definition.attributes.get(name), value)];
-        }),
-    );
+    const names = this.#namesUnder(path);
+    const values: Record<string, unknown> = {};
+    for (const key of Object.keys(row)) {
+      const name = names.get(key) ?? this.#direct(names, path, key);
+      if (name !== null) {
+        this.#writer.set(values, name, this.parseValue(definition.attributes.get(name), row[key]));
+      }
+    }
+    return values;
   }
 
   /**
@@ -54,14 +65,16 @@ export class IncludeRows {
   identity(
     definition: ModelDefinition,
     values: Readonly<Record<string, unknown>>,
-  ): string | undefined {
+  ): string | number | undefined {
     if (Object.values(values).every((value) => value === null || value === undefined)) {
       return undefined;
     }
     const keys = definition.primaryKeys;
-    return keys.length > 0 && keys.every((key) => key in values)
-      ? JSON.stringify(keys.map((key) => values[key]))
-      : JSON.stringify(Object.entries(values));
+    if (keys.length === 0 || !keys.every((key) => key in values)) {
+      return JSON.stringify(Object.entries(values));
+    }
+    const single = keys.length === 1 ? values[keys[0] as string] : undefined;
+    return typeof single === 'number' ? single : JSON.stringify(keys.map((key) => values[key]));
   }
 
   /**
@@ -69,7 +82,7 @@ export class IncludeRows {
    *
    * @param includes - Include tree.
    * @param row - Joined row.
-   * @param parseMain - Parses a row with the main model's data types.
+   * @param parseMain - Parses a row with the main model's data types; must return a new object.
    * @returns Parsed row.
    */
   parseRaw(
@@ -77,23 +90,56 @@ export class IncludeRows {
     row: IncludeRow,
     parseMain: (row: IncludeRow) => Readonly<Record<string, unknown>>,
   ): Record<string, unknown> {
-    const all = this.#flatten(includes);
-    return Object.fromEntries(
-      Object.entries(parseMain(row)).map(([key, value]) => [
-        key,
-        this.#parseEntry(all, key, value),
-      ]),
-    );
+    const parsed = parseMain(row) as Record<string, unknown>;
+    const attributes = this.#attributesOf(includes);
+    for (const key of Object.keys(parsed)) {
+      const attribute = attributes.get(key) ?? this.#rawAttribute(includes, attributes, key);
+      if (attribute !== null) {
+        parsed[key] = this.parseValue(attribute, parsed[key]);
+      }
+    }
+    return parsed;
   }
 
-  #parseEntry(all: readonly IncludeNode[], key: string, value: unknown): unknown {
+  #namesUnder(path: string): Map<string, string | null> {
+    let names = this.#directNames.get(path);
+    if (names === undefined) {
+      names = new Map();
+      this.#directNames.set(path, names);
+    }
+    return names;
+  }
+
+  #direct(names: Map<string, string | null>, path: string, key: string): string | null {
+    const rest = key.startsWith(`${path}.`) ? key.slice(path.length + 1) : null;
+    const name = rest !== null && !rest.includes('.') ? rest : null;
+    names.set(key, name);
+    return name;
+  }
+
+  #attributesOf(includes: readonly IncludeNode[]): Map<string, AttributeDefinition | null> {
+    let attributes = this.#rawAttributes.get(includes);
+    if (attributes === undefined) {
+      attributes = new Map();
+      this.#rawAttributes.set(includes, attributes);
+    }
+    return attributes;
+  }
+
+  #rawAttribute(
+    includes: readonly IncludeNode[],
+    attributes: Map<string, AttributeDefinition | null>,
+    key: string,
+  ): AttributeDefinition | null {
     const dot = key.lastIndexOf('.');
-    return dot < 0
-      ? value
-      : this.parseValue(
-          this.#definitionAt(all, key.slice(0, dot))?.attributes.get(key.slice(dot + 1)),
-          value,
-        );
+    const attribute =
+      dot < 0
+        ? null
+        : (this.#definitionAt(this.#flatten(includes), key.slice(0, dot))?.attributes.get(
+            key.slice(dot + 1),
+          ) ?? null);
+    attributes.set(key, attribute);
+    return attribute;
   }
 
   #definitionAt(all: readonly IncludeNode[], path: string): ModelDefinition | undefined {
