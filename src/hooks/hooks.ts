@@ -65,9 +65,6 @@ export type Hook = Readonly<{
   fn: HookFunction;
 }>;
 
-/** Immutable hook registry. */
-export type HookRegistry = ReadonlyMap<HookType, readonly Hook[]>;
-
 /** Hooks passed in `init({ hooks })` / `define({ hooks })`: one function or a list per hook type. */
 export type HooksOption = Partial<
   Readonly<Record<HookType, HookFunction | readonly HookFunction[]>>
@@ -80,81 +77,139 @@ const PROXIES: Partial<Readonly<Record<HookType, readonly HookType[]>>> = {
 
 const HOOK_SET: ReadonlySet<string> = new Set(HOOK_TYPES);
 
-/** @internal */
-export const isHookType = (value: string): value is HookType => HOOK_SET.has(value);
+/**
+ * Immutable registry of hooks by type: `add` and `remove` return a new registry, so a model or `Sequelize`
+ * instance replaces its registry on change.
+ */
+export class HookRegistry {
+  /** Registry without hooks. */
+  static readonly EMPTY: HookRegistry = new HookRegistry(new Map());
 
-const assertHookType = (type: string): HookType => {
-  if (!isHookType(type)) {
-    throw new Error(`${type} is not a valid hook type`);
+  readonly #hooks: ReadonlyMap<HookType, readonly Hook[]>;
+
+  private constructor(hooks: ReadonlyMap<HookType, readonly Hook[]>) {
+    this.#hooks = hooks;
   }
-  return type;
-};
 
-/** Empty registry. */
-export const emptyHooks: HookRegistry = new Map();
+  /**
+   * Builds a registry from the `hooks` option.
+   *
+   * @param option - One function or a list per hook type.
+   * @param base - Registry the hooks are added to.
+   * @returns Registry with the hooks of `base`, then those of `option`.
+   */
+  static fromOption(
+    option: HooksOption | undefined,
+    base: HookRegistry = HookRegistry.EMPTY,
+  ): HookRegistry {
+    return Object.entries(option ?? {}).reduce<HookRegistry>(
+      (registry, [type, value]) =>
+        (Array.isArray(value) ? value : [value]).reduce<HookRegistry>(
+          (next, fn: HookFunction) => next.add(type, fn),
+          registry,
+        ),
+      base,
+    );
+  }
 
-/** Returns a registry with `fn` added (to proxied types for `beforeSave` / `afterSave`, like v6). */
-export const addHook = (
-  registry: HookRegistry,
-  type: string,
-  fn: HookFunction,
-  name?: string,
-): HookRegistry => {
-  const hook: Hook = name === undefined ? { fn } : { name, fn };
-  const types = PROXIES[assertHookType(type)] ?? [assertHookType(type)];
-  return new Map([
-    ...registry,
-    ...types.map((target) => [target, [...(registry.get(target) ?? []), hook]] as const),
-  ]);
-};
+  /**
+   * Runs hooks of `type` from each registry in order (model hooks first, then Sequelize-level hooks).
+   *
+   * @param registries - Registries in run order.
+   * @param type - Hook type.
+   * @param context - `this` of the hook functions.
+   * @param args - Hook arguments.
+   * @returns Resolves when all hooks finished.
+   */
+  static async runAll(
+    registries: readonly HookRegistry[],
+    type: HookType,
+    context: unknown,
+    ...args: readonly unknown[]
+  ): Promise<void> {
+    const hooks = registries.flatMap((registry) => registry.#hooks.get(type) ?? []);
+    await hooks.reduce<Promise<void>>(
+      (previous, hook) =>
+        previous.then(async () => {
+          await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, [...args]);
+        }),
+      Promise.resolve(),
+    );
+  }
 
-/** Returns a registry without hooks matching `nameOrFn` (all hooks of the type when omitted). */
-export const removeHook = (
-  registry: HookRegistry,
-  type: string,
-  nameOrFn?: string | HookFunction,
-): HookRegistry => {
-  const types = PROXIES[assertHookType(type)] ?? [assertHookType(type)];
-  const keep = (hook: Hook): boolean =>
-    nameOrFn !== undefined &&
-    (typeof nameOrFn === 'string' ? hook.name !== nameOrFn : hook.fn !== nameOrFn);
-  return new Map([
-    ...registry,
-    ...types.map((target) => [target, (registry.get(target) ?? []).filter(keep)] as const),
-  ]);
-};
+  /**
+   * Returns a registry with `fn` added (to the proxied types for `beforeSave` / `afterSave`, like v6).
+   *
+   * @param type - Hook type.
+   * @param fn - Hook function.
+   * @param name - Name to remove the hook by.
+   * @returns New registry.
+   * @throws Error for an unknown hook type.
+   */
+  add(type: string, fn: HookFunction, name?: string): HookRegistry {
+    const hook: Hook = name === undefined ? { fn } : { name, fn };
+    const types = HookRegistry.#targets(type);
+    return new HookRegistry(
+      new Map([
+        ...this.#hooks,
+        ...types.map((target) => [target, [...(this.#hooks.get(target) ?? []), hook]] as const),
+      ]),
+    );
+  }
 
-/** True when the registry has hooks of the type. */
-export const hasHook = (registry: HookRegistry, type: string): boolean =>
-  (registry.get(assertHookType(type)) ?? []).length > 0;
+  /**
+   * Returns a registry without hooks matching `nameOrFn`.
+   *
+   * @param type - Hook type.
+   * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
+   * @returns New registry.
+   * @throws Error for an unknown hook type.
+   */
+  remove(type: string, nameOrFn?: string | HookFunction): HookRegistry {
+    const types = HookRegistry.#targets(type);
+    const keep = (hook: Hook): boolean =>
+      nameOrFn !== undefined &&
+      (typeof nameOrFn === 'string' ? hook.name !== nameOrFn : hook.fn !== nameOrFn);
+    return new HookRegistry(
+      new Map([
+        ...this.#hooks,
+        ...types.map((target) => [target, (this.#hooks.get(target) ?? []).filter(keep)] as const),
+      ]),
+    );
+  }
 
-/** Builds a registry from the `hooks` option. */
-export const hooksFromOption = (
-  option: HooksOption | undefined,
-  base: HookRegistry = emptyHooks,
-): HookRegistry =>
-  Object.entries(option ?? {}).reduce<HookRegistry>(
-    (registry, [type, value]) =>
-      (Array.isArray(value) ? value : [value]).reduce<HookRegistry>(
-        (next, fn: HookFunction) => addHook(next, type, fn),
-        registry,
-      ),
-    base,
-  );
+  /**
+   * Checks whether the registry has hooks of the type.
+   *
+   * @param type - Hook type.
+   * @returns True when at least one hook exists.
+   * @throws Error for an unknown hook type.
+   */
+  has(type: string): boolean {
+    return (this.#hooks.get(HookRegistry.#assertHookType(type)) ?? []).length > 0;
+  }
 
-/** Runs hooks of `type` from each registry in order (model hooks first, then Sequelize-level hooks). */
-export const runHooks = async (
-  registries: readonly HookRegistry[],
-  type: HookType,
-  context: unknown,
-  ...args: readonly unknown[]
-): Promise<void> => {
-  const hooks = registries.flatMap((registry) => registry.get(type) ?? []);
-  await hooks.reduce<Promise<void>>(
-    (previous, hook) =>
-      previous.then(async () => {
-        await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, [...args]);
-      }),
-    Promise.resolve(),
-  );
-};
+  /**
+   * Runs the hooks of `type` in registration order.
+   *
+   * @param type - Hook type.
+   * @param context - `this` of the hook functions.
+   * @param args - Hook arguments.
+   * @returns Resolves when all hooks finished.
+   */
+  run(type: HookType, context: unknown, ...args: readonly unknown[]): Promise<void> {
+    return HookRegistry.runAll([this], type, context, ...args);
+  }
+
+  static #targets(type: string): readonly HookType[] {
+    const hookType = HookRegistry.#assertHookType(type);
+    return PROXIES[hookType] ?? [hookType];
+  }
+
+  static #assertHookType(type: string): HookType {
+    if (!HOOK_SET.has(type)) {
+      throw new Error(`${type} is not a valid hook type`);
+    }
+    return type as HookType;
+  }
+}

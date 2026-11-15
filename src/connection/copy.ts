@@ -1,47 +1,64 @@
 /** Value accepted by the COPY text encoder. */
 type CopyValue = unknown;
 
-const escapeText = (text: string): string =>
-  text.replace(/[\\\t\n\r]/g, (char) =>
-    char === '\\' ? '\\\\' : char === '\t' ? '\\t' : char === '\n' ? '\\n' : '\\r',
-  );
+/** Encodes values and rows in PostgreSQL COPY text format. */
+export class CopyEncoder {
+  readonly #encodeValue = (value: CopyValue): string => this.encodeValue(value);
+  readonly #arrayElement = (value: unknown): string =>
+    value === null || value === undefined
+      ? 'NULL'
+      : Array.isArray(value)
+        ? this.#arrayLiteral(value)
+        : `"${String(value instanceof Date ? value.toISOString() : typeof value === 'object' ? JSON.stringify(value) : value).replace(/["\\]/g, (char) => `\\${char}`)}"`;
 
-const arrayElement = (value: unknown): string =>
-  value === null || value === undefined
-    ? 'NULL'
-    : Array.isArray(value)
-      ? arrayLiteral(value)
-      : `"${String(value instanceof Date ? value.toISOString() : typeof value === 'object' ? JSON.stringify(value) : value).replace(/["\\]/g, (char) => `\\${char}`)}"`;
+  /**
+   * Encodes one value in PostgreSQL COPY text format (`\N` for NULL).
+   *
+   * @param value - Value to encode.
+   * @returns Encoded field.
+   */
+  encodeValue(value: CopyValue): string {
+    if (value === null || value === undefined) {
+      return '\\N';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 't' : 'f';
+    }
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    if (Buffer.isBuffer(value)) {
+      return `\\\\x${value.toString('hex')}`;
+    }
+    if (Array.isArray(value)) {
+      return CopyEncoder.#escapeText(this.#arrayLiteral(value));
+    }
+    if (typeof value === 'object') {
+      return CopyEncoder.#escapeText(JSON.stringify(value));
+    }
+    return CopyEncoder.#escapeText(String(value));
+  }
 
-const arrayLiteral = (values: readonly unknown[]): string =>
-  `{${values.map(arrayElement).join(',')}}`;
+  /**
+   * Encodes a row (already in column order) as one COPY text line.
+   *
+   * @param values - Values in column order.
+   * @returns Encoded line ending with a newline.
+   */
+  encodeRow(values: readonly CopyValue[]): string {
+    return `${values.map(this.#encodeValue).join('\t')}\n`;
+  }
 
-/** Encodes one value in PostgreSQL COPY text format (`\N` for NULL). */
-export const encodeCopyValue = (value: CopyValue): string => {
-  if (value === null || value === undefined) {
-    return '\\N';
+  #arrayLiteral(values: readonly unknown[]): string {
+    return `{${values.map(this.#arrayElement).join(',')}}`;
   }
-  if (typeof value === 'boolean') {
-    return value ? 't' : 'f';
-  }
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (Buffer.isBuffer(value)) {
-    return `\\\\x${value.toString('hex')}`;
-  }
-  if (Array.isArray(value)) {
-    return escapeText(arrayLiteral(value));
-  }
-  if (typeof value === 'object') {
-    return escapeText(JSON.stringify(value));
-  }
-  return escapeText(String(value));
-};
 
-/** Encodes a row (already in column order) as one COPY text line. */
-export const encodeCopyRow = (values: readonly CopyValue[]): string =>
-  `${values.map(encodeCopyValue).join('\t')}\n`;
+  static #escapeText(text: string): string {
+    return text.replace(/[\\\t\n\r]/g, (char) =>
+      char === '\\' ? '\\\\' : char === '\t' ? '\\t' : char === '\n' ? '\\n' : '\\r',
+    );
+  }
+}
 
 /** Minimal view of the `pg` connection used by COPY. */
 type CopyConnection = Readonly<{

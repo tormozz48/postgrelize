@@ -1,5 +1,5 @@
 import { ValidationError } from '../errors/errors.ts';
-import { runHooks, type HookType } from '../hooks/hooks.ts';
+import { HookRegistry, type HookType } from '../hooks/hooks.ts';
 import { Op } from '../expressions/op.ts';
 import { validateInstance } from '../validation/validate.ts';
 import type { ModelDefinition } from './definition.ts';
@@ -12,7 +12,7 @@ export const runModelHooks = (
   ...args: readonly unknown[]
 ): Promise<void> => {
   const { hooks, runtime } = stateOf(model);
-  return runHooks([hooks, runtime.hooks()], type, model, ...args);
+  return HookRegistry.runAll([hooks, runtime.hooks()], type, model, ...args);
 };
 
 /** Options of `instance.validate()`. */

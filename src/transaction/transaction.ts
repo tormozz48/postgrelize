@@ -1,6 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import type { Client, ConnectionManager, ExecuteOptions } from '../connection/executor.ts';
+import type {
+  Client,
+  ConnectionManager,
+  ExecuteOptions,
+} from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
 import { quoteIdent } from '../sql/compile.ts';
 
@@ -65,32 +69,6 @@ export type TransactionOptions = Readonly<{
 
 /** Advisory lock key: a 64-bit integer, or a string hashed by PostgreSQL. */
 export type AdvisoryLockKey = number | bigint | string;
-
-const advisoryLockQuery = (fn: string, key: AdvisoryLockKey, alias = 'lock') => ({
-  text:
-    typeof key === 'string'
-      ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
-      : `SELECT ${fn}($1::bigint) AS "${alias}"`,
-  values: [typeof key === 'string' ? key : String(key)],
-});
-
-const storage = new AsyncLocalStorage<Transaction>();
-
-/** @internal */
-export const currentTransaction = (): Transaction | undefined => storage.getStore();
-
-/** @internal */
-export const runWithTransaction = <T>(
-  transaction: Transaction,
-  run: () => Promise<T>,
-): Promise<T> => storage.run(transaction, run);
-
-const beginSql = (options: TransactionOptions): string =>
-  [
-    'START TRANSACTION',
-    options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
-    options.readOnly === true ? ' READ ONLY' : '',
-  ].join('');
 
 /**
  * Database transaction (Sequelize v6 `Transaction`). Obtain one from `sequelize.transaction()`;
@@ -157,7 +135,9 @@ export class Transaction {
     }
     try {
       await this.#run(
-        this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
+        this.parent === undefined
+          ? Transaction.#beginSql(this.options)
+          : `SAVEPOINT ${quoteIdent(this.id)}`,
       );
       await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
         (previous, [name, value]) =>
@@ -233,7 +213,7 @@ export class Transaction {
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<void> {
     await this.#connections.execute(
-      advisoryLockQuery(
+      Transaction.#advisoryLockQuery(
         options.shared === true ? 'pg_advisory_xact_lock_shared' : 'pg_advisory_xact_lock',
         key,
       ),
@@ -253,7 +233,7 @@ export class Transaction {
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<boolean> {
     const result = await this.#connections.execute(
-      advisoryLockQuery(
+      Transaction.#advisoryLockQuery(
         options.shared === true ? 'pg_try_advisory_xact_lock_shared' : 'pg_try_advisory_xact_lock',
         key,
         'locked',
@@ -290,22 +270,83 @@ export class Transaction {
       this.#client = undefined;
     }
   }
+
+  static #beginSql(options: TransactionOptions): string {
+    return [
+      'START TRANSACTION',
+      options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
+      options.readOnly === true ? ' READ ONLY' : '',
+    ].join('');
+  }
+
+  static #advisoryLockQuery(fn: string, key: AdvisoryLockKey, alias = 'lock') {
+    return {
+      text:
+        typeof key === 'string'
+          ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
+          : `SELECT ${fn}($1::bigint) AS "${alias}"`,
+      values: [typeof key === 'string' ? key : String(key)],
+    };
+  }
 }
 
-/** Runs `run` inside a new transaction; commits on success, rolls back on error. */
-export const runManagedTransaction = async <T>(
-  transaction: Transaction,
-  run: (transaction: Transaction) => Promise<T>,
-): Promise<T> => {
-  await transaction.begin();
-  try {
-    const result = await runWithTransaction(transaction, () => run(transaction));
-    await transaction.commit();
-    return result;
-  } catch (error) {
-    if (transaction.finished === undefined) {
-      await transaction.rollback().catch(() => undefined);
-    }
-    throw error;
+/** Continuation-local storage of the current transaction (`AsyncLocalStorage`, used by `Sequelize.useCLS`). */
+export class TransactionContext {
+  readonly #storage = new AsyncLocalStorage<Transaction>();
+
+  /**
+   * Transaction of the current async context.
+   *
+   * @returns The transaction, or `undefined` outside `run`.
+   */
+  current(): Transaction | undefined {
+    return this.#storage.getStore();
   }
-};
+
+  /**
+   * Runs `run` with `transaction` as the current transaction.
+   *
+   * @param transaction - Transaction to make current.
+   * @param run - Callback.
+   * @returns Result of `run`.
+   */
+  run<T>(transaction: Transaction, run: () => Promise<T>): Promise<T> {
+    return this.#storage.run(transaction, run);
+  }
+}
+
+/** Runs managed transactions: begins, runs the callback, commits on success and rolls back on error. */
+export class TransactionRunner {
+  readonly #context: TransactionContext;
+
+  /**
+   * @param context - Context the transaction is made current in while the callback runs.
+   */
+  constructor(context: TransactionContext) {
+    this.#context = context;
+  }
+
+  /**
+   * Runs `run` inside `transaction`.
+   *
+   * @param transaction - Transaction, not started yet.
+   * @param run - Callback receiving the transaction.
+   * @returns Result of `run`.
+   */
+  async run<T>(
+    transaction: Transaction,
+    run: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    await transaction.begin();
+    try {
+      const result = await this.#context.run(transaction, () => run(transaction));
+      await transaction.commit();
+      return result;
+    } catch (error) {
+      if (transaction.finished === undefined) {
+        await transaction.rollback().catch(() => undefined);
+      }
+      throw error;
+    }
+  }
+}

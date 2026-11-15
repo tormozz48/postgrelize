@@ -34,14 +34,7 @@ import {
   InstanceError,
   OptimisticLockError,
 } from '../errors/errors.ts';
-import {
-  addHook,
-  hasHook,
-  hooksFromOption,
-  removeHook,
-  type HookFunction,
-  type HookType,
-} from '../hooks/hooks.ts';
+import { HookRegistry, type HookFunction, type HookType } from '../hooks/hooks.ts';
 import {
   runModelHooks,
   validateWithHooks,
@@ -81,7 +74,7 @@ import {
 import { parseRow } from './rows.ts';
 import { escapeLiteral, inlineValues } from '../ddl/literals.ts';
 import { cteSelectOptions, sourceDefinition } from './cte.ts';
-import { encodeCopyRow } from '../connection/copy.ts';
+import { CopyEncoder } from '../connection/copy.ts';
 import { quoteIdent } from '../sql/compile.ts';
 import { randomUUID } from 'node:crypto';
 import type { Transaction } from '../transaction/transaction.ts';
@@ -155,6 +148,7 @@ import {
 
 const insertedFlags = new WeakMap<object, boolean>();
 const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null>();
+const copyEncoder = new CopyEncoder();
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -381,7 +375,7 @@ export class Model<
         runtime,
         { className: this.name, attributes, options: definitionOptions, extra: {} },
         {
-          hooks: hooksFromOption(hooks, hooksFromOption(runtime.defaults.hooks)),
+          hooks: HookRegistry.fromOption(hooks, HookRegistry.fromOption(runtime.defaults.hooks)),
           defaultScope,
           scopes,
           whereMergeStrategy,
@@ -753,7 +747,7 @@ export class Model<
     const now = new Date();
     async function* lines(): AsyncGenerator<string> {
       for await (const row of rows as AsyncIterable<Values>) {
-        yield encodeCopyRow(
+        yield copyEncoder.encodeRow(
           attributes.map((attribute) => {
             const value = stamps.includes(attribute.fieldName) ? now : row[attribute.fieldName];
             return value === undefined || value === null || attribute.type.serialize === undefined
@@ -827,8 +821,8 @@ export class Model<
       ...state,
       hooks:
         typeof nameOrFn === 'string'
-          ? addHook(state.hooks, type, fn ?? missingHook(), nameOrFn)
-          : addHook(state.hooks, type, nameOrFn),
+          ? state.hooks.add(type, fn ?? missingHook(), nameOrFn)
+          : state.hooks.add(type, nameOrFn),
     }));
     return this;
   }
@@ -845,7 +839,7 @@ export class Model<
     type: HookType,
     nameOrFn?: string | HookFunction,
   ): MS {
-    updateState(this, (state) => ({ ...state, hooks: removeHook(state.hooks, type, nameOrFn) }));
+    updateState(this, (state) => ({ ...state, hooks: state.hooks.remove(type, nameOrFn) }));
     return this;
   }
 
@@ -856,7 +850,7 @@ export class Model<
    * @returns True when at least one hook exists.
    */
   static hasHook(type: HookType): boolean {
-    return hasHook(stateOf(this).hooks, type);
+    return stateOf(this).hooks.has(type);
   }
 
   /**

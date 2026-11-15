@@ -1,4 +1,4 @@
-import type { QueryResult } from '../connection/executor.ts';
+import type { QueryResult } from '../connection/connection-manager.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';

@@ -1,21 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { encodeCopyRow, encodeCopyValue } from '../../../src/connection/copy.ts';
+import { CopyEncoder } from '../../../src/connection/copy.ts';
+
+const encoder = new CopyEncoder();
 
 describe('COPY text encoding', () => {
   it('encodes scalars, NULL and escapes control characters', () => {
-    expect(encodeCopyValue(null)).toBe('\\N');
-    expect(encodeCopyValue(true)).toBe('t');
-    expect(encodeCopyValue(1.5)).toBe('1.5');
-    expect(encodeCopyValue('a\tb\nc\\d\re')).toBe('a\\tb\\nc\\\\d\\re');
-    expect(encodeCopyValue(new Date('2026-01-02T03:04:05.000Z'))).toBe('2026-01-02T03:04:05.000Z');
-    expect(encodeCopyValue(Buffer.from('hi'))).toBe('\\\\x6869');
-    expect(encodeCopyValue({ a: 'x\ty' })).toBe('{"a":"x\\\\ty"}');
+    expect(encoder.encodeValue(null)).toBe('\\N');
+    expect(encoder.encodeValue(true)).toBe('t');
+    expect(encoder.encodeValue(1.5)).toBe('1.5');
+    expect(encoder.encodeValue('a\tb\nc\\d\re')).toBe('a\\tb\\nc\\\\d\\re');
+    expect(encoder.encodeValue(new Date('2026-01-02T03:04:05.000Z'))).toBe(
+      '2026-01-02T03:04:05.000Z',
+    );
+    expect(encoder.encodeValue(Buffer.from('hi'))).toBe('\\\\x6869');
+    expect(encoder.encodeValue({ a: 'x\ty' })).toBe('{"a":"x\\\\ty"}');
   });
 
   it('encodes arrays as PostgreSQL array literals', () => {
-    expect(encodeCopyValue(['a b', 'c"d', null, 'e\\f'])).toBe(
+    expect(encoder.encodeValue(['a b', 'c"d', null, 'e\\f'])).toBe(
       '{"a b","c\\\\"d",NULL,"e\\\\\\\\f"}',
     );
-    expect(encodeCopyRow([1, null, 'x'])).toBe('1\t\\N\tx\n');
+    expect(encoder.encodeRow([1, null, 'x'])).toBe('1\t\\N\tx\n');
   });
 });

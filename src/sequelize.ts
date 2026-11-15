@@ -1,32 +1,19 @@
 import type { PoolConfig } from 'pg';
+import { ConnectionConfig } from './connection/connection-config.ts';
 import {
-  createConnectionManager,
-  type ConnectionManager,
+  ConnectionManager,
   type ExecuteOptions,
   type QueryResult,
-} from './connection/executor.ts';
-import {
-  connectionConfig,
-  parseConstructorArgs,
-  replicationPoolConfigs,
-  type ConnectionConfig,
-  type SequelizeOptions,
+} from './connection/connection-manager.ts';
+import type {
+  ConnectionConfig as ConnectionSettings,
+  SequelizeOptions,
 } from './connection/options.ts';
+import { QueryLogger } from './connection/query-logger.ts';
 import { DataTypes } from './data-types/data-types.ts';
-import {
-  createNotifier,
-  type NotificationHandler,
-  type Notifier,
-} from './connection/notifications.ts';
-import {
-  addHook,
-  hasHook,
-  hooksFromOption,
-  removeHook,
-  runHooks,
-  type HookFunction,
-  type HookRegistry,
-} from './hooks/hooks.ts';
+import { NotificationListener, type NotificationHandler } from './connection/notifications.ts';
+import { PgErrorMapper } from './errors/map-pg-error.ts';
+import { HookRegistry, type HookFunction } from './hooks/hooks.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
 import { Model, definitionOf, parseModelRow } from './model/model.ts';
@@ -46,9 +33,9 @@ import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/ru
 import { prepareRawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
 import type { CompiledQuery } from './sql/compile.ts';
 import {
-  currentTransaction,
-  runManagedTransaction,
   Transaction,
+  TransactionContext,
+  TransactionRunner,
   type AdvisoryLockKey,
   type TransactionOptions,
 } from './transaction/transaction.ts';
@@ -141,11 +128,13 @@ export class Sequelize {
   static readonly json = json;
 
   static #cls = false;
+  static readonly #context = new TransactionContext();
+  static readonly #transactions = new TransactionRunner(Sequelize.#context);
 
   /** Normalized constructor options. */
   readonly options: SequelizeOptions;
   /** Connection settings. */
-  readonly config: ConnectionConfig;
+  readonly config: ConnectionSettings;
   /** Models registered with `define` / `Model.init`, by model name. */
   readonly models: Record<string, ModelStatic<AnyModel>> = {};
   /** Raw SQL fragment builder. */
@@ -166,7 +155,7 @@ export class Sequelize {
   #hooks: HookRegistry;
   #queryInterface: QueryInterface | undefined;
   #serverVersion: Promise<number> | undefined;
-  #notifier: Notifier | undefined;
+  #notifier: NotificationListener | undefined;
 
   /**
    * Creates an instance from a connection URI.
@@ -196,23 +185,27 @@ export class Sequelize {
    */
   constructor(options?: SequelizeOptions);
   constructor(...args: readonly unknown[]) {
-    this.options = parseConstructorArgs(args as Parameters<typeof parseConstructorArgs>[0]);
-    this.config = connectionConfig(this.options);
+    const connectionConfig = new ConnectionConfig(
+      args as ConstructorParameters<typeof ConnectionConfig>[0],
+    );
+    this.options = connectionConfig.options;
+    this.config = connectionConfig.settings();
     const logging = this.options.logging === undefined ? console.log : this.options.logging;
     const defaults: ExecuteOptions = {
       logging,
       ...(this.options.benchmark === undefined ? {} : { benchmark: this.options.benchmark }),
     };
-    this.#hooks = hooksFromOption(this.options.hooks);
-    const pools = replicationPoolConfigs(this.options);
+    this.#hooks = HookRegistry.fromOption(this.options.hooks);
+    const pools = connectionConfig.replicationPoolConfigs();
     const withHookPassword = (config: PoolConfig): PoolConfig => ({
       ...config,
       password: () => this.#connectPassword(config.password),
     });
-    this.#connections = createConnectionManager(
+    this.#connections = new ConnectionManager(
       withHookPassword(pools.write),
-      defaults,
       pools.read.map(withHookPassword),
+      new QueryLogger(defaults),
+      new PgErrorMapper(),
     );
     this.#runtime = {
       execute: (query, options, kind) => this.#execute(query, options, kind),
@@ -270,8 +263,8 @@ export class Sequelize {
   addHook(type: string, nameOrFn: string | HookFunction, hook?: HookFunction): this {
     this.#hooks =
       typeof nameOrFn === 'string'
-        ? addHook(this.#hooks, type, hook ?? missingHook(), nameOrFn)
-        : addHook(this.#hooks, type, nameOrFn);
+        ? this.#hooks.add(type, hook ?? missingHook(), nameOrFn)
+        : this.#hooks.add(type, nameOrFn);
     return this;
   }
 
@@ -283,7 +276,7 @@ export class Sequelize {
    * @returns This instance.
    */
   removeHook(type: string, nameOrFn?: string | HookFunction): this {
-    this.#hooks = removeHook(this.#hooks, type, nameOrFn);
+    this.#hooks = this.#hooks.remove(type, nameOrFn);
     return this;
   }
 
@@ -294,7 +287,7 @@ export class Sequelize {
    * @returns True when at least one hook exists.
    */
   hasHook(type: string): boolean {
-    return hasHook(this.#hooks, type);
+    return this.#hooks.has(type);
   }
 
   /**
@@ -309,11 +302,11 @@ export class Sequelize {
 
   async #connectPassword(configured: PoolConfig['password']): Promise<string> {
     const password = typeof configured === 'function' ? await configured() : (configured ?? '');
-    if (!hasHook(this.#hooks, 'beforeConnect')) {
+    if (!this.#hooks.has('beforeConnect')) {
       return password;
     }
     const config = { ...this.config, password };
-    await runHooks([this.#hooks], 'beforeConnect', this, config);
+    await this.#hooks.run('beforeConnect', this, config);
     return config.password ?? '';
   }
 
@@ -433,13 +426,13 @@ export class Sequelize {
     const run = typeof optionsOrRun === 'function' ? optionsOrRun : maybeRun;
     const parent =
       options.transaction === undefined && Sequelize.#cls
-        ? currentTransaction()
+        ? Sequelize.#context.current()
         : options.transaction;
     const transaction = new Transaction(this.#connections, {
       ...options,
       ...(parent === undefined ? {} : { transaction: parent }),
     });
-    return run === undefined ? transaction.begin() : runManagedTransaction(transaction, run);
+    return run === undefined ? transaction.begin() : Sequelize.#transactions.run(transaction, run);
   }
 
   /**
@@ -536,7 +529,7 @@ export class Sequelize {
    * @returns Function that unsubscribes the handler.
    */
   listen(channel: string, handler: NotificationHandler): Promise<() => Promise<void>> {
-    this.#notifier ??= createNotifier(() => this.#connections.dedicated());
+    this.#notifier ??= new NotificationListener(() => this.#connections.dedicated());
     return this.#notifier.listen(channel, handler);
   }
 
@@ -609,7 +602,7 @@ export class Sequelize {
     const transaction =
       options.transaction === undefined
         ? Sequelize.#cls
-          ? currentTransaction()
+          ? Sequelize.#context.current()
           : undefined
         : (options.transaction ?? undefined);
     return {

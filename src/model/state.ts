@@ -1,4 +1,4 @@
-import { emptyHooks, type HookRegistry } from '../hooks/hooks.ts';
+import { HookRegistry } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
 import {
@@ -84,7 +84,7 @@ export const initialState = (
 ): ModelState => ({
   definition,
   runtime,
-  hooks: options.hooks ?? emptyHooks,
+  hooks: options.hooks ?? HookRegistry.EMPTY,
   scopes: scopeRegistry(options.defaultScope, options.scopes, options.whereMergeStrategy),
   validators: options.validate ?? {},
   schema: options.schema,
