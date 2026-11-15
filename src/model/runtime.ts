@@ -13,6 +13,13 @@ export type QueryOptionsBase = Readonly<{
   logging?: LoggingFunction | false;
   /** Pass query duration to the logger. */
   benchmark?: boolean;
+  /**
+   * `statement_timeout` for this query only, in milliseconds (non-negative integer; `0` disables it).
+   * PostgreSQL cancels the statement with a `DatabaseError` (code `57014`) when it runs longer.
+   * Outside a transaction the query runs in its own short transaction; inside one the previous
+   * timeout is restored afterwards. PostgreSQL extension.
+   */
+  statementTimeout?: number;
   /** Force the writer even for SELECTs when read replicas are configured. */
   useMaster?: boolean;
 }>;

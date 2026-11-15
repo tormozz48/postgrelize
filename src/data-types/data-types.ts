@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DataType, DataTypeInput } from './abstract-data-type.ts';
 import { ArrayType } from './array-type.ts';
+import { BitType } from './bit-type.ts';
 import { BlobType } from './blob-type.ts';
 import { CharType } from './char-type.ts';
 import { DateType } from './date-type.ts';
@@ -8,6 +9,7 @@ import { DecimalType } from './decimal-type.ts';
 import { DefaultValueGenerator } from './default-value-generator.ts';
 import { EnumType } from './enum-type.ts';
 import { FloatType } from './float-type.ts';
+import { HstoreType } from './hstore-type.ts';
 import { IntegerType } from './integer-type.ts';
 import { JsonType } from './json-type.ts';
 import { RangeType } from './range-type.ts';
@@ -15,9 +17,11 @@ import { ScalarType } from './scalar-type.ts';
 import { SpatialType } from './spatial-type.ts';
 import { StringType } from './string-type.ts';
 import { TextType } from './text-type.ts';
+import { TimestampType } from './timestamp-type.ts';
 import { VirtualType } from './virtual-type.ts';
 
 export type { DataType, DataTypeInput } from './abstract-data-type.ts';
+export type { HstoreValue } from './hstore-type.ts';
 export type { IntegerDataType } from './integer-type.ts';
 export type { RangeBound } from './range-type.ts';
 export type { DefaultValueGenerator } from './default-value-generator.ts';
@@ -79,6 +83,11 @@ export const DataTypes = {
   BOOLEAN: new ScalarType('BOOLEAN', 'BOOLEAN'),
   /** `TIMESTAMP WITH TIME ZONE`; values are `Date` objects. */
   DATE: callable((fsp?: number) => new DateType(fsp), new DateType()),
+  /**
+   * `TIMESTAMP WITHOUT TIME ZONE`; values are `Date` objects whose local wall-clock time is the
+   * stored time. PostgreSQL extension.
+   */
+  TIMESTAMP: callable((fsp?: number) => new TimestampType(fsp), new TimestampType()),
   /** `DATE`; values are `'YYYY-MM-DD'` strings. */
   DATEONLY: new ScalarType('DATEONLY', 'DATE'),
   /** `TIME`. */
@@ -93,14 +102,40 @@ export const DataTypes = {
   BLOB: callable((size?: 'tiny' | 'medium' | 'long') => new BlobType(size), new BlobType()),
   /** `UUID`. */
   UUID: new ScalarType('UUID', 'UUID'),
-  /** `HSTORE` (requires the `hstore` extension). */
-  HSTORE: new ScalarType('HSTORE', 'HSTORE'),
+  /**
+   * `HSTORE` (requires the `hstore` extension); values are objects of string (or `null`) values,
+   * like Sequelize v6.
+   */
+  HSTORE: new HstoreType(),
+  /**
+   * `LTREE` label path (requires the `ltree` extension); values are strings like `'Top.Science'`.
+   * PostgreSQL extension.
+   */
+  LTREE: new ScalarType('LTREE', 'LTREE'),
+  /**
+   * `MONEY`; values are strings formatted by the server's `lc_monetary` (e.g. `'$12.50'`); numbers
+   * are accepted on write. PostgreSQL extension.
+   */
+  MONEY: new ScalarType('MONEY', 'MONEY'),
+  /** `XML`; values are XML text. PostgreSQL extension. */
+  XML: new ScalarType('XML', 'XML'),
+  /** `BIT(length)`, default length 1; values are strings of `0` and `1`. PostgreSQL extension. */
+  BIT: callable((length?: number) => new BitType('BIT', length), new BitType('BIT')),
+  /**
+   * `BIT VARYING(length)`, unlimited without a length; values are strings of `0` and `1`.
+   * PostgreSQL extension.
+   */
+  VARBIT: callable((length?: number) => new BitType('VARBIT', length), new BitType('VARBIT')),
   /** `INET`. */
   INET: new ScalarType('INET', 'INET'),
   /** `CIDR`. */
   CIDR: new ScalarType('CIDR', 'CIDR'),
   /** `MACADDR`. */
   MACADDR: new ScalarType('MACADDR', 'MACADDR'),
+  /** `MACADDR8` (EUI-64 address). PostgreSQL extension. */
+  MACADDR8: new ScalarType('MACADDR8', 'MACADDR8'),
+  /** `TSQUERY`; values are full-text query strings. PostgreSQL extension. */
+  TSQUERY: new ScalarType('TSQUERY', 'TSQUERY'),
   /** `TSVECTOR`. */
   TSVECTOR: new ScalarType('TSVECTOR', 'TSVECTOR'),
   /** PostGIS `GEOMETRY(type, srid)`. */

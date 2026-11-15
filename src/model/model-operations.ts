@@ -30,6 +30,8 @@ import { DestroyOperation } from './operations/destroy-operation.ts';
 import { FindOperation } from './operations/find-operation.ts';
 import { IncrementOperation } from './operations/increment-operation.ts';
 import { InsertOperation } from './operations/insert-operation.ts';
+import { BulkInsertBuilder } from './bulk-insert-builder.ts';
+import { UnnestInsertBuilder } from './unnest-insert-builder.ts';
 import { MergeOperation } from './operations/merge-operation.ts';
 import { UpdateOperation } from './operations/update-operation.ts';
 import { UpsertOperation } from './operations/upsert-operation.ts';
@@ -81,11 +83,15 @@ export const bulkCreator = new BulkCreateOperation({
   registry,
   lifecycle,
   values: modelValues,
-  inserts: insertQueries,
+  bulkInserts: new BulkInsertBuilder(
+    insertQueries,
+    new UnnestInsertBuilder(insertQueries, sqlCompiler),
+    onConflictBuilder,
+    sqlCompiler,
+  ),
   conflicts: onConflictBuilder,
   inserter,
   written: writtenRows,
-  compiler: sqlCompiler,
 });
 export const upserter = new UpsertOperation({
   registry,

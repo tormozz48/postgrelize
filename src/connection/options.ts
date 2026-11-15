@@ -28,6 +28,19 @@ export type PoolOptions = Readonly<{
   maxUses?: number;
 }>;
 
+/**
+ * Named prepared statement cache settings, given as the `statementCache` option of {@link SequelizeOptions}.
+ *
+ * @example
+ * ```ts
+ * const db = new Sequelize('postgres://user:pass@localhost:5432/app', { statementCache: { max: 50 } });
+ * ```
+ */
+export type StatementCacheOptions = Readonly<{
+  /** Maximum named statements per connection. Default 100. Further statements run unnamed. */
+  max?: number;
+}>;
+
 /** Defaults applied to every model defined through this instance (Sequelize v6 `define` option). */
 export type ModelDefaults = Readonly<{
   /** Add `createdAt` / `updatedAt`. Default true. */
@@ -130,6 +143,12 @@ export type SequelizeOptions = Readonly<{
   hooks?: HooksOption;
   /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
   inAsAnyThreshold?: number;
+  /**
+   * Opt-in named prepared statements (PostgreSQL extension): repeated SELECT / INSERT / UPDATE / DELETE texts are
+   * parsed and planned once per connection. `true` uses the default bound of 100 statements per connection.
+   * Off by default; not for PgBouncer in transaction pooling mode; pair with a bounded `pool.max`.
+   */
+  statementCache?: boolean | StatementCacheOptions;
 }>;
 
 /** Connection settings exposed as `sequelize.config` (Sequelize v6 shape). */

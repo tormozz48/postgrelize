@@ -49,6 +49,7 @@ export default defineConfig({
   title: 'postgrelize',
   description: 'PostgreSQL-only ORM with the Sequelize v6 API',
   base: '/postgrelize/',
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/postgrelize/favicon.svg' }]],
   cleanUrls: true,
   lastUpdated: true,
   srcExclude: ['examples/**', 'llm/**'],
@@ -56,6 +57,7 @@ export default defineConfig({
     new LlmsWriter(siteConfig.srcDir, siteConfig.outDir).write();
   },
   themeConfig: {
+    logo: '/logo.svg',
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'PostgreSQL features', link: '/guide/upserts' },

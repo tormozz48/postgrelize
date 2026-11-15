@@ -4,6 +4,8 @@
 **Feature slug:** `postgrelize-mvp`
 **Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 0.9.0 released
 
+**S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.
+
 **S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
 ## Phases
@@ -151,3 +153,8 @@
 ## Release 0.9.0 (2026-11-15)
 - Tag `v0.9.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.9.0` published. Contents: SQL-injection hardening and audit (S5), refactor to small units with mixins and decorators plus public decorator API (S6), PostgreSQL matrix (S9), coverage 99.7% (S7), parity and robustness fixes (S7b), LLM docs and full TSDoc (S8), performance (S10). Next: backlog 4.
 
+
+## Backlog 4 / S16 session and write extras (2026-11-15)
+- [x] PR 1 (#61): named prepared statements, `statementCache` (ADR-023), bench case `findByPk statementCache`.
+- [x] PR 2: `DEFERRABLE` transaction mode (`deferrable`), per-query `statementTimeout`, `bulkCreate({ unnest: true })`; spec `.10x/specs/2026-11-15-s16-session-extras-design.md`. All four matrix rows `supported`.
+- Open: the `unnest` builder swaps a placeholder table for `unnest(...)` because the AST has no function in FROM; move it to the S12 `function` FromItem (ADR-024) once S12 lands. The stub bench gate for the default path was not rerun under load; run it before the next release.

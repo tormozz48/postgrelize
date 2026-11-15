@@ -39,6 +39,14 @@ Typical uses:
 
 Names and values are sent as bound parameters. Custom setting names need a dot (`app.user_id`).
 
+## Statement timeout per query
+
+The `statementTimeout` option (milliseconds, a non-negative integer; `0` disables the limit) applies `statement_timeout` to one query. PostgreSQL cancels a longer statement and the call rejects with a `DatabaseError` (code `57014`). It works on `sequelize.query` and on model finders and writers:
+
+<<< @/examples/sessions.ts#statement-timeout{ts}
+
+Outside a transaction the query runs in its own short transaction, so the value never leaks to the pooled connection. Inside a transaction the previous timeout (for example from `settings`) is restored after the query. To limit a whole transaction use the `settings` option above; to limit every query of the pool use `dialectOptions.statement_timeout`.
+
 ## Advisory locks
 
 Advisory locks are application-defined locks managed by PostgreSQL — for example to make sure only one worker runs a job. postgrelize uses transaction-level locks (`pg_advisory_xact_lock`), which are released automatically on commit or rollback, so a crashed worker cannot leave a lock behind.
