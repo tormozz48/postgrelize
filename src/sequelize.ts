@@ -34,11 +34,10 @@ import { RowMapper } from './model/row-mapper.ts';
 import type { CompiledQuery } from './sql/compile.ts';
 import {
   Transaction,
-  TransactionContext,
-  TransactionRunner,
   type AdvisoryLockKey,
   type TransactionOptions,
 } from './transaction/transaction.ts';
+import { TransactionContext, TransactionRunner } from './transaction/transaction-runner.ts';
 
 export { QueryTypes } from './query/query-result-shaper.ts';
 export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';

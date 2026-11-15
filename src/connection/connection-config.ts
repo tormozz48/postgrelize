@@ -58,29 +58,31 @@ export class ConnectionConfig {
   }
 
   static #parse(args: ConstructorArgs): SequelizeOptions {
-    const [first, second, third, fourth] = args;
-    const options: SequelizeOptions =
-      first === undefined || typeof first === 'object'
-        ? (first ?? {})
-        : ConnectionConfig.#isUri(first)
-          ? {
-              ...(typeof second === 'object' && second !== null ? second : {}),
-              ...ConnectionConfig.#fromUri(first),
-            }
-          : {
-              ...(fourth ?? (typeof second === 'object' && second !== null ? second : {})),
-              ...ConnectionConfig.#definedOnly({
-                database: first,
-                username: typeof second === 'string' ? second : undefined,
-                password: typeof third === 'string' ? third : undefined,
-              }),
-            };
+    const options = ConnectionConfig.#merge(args);
     if (options.dialect !== undefined && options.dialect !== 'postgres') {
       throw new Error(
         `postgrelize supports only the postgres dialect, got ${String(options.dialect)}`,
       );
     }
     return options;
+  }
+
+  static #merge(args: ConstructorArgs): SequelizeOptions {
+    const [first, second, third, fourth] = args;
+    if (first === undefined || typeof first === 'object') {
+      return first ?? {};
+    }
+    const secondOptions = typeof second === 'object' && second !== null ? second : {};
+    return ConnectionConfig.#isUri(first)
+      ? { ...secondOptions, ...ConnectionConfig.#fromUri(first) }
+      : {
+          ...(fourth ?? secondOptions),
+          ...ConnectionConfig.#definedOnly({
+            database: first,
+            username: typeof second === 'string' ? second : undefined,
+            password: typeof third === 'string' ? third : undefined,
+          }),
+        };
   }
 
   static #fromUri(uri: string): SequelizeOptions {
@@ -142,7 +144,6 @@ export class ConnectionConfig {
 
   static #poolConfig(options: SequelizeOptions): PoolConfig {
     const config = ConnectionConfig.#settings(options);
-    const pool = options.pool ?? {};
     const timezone = ConnectionConfig.#timezone(options.timezone ?? '+00:00');
     return ConnectionConfig.#definedOnly({
       host: config.host,
@@ -151,14 +152,21 @@ export class ConnectionConfig {
       user: config.username,
       password: config.password,
       ssl: options.ssl,
-      max: pool.max ?? 5,
-      idleTimeoutMillis: pool.idle ?? 10_000,
-      connectionTimeoutMillis: pool.acquire ?? 60_000,
-      maxUses: pool.maxUses,
+      ...ConnectionConfig.#poolLimits(options),
       ...options.dialectOptions,
       options: [`-c TimeZone=${timezone}`, options.dialectOptions?.options]
         .filter(Boolean)
         .join(' '),
     });
+  }
+
+  static #poolLimits(options: SequelizeOptions): PoolConfig {
+    const pool = options.pool ?? {};
+    return {
+      max: pool.max ?? 5,
+      idleTimeoutMillis: pool.idle ?? 10_000,
+      connectionTimeoutMillis: pool.acquire ?? 60_000,
+      maxUses: pool.maxUses,
+    };
   }
 }
