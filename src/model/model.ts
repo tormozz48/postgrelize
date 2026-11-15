@@ -48,8 +48,7 @@ import {
   type ScopeOptions,
   type ScopeSelector,
 } from './scopes.ts';
-import { isExpression, subqueryExpression, type Subquery } from '../expressions/methods.ts';
-import { compile } from '../sql/compile.ts';
+import { SqlExpression, Subquery } from '../expressions/methods.ts';
 import {
   normalizeDefinition,
   type AttributeDefinition,
@@ -68,14 +67,14 @@ import {
   primaryKeyWhere,
   setItems,
   tableOf,
-  whereContext,
+  whereCompiler,
   type SelectOptions,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
 import { escapeLiteral, inlineValues } from '../ddl/literals.ts';
 import { cteSelectOptions, sourceDefinition } from './cte.ts';
 import { CopyEncoder } from '../connection/copy.ts';
-import { quoteIdent } from '../sql/compile.ts';
+import { SqlCompiler } from '../sql/compile.ts';
 import { randomUUID } from 'node:crypto';
 import type { Transaction } from '../transaction/transaction.ts';
 import { buildMerge, joinSources, MERGE_ACTION, type MergeOptions } from './write-power.ts';
@@ -149,6 +148,7 @@ import {
 const insertedFlags = new WeakMap<object, boolean>();
 const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null>();
 const copyEncoder = new CopyEncoder();
+const sqlCompiler = new SqlCompiler();
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -497,7 +497,7 @@ export class Model<
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> & Readonly<{ as?: string }> = {},
   ): Subquery {
-    return subqueryExpression(() => {
+    return new Subquery(() => {
       const { definition, runtime, scopes } = stateOf(this);
       const { as, ...findOptions } = options;
       const scoped = injectScope(
@@ -554,7 +554,7 @@ export class Model<
     };
     const old = await returningOld(runtime, options);
     const result = await runtime.execute(
-      compile(old ? withReturningOld(definition, node) : node),
+      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
       options,
     );
     return result.rows.map((row) => {
@@ -614,7 +614,7 @@ export class Model<
       options.returning === true,
     );
     const result = await runtime.execute(
-      compile(old ? withReturningOld(definition, node) : node),
+      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
       options,
     );
     return {
@@ -661,7 +661,7 @@ export class Model<
       throw new Error('findEach: batchSize must be a positive integer');
     }
     const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-    const compiled = compile(
+    const compiled = sqlCompiler.compile(
       buildSelect(definition, query as SelectOptions, runtime.inAsAnyThreshold),
     );
     const own =
@@ -669,7 +669,7 @@ export class Model<
         ? await runtime.beginTransaction()
         : undefined;
     const transaction = own ?? (options.transaction as Transaction);
-    const name = quoteIdent(`pgz_cursor_${randomUUID().replaceAll('-', '')}`);
+    const name = SqlCompiler.quoteIdent(`pgz_cursor_${randomUUID().replaceAll('-', '')}`);
     const run = (text: string, values: readonly unknown[] = []) =>
       runtime.execute({ text, values }, { ...pickQueryOptions(options), transaction });
     let failed = false;
@@ -741,9 +741,9 @@ export class Model<
     );
     const table = [definition.schema, definition.tableName]
       .filter((part): part is string => part !== undefined)
-      .map(quoteIdent)
+      .map(SqlCompiler.quoteIdent)
       .join('.');
-    const text = `COPY ${table} (${attributes.map((attribute) => quoteIdent(attribute.field)).join(', ')}) FROM STDIN`;
+    const text = `COPY ${table} (${attributes.map((attribute) => SqlCompiler.quoteIdent(attribute.field)).join(', ')}) FROM STDIN`;
     const now = new Date();
     async function* lines(): AsyncGenerator<string> {
       for await (const row of rows as AsyncIterable<Values>) {
@@ -797,7 +797,7 @@ export class Model<
     );
     const select = includes.length === 0 ? base : withIncludes(definition, base, includes, query);
     return runtime.copyTo(
-      `COPY (${inlineValues(compile(select))}) TO STDOUT${copyFormatSql(options)}`,
+      `COPY (${inlineValues(sqlCompiler.compile(select))}) TO STDOUT${copyFormatSql(options)}`,
       options,
       'read',
     );
@@ -1136,7 +1136,7 @@ export class Model<
       ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
       returning: [...returningAll(definition), insertedFlagColumn()],
     });
-    const result = await runtime.execute(compile(insert), options);
+    const result = await runtime.execute(sqlCompiler.compile(insert), options);
     const row = result.rows[0];
     const flag = row?.[INSERTED_FLAG];
     instance.#refresh(definition, row === undefined ? undefined : withoutFlag(row));
@@ -1236,7 +1236,7 @@ export class Model<
         ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
         ...v6BulkConflict(definition, options as BulkCreateOptions),
       });
-      const result = await runtime.execute(compile(insert), options);
+      const result = await runtime.execute(sqlCompiler.compile(insert), options);
       const returned =
         options.ignoreDuplicates === true
           ? insertedRowsOf(definition, rows, result.rows)
@@ -1285,7 +1285,7 @@ export class Model<
     );
     const select =
       includes.length === 0 ? base : withIncludes(definition, base, includes, query as FindOptions);
-    const result = await runtime.execute(compile(select), query, 'read');
+    const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
     const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
     const found =
       opts['raw'] === true
@@ -1405,7 +1405,7 @@ export class Model<
     );
     const select =
       includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
-    const result = await runtime.execute(compile(select), query, 'read');
+    const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
     if (query.group !== undefined) {
       return result.rows.map((row) => ({
         ...parseRow(definition, row),
@@ -1456,7 +1456,7 @@ export class Model<
     const scoped = injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy);
     const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
     const result = await runtime.execute(
-      compile(
+      sqlCompiler.compile(
         buildAggregate(
           definition,
           name,
@@ -1604,7 +1604,7 @@ export class Model<
       setItems(
         definition,
         changes,
-        whereContext(definition, from.length === 0 ? undefined : definition.name),
+        whereCompiler(definition, from.length === 0 ? undefined : definition.name),
       ),
       where,
       {
@@ -1616,7 +1616,7 @@ export class Model<
       },
     );
     const result = await runtime.execute(
-      compile(old ? withReturningOld(definition, node) : node),
+      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
       options,
     );
     const updated = result.rows.map((row) => fromWrittenRow(this, row, old));
@@ -1704,7 +1704,7 @@ export class Model<
               ...(options.limit === undefined ? {} : { limit: options.limit }),
               ...inAsAny,
             });
-      const result = await runtime.execute(compile(node), options);
+      const result = await runtime.execute(sqlCompiler.compile(node), options);
       return options.returning === true
         ? result.rows.map((row) => fromRow(this, row))
         : result.rowCount;
@@ -1758,7 +1758,7 @@ export class Model<
       opts['where'],
       runtime.inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold: runtime.inAsAnyThreshold },
     );
-    await runtime.execute(compile(node), options);
+    await runtime.execute(sqlCompiler.compile(node), options);
     await targets.reduce<Promise<unknown>>(
       (previous, instance) =>
         previous.then(() => runModelHooks(this, 'afterRestore', instance, opts)),
@@ -1780,7 +1780,7 @@ export class Model<
   ): Promise<void> {
     const { definition, runtime } = stateOf(this);
     await runtime.execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'truncate',
         table: {
           name: definition.tableName,
@@ -1999,7 +1999,7 @@ export class Model<
    */
   setDataValue<K extends keyof TAttributes>(key: K, value: TAttributes[K]): this {
     const name = String(key);
-    if (!isEqualValue(this._previousDataValues[key], value) || isExpression(value)) {
+    if (!isEqualValue(this._previousDataValues[key], value) || value instanceof SqlExpression) {
       this.#changed = new Set([...this.#changed, name]);
     } else if (this.#changed.has(name)) {
       this.#changed = new Set([...this.#changed].filter((item) => item !== name));
@@ -2108,7 +2108,7 @@ export class Model<
         explicitFields,
       );
       const result = await runtime.execute(
-        compile(
+        sqlCompiler.compile(
           buildInsert(definition, [values], {
             returning: true,
             ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
@@ -2141,7 +2141,9 @@ export class Model<
           ? changes
           : { ...changes, [version]: Number(previousVersion ?? 0) + 1 };
       const result = await runtime.execute(
-        compile(buildUpdate(definition, setItems(definition, set), where, { returning: true })),
+        sqlCompiler.compile(
+          buildUpdate(definition, setItems(definition, set), where, { returning: true }),
+        ),
         options,
       );
       if (version !== undefined && result.rowCount === 0) {
@@ -2191,7 +2193,7 @@ export class Model<
   async reload(options: QueryOptionsBase = {}): Promise<this> {
     const { definition, runtime } = stateOf(this.constructor);
     const result = await runtime.execute(
-      compile(
+      sqlCompiler.compile(
         buildSelect(definition, {
           where: primaryKeyWhere(definition, this.dataValues as Values),
           limit: 1,
@@ -2228,7 +2230,9 @@ export class Model<
       await this.save({ ...pickQueryOptions(options), hooks: false });
     } else {
       await runtime.execute(
-        compile(buildDelete(definition, primaryKeyWhere(definition, this.dataValues as Values))),
+        sqlCompiler.compile(
+          buildDelete(definition, primaryKeyWhere(definition, this.dataValues as Values)),
+        ),
         options,
       );
     }
@@ -2373,7 +2377,7 @@ const changeBy = async <M extends AnyModel>(
     options.where ?? {},
     { returning: true },
   );
-  const result = await runtime.execute(compile(node), options);
+  const result = await runtime.execute(sqlCompiler.compile(node), options);
   return [result.rows.map((row) => fromRow(model, row)), result.rowCount];
 };
 
@@ -2417,7 +2421,7 @@ const insertedRowsOf = (
           ([name, value]) =>
             value === undefined ||
             (value === null && definition.attributes.get(name)?.autoIncrement === true) ||
-            isExpression(value) ||
+            value instanceof SqlExpression ||
             !(name in parsed) ||
             sameValue(parsed[name], value),
         );
@@ -2481,7 +2485,7 @@ const insertWithConflict = async <M extends AnyModel>(
     returning: [...returningAll(definition), insertedFlagColumn()],
   });
   const result = await runtime.execute(
-    compile(old ? withReturningOld(definition, insert) : insert),
+    sqlCompiler.compile(old ? withReturningOld(definition, insert) : insert),
     options,
   );
   return result.rows.map((row) => {

@@ -1,6 +1,6 @@
 import { promisify } from 'node:util';
 import { ValidationErrorItem } from '../errors/errors.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
 import { builtinValidator } from './validators.ts';
 import {
@@ -69,7 +69,7 @@ const schemaItems = (
     typeof value === 'object' &&
     value !== null &&
     !Buffer.isBuffer(value) &&
-    !isExpression(value)
+    !(value instanceof SqlExpression)
   ) {
     return [
       new ValidationErrorItem(
@@ -274,7 +274,8 @@ export const validateInstance = async (
 ): Promise<readonly ValidationErrorItem[]> => {
   const attributes = [...target.definition.attributes.values()].filter(
     (attribute) =>
-      !scope.skip.has(attribute.fieldName) && !isExpression(target.values[attribute.fieldName]),
+      !scope.skip.has(attribute.fieldName) &&
+      !(target.values[attribute.fieldName] instanceof SqlExpression),
   );
   const schemaErrors = attributes.flatMap((attribute) =>
     schemaItems(target.definition, target, attribute, target.values[attribute.fieldName]),

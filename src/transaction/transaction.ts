@@ -6,7 +6,7 @@ import type {
   ExecuteOptions,
 } from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
-import { quoteIdent } from '../sql/compile.ts';
+import { SqlCompiler } from '../sql/compile.ts';
 
 /** Transaction isolation levels (Sequelize v6 `Transaction.ISOLATION_LEVELS`). */
 export const ISOLATION_LEVELS = {
@@ -137,7 +137,7 @@ export class Transaction {
       await this.#run(
         this.parent === undefined
           ? Transaction.#beginSql(this.options)
-          : `SAVEPOINT ${quoteIdent(this.id)}`,
+          : `SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
       );
       await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
         (previous, [name, value]) =>
@@ -170,7 +170,9 @@ export class Transaction {
     this.#assertActive('commit');
     try {
       await this.#run(
-        this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
+        this.parent === undefined
+          ? 'COMMIT'
+          : `RELEASE SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
       );
       this.finished = 'commit';
     } finally {
@@ -192,7 +194,9 @@ export class Transaction {
     this.#assertActive('rollback');
     try {
       await this.#run(
-        this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
+        this.parent === undefined
+          ? 'ROLLBACK'
+          : `ROLLBACK TO SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
       );
       this.finished = 'rollback';
     } finally {

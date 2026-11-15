@@ -196,19 +196,40 @@ export type StatementNode =
   | TruncateNode
   | MergeNode;
 
-export const param = (value: unknown): ParamNode => ({ kind: 'param', value });
-export const raw = (sql: string): RawNode => ({ kind: 'raw', sql });
-export const ident = (...path: readonly string[]): IdentNode => ({ kind: 'ident', path });
-export const binary = (op: string, left: ExprNode, right: ExprNode): BinaryNode => ({
-  kind: 'binary',
-  op,
-  left,
-  right,
-});
-export const and = (items: readonly ExprNode[]): LogicalNode => ({ kind: 'and', items });
-export const or = (items: readonly ExprNode[]): LogicalNode => ({ kind: 'or', items });
-export const fnCall = (name: string, args: readonly ExprNode[]): FnNode => ({
-  kind: 'fn',
-  name,
-  args,
-});
+/** Factories for the most common AST nodes. Stateless; nodes are plain immutable data. */
+export class SqlAst {
+  /** Bound parameter (`$n`). */
+  param(value: unknown): ParamNode {
+    return { kind: 'param', value };
+  }
+
+  /** Raw SQL text inserted as-is. */
+  raw(sql: string): RawNode {
+    return { kind: 'raw', sql };
+  }
+
+  /** Quoted identifier path, e.g. `"table"."column"`. */
+  ident(...path: readonly string[]): IdentNode {
+    return { kind: 'ident', path };
+  }
+
+  /** Binary operation `left op right`. */
+  binary(op: string, left: ExprNode, right: ExprNode): BinaryNode {
+    return { kind: 'binary', op, left, right };
+  }
+
+  /** Conjunction of the items (`TRUE` when empty). */
+  and(items: readonly ExprNode[]): LogicalNode {
+    return { kind: 'and', items };
+  }
+
+  /** Disjunction of the items (`FALSE` when empty). */
+  or(items: readonly ExprNode[]): LogicalNode {
+    return { kind: 'or', items };
+  }
+
+  /** Function call `name(args)`. */
+  fnCall(name: string, args: readonly ExprNode[]): FnNode {
+    return { kind: 'fn', name, args };
+  }
+}

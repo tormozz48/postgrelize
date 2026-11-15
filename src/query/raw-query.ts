@@ -1,6 +1,6 @@
-import { isExpression } from '../expressions/methods.ts';
-import { compileExpr, finalize, type Chunks, type CompiledQuery } from '../sql/compile.ts';
-import { toExpr } from '../where/where.ts';
+import { SqlExpression } from '../expressions/methods.ts';
+import { SqlCompiler, type Chunks, type CompiledQuery } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
 
 /** Values substituted into raw SQL: `?` for arrays, `:name` for objects. */
 export type Replacements = readonly unknown[] | Readonly<Record<string, unknown>>;
@@ -11,11 +11,13 @@ export type BindParameters = readonly unknown[] | Readonly<Record<string, unknow
 const TOKEN =
   /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\/|\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$|::|:([A-Za-z_]\w*)|\?(?![|&])|\$([A-Za-z_]\w*|\d+)/g;
 
-const noContext = { resolve: () => undefined } as const;
+const noContext = new WhereCompiler({ resolve: () => undefined });
+
+const compiler = new SqlCompiler();
 
 const valueChunks = (value: unknown): Chunks => {
-  if (isExpression(value)) {
-    const compiled = compileExpr(toExpr(value, noContext));
+  if (value instanceof SqlExpression) {
+    const compiled = compiler.compileExpr(noContext.toExpr(value));
     if (compiled.values.length > 0) {
       throw new Error('Expressions with bound values are not supported in replacements');
     }
@@ -106,5 +108,5 @@ export const prepareRawQuery = (
   });
   const last = matches.at(-1);
   const tail = last === undefined ? sql : sql.slice(last.index + last[0].length);
-  return finalize([...chunks, tail]);
+  return compiler.finalize([...chunks, tail]);
 };

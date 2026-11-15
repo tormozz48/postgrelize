@@ -1,4 +1,4 @@
-import { compileExpr, quoteIdent, type CompiledQuery } from '../sql/compile.ts';
+import { SqlCompiler, type CompiledQuery } from '../sql/compile.ts';
 import type { ExprNode } from '../sql/ast.ts';
 
 /**
@@ -36,6 +36,8 @@ export const escapeLiteral = (value: unknown): string => {
   return escapeString(String(value));
 };
 
+const compiler = new SqlCompiler();
+
 const escapeString = (text: string): string => {
   if (text.includes('\0')) {
     throw new Error('SQL literals cannot contain NUL characters');
@@ -53,7 +55,7 @@ export const inlineValues = (query: CompiledQuery): string =>
   );
 
 /** Compiles an expression node and inlines its values (for DDL). */
-export const inlineExpr = (node: ExprNode): string => inlineValues(compileExpr(node));
+export const inlineExpr = (node: ExprNode): string => inlineValues(compiler.compileExpr(node));
 
 /** Table reference accepted by QueryInterface: a name or `{ tableName, schema }`. */
 export type TableName = string | QualifiedTable;
@@ -78,5 +80,7 @@ export const tableParts = (
 /** Quoted, schema-qualified table name. */
 export const quoteTable = (table: TableName, defaultSchema?: string): string => {
   const { name, schema } = tableParts(table, defaultSchema);
-  return schema === undefined ? quoteIdent(name) : `${quoteIdent(schema)}.${quoteIdent(name)}`;
+  return schema === undefined
+    ? SqlCompiler.quoteIdent(name)
+    : `${SqlCompiler.quoteIdent(schema)}.${SqlCompiler.quoteIdent(name)}`;
 };

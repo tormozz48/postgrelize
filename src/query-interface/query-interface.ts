@@ -21,9 +21,11 @@ import {
   type ModelAttributes,
 } from '../model/definition.ts';
 import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from '../model/runtime.ts';
-import { raw, type ExprNode } from '../sql/ast.ts';
-import { compile, quoteIdent } from '../sql/compile.ts';
-import { isEmptyWhere, toExpr, whereToAst, type WhereContext } from '../where/where.ts';
+import { SqlAst, type ExprNode } from '../sql/ast.ts';
+import { SqlCompiler } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
+
+const ast = new SqlAst();
 
 /** Column description returned by `describeTable` (Sequelize v6 shape). */
 export type ColumnDescription = Readonly<{
@@ -67,7 +69,9 @@ export type DropTableOptions = QueryOptionsBase &
     cascade?: boolean;
   }>;
 
-const identity: WhereContext = { resolve: (name) => ({ field: name }) };
+const identity = new WhereCompiler({ resolve: (name) => ({ field: name }) });
+
+const sqlCompiler = new SqlCompiler();
 
 const parseArray = (value: unknown): readonly string[] =>
   Array.isArray(value)
@@ -136,7 +140,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async createSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`CREATE SCHEMA IF NOT EXISTS ${quoteIdent(schema)}`, options);
+    await this.#run(`CREATE SCHEMA IF NOT EXISTS ${SqlCompiler.quoteIdent(schema)}`, options);
   }
 
   /**
@@ -146,7 +150,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async dropSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE`, options);
+    await this.#run(`DROP SCHEMA IF EXISTS ${SqlCompiler.quoteIdent(schema)} CASCADE`, options);
   }
 
   /**
@@ -213,7 +217,7 @@ export class QueryInterface {
       (name) => !(options.skip ?? []).includes(name),
     );
     await this.#runAll(
-      tables.map((name) => `DROP TABLE IF EXISTS ${quoteIdent(name)} CASCADE`),
+      tables.map((name) => `DROP TABLE IF EXISTS ${SqlCompiler.quoteIdent(name)} CASCADE`),
       options,
     );
   }
@@ -231,7 +235,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(before)} RENAME TO ${quoteIdent(tableParts(after).name)}`,
+      `ALTER TABLE ${quoteTable(before)} RENAME TO ${SqlCompiler.quoteIdent(tableParts(after).name)}`,
       options,
     );
   }
@@ -341,7 +345,10 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async removeColumn(table: TableName, column: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`ALTER TABLE ${quoteTable(table)} DROP COLUMN ${quoteIdent(column)}`, options);
+    await this.#run(
+      `ALTER TABLE ${quoteTable(table)} DROP COLUMN ${SqlCompiler.quoteIdent(column)}`,
+      options,
+    );
   }
 
   /**
@@ -376,7 +383,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(table)} RENAME COLUMN ${quoteIdent(before)} TO ${quoteIdent(after)}`,
+      `ALTER TABLE ${quoteTable(table)} RENAME COLUMN ${SqlCompiler.quoteIdent(before)} TO ${SqlCompiler.quoteIdent(after)}`,
       options,
     );
   }
@@ -414,7 +421,9 @@ export class QueryInterface {
     const { schema } = tableParts(table);
     const name = typeof nameOrFields === 'string' ? nameOrFields : indexName(table, nameOrFields);
     const qualified =
-      schema === undefined ? quoteIdent(name) : `${quoteIdent(schema)}.${quoteIdent(name)}`;
+      schema === undefined
+        ? SqlCompiler.quoteIdent(name)
+        : `${SqlCompiler.quoteIdent(schema)}.${SqlCompiler.quoteIdent(name)}`;
     await this.#run(
       `DROP INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}IF EXISTS ${qualified}`,
       options,
@@ -447,7 +456,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(table)} DROP CONSTRAINT ${quoteIdent(name)}`,
+      `ALTER TABLE ${quoteTable(table)} DROP CONSTRAINT ${SqlCompiler.quoteIdent(name)}`,
       options,
     );
   }
@@ -459,7 +468,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async dropEnum(name: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`DROP TYPE IF EXISTS ${quoteIdent(name)}`, options);
+    await this.#run(`DROP TYPE IF EXISTS ${SqlCompiler.quoteIdent(name)}`, options);
   }
 
   /**
@@ -473,7 +482,9 @@ export class QueryInterface {
       options,
     );
     await this.#runAll(
-      rows.map((row) => `DROP TYPE IF EXISTS ${quoteIdent(String(row['typname']))} CASCADE`),
+      rows.map(
+        (row) => `DROP TYPE IF EXISTS ${SqlCompiler.quoteIdent(String(row['typname']))} CASCADE`,
+      ),
       options,
     );
   }
@@ -487,8 +498,8 @@ export class QueryInterface {
     const { schema } = tableParts(table);
     await this.#runAll(
       fields.map((field) => {
-        const name = quoteIdent(enumTypeName(table, field));
-        return `DROP TYPE IF EXISTS ${schema === undefined ? name : `${quoteIdent(schema)}.${name}`}`;
+        const name = SqlCompiler.quoteIdent(enumTypeName(table, field));
+        return `DROP TYPE IF EXISTS ${schema === undefined ? name : `${SqlCompiler.quoteIdent(schema)}.${name}`}`;
       }),
       options,
     );
@@ -513,13 +524,13 @@ export class QueryInterface {
     const columns = [...new Set(records.flatMap((record) => Object.keys(record)))];
     const { name, schema } = tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'insert',
         table: { name, ...(schema === undefined ? {} : { schema }) },
         columns,
         rows: records.map((record) =>
           columns.map((column): ExprNode =>
-            record[column] === undefined ? raw('DEFAULT') : toExpr(record[column], identity),
+            record[column] === undefined ? ast.raw('DEFAULT') : identity.toExpr(record[column]),
           ),
         ),
       }),
@@ -545,14 +556,14 @@ export class QueryInterface {
   ): Promise<number> {
     const { name, schema } = tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'update',
         table: { name, ...(schema === undefined ? {} : { schema }) },
         set: Object.entries(values).map(([column, value]) => ({
           column,
-          value: toExpr(value, identity),
+          value: identity.toExpr(value),
         })),
-        ...(isEmptyWhere(where) ? {} : { where: whereToAst(where, identity) }),
+        ...(WhereCompiler.isEmpty(where) ? {} : { where: identity.compile(where) }),
       }),
       options,
     );
@@ -574,10 +585,10 @@ export class QueryInterface {
   ): Promise<number> {
     const { name, schema } = tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'delete',
         table: { name, ...(schema === undefined ? {} : { schema }) },
-        ...(isEmptyWhere(where) ? {} : { where: whereToAst(where, identity) }),
+        ...(WhereCompiler.isEmpty(where) ? {} : { where: identity.compile(where) }),
       }),
       options,
     );

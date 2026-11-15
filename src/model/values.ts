@@ -1,5 +1,5 @@
 import { isDefaultValueGenerator } from '../data-types/data-types.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import type { AttributeDefinition, ModelDefinition } from './definition.ts';
 import type { AttributeAmounts, Values } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
@@ -11,7 +11,8 @@ export const isEqualValue = (left: unknown, right: unknown): boolean =>
       ? JSON.stringify(left) === JSON.stringify(right)
       : left === right;
 
-export const clone = <T>(value: T): T => (isExpression(value) ? value : structuredClone(value));
+export const clone = <T>(value: T): T =>
+  value instanceof SqlExpression ? value : structuredClone(value);
 
 export const defaultValueOf = (attribute: AttributeDefinition): unknown =>
   isDefaultValueGenerator(attribute.defaultValue)
@@ -114,7 +115,10 @@ export const withTimestamps = (
 });
 
 export const plainWhereValues = (where: unknown): Values =>
-  typeof where === 'object' && where !== null && !Array.isArray(where) && !isExpression(where)
+  typeof where === 'object' &&
+  where !== null &&
+  !Array.isArray(where) &&
+  !(where instanceof SqlExpression)
     ? Object.fromEntries(
         Object.entries(where).filter(
           ([, value]) => typeof value !== 'object' || value === null || value instanceof Date,

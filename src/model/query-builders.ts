@@ -1,11 +1,8 @@
-import { directionOf } from '../sql/order.ts';
+import { OrderDirection } from '../sql/order.ts';
 import { isDefaultValueGenerator } from '../data-types/data-types.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import {
-  binary,
-  ident,
-  param,
-  raw,
+  SqlAst,
   type DeleteNode,
   type ExprNode,
   type InsertNode,
@@ -19,14 +16,10 @@ import {
   type TableRef,
   type UpdateNode,
 } from '../sql/ast.ts';
-import {
-  isEmptyWhere,
-  toExpr,
-  whereToAst,
-  type AttributeRef,
-  type WhereContext,
-} from '../where/where.ts';
+import { WhereCompiler, type AttributeRef } from '../where/where.ts';
 import type { AttributeDefinition, ModelDefinition } from './definition.ts';
+
+const ast = new SqlAst();
 
 /** `attributes` option of finders. */
 export type FindAttributeOptions = readonly (string | readonly [unknown, string])[] | AttributeSpec;
@@ -105,29 +98,30 @@ const attributeRef = (attribute: AttributeDefinition): AttributeRef => ({
   ...(attribute.type.serialize === undefined ? {} : { serialize: attribute.type.serialize }),
 });
 
-/** Where-compiler context resolving attribute names of the model. */
-export const whereContext = (
+/** Where compiler resolving attribute names of the model. */
+export const whereCompiler = (
   definition: ModelDefinition,
   alias: string | undefined,
   inAsAnyThreshold?: number,
-): WhereContext => ({
-  ...(alias === undefined ? {} : { tableAlias: alias }),
-  ...(inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold }),
-  resolve: (name) => {
-    const attribute = definition.attributes.get(name);
-    return attribute === undefined ? undefined : attributeRef(attribute);
-  },
-});
+): WhereCompiler =>
+  new WhereCompiler({
+    ...(alias === undefined ? {} : { tableAlias: alias }),
+    ...(inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold }),
+    resolve: (name) => {
+      const attribute = definition.attributes.get(name);
+      return attribute === undefined ? undefined : attributeRef(attribute);
+    },
+  });
 
-export const whereClause = (where: unknown, ctx: WhereContext): ExprNode | undefined =>
-  isEmptyWhere(where) ? undefined : whereToAst(where, ctx);
+export const whereClause = (where: unknown, ctx: WhereCompiler): ExprNode | undefined =>
+  WhereCompiler.isEmpty(where) ? undefined : ctx.compile(where);
 
 export const storedAttributes = (definition: ModelDefinition): readonly AttributeDefinition[] =>
   [...definition.attributes.values()].filter((attribute) => attribute.type.isVirtual !== true);
 
 const columnFor = (definition: ModelDefinition, alias: string, name: string): ExprNode => {
   const attribute = definition.attributes.get(name);
-  const column = ident(alias, attribute?.field ?? name);
+  const column = ast.ident(alias, attribute?.field ?? name);
   return attribute === undefined || attribute.field === name
     ? column
     : { kind: 'alias', expr: column, alias: name };
@@ -136,7 +130,7 @@ const columnFor = (definition: ModelDefinition, alias: string, name: string): Ex
 const attributeItem = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   item: string | readonly [unknown, string],
 ): ExprNode => {
   if (typeof item === 'string') {
@@ -145,15 +139,15 @@ const attributeItem = (
   const [source, name] = item;
   const expr =
     typeof source === 'string'
-      ? ident(alias, definition.attributes.get(source)?.field ?? source)
-      : toExpr(source, ctx);
+      ? ast.ident(alias, definition.attributes.get(source)?.field ?? source)
+      : ctx.toExpr(source);
   return { kind: 'alias', expr, alias: name };
 };
 
 export const selectColumns = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   attributes: FindAttributeOptions | undefined,
 ): readonly ExprNode[] => {
   const all = storedAttributes(definition).map((attribute) => attribute.fieldName);
@@ -184,38 +178,38 @@ const jsonPathOrder = (
     path.length === 0 ||
     (attribute.type.key !== 'JSON' && attribute.type.key !== 'JSONB')
     ? undefined
-    : binary(
+    : ast.binary(
         '#>',
         attribute.type.key === 'JSON'
-          ? { kind: 'cast', expr: ident(alias, attribute.field), type: 'JSONB' }
-          : ident(alias, attribute.field),
-        param(path),
+          ? { kind: 'cast', expr: ast.ident(alias, attribute.field), type: 'JSONB' }
+          : ast.ident(alias, attribute.field),
+        ast.param(path),
       );
 };
 
 const orderTarget = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   target: unknown,
 ): ExprNode =>
   typeof target === 'string'
     ? definition.attributes.has(target)
-      ? ident(alias, definition.attributes.get(target)?.field ?? target)
-      : (jsonPathOrder(definition, alias, target) ?? ident(...target.split('.')))
-    : toExpr(target, ctx);
+      ? ast.ident(alias, definition.attributes.get(target)?.field ?? target)
+      : (jsonPathOrder(definition, alias, target) ?? ast.ident(...target.split('.')))
+    : ctx.toExpr(target);
 
 export const orderItem = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   item: unknown,
 ): OrderNode => {
   if (Array.isArray(item)) {
     const [target, direction]: readonly unknown[] = item;
     return {
       expr: orderTarget(definition, alias, ctx, target),
-      ...(direction === undefined ? {} : directionOf(direction)),
+      ...(direction === undefined ? {} : OrderDirection.parse(direction)),
     };
   }
   return { expr: orderTarget(definition, alias, ctx, item) };
@@ -228,21 +222,21 @@ const invalidOrder = (): never => {
 const orderBy = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   order: Order,
 ): readonly OrderNode[] =>
   order === undefined || order === null
     ? []
     : Array.isArray(order)
       ? order.map((item: unknown) => orderItem(definition, alias, ctx, item))
-      : isExpression(order)
-        ? [{ expr: toExpr(order, ctx) }]
+      : order instanceof SqlExpression
+        ? [{ expr: ctx.toExpr(order) }]
         : invalidOrder();
 
 const groupBy = (
   definition: ModelDefinition,
   alias: string,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
   group: unknown,
 ): readonly ExprNode[] =>
   group === undefined
@@ -284,7 +278,7 @@ export const buildSelect = (
   aliasOverride?: string,
 ): SelectNode => {
   const alias = aliasOverride ?? definition.name;
-  const ctx = whereContext(definition, alias, inAsAnyThreshold);
+  const ctx = whereCompiler(definition, alias, inAsAnyThreshold);
   const where = whereClause(options.where, ctx);
   const having = whereClause(options.having, ctx);
   const limit = definedNumber(options.limit);
@@ -323,9 +317,12 @@ export const buildCount = (
   const target: ExprNode =
     options.col === undefined
       ? options.distinct === true
-        ? ident(alias, definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id')
+        ? ast.ident(
+            alias,
+            definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id',
+          )
         : { kind: 'star' }
-      : orderTarget(definition, alias, whereContext(definition, alias), options.col);
+      : orderTarget(definition, alias, whereCompiler(definition, alias), options.col);
   const count: ExprNode = {
     kind: 'alias',
     expr: {
@@ -336,7 +333,7 @@ export const buildCount = (
     },
     alias: 'count',
   };
-  const ctx = whereContext(definition, alias);
+  const ctx = whereCompiler(definition, alias);
   const groupColumns = groupBy(definition, alias, ctx, options.group);
   const { order: _order, limit: _limit, offset: _offset, lock: _lock, ...rest } = options;
   return buildSelect(definition, rest, inAsAnyThreshold, [...groupColumns, count]);
@@ -351,7 +348,7 @@ export const buildAggregate = (
   inAsAnyThreshold?: number,
 ): SelectNode => {
   const alias = definition.name;
-  const ctx = whereContext(definition, alias);
+  const ctx = whereCompiler(definition, alias);
   const target =
     field === '*' ? ({ kind: 'star' } as const) : orderTarget(definition, alias, ctx, field);
   const column: ExprNode = {
@@ -375,11 +372,11 @@ export const buildAggregate = (
 export const valueExpr = (
   attribute: AttributeDefinition | undefined,
   value: unknown,
-  ctx: WhereContext,
+  ctx: WhereCompiler,
 ): ExprNode =>
   isDefaultValueGenerator(value)
-    ? param(value.generate())
-    : toExpr(value, ctx, attribute === undefined ? undefined : attributeRef(attribute));
+    ? ast.param(value.generate())
+    : ctx.toExpr(value, attribute === undefined ? undefined : attributeRef(attribute));
 
 const insertableAttributes = (
   definition: ModelDefinition,
@@ -398,7 +395,8 @@ const isAutoIncrementEmpty = (
 /** Returning list: all stored columns aliased to attribute names. */
 export const returningAll = (definition: ModelDefinition, alias?: string): readonly ExprNode[] =>
   storedAttributes(definition).map((attribute) => {
-    const column = alias === undefined ? ident(attribute.field) : ident(alias, attribute.field);
+    const column =
+      alias === undefined ? ast.ident(attribute.field) : ast.ident(alias, attribute.field);
     return attribute.field === attribute.fieldName && alias === undefined
       ? column
       : { kind: 'alias', expr: column, alias: attribute.fieldName };
@@ -421,7 +419,7 @@ export const withReturningOld = <N extends Readonly<{ returning?: readonly ExprN
     ...(node.returning ?? []),
     ...storedAttributes(definition).map((attribute): ExprNode => ({
       kind: 'alias',
-      expr: ident(OLD_ALIAS, attribute.field),
+      expr: ast.ident(OLD_ALIAS, attribute.field),
       alias: `${OLD_PREFIX}${attribute.fieldName}`,
     })),
   ],
@@ -437,7 +435,7 @@ export const buildInsert = (
     overriding?: 'system' | 'user';
   }> = {},
 ): InsertNode => {
-  const ctx = whereContext(definition, undefined);
+  const ctx = whereCompiler(definition, undefined);
   const attributes = insertableAttributes(definition, rows).filter(
     (name) =>
       !rows.every((row) => isAutoIncrementEmpty(definition.attributes.get(name), row[name])),
@@ -457,7 +455,7 @@ export const buildInsert = (
         const attribute = definition.attributes.get(name);
         const value = row[name];
         return value === undefined || isAutoIncrementEmpty(attribute, value)
-          ? raw('DEFAULT')
+          ? ast.raw('DEFAULT')
           : valueExpr(attribute, value, ctx);
       }),
     ),
@@ -471,7 +469,7 @@ export const buildInsert = (
 export const setItems = (
   definition: ModelDefinition,
   values: Readonly<Record<string, unknown>>,
-  ctx: WhereContext = whereContext(definition, undefined),
+  ctx: WhereCompiler = whereCompiler(definition, undefined),
 ): readonly SetItem[] => {
   return Object.entries(values)
     .filter(
@@ -497,7 +495,7 @@ export const buildUpdate = (
 ): UpdateNode => {
   const alias =
     options.from === undefined || options.from.length === 0 ? undefined : definition.name;
-  const condition = whereClause(where, whereContext(definition, alias, options.inAsAnyThreshold));
+  const condition = whereClause(where, whereCompiler(definition, alias, options.inAsAnyThreshold));
   return {
     kind: 'update',
     table: tableOf(definition, alias),
@@ -521,16 +519,16 @@ export const buildDelete = (
 ): DeleteNode => {
   const alias =
     options.using === undefined || options.using.length === 0 ? undefined : definition.name;
-  const ctx = whereContext(definition, alias, options.inAsAnyThreshold);
+  const ctx = whereCompiler(definition, alias, options.inAsAnyThreshold);
   const condition = whereClause(where, ctx);
   const limited: ExprNode | undefined =
     options.limit === undefined
       ? condition
-      : binary('IN', raw('ctid'), {
+      : ast.binary('IN', ast.raw('ctid'), {
           kind: 'subquery',
           query: {
             kind: 'select',
-            columns: [raw('ctid')],
+            columns: [ast.raw('ctid')],
             from: tableOf(definition),
             ...(condition === undefined ? {} : { where: condition }),
             limit: options.limit,
@@ -553,7 +551,10 @@ export const incrementItems = (
 ): readonly SetItem[] =>
   Object.entries(by).map(([name, amount]) => {
     const field = definition.attributes.get(name)?.field ?? name;
-    return { column: field, value: binary(sign === 1 ? '+' : '-', ident(field), param(amount)) };
+    return {
+      column: field,
+      value: ast.binary(sign === 1 ? '+' : '-', ast.ident(field), ast.param(amount)),
+    };
   });
 
 /** Primary-key where object for an instance. */
@@ -562,5 +563,3 @@ export const primaryKeyWhere = (
   values: Readonly<Record<string, unknown>>,
 ): Readonly<Record<string, unknown>> =>
   Object.fromEntries(definition.primaryKeys.map((name) => [name, values[name]]));
-
-export { directionOf };

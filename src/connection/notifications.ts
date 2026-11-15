@@ -1,5 +1,5 @@
 import type { Client as PgClient } from 'pg';
-import { quoteIdent } from '../sql/compile.ts';
+import { SqlCompiler } from '../sql/compile.ts';
 
 /** Handler of `LISTEN` notifications. */
 export type NotificationHandler = (payload: string | undefined, channel: string) => unknown;
@@ -35,7 +35,7 @@ export class NotificationListener {
     if (existing === undefined) {
       this.#handlers.set(channel, new Set([handler]));
       const client = await this.#open();
-      await client.query(`LISTEN ${quoteIdent(channel)}`);
+      await client.query(`LISTEN ${SqlCompiler.quoteIdent(channel)}`);
     } else {
       existing.add(handler);
       await this.#open();
@@ -46,7 +46,7 @@ export class NotificationListener {
       if (handlers !== undefined && handlers.size === 0) {
         this.#handlers.delete(channel);
         const client = await this.#client;
-        await client?.query(`UNLISTEN ${quoteIdent(channel)}`);
+        await client?.query(`UNLISTEN ${SqlCompiler.quoteIdent(channel)}`);
       }
     };
   }
@@ -83,7 +83,8 @@ export class NotificationListener {
         }
       });
       await [...this.#handlers.keys()].reduce<Promise<unknown>>(
-        (previous, channel) => previous.then(() => client.query(`LISTEN ${quoteIdent(channel)}`)),
+        (previous, channel) =>
+          previous.then(() => client.query(`LISTEN ${SqlCompiler.quoteIdent(channel)}`)),
         Promise.resolve(),
       );
       return client;

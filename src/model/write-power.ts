@@ -1,25 +1,26 @@
 import { enumTypeName } from '../ddl/ddl.ts';
-import { isExpression, literal, methodKind, type Subquery } from '../expressions/methods.ts';
+import { literal, Subquery } from '../expressions/methods.ts';
 import {
-  fnCall,
+  SqlAst,
   type ExprNode,
   type FromItem,
   type MergeNode,
   type MergeWhen,
 } from '../sql/ast.ts';
-import { quoteIdent } from '../sql/compile.ts';
-import { isEmptyWhere, whereToAst } from '../where/where.ts';
+import { SqlCompiler } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
 import type { AttributeDefinition, ModelDefinition } from './definition.ts';
 import type { AnyModel, ModelStatic, Values } from './options.ts';
-import { returningAll, setItems, tableOf, valueExpr, whereContext } from './query-builders.ts';
+import { returningAll, setItems, tableOf, valueExpr, whereCompiler } from './query-builders.ts';
 import { stateOf } from './state.ts';
 import type { WhereOptions } from './types.ts';
+
+const ast = new SqlAst();
 
 /** Extra relations for `UPDATE ... FROM` / `DELETE ... USING`, keyed by alias. PostgreSQL extension. */
 export type JoinSources = Readonly<Record<string, ModelStatic<AnyModel> | Subquery | string>>;
 
-const isSubquery = (value: unknown): value is Subquery =>
-  isExpression(value) && value[methodKind] === 'subquery';
+const isSubquery = (value: unknown): value is Subquery => value instanceof Subquery;
 
 /** Converts `from` / `using` options into FROM items. */
 export const joinSources = (sources: JoinSources | undefined): readonly FromItem[] =>
@@ -76,7 +77,7 @@ const castType = (definition: ModelDefinition, attribute: AttributeDefinition): 
   attribute.type.key === 'ENUM'
     ? [definition.schema, enumTypeName(definition.tableName, attribute.field)]
         .filter((part): part is string => part !== undefined)
-        .map(quoteIdent)
+        .map(SqlCompiler.quoteIdent)
         .join('.')
     : attribute.type.sqlType;
 
@@ -89,7 +90,7 @@ const valuesSource = (
     throw new Error('merge: source rows must not be empty');
   }
   const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];
-  const ctx = whereContext(definition, undefined);
+  const ctx = whereCompiler(definition, undefined);
   return {
     kind: 'values',
     alias,
@@ -132,7 +133,7 @@ const insertAction = (
   source: MergeNode['source'],
   insert: true | Values,
 ): MergeWhen['action'] => {
-  const ctx = whereContext(definition, undefined, undefined);
+  const ctx = whereCompiler(definition, undefined, undefined);
   const values: Values =
     insert === true
       ? Object.fromEntries(
@@ -140,14 +141,15 @@ const insertAction = (
             .filter((field) => definition.fieldToAttribute.has(field))
             .map((field) => [
               definition.fieldToAttribute.get(field) ?? field,
-              literal(`${quoteIdent(source.alias)}.${quoteIdent(field)}`),
+              literal(`${SqlCompiler.quoteIdent(source.alias)}.${SqlCompiler.quoteIdent(field)}`),
             ]),
         )
       : insert;
-  const items = setItems(definition, timestamps(definition, values, true), {
-    ...ctx,
-    tableAlias: source.alias,
-  });
+  const items = setItems(
+    definition,
+    timestamps(definition, values, true),
+    new WhereCompiler({ ...ctx.context, tableAlias: source.alias }),
+  );
   return {
     kind: 'insert',
     columns: items.map((item) => item.column),
@@ -168,7 +170,7 @@ const matchedAction = (
       set: setItems(
         definition,
         timestamps(definition, action.update as Values, false),
-        whereContext(definition, definition.name),
+        whereCompiler(definition, definition.name),
       ),
     };
   }
@@ -176,7 +178,9 @@ const matchedAction = (
 };
 
 const condition = (definition: ModelDefinition, where: unknown): ExprNode | undefined =>
-  isEmptyWhere(where) ? undefined : whereToAst(where, whereContext(definition, definition.name));
+  WhereCompiler.isEmpty(where)
+    ? undefined
+    : whereCompiler(definition, definition.name).compile(where);
 
 /** Builds a MERGE statement for a model. */
 export const buildMerge = (
@@ -237,7 +241,11 @@ export const buildMerge = (
     ...(returning
       ? {
           returning: [
-            { kind: 'alias', expr: fnCall('merge_action', []), alias: MERGE_ACTION } as const,
+            {
+              kind: 'alias',
+              expr: ast.fnCall('merge_action', []),
+              alias: MERGE_ACTION,
+            } as const,
             ...returningAll(definition, definition.name),
           ],
         }

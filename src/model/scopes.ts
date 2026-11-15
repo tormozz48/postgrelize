@@ -1,4 +1,4 @@
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
 
 /** Find options stored in a scope (`where`, `attributes`, `order`, `limit`, ...). */
@@ -27,7 +27,10 @@ export type ScopeRegistry = Readonly<{
 }>;
 
 const isPlainObject = (value: unknown): value is Readonly<Record<string | symbol, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value) && !isExpression(value);
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  !(value instanceof SqlExpression);
 
 const union = (left: readonly unknown[], right: readonly unknown[]): readonly unknown[] => [
   ...left,
@@ -35,7 +38,7 @@ const union = (left: readonly unknown[], right: readonly unknown[]): readonly un
 ];
 
 const asCondition = (value: unknown): unknown =>
-  isExpression(value) ? { [Op.and]: value } : value;
+  value instanceof SqlExpression ? { [Op.and]: value } : value;
 
 const mergeWhere = (left: unknown, right: unknown, strategy: WhereMergeStrategy): unknown => {
   if (left === undefined) {

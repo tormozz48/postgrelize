@@ -1,9 +1,9 @@
 import inflection from 'inflection';
 import { isDefaultValueGenerator, type DataType } from '../data-types/data-types.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import type { AttributeDefinition } from '../model/definition.ts';
-import { quoteIdent } from '../sql/compile.ts';
-import { toExpr, whereToAst, type WhereContext } from '../where/where.ts';
+import { SqlCompiler } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
 import { escapeLiteral, inlineExpr, quoteTable, tableParts, type TableName } from './literals.ts';
 
 /** `Deferrable` setting of a foreign key or transaction (Sequelize v6 `Deferrable`). */
@@ -47,7 +47,9 @@ export type ColumnDefinition = Readonly<{
   generated: AttributeDefinition['generated'];
 }>;
 
-const noContext: WhereContext = { resolve: () => undefined };
+const noContext = new WhereCompiler({ resolve: () => undefined });
+
+const identity = new WhereCompiler({ resolve: (field) => ({ field }) });
 
 /** Converts a normalized attribute to a column definition. */
 export const columnOf = (attribute: AttributeDefinition): ColumnDefinition => ({
@@ -73,8 +75,8 @@ export const enumTypeName = (table: TableName, field: string): string =>
 
 const enumType = (table: TableName, field: string): string => {
   const { schema } = tableParts(table);
-  const name = quoteIdent(enumTypeName(table, field));
-  return schema === undefined ? name : `${quoteIdent(schema)}.${name}`;
+  const name = SqlCompiler.quoteIdent(enumTypeName(table, field));
+  return schema === undefined ? name : `${SqlCompiler.quoteIdent(schema)}.${name}`;
 };
 
 /** SQL type of a column (SERIAL for auto-increment integers, enum type names). */
@@ -107,8 +109,8 @@ export const defaultSql = (column: ColumnDefinition): string | undefined => {
   if (isDefaultValueGenerator(value)) {
     return value.key === 'NOW' ? 'now()' : undefined;
   }
-  if (isExpression(value)) {
-    return inlineExpr(toExpr(value, noContext));
+  if (value instanceof SqlExpression) {
+    return inlineExpr(noContext.toExpr(value));
   }
   return column.type.isJson === true ? escapeLiteral(JSON.stringify(value)) : escapeLiteral(value);
 };
@@ -143,7 +145,7 @@ export const referencesSql = (
       ? (references as { deferrable?: DeferrableValue }).deferrable
       : undefined;
   return [
-    `REFERENCES ${quoteTable(referencedTable(references), defaultSchema)} (${quoteIdent(key)})`,
+    `REFERENCES ${quoteTable(referencedTable(references), defaultSchema)} (${SqlCompiler.quoteIdent(key)})`,
     column.onDelete === undefined ? '' : ` ON DELETE ${validAction(column.onDelete)}`,
     column.onUpdate === undefined ? '' : ` ON UPDATE ${validAction(column.onUpdate)}`,
     deferrable === undefined ? '' : ` ${deferrable.sql}`,
@@ -173,12 +175,12 @@ export const columnSql = (
   options: Readonly<{ inlinePrimaryKey?: boolean; defaultSchema?: string }> = {},
 ): string =>
   [
-    `${quoteIdent(column.field)} ${columnType(table, column)}`,
+    `${SqlCompiler.quoteIdent(column.field)} ${columnType(table, column)}`,
     column.allowNull || column.primaryKey ? '' : ' NOT NULL',
     options.inlinePrimaryKey === true && column.primaryKey ? ' PRIMARY KEY' : '',
     column.generated === undefined
       ? ''
-      : ` GENERATED ALWAYS AS (${inlineExpr(toExpr(column.generated.as, noContext))}) ${column.generated.stored === false ? 'VIRTUAL' : 'STORED'}`,
+      : ` GENERATED ALWAYS AS (${inlineExpr(noContext.toExpr(column.generated.as))}) ${column.generated.stored === false ? 'VIRTUAL' : 'STORED'}`,
     isUnnamedUnique(column.unique)
       ? nullsNotDistinct(column.unique)
         ? ' UNIQUE NULLS NOT DISTINCT'
@@ -245,10 +247,10 @@ export const createTableSql = (
 ): readonly string[] => {
   const primaryKeys = columns
     .filter((column) => column.primaryKey)
-    .map((column) => quoteIdent(column.field));
+    .map((column) => SqlCompiler.quoteIdent(column.field));
   const uniqueKeys = [...namedUniqueKeys(columns)].map(
     ([name, key]) =>
-      `CONSTRAINT ${quoteIdent(name)} UNIQUE${key.nullsNotDistinct ? ' NULLS NOT DISTINCT' : ''} (${key.fields.map(quoteIdent).join(', ')})`,
+      `CONSTRAINT ${SqlCompiler.quoteIdent(name)} UNIQUE${key.nullsNotDistinct ? ' NULLS NOT DISTINCT' : ''} (${key.fields.map(SqlCompiler.quoteIdent).join(', ')})`,
   );
   const body = [
     ...columns.map((column) =>
@@ -282,7 +284,7 @@ export const columnCommentSql = (
   column.comment === undefined
     ? []
     : [
-        `COMMENT ON COLUMN ${quoteTable(table)}.${quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
+        `COMMENT ON COLUMN ${quoteTable(table)}.${SqlCompiler.quoteIdent(column.field)} IS ${escapeLiteral(column.comment)}`,
       ];
 
 /** `ALTER TYPE ... ADD VALUE IF NOT EXISTS` for every enum value of a column. */
@@ -306,7 +308,7 @@ export const changeColumnSql = (
   defaultSchema?: string,
 ): readonly string[] => {
   const qualified = quoteTable(table, defaultSchema);
-  const target = `ALTER TABLE ${qualified} ALTER COLUMN ${quoteIdent(column.field)}`;
+  const target = `ALTER TABLE ${qualified} ALTER COLUMN ${SqlCompiler.quoteIdent(column.field)}`;
   const value = defaultSql(column);
   const enumSql = createEnumSql(table, column);
   const type = columnType(table, { ...column, autoIncrement: false });
@@ -316,7 +318,7 @@ export const changeColumnSql = (
       ? []
       : [value === undefined ? `${target} DROP DEFAULT` : `${target} SET DEFAULT ${value}`]),
     ...(enumSql === undefined ? [] : [enumSql]),
-    `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${quoteIdent(column.field)}::${type})` : ''}`,
+    `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${SqlCompiler.quoteIdent(column.field)}::${type})` : ''}`,
     ...columnCommentSql(table, column),
   ];
 };
@@ -389,10 +391,10 @@ export const createIndexSql = (
   const columns = fields
     .map((field) =>
       typeof field === 'string'
-        ? `${quoteIdent(field)}${options.operator === undefined ? '' : ` ${safeWord(options.operator, 'operator class')}`}`
+        ? `${SqlCompiler.quoteIdent(field)}${options.operator === undefined ? '' : ` ${safeWord(options.operator, 'operator class')}`}`
         : [
-            quoteIdent(field.name),
-            field.collate === undefined ? '' : ` COLLATE ${quoteIdent(field.collate)}`,
+            SqlCompiler.quoteIdent(field.name),
+            field.collate === undefined ? '' : ` COLLATE ${SqlCompiler.quoteIdent(field.collate)}`,
             (field.operator ?? options.operator) === undefined
               ? ''
               : ` ${safeWord(field.operator ?? options.operator ?? '', 'operator class')}`,
@@ -401,17 +403,15 @@ export const createIndexSql = (
     )
     .join(', ');
   const where =
-    options.where === undefined
-      ? ''
-      : ` WHERE ${inlineExpr(whereToAst(options.where, { resolve: (name) => ({ field: name }) }))}`;
+    options.where === undefined ? '' : ` WHERE ${inlineExpr(identity.compile(options.where))}`;
   return [
     `CREATE ${options.unique === true ? 'UNIQUE ' : ''}INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}${options.ifNotExists === true ? 'IF NOT EXISTS ' : ''}`,
-    `${quoteIdent(options.name ?? indexName(table, fields))} ON ${quoteTable(table, defaultSchema)}`,
+    `${SqlCompiler.quoteIdent(options.name ?? indexName(table, fields))} ON ${quoteTable(table, defaultSchema)}`,
     options.using === undefined ? '' : ` USING ${safeWord(options.using, 'index method')}`,
     ` (${columns})`,
     options.include === undefined || options.include.length === 0
       ? ''
-      : ` INCLUDE (${options.include.map(quoteIdent).join(', ')})`,
+      : ` INCLUDE (${options.include.map(SqlCompiler.quoteIdent).join(', ')})`,
     options.unique === true && options.nullsNotDistinct === true ? ' NULLS NOT DISTINCT' : '',
     where,
   ].join('');
@@ -460,11 +460,11 @@ export const addConstraintSql = (
   const name =
     options.name ??
     `${tableParts(table).name}_${options.fields.join('_')}_${type.replace(' ', '_').replace('primary_key', 'pk').replace('foreign_key', 'fkey').replace('check', 'ck').replace('unique', 'uk')}`;
-  const fields = options.fields.map(quoteIdent).join(', ');
+  const fields = options.fields.map(SqlCompiler.quoteIdent).join(', ');
   const body = ((): string => {
     switch (type) {
       case 'check':
-        return `CHECK (${inlineExpr(whereToAst(options.where, { resolve: (field) => ({ field }) }))})`;
+        return `CHECK (${inlineExpr(identity.compile(options.where))})`;
       case 'unique':
         return `UNIQUE${options.nullsNotDistinct === true ? ' NULLS NOT DISTINCT' : ''} (${fields})`;
       case 'primary key':
@@ -474,7 +474,7 @@ export const addConstraintSql = (
           throw new Error('Foreign key constraint requires references');
         }
         return [
-          `FOREIGN KEY (${fields}) REFERENCES ${quoteTable(options.references.table, defaultSchema)} (${quoteIdent(options.references.field)})`,
+          `FOREIGN KEY (${fields}) REFERENCES ${quoteTable(options.references.table, defaultSchema)} (${SqlCompiler.quoteIdent(options.references.field)})`,
           options.onDelete === undefined ? '' : ` ON DELETE ${validAction(options.onDelete)}`,
           options.onUpdate === undefined ? '' : ` ON UPDATE ${validAction(options.onUpdate)}`,
           options.deferrable === undefined ? '' : ` ${options.deferrable.sql}`,
@@ -484,5 +484,5 @@ export const addConstraintSql = (
         throw new Error(`Constraint type must be specified through options.type: ${options.type}`);
     }
   })();
-  return `ALTER TABLE ${quoteTable(table, defaultSchema)} ADD CONSTRAINT ${quoteIdent(name)} ${body}`;
+  return `ALTER TABLE ${quoteTable(table, defaultSchema)} ADD CONSTRAINT ${SqlCompiler.quoteIdent(name)} ${body}`;
 };

@@ -1,15 +1,11 @@
-import {
-  excluded,
-  isExpression,
-  type Fn,
-  type Literal,
-  type SqlExpression,
-} from '../expressions/methods.ts';
-import { ident, raw, type ConflictTarget, type ExprNode, type OnConflictNode } from '../sql/ast.ts';
-import { isEmptyWhere, toExpr, whereToAst } from '../where/where.ts';
+import { excluded, SqlExpression, type Fn, type Literal } from '../expressions/methods.ts';
+import { SqlAst, type ConflictTarget, type ExprNode, type OnConflictNode } from '../sql/ast.ts';
+import { WhereCompiler } from '../where/where.ts';
 import type { ModelDefinition } from './definition.ts';
-import { setItems, whereContext } from './query-builders.ts';
+import { setItems, whereCompiler } from './query-builders.ts';
 import type { WhereOptions } from './types.ts';
+
+const ast = new SqlAst();
 
 /** Columns or index expressions identifying the unique index, optionally a partial index. */
 export type OnConflictColumnsTarget<T> = Readonly<{
@@ -79,9 +75,9 @@ const assertAttribute = (definition: ModelDefinition, name: string): string => {
 };
 
 const targetItem = (definition: ModelDefinition, item: unknown): ExprNode =>
-  isExpression(item)
-    ? toExpr(item, whereContext(definition, undefined))
-    : ident(assertAttribute(definition, String(item)));
+  item instanceof SqlExpression
+    ? whereCompiler(definition, undefined).toExpr(item)
+    : ast.ident(assertAttribute(definition, String(item)));
 
 const isConstraintTarget = (
   target: OnConflictTarget<unknown>,
@@ -100,9 +96,9 @@ const conflictTarget = (
   if (columnsTarget.columns.length === 0) {
     throw new Error('onConflict: target columns must not be empty');
   }
-  const where = isEmptyWhere(columnsTarget.where)
+  const where = WhereCompiler.isEmpty(columnsTarget.where)
     ? undefined
-    : whereToAst(columnsTarget.where, whereContext(definition, undefined));
+    : whereCompiler(definition, undefined).compile(columnsTarget.where);
   return {
     kind: 'columns',
     items: columnsTarget.columns.map((item) => targetItem(definition, item)),
@@ -145,11 +141,14 @@ export const buildOnConflict = (
   if (target === undefined) {
     throw new Error('onConflict: target is required when action is an update');
   }
-  const ctx = { ...whereContext(definition, definition.name), allowExcluded: true };
+  const ctx = new WhereCompiler({
+    ...whereCompiler(definition, definition.name).context,
+    allowExcluded: true,
+  });
   const set = setItems(definition, updateValues(definition, options.action.update), ctx);
-  const where = isEmptyWhere(options.action.where)
+  const where = WhereCompiler.isEmpty(options.action.where)
     ? undefined
-    : whereToAst(options.action.where, ctx);
+    : ctx.compile(options.action.where);
   return { target, action: { kind: 'update', set, ...(where === undefined ? {} : { where }) } };
 };
 
@@ -159,6 +158,6 @@ export const INSERTED_FLAG = '__pgz_inserted';
 /** `(xmax = 0) AS "__pgz_inserted"` — true for rows inserted by this statement. */
 export const insertedFlagColumn = (): ExprNode => ({
   kind: 'alias',
-  expr: raw('(xmax = 0)'),
+  expr: ast.raw('(xmax = 0)'),
   alias: INSERTED_FLAG,
 });

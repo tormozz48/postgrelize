@@ -1,8 +1,8 @@
 import type { OnConflictNode } from '../sql/ast.ts';
-import { isEmptyWhere, whereToAst } from '../where/where.ts';
+import { WhereCompiler } from '../where/where.ts';
 import type { ModelDefinition } from './definition.ts';
 import type { BulkCreateOptions, Values } from './options.ts';
-import { whereContext } from './query-builders.ts';
+import { whereCompiler } from './query-builders.ts';
 
 export const V6_CONFLICT_OPTIONS = [
   'ignoreDuplicates',
@@ -71,9 +71,9 @@ export const v6BulkConflict = (
     const target =
       options.conflictAttributes ?? (indexed.length > 0 ? indexed : definition.primaryKeys);
     const where =
-      options.conflictWhere === undefined || isEmptyWhere(options.conflictWhere)
+      options.conflictWhere === undefined || WhereCompiler.isEmpty(options.conflictWhere)
         ? undefined
-        : whereToAst(options.conflictWhere, whereContext(definition, undefined));
+        : whereCompiler(definition, undefined).compile(options.conflictWhere);
     return {
       onConflict: conflictUpdate(
         fieldsOf(definition, updatable),
@@ -115,9 +115,11 @@ export const v6UpsertConflict = (
   const target =
     conflictFields ?? fieldsOf(definition, uniqueKey?.fields ?? definition.primaryKeys);
   const where =
-    conflictFields !== undefined || uniqueKey?.where === undefined || isEmptyWhere(uniqueKey.where)
+    conflictFields !== undefined ||
+    uniqueKey?.where === undefined ||
+    WhereCompiler.isEmpty(uniqueKey.where)
       ? undefined
-      : whereToAst(uniqueKey.where, whereContext(definition, undefined));
+      : whereCompiler(definition, undefined).compile(uniqueKey.where);
   const assigned = update.filter((name) => definition.attributes.get(name)?.identity !== 'always');
   return conflictUpdate(fieldsOf(definition, assigned), [...new Set(target)], where);
 };

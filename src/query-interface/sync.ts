@@ -12,7 +12,7 @@ import {
 import { quoteTable, type TableName } from '../ddl/literals.ts';
 import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
-import { quoteIdent } from '../sql/compile.ts';
+import { SqlCompiler } from '../sql/compile.ts';
 import type { QueryInterface } from './query-interface.ts';
 
 /** `alter` options of `sync()`. */
@@ -119,14 +119,14 @@ const alterStatements = async (
     )
     .map(
       (column) =>
-        `ALTER TABLE ${qualified} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
+        `ALTER TABLE ${qualified} ADD FOREIGN KEY (${SqlCompiler.quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
     );
   const dropped =
     typeof alter === 'object' && alter.drop === false
       ? []
       : Object.keys(described)
           .filter((field) => !fields.has(field))
-          .map((field) => `ALTER TABLE ${qualified} DROP COLUMN ${quoteIdent(field)}`);
+          .map((field) => `ALTER TABLE ${qualified} DROP COLUMN ${SqlCompiler.quoteIdent(field)}`);
   return [...added, ...changed, ...references, ...dropped];
 };
 
@@ -252,7 +252,7 @@ export const addDeferredReferences = async (
       .filter((column) => fields.includes(column.field) && !existing.has(column.field))
       .map(
         (column) =>
-          `ALTER TABLE ${quoteTable(table)} ADD FOREIGN KEY (${quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
+          `ALTER TABLE ${quoteTable(table)} ADD FOREIGN KEY (${SqlCompiler.quoteIdent(column.field)}) ${referencesSql(column, schema) ?? ''}`,
       ),
     options,
   );

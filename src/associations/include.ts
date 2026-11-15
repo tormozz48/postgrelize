@@ -1,32 +1,31 @@
 import { EagerLoadingError } from '../errors/errors.ts';
-import { isExpression } from '../expressions/methods.ts';
+import { SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
 import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import {
-  directionOf,
   orderItem,
   selectColumns,
   storedAttributes,
   tableOf,
   whereClause,
-  whereContext,
+  whereCompiler,
   type FindAttributeOptions,
 } from '../model/query-builders.ts';
 import { injectScope } from '../model/scopes.ts';
 import { activeScope, stateOf } from '../model/state.ts';
 import {
-  and,
-  binary,
-  ident,
-  raw,
+  SqlAst,
   type ExprNode,
   type JoinNode,
   type OrderNode,
   type SelectNode,
 } from '../sql/ast.ts';
+import { OrderDirection } from '../sql/order.ts';
 import { associationsOf } from './associate.ts';
 import type { Association } from './types.ts';
+
+const ast = new SqlAst();
 
 type Model = ModelStatic<AnyModel>;
 
@@ -235,7 +234,7 @@ const prefixColumns = (
   path: string,
   attributes: FindAttributeOptions | undefined,
 ): readonly ExprNode[] =>
-  selectColumns(definition, alias, whereContext(definition, alias), attributes).map((column) => {
+  selectColumns(definition, alias, whereCompiler(definition, alias), attributes).map((column) => {
     const name =
       column.kind === 'alias'
         ? column.alias
@@ -252,17 +251,17 @@ const conditionFor = (
   where: unknown,
   paranoid: boolean,
 ): ExprNode | undefined => {
-  const condition = whereClause(where, whereContext(definition, alias));
+  const condition = whereClause(where, whereCompiler(definition, alias));
   const notDeleted =
     paranoid && definition.deletedAt !== undefined
       ? ({
           kind: 'postfix',
           op: 'IS NULL',
-          expr: ident(alias, field(definition, definition.deletedAt)),
+          expr: ast.ident(alias, field(definition, definition.deletedAt)),
         } as const)
       : undefined;
   const parts = [condition, notDeleted].filter((part): part is ExprNode => part !== undefined);
-  return parts.length === 0 ? undefined : and(parts);
+  return parts.length === 0 ? undefined : ast.and(parts);
 };
 
 const scopeCondition = (
@@ -270,7 +269,7 @@ const scopeCondition = (
   alias: string,
   scope: Readonly<Record<string, unknown>> | undefined,
 ): ExprNode | undefined =>
-  scope === undefined ? undefined : whereClause(scope, whereContext(definition, alias));
+  scope === undefined ? undefined : whereClause(scope, whereCompiler(definition, alias));
 
 const joinType = (node: IncludeNode, required: boolean): JoinNode['type'] =>
   node.right ? 'RIGHT OUTER' : required ? 'INNER' : 'LEFT OUTER';
@@ -278,15 +277,15 @@ const joinType = (node: IncludeNode, required: boolean): JoinNode['type'] =>
 const onClause = (parent: ModelDefinition, parentAlias: string, node: IncludeNode): ExprNode => {
   const { association } = node;
   return association.associationType === 'BelongsTo'
-    ? binary(
+    ? ast.binary(
         '=',
-        ident(parentAlias, field(parent, association.foreignKey)),
-        ident(node.alias, field(node.definition, association.targetKey)),
+        ast.ident(parentAlias, field(parent, association.foreignKey)),
+        ast.ident(node.alias, field(node.definition, association.targetKey)),
       )
-    : binary(
+    : ast.binary(
         '=',
-        ident(parentAlias, field(parent, association.sourceKey)),
-        ident(node.alias, field(node.definition, association.foreignKey)),
+        ast.ident(parentAlias, field(parent, association.sourceKey)),
+        ast.ident(node.alias, field(node.definition, association.foreignKey)),
       );
 };
 
@@ -305,7 +304,7 @@ const joinsFor = (
       {
         type: joinType(node, node.required),
         table: tableOf(node.definition, node.alias),
-        on: and([
+        on: ast.and([
           onClause(parent, parentAlias, node),
           ...extra.filter((part): part is ExprNode => part !== undefined),
         ]),
@@ -316,28 +315,28 @@ const joinsFor = (
     ];
   }
   const throughCondition = [
-    binary(
+    ast.binary(
       '=',
-      ident(parentAlias, field(parent, node.association.sourceKey)),
-      ident(through.alias, field(through.definition, node.association.foreignKey)),
+      ast.ident(parentAlias, field(parent, node.association.sourceKey)),
+      ast.ident(through.alias, field(through.definition, node.association.foreignKey)),
     ),
-    whereClause(through.where, whereContext(through.definition, through.alias)),
+    whereClause(through.where, whereCompiler(through.definition, through.alias)),
     scopeCondition(through.definition, through.alias, node.association.through?.scope),
   ].filter((part): part is ExprNode => part !== undefined);
   return [
     {
       type: joinType(node, node.required),
       table: tableOf(through.definition, through.alias),
-      on: and(throughCondition),
+      on: ast.and(throughCondition),
     },
     {
       type: joinType(node, node.required),
       table: tableOf(node.definition, node.alias),
-      on: and([
-        binary(
+      on: ast.and([
+        ast.binary(
           '=',
-          ident(node.alias, field(node.definition, node.association.targetKey)),
-          ident(through.alias, field(through.definition, node.association.otherKey ?? '')),
+          ast.ident(node.alias, field(node.definition, node.association.targetKey)),
+          ast.ident(through.alias, field(through.definition, node.association.otherKey ?? '')),
         ),
         ...extra.filter((part): part is ExprNode => part !== undefined),
       ]),
@@ -383,7 +382,7 @@ const includeOrder = (
     typeof item[directionIndex] === 'string' &&
     (() => {
       try {
-        directionOf(item[directionIndex]);
+        OrderDirection.parse(item[directionIndex]);
         return true;
       } catch {
         return false;
@@ -406,8 +405,8 @@ const includeOrder = (
     return undefined;
   }
   return {
-    expr: ident(node.alias, field(node.definition, attribute)),
-    ...(hasDirection ? directionOf(item[directionIndex]) : {}),
+    expr: ast.ident(node.alias, field(node.definition, attribute)),
+    ...(hasDirection ? OrderDirection.parse(item[directionIndex]) : {}),
   };
 };
 
@@ -420,7 +419,7 @@ const orderNodes = (
   if (order === undefined || order === null) {
     return { all: [], main: [] };
   }
-  const ctx = whereContext(definition, mainAlias);
+  const ctx = whereCompiler(definition, mainAlias);
   const items: readonly unknown[] = Array.isArray(order) ? order : [order];
   const resolved = items.map((item) => {
     const viaInclude =
@@ -429,14 +428,15 @@ const orderNodes = (
         : Array.isArray(item) &&
             item.length === 2 &&
             typeof item[0] !== 'string' &&
-            !isExpression(item[0])
+            !(item[0] instanceof SqlExpression)
           ? includeOrder(includes, item)
           : undefined;
     return viaInclude === undefined
       ? {
-          node: isExpression(item)
-            ? { expr: whereClause(item, ctx) ?? raw('1') }
-            : orderItem(definition, mainAlias, ctx, item),
+          node:
+            item instanceof SqlExpression
+              ? { expr: whereClause(item, ctx) ?? ast.raw('1') }
+              : orderItem(definition, mainAlias, ctx, item),
           main: true,
         }
       : { node: viaInclude, main: false };
@@ -489,11 +489,11 @@ const existsFilter = (
   });
   const [first, ...rest] = joins;
   if (first === undefined) {
-    return raw('TRUE');
+    return ast.raw('TRUE');
   }
   const query: SelectNode = {
     kind: 'select',
-    columns: [raw('1')],
+    columns: [ast.raw('1')],
     from: first.table,
     ...(rest.length === 0 ? {} : { joins: rest }),
     where: first.on,
@@ -532,7 +532,9 @@ export const withIncludes = (
     columns: [...base.columns, ...missingKeyColumns(definition, alias, base.columns, joined)],
     ...(base.where === undefined && requiredFilters.length === 0
       ? {}
-      : { where: and([...(base.where === undefined ? [] : [base.where]), ...requiredFilters]) }),
+      : {
+          where: ast.and([...(base.where === undefined ? [] : [base.where]), ...requiredFilters]),
+        }),
     orderBy: order.main,
   };
   return {
@@ -566,7 +568,7 @@ const missingKeyColumns = (
     .filter(
       (name) => !columns.some((column) => selectsField(column, name, field(definition, name))),
     )
-    .map((name) => ident(alias, field(definition, name)));
+    .map((name) => ast.ident(alias, field(definition, name)));
 
 /** Joins for `count` with includes (no include columns). */
 export const countJoins = (
