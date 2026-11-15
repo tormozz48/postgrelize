@@ -13,42 +13,42 @@ const ast = new SqlAst();
 const ddl = new DdlGenerator();
 
 /** One `WHEN MATCHED` / `WHEN NOT MATCHED BY SOURCE` action of `merge`. */
-export type MergeMatchedAction<T> = Readonly<{
+export interface MergeMatchedAction<T> {
   /** Extra condition (`WHEN MATCHED AND ...`). */
-  where?: WhereOptions<T> | unknown;
+  readonly where?: WhereOptions<T> | unknown;
   /** Update the target row with these values / expressions (`col('source.attr')`). */
-  update?: Partial<Record<keyof T & string, unknown>>;
+  readonly update?: Partial<Record<keyof T & string, unknown>>;
   /** Delete the target row. */
-  delete?: true;
+  readonly delete?: true;
   /** Do nothing. */
-  nothing?: true;
-}>;
+  readonly nothing?: true;
+}
 
 /** `WHEN NOT MATCHED` action of `merge`. */
-export type MergeInsertAction<T> = Readonly<{
+export interface MergeInsertAction<T> {
   /** Extra condition (`WHEN NOT MATCHED AND ...`); may reference only source columns. */
-  where?: unknown;
+  readonly where?: unknown;
   /** Values to insert: `true` copies same-named source columns, or a map of values / expressions. */
-  insert?: true | Partial<Record<keyof T & string, unknown>>;
+  readonly insert?: true | Partial<Record<keyof T & string, unknown>>;
   /** Do nothing. */
-  nothing?: true;
-}>;
+  readonly nothing?: true;
+}
 
 /** Options of `Model.merge`. PostgreSQL 15+ (RETURNING: 17+). */
-export type MergeOptions<T> = Readonly<{
+export interface MergeOptions<T> {
   /** Source rows (plain objects) or a subquery. */
-  source: readonly Readonly<Record<string, unknown>>[] | Subquery;
+  readonly source: readonly Readonly<Record<string, unknown>>[] | Subquery;
   /** Alias of the source; default `'source'`. */
-  as?: string;
+  readonly as?: string;
   /** Join condition between target (model alias) and source (`col('source.attr')`). */
-  on: WhereOptions<T> | unknown;
+  readonly on: WhereOptions<T> | unknown;
   /** Actions for matched rows, applied in order. */
-  whenMatched?: MergeMatchedAction<T> | readonly MergeMatchedAction<T>[];
+  readonly whenMatched?: MergeMatchedAction<T> | readonly MergeMatchedAction<T>[];
   /** Actions for source rows without a target row. */
-  whenNotMatched?: MergeInsertAction<T> | readonly MergeInsertAction<T>[];
+  readonly whenNotMatched?: MergeInsertAction<T> | readonly MergeInsertAction<T>[];
   /** Actions for target rows without a source row (PostgreSQL 17+). */
-  whenNotMatchedBySource?: MergeMatchedAction<T> | readonly MergeMatchedAction<T>[];
-}>;
+  readonly whenNotMatchedBySource?: MergeMatchedAction<T> | readonly MergeMatchedAction<T>[];
+}
 
 const asArray = <T>(value: T | readonly T[] | undefined): readonly T[] =>
   value === undefined ? [] : Array.isArray(value) ? value : [value as T];

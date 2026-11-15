@@ -89,7 +89,7 @@ export class CreateOperation {
       options,
     );
     if (inserted === undefined) {
-      instance[InstanceState.key]().wasInserted = false;
+      InstanceState.of(instance).wasInserted = false;
       return instance;
     }
     if (opts['hooks'] === true) {

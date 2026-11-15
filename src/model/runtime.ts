@@ -64,7 +64,9 @@ export type ModelRuntime = Readonly<{
 export const runtimeKey: unique symbol = Symbol('postgrelize.runtime');
 
 /** Owner of the internal model services: the `Sequelize` instance. */
-export type RuntimeOwner = Readonly<{
+// An interface (not a type alias) so declaration files reference it by name instead of inlining
+// the internal symbol key.
+export interface RuntimeOwner {
   /** Internal services used by models. */
-  [runtimeKey]: ModelRuntime;
-}>;
+  readonly [runtimeKey]: ModelRuntime;
+}

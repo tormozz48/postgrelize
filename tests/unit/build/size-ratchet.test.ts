@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 // ADR-021: files that still exceed the size limits. Lower these numbers as files are split;
 // never raise them.
-const MAX_FILES_OVER_150_LINES = 30;
+const MAX_FILES_OVER_150_LINES = 29;
 const MAX_FILES_WITH_FUNCTIONS_OVER_20_LINES = 51;
 
 type Override = Readonly<{ files: readonly string[]; rules: Readonly<Record<string, unknown>> }>;

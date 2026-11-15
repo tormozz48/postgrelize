@@ -90,5 +90,5 @@ Write the chunks straight to an HTTP response or a file stream. Stopping the ite
 
 - [`Model`](/api/classes/Model) — `update`, `destroy`, `insertFrom`, `merge`, `copyFrom`, `copyTo`
 - [`UpdateOptions`](/api/type-aliases/UpdateOptions), [`DestroyOptions`](/api/type-aliases/DestroyOptions), [`JoinSources`](/api/type-aliases/JoinSources)
-- [`MergeOptions`](/api/type-aliases/MergeOptions), [`MergeResult`](/api/type-aliases/MergeResult)
+- [`MergeOptions`](/api/interfaces/MergeOptions), [`MergeResult`](/api/type-aliases/MergeResult)
 - [`CopyFromOptions`](/api/type-aliases/CopyFromOptions), [`CopyToOptions`](/api/type-aliases/CopyToOptions)

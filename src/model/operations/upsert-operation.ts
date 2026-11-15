@@ -109,7 +109,7 @@ export class UpsertOperation {
       row === undefined ? undefined : this.#written.withoutMarkers(row),
     );
     if (options.onConflict !== undefined) {
-      instance[InstanceState.key]().wasInserted = flag === true;
+      InstanceState.of(instance).wasInserted = flag === true;
     }
     const upserted: [M, boolean | null] = [
       instance,

@@ -65,7 +65,7 @@ export class WrittenRows {
   instance<M extends AnyModel>(model: ModelStatic<M>, row: Row, old: boolean): M {
     const instance = this.#rows.instance(model, this.withoutMarkers(row));
     if (old) {
-      instance[InstanceState.key]().oldValues = this.#returningOld.previous(
+      InstanceState.of(instance).oldValues = this.#returningOld.previous(
         this.#registry.definition(model),
         row,
       );
@@ -83,7 +83,7 @@ export class WrittenRows {
    */
   inserted<M extends AnyModel>(model: ModelStatic<M>, row: Row, old: boolean): M {
     const instance = this.instance(model, row, old);
-    instance[InstanceState.key]().wasInserted = row[OnConflictBuilder.INSERTED_FLAG] === true;
+    InstanceState.of(instance).wasInserted = row[OnConflictBuilder.INSERTED_FLAG] === true;
     return instance;
   }
 
