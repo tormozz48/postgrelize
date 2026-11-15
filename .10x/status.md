@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Released 0.8.0 (OOP architecture, Effect removed); test isolation fixed; AGENTS.md + documentation sync rules (ADR-019)
+**Current phase:** Released 0.8.1 (test isolation, AGENTS.md handover docs); no open items
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -133,6 +133,9 @@
 - [x] SQL compiler, where, expressions
 - [x] data types, validation, DDL, QueryInterface, sync
 - [x] model internals, associations, includes
+
+## Release 0.8.1 (2026-11-15)
+- Tag `v0.8.1` → release.yml green, `@tormozz48/postgrelize@0.8.1` published. No library code changes: test isolation and lock-ordering fixes (PR 31; the `sessions` docs example now orders its advisory-lock calls deterministically), AGENTS.md + documentation sync rules, ADR-019 (PR 32).
 
 ## Release 0.8.0 (2026-11-15)
 - Tag `v0.8.0` → release.yml green, `@tormozz48/postgrelize@0.8.0` published. Breaking: `postgrelize/effect` removed. Contents: object-oriented architecture (ADR-018), describeTable enum fix.
