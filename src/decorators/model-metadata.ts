@@ -4,7 +4,7 @@ import type { HookType } from '../hooks/hooks.ts';
 import type { AttributeOptions } from '../model/attribute-options.ts';
 import type { AnyModel, InitOptions, ModelStatic } from '../model/options.ts';
 import type { ScopeDefinition, ScopeOptions } from '../model/scope-registry.ts';
-import { signature, type DecoratorTarget } from './decorator-signature.ts';
+import type { DecoratorTarget } from './decorator-signature.ts';
 
 /** Lazily resolved model class, so decorators can refer to classes defined later in the file. */
 export type ModelGetter = () => ModelStatic<AnyModel>;
@@ -70,14 +70,6 @@ export class MetadataStore {
     const found = this.#entries.get(target.owner) ?? empty();
     this.#entries.set(target.owner, found);
     return found;
-  }
-
-  /**
-   * @param decoratorArgs - Arguments of the running decorator.
-   * @returns The metadata bag of the decorated class, created on first use.
-   */
-  forCall(decoratorArgs: readonly unknown[]): ModelMetadata {
-    return this.of(signature.resolve(decoratorArgs));
   }
 
   /**
