@@ -32,6 +32,7 @@ const guide = [
   {
     text: 'Reference',
     items: [
+      { text: 'PostgreSQL coverage', link: '/postgresql-coverage' },
       { text: 'Security', link: '/security' },
       { text: 'Sequelize issues fixed', link: '/sequelize-issues' },
       { text: 'API reference', link: '/api/' },
@@ -58,6 +59,7 @@ export default defineConfig({
       '/guide/': guide,
       '/sequelize-issues': guide,
       '/security': guide,
+      '/postgresql-coverage': guide,
       '/api/': [{ text: 'API reference', items: apiSidebar }],
     },
     search: { provider: 'local' },
