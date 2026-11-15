@@ -183,31 +183,39 @@ export class ScopeRegistry {
       return {};
     }
     if (typeof selector === 'string') {
-      if (selector === 'defaultScope') {
-        return this.defaultScope;
-      }
-      const scope = this.scopes.get(selector);
-      if (scope === undefined) {
-        throw new Error(`Invalid scope ${selector} called.`);
-      }
-      if (typeof scope === 'function') {
-        throw new Error(
-          `Scope "${selector}" is a function; use { method: ['${selector}', ...args] }`,
-        );
-      }
-      return scope;
+      return this.#resolveNamed(selector);
     }
     if ('method' in selector) {
-      const method: readonly unknown[] = Array.isArray(selector.method)
-        ? selector.method
-        : [selector.method];
-      const [name = '', ...args] = method as readonly string[];
-      const scope = this.scopes.get(name);
-      if (typeof scope !== 'function') {
-        throw new Error(`Invalid scope ${name} called.`);
-      }
-      return (scope as (...scopeArgs: unknown[]) => ScopeOptions)(...args);
+      return this.#resolveMethod(selector as ScopeMethodSelector);
     }
     return selector;
+  }
+
+  #resolveNamed(selector: string): ScopeOptions {
+    if (selector === 'defaultScope') {
+      return this.defaultScope;
+    }
+    const scope = this.scopes.get(selector);
+    if (scope === undefined) {
+      throw new Error(`Invalid scope ${selector} called.`);
+    }
+    if (typeof scope === 'function') {
+      throw new Error(
+        `Scope "${selector}" is a function; use { method: ['${selector}', ...args] }`,
+      );
+    }
+    return scope;
+  }
+
+  #resolveMethod(selector: ScopeMethodSelector): ScopeOptions {
+    const method: readonly unknown[] = Array.isArray(selector.method)
+      ? selector.method
+      : [selector.method];
+    const [name = '', ...args] = method as readonly string[];
+    const scope = this.scopes.get(name);
+    if (typeof scope !== 'function') {
+      throw new Error(`Invalid scope ${name} called.`);
+    }
+    return (scope as (...scopeArgs: unknown[]) => ScopeOptions)(...args);
   }
 }
