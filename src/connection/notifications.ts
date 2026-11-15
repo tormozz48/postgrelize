@@ -73,23 +73,34 @@ export class NotificationListener {
   }
 
   #open(): Promise<PgClient> {
-    this.#client ??= this.#connect().then(async (client) => {
-      client.on('notification', (message) => this.#dispatch(message));
-      client.on('error', () => undefined);
-      client.on('end', () => {
+    if (this.#client !== undefined) {
+      return this.#client;
+    }
+    const opening = this.#connect().then((client) => this.#attach(client));
+    this.#client = opening;
+    opening.catch(() => {
+      if (this.#client === opening) {
         this.#client = undefined;
-        if (!this.#closed && this.#handlers.size > 0) {
-          setTimeout(() => void this.#resubscribe(), RECONNECT_DELAY_MS);
-        }
-      });
-      await [...this.#handlers.keys()].reduce<Promise<unknown>>(
-        (previous, channel) =>
-          previous.then(() => client.query(`LISTEN ${SqlCompiler.quoteIdent(channel)}`)),
-        Promise.resolve(),
-      );
-      return client;
+      }
     });
-    return this.#client;
+    return opening;
+  }
+
+  async #attach(client: PgClient): Promise<PgClient> {
+    client.on('notification', (message) => this.#dispatch(message));
+    client.on('error', () => undefined);
+    client.on('end', () => {
+      this.#client = undefined;
+      if (!this.#closed && this.#handlers.size > 0) {
+        setTimeout(() => void this.#resubscribe(), RECONNECT_DELAY_MS);
+      }
+    });
+    await [...this.#handlers.keys()].reduce<Promise<unknown>>(
+      (previous, channel) =>
+        previous.then(() => client.query(`LISTEN ${SqlCompiler.quoteIdent(channel)}`)),
+      Promise.resolve(),
+    );
+    return client;
   }
 
   async #resubscribe(): Promise<void> {

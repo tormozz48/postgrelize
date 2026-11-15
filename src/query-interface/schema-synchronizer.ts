@@ -23,7 +23,12 @@ export type SyncOptions = QueryOptionsBase &
     match?: RegExp;
     /** Create the tables in this schema instead of the models' schema (references stay in it too). */
     schema?: string;
+    /** Run the `beforeSync` / `afterSync` hooks. Default true. */
+    hooks?: boolean;
   }>;
+
+/** Wraps the sync of one model (used to run its sync hooks). */
+export type SyncWrapper = (definition: ModelDefinition, run: () => Promise<void>) => Promise<void>;
 
 /** Options of `drop()`. */
 export type DropOptions = QueryOptionsBase &
@@ -67,17 +72,32 @@ export class SchemaSynchronizer {
    *
    * @param definitions - Model definitions.
    * @param options - `force`, `alter`, `schema` and query options.
+   * @param wrap - Runs around the sync of each model.
    */
-  async syncAll(definitions: readonly ModelDefinition[], options: SyncOptions = {}): Promise<void> {
+  async syncAll(
+    definitions: readonly ModelDefinition[],
+    options: SyncOptions = {},
+    wrap: SyncWrapper = (_definition, run) => run(),
+  ): Promise<void> {
     const ordered = planner.dependencyOrder(definitions);
     if (options.force === true) {
       await this.#each(ordered.toReversed(), (definition) =>
         this.drop(definition, { ...options, cascade: true }),
       );
     }
+    await this.#syncOrdered(ordered, options, wrap);
+  }
+
+  async #syncOrdered(
+    ordered: readonly ModelDefinition[],
+    options: SyncOptions,
+    wrap: SyncWrapper,
+  ): Promise<void> {
     const deferred = planner.deferredReferences(ordered);
     await this.#each(ordered, (definition) =>
-      this.sync(definition, { ...options, force: false }, deferred.get(definition)),
+      wrap(definition, () =>
+        this.sync(definition, { ...options, force: false }, deferred.get(definition)),
+      ),
     );
     await this.#each(ordered, (definition) =>
       this.#addDeferredReferences(definition, deferred.get(definition) ?? [], options),

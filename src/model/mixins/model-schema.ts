@@ -4,7 +4,7 @@ import {
   type SyncOptions,
 } from '../../query-interface/schema-synchronizer.ts';
 import { destroyer } from '../model-operations.ts';
-import { registry } from '../model-services.ts';
+import { registry, syncHooks } from '../model-services.ts';
 import type { AnyModel, ModelStatic } from '../options.ts';
 import type { QueryOptionsBase } from '../runtime.ts';
 import type { ModelConstructor } from './model-constructor.ts';
@@ -28,7 +28,9 @@ export const ModelSchema = <TBase extends ModelConstructor>(Base: TBase) => {
       options: SyncOptions = {},
     ): Promise<MS> {
       const { definition, runtime } = registry.state(this);
-      await new SchemaSynchronizer(runtime, runtime.queryInterface()).sync(definition, options);
+      await syncHooks.around(this, options, () =>
+        new SchemaSynchronizer(runtime, runtime.queryInterface()).sync(definition, options),
+      );
       return this;
     }
 

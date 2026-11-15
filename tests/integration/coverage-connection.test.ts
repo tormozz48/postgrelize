@@ -50,4 +50,37 @@ describe('connection failures', () => {
         await killer.end();
       }
     }));
+
+  it('rejects the in-flight work and keeps the pool usable when a checked-out backend is killed', () =>
+    withSchema(async ({ schema }) => {
+      const uncaught: unknown[] = [];
+      const onUncaught = (error: unknown): void => void uncaught.push(error);
+      process.on('uncaughtException', onUncaught);
+      const sequelize = new Sequelize(testDatabaseUrl(), {
+        logging: false,
+        pool: { max: 1 },
+        dialectOptions: { options: `-c search_path=${schema}` },
+      });
+      opened.push(sequelize);
+      const killer = new Client({ connectionString: testDatabaseUrl() });
+      await killer.connect();
+      try {
+        const transaction = await sequelize.transaction();
+        const [first] = (await sequelize.query('SELECT pg_backend_pid() AS pid', {
+          type: 'SELECT',
+          transaction,
+        })) as { pid: number }[];
+        await killer.query('SELECT pg_terminate_backend($1)', [first?.pid]);
+        await expect(sequelize.query('SELECT 1', { transaction })).rejects.toBeInstanceOf(Error);
+        await transaction.rollback().catch(() => undefined);
+        const [next] = (await sequelize.query('SELECT pg_backend_pid() AS pid', {
+          type: 'SELECT',
+        })) as { pid: number }[];
+        expect(next?.pid).not.toBe(first?.pid);
+        expect(uncaught).toEqual([]);
+      } finally {
+        process.off('uncaughtException', onUncaught);
+        await killer.end();
+      }
+    }));
 });

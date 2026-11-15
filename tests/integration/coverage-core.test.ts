@@ -44,8 +44,7 @@ describe('Sequelize hooks and sync guards', () => {
       return Promise.resolve();
     }));
 
-  // BUG: sync() never runs beforeBulkSync / afterBulkSync (v6 runs both around Sequelize#sync).
-  it.fails('runs beforeBulkSync and afterBulkSync around sync()', () =>
+  it('runs beforeBulkSync and afterBulkSync around sync()', () =>
     withSchema(async ({ schema }) => {
       const sequelize = connect(schema);
       const calls: string[] = [];

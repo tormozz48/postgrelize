@@ -136,8 +136,7 @@ describe('NotificationListener', () => {
     await listener.close();
   });
 
-  it.fails('keeps retrying after a failed reconnect attempt until the server is back', async () => {
-    // BUG: a rejected connect() promise stays cached in #client, so every retry re-awaits it.
+  it('keeps retrying after a failed reconnect attempt until the server is back', async () => {
     const first = new StubClient();
     const recovered = new StubClient();
     let attempts = 0;

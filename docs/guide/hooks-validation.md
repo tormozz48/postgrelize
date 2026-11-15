@@ -36,7 +36,7 @@ sequelize.addHook('beforeConnect', async (config) => {
 });
 ```
 
-All v6 hook names are accepted, but connection, sync and define hooks other than `beforeConnect` (`afterConnect`, `beforeSync`, `afterSync`, `beforeDefine`, `beforeQuery`, ...) are not run yet.
+All v6 hook names are accepted, but connection and define hooks other than `beforeConnect` (`afterConnect`, `beforeDefine`, `beforeQuery`, ...) are not run yet. `beforeBulkSync` / `afterBulkSync` run around `sequelize.sync()` and `beforeSync` / `afterSync` around each model's sync (also `Model.sync()`); `hooks: false` skips them.
 
 ### Transactions in hooks
 

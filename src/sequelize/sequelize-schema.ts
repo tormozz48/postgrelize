@@ -1,4 +1,5 @@
 import { ModelRegistry } from '../model/model-registry.ts';
+import { syncHooks } from '../model/model-services.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 import {
   SchemaSynchronizer,
@@ -15,6 +16,21 @@ const synchronizer = (sequelize: SequelizeBase): SchemaSynchronizer =>
 
 const definitions = (sequelize: SequelizeBase): ReturnType<ModelRegistry['definition']>[] =>
   Object.values(sequelize.models).map((model) => registry.definition(model));
+
+const runSync = async (sequelize: SequelizeBase, options: SyncOptions): Promise<void> => {
+  const hooks = options.hooks !== false;
+  const hookOptions = { ...options, hooks };
+  if (hooks) {
+    await sequelize.internals.hooks.run('beforeBulkSync', sequelize, hookOptions);
+  }
+  const models = new Map(Object.values(sequelize.models).map((m) => [registry.definition(m), m]));
+  await synchronizer(sequelize).syncAll(definitions(sequelize), options, (definition, run) =>
+    syncHooks.around(models.get(definition) ?? {}, hookOptions, run),
+  );
+  if (hooks) {
+    await sequelize.internals.hooks.run('afterBulkSync', sequelize, hookOptions);
+  }
+};
 
 /**
  * Schema methods of `Sequelize`: schema management, `sync` and `drop`.
@@ -75,7 +91,7 @@ export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase)
           `Database "${this.config.database ?? ''}" does not match sync match parameter "${String(options.match)}"`,
         );
       }
-      await synchronizer(this).syncAll(definitions(this), options);
+      await runSync(this, options);
       return this;
     }
 
