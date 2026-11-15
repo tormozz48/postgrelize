@@ -34,7 +34,32 @@ export interface SqlExpressionVisitor<R> {
  * Any expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. Instances are
  * immutable.
  */
+// Shared through the global symbol registry so that expressions built by another copy of the
+// package (e.g. the CommonJS build next to the ES module build) are still recognised.
+const KIND: unique symbol = Symbol.for('postgrelize.expression') as never;
+
 export abstract class SqlExpression {
+  /** @internal Expression kind; set by every concrete class. */
+  static readonly kind: string = 'SqlExpression';
+
+  constructor() {
+    Object.defineProperty(this, KIND, { value: (new.target as typeof SqlExpression).kind });
+  }
+
+  /**
+   * `instanceof` by kind tag instead of prototype chain, so it works across package copies.
+   *
+   * @param value - Value to test.
+   * @returns True when `value` is an expression of this class (any expression for the base class).
+   */
+  static [Symbol.hasInstance](value: unknown): boolean {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    const kind = (value as { [KIND]?: unknown })[KIND];
+    return typeof kind === 'string' && (this === SqlExpression || this.kind === kind);
+  }
+
   /** @internal Dispatches to the visitor method of the concrete expression class. */
   abstract accept<R>(visitor: SqlExpressionVisitor<R>): R;
 }
@@ -45,6 +70,8 @@ const TYPE_NAME = /^[A-Za-z_][\w ]*(?:\(\s*\d+\s*(?:,\s*\d+\s*)?\))?(?:\[\])*$/;
 
 /** Raw SQL fragment inserted into a query as-is. Created by {@link literal}. */
 export class Literal extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Literal';
   /** SQL text. */
   readonly val: string;
 
@@ -65,6 +92,8 @@ export class Literal extends SqlExpression {
 
 /** SQL function call. Created by {@link fn}. */
 export class Fn extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Fn';
   /** Function name. */
   readonly fn: string;
   /** Arguments. */
@@ -92,6 +121,8 @@ export class Fn extends SqlExpression {
 
 /** Column reference. Created by {@link col}. */
 export class Col extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Col';
   /** Column name or path. */
   readonly col: string | readonly string[];
 
@@ -112,6 +143,8 @@ export class Col extends SqlExpression {
 
 /** Type cast `CAST(value AS type)`. Created by {@link cast}. */
 export class Cast extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Cast';
   /** Value or expression to cast. */
   readonly val: unknown;
   /** Target type. */
@@ -141,6 +174,8 @@ export class Cast extends SqlExpression {
 
 /** JSON path access or JSON conditions. Created by {@link json}. */
 export class Json extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Json';
   /** Dot-separated path starting with the attribute name. */
   readonly path?: string;
   /** Conditions object. */
@@ -171,6 +206,8 @@ export class Json extends SqlExpression {
 
 /** Comparison of an arbitrary expression with a value. Created by {@link where}. */
 export class Where extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Where';
   /** Left-hand expression. */
   readonly attribute: unknown;
   /** Comparison operator. */
@@ -199,6 +236,8 @@ export class Where extends SqlExpression {
 
 /** Reference to a column of the row proposed for insertion in `ON CONFLICT DO UPDATE`. Created by {@link excluded}. */
 export class Excluded extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Excluded';
   /** Attribute name. */
   readonly column: string;
 
@@ -219,6 +258,8 @@ export class Excluded extends SqlExpression {
 
 /** SELECT embedded in another statement. Created by `Model.subquery()`. PostgreSQL extension. */
 export class Subquery extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Subquery';
   /** Builds the SELECT AST (called when the outer statement is compiled). */
   readonly build: () => SelectNode;
 
@@ -239,6 +280,8 @@ export class Subquery extends SqlExpression {
 
 /** `EXISTS (subquery)` / `NOT EXISTS (subquery)`. Created by {@link exists} / {@link notExists}. */
 export class Exists extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Exists';
   /** Subquery. */
   readonly subquery: Subquery;
   /** `NOT EXISTS`. */
@@ -263,6 +306,8 @@ export class Exists extends SqlExpression {
 
 /** Window function call `fn OVER (...)`. Created by {@link over}. */
 export class Over extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Over';
   /** Window function, e.g. `fn('row_number')`. */
   readonly fn: Fn | Literal;
   /** `PARTITION BY` attributes or expressions. */
@@ -291,6 +336,8 @@ export class Over extends SqlExpression {
 
 /** Row constructor `(a, b, ...)` for row comparisons. Created by {@link tuple}. */
 export class Tuple extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Tuple';
   /** Row items. */
   readonly items: readonly unknown[];
 
