@@ -15,7 +15,10 @@ export class DecimalType extends AbstractDataType {
       'DECIMAL',
       digits === undefined
         ? 'DECIMAL'
-        : `DECIMAL(${[digits, scale].filter((n) => n !== undefined).join(',')})`,
+        : `DECIMAL(${[digits, scale]
+            .filter((n) => n !== undefined)
+            .map((n) => AbstractDataType.integer('DECIMAL precision and scale', n))
+            .join(',')})`,
     );
     Object.freeze(this);
   }

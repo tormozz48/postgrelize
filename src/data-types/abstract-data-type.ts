@@ -46,6 +46,20 @@ export abstract class AbstractDataType implements DataType {
   }
 
   /**
+   * Validates a numeric type parameter (length, precision, scale, srid) before it reaches SQL.
+   *
+   * @param name - Parameter name for the error message.
+   * @param value - Parameter value.
+   * @returns The value.
+   */
+  protected static integer(name: string, value: number): number {
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error(`${name} must be a non-negative integer, got ${String(value)}`);
+    }
+    return value;
+  }
+
+  /**
    * Resolves a data type given bare or called (`DataTypes.STRING` / `DataTypes.STRING(64)`).
    *
    * @param input - Data type or callable data type.

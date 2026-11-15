@@ -132,10 +132,18 @@ export class ConnectionConfig {
         };
   }
 
+  // A UTC offset or an IANA zone name: it is passed as a libpq startup option, so no spaces.
+  static #timezone(timezone: string): string {
+    if (!/^(?:[+-]\d{2}:\d{2}|[A-Za-z][\w+\-/]*)$/.test(timezone)) {
+      throw new Error(`Invalid timezone: ${timezone}`);
+    }
+    return timezone;
+  }
+
   static #poolConfig(options: SequelizeOptions): PoolConfig {
     const config = ConnectionConfig.#settings(options);
     const pool = options.pool ?? {};
-    const timezone = options.timezone ?? '+00:00';
+    const timezone = ConnectionConfig.#timezone(options.timezone ?? '+00:00');
     return ConnectionConfig.#definedOnly({
       host: config.host,
       port: config.port,

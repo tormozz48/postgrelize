@@ -10,7 +10,7 @@ export class StringType extends AbstractDataType {
    * @param length - Maximum length; default 255.
    */
   constructor(length = 255) {
-    super('STRING', `VARCHAR(${length})`);
+    super('STRING', `VARCHAR(${AbstractDataType.integer('STRING length', length)})`);
     Object.freeze(this);
   }
 }

@@ -10,7 +10,7 @@ export class CharType extends AbstractDataType {
    * @param length - Fixed length; default 255.
    */
   constructor(length = 255) {
-    super('CHAR', `CHAR(${length})`);
+    super('CHAR', `CHAR(${AbstractDataType.integer('CHAR length', length)})`);
     Object.freeze(this);
   }
 }

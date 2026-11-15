@@ -16,7 +16,9 @@ export class DateType extends AbstractDataType {
   constructor(fsp?: number) {
     super(
       'DATE',
-      fsp === undefined ? 'TIMESTAMP WITH TIME ZONE' : `TIMESTAMP(${fsp}) WITH TIME ZONE`,
+      fsp === undefined
+        ? 'TIMESTAMP WITH TIME ZONE'
+        : `TIMESTAMP(${AbstractDataType.integer('DATE precision', fsp)}) WITH TIME ZONE`,
     );
     Object.freeze(this);
   }
