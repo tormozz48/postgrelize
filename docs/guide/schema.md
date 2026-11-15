@@ -62,6 +62,6 @@ The details and issue links are on [Sequelize issues fixed](/sequelize-issues).
 
 ## API reference
 
-- [`QueryInterface`](/api/classes/QueryInterface)
-- [`SyncOptions`](/api/type-aliases/SyncOptions), [`AlterOptions`](/api/type-aliases/AlterOptions)
-- [`IndexOptions`](/api/type-aliases/IndexOptions), [`Deferrable`](/api/variables/Deferrable)
+- [`QueryInterface`](/api/index/classes/QueryInterface)
+- [`SyncOptions`](/api/index/type-aliases/SyncOptions), [`AlterOptions`](/api/index/type-aliases/AlterOptions)
+- [`IndexOptions`](/api/index/type-aliases/IndexOptions), [`Deferrable`](/api/index/variables/Deferrable)

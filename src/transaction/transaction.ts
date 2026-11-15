@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
+import { Effect, Exit } from 'effect';
+import type { BaseError } from '../errors/errors.ts';
 import type { Client, ConnectionManager, ExecuteOptions } from '../connection/executor.ts';
 import type { LoggingFunction } from '../connection/options.ts';
 import { quoteIdent } from '../sql/compile.ts';
@@ -150,25 +152,103 @@ export class Transaction {
     };
   }
 
-  /** @internal */
-  async begin(): Promise<this> {
-    if (this.parent === undefined) {
-      this.#client = await this.#connections.acquire();
-    }
-    await this.#run(
+  /**
+   * @internal Starts the transaction (or savepoint) and applies `settings`. A root transaction holds
+   * a pooled client until commit / rollback; when starting fails the client is released.
+   */
+  beginEffect(): Effect.Effect<this, BaseError | Error> {
+    const opening = this.#run(
       this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
     );
-    await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
-      (previous, [name, value]) =>
-        previous.then(() =>
-          this.#connections.execute(
-            { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
-            this.executeOptions(),
+    const settings = Object.entries(this.options.settings ?? {});
+    // Kept to the minimum number of Effect nodes: this runs for every transaction (see bench/).
+    const start = (
+      settings.length === 0
+        ? opening
+        : opening.pipe(
+            Effect.andThen(
+              Effect.forEach(
+                settings,
+                ([name, value]) =>
+                  this.#connections.effects.execute(
+                    { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
+                    this.executeOptions(),
+                  ),
+                { discard: true },
+              ),
+            ),
+          )
+    ).pipe(Effect.as(this));
+    if (this.parent !== undefined) {
+      return start;
+    }
+    return this.#connections.effects.acquire.pipe(
+      Effect.flatMap((client) => {
+        this.#client = client;
+        return start.pipe(
+          // Never return a connection inside an open (possibly aborted) transaction to the pool.
+          Effect.onError(() =>
+            Effect.exit(this.#run('ROLLBACK')).pipe(
+              Effect.andThen(Effect.sync(() => this.#release())),
+            ),
           ),
-        ),
-      Promise.resolve(),
+        );
+      }),
     );
-    return this;
+  }
+
+  /** @internal Commits (or releases the savepoint), releases the client, runs `afterCommit` hooks. */
+  commitEffect(): Effect.Effect<void, BaseError | Error> {
+    return this.#finish(
+      'commit',
+      this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
+    ).pipe(
+      Effect.andThen(
+        Effect.suspend(() =>
+          this.#afterCommit.length === 0
+            ? Effect.void
+            : Effect.forEach(
+                this.#afterCommit,
+                (hook) =>
+                  Effect.tryPromise({
+                    try: async () => hook(this),
+                    catch: (error) => error as Error,
+                  }),
+                { discard: true },
+              ),
+        ),
+      ),
+    );
+  }
+
+  /** @internal Rolls back (or to the savepoint) and releases the client. */
+  rollbackEffect(): Effect.Effect<void, BaseError | Error> {
+    return this.#finish(
+      'rollback',
+      this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
+    );
+  }
+
+  #finish(state: 'commit' | 'rollback', sql: string): Effect.Effect<void, BaseError | Error> {
+    return Effect.suspend(() =>
+      this.finished === undefined
+        ? this.#run(sql).pipe(
+            Effect.map(() => {
+              this.finished = state;
+            }),
+            Effect.ensuring(Effect.sync(() => this.#release())),
+          )
+        : Effect.fail(
+            new Error(
+              `Transaction cannot be ${state === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
+            ),
+          ),
+    );
+  }
+
+  /** @internal */
+  async begin(): Promise<this> {
+    return Effect.runPromise(this.beginEffect());
   }
 
   /**
@@ -178,19 +258,7 @@ export class Transaction {
    * @throws Error when the transaction is already finished.
    */
   async commit(): Promise<void> {
-    this.#assertActive('commit');
-    try {
-      await this.#run(
-        this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
-      );
-      this.finished = 'commit';
-    } finally {
-      this.#release();
-    }
-    await this.#afterCommit.reduce<Promise<unknown>>(
-      (previous, hook) => previous.then(() => hook(this)),
-      Promise.resolve(),
-    );
+    return Effect.runPromise(this.commitEffect());
   }
 
   /**
@@ -200,15 +268,7 @@ export class Transaction {
    * @throws Error when the transaction is already finished.
    */
   async rollback(): Promise<void> {
-    this.#assertActive('rollback');
-    try {
-      await this.#run(
-        this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
-      );
-      this.finished = 'rollback';
-    } finally {
-      this.#release();
-    }
+    return Effect.runPromise(this.rollbackEffect());
   }
 
   /**
@@ -263,16 +323,13 @@ export class Transaction {
     this.#afterCommit = [...this.#afterCommit, hook];
   }
 
-  #assertActive(action: string): void {
-    if (this.finished !== undefined) {
-      throw new Error(
-        `Transaction cannot be ${action === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
-      );
-    }
-  }
-
-  async #run(sql: string): Promise<void> {
-    await this.#connections.execute({ text: sql, values: [] }, this.executeOptions());
+  #run(sql: string): Effect.Effect<void, BaseError | Error> {
+    return Effect.try({ try: () => this.executeOptions(), catch: (error) => error as Error }).pipe(
+      Effect.flatMap((options) =>
+        this.#connections.effects.execute({ text: sql, values: [] }, options),
+      ),
+      Effect.asVoid,
+    );
   }
 
   #release(): void {
@@ -283,20 +340,33 @@ export class Transaction {
   }
 }
 
+/**
+ * Runs `use` inside `transaction`: begins it, commits when `use` succeeds, and rolls back when it
+ * fails or is interrupted. The rollback error, if any, is dropped in favour of the original failure.
+ */
+export const managedTransaction = <A, E>(
+  transaction: Transaction,
+  use: (transaction: Transaction) => Effect.Effect<A, E>,
+): Effect.Effect<A, E | BaseError | Error> =>
+  Effect.acquireUseRelease(
+    transaction.beginEffect(),
+    (started) => use(started).pipe(Effect.tap(() => started.commitEffect())),
+    (started, exit) =>
+      Exit.isFailure(exit) && started.finished === undefined
+        ? Effect.asVoid(Effect.exit(started.rollbackEffect()))
+        : Effect.void,
+  );
+
 /** Runs `run` inside a new transaction; commits on success, rolls back on error. */
-export const runManagedTransaction = async <T>(
+export const runManagedTransaction = <T>(
   transaction: Transaction,
   run: (transaction: Transaction) => Promise<T>,
-): Promise<T> => {
-  await transaction.begin();
-  try {
-    const result = await runWithTransaction(transaction, () => run(transaction));
-    await transaction.commit();
-    return result;
-  } catch (error) {
-    if (transaction.finished === undefined) {
-      await transaction.rollback().catch(() => undefined);
-    }
-    throw error;
-  }
-};
+): Promise<T> =>
+  Effect.runPromise(
+    managedTransaction(transaction, (started) =>
+      Effect.tryPromise({
+        try: () => runWithTransaction(started, () => run(started)),
+        catch: (error) => error,
+      }),
+    ),
+  );

@@ -17,7 +17,10 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "paths": { "postgrelize": ["./src/index.ts"] }
+    "paths": {
+      "postgrelize": ["./src/index.ts"],
+      "postgrelize/effect": ["./src/effect/index.ts"]
+    }
   },
   "include": ["src", "tests", "docs/examples", "*.config.ts"]
 }

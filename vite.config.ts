@@ -16,9 +16,9 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
     lib: {
-      entry: 'src/index.ts',
+      entry: { index: 'src/index.ts', effect: 'src/effect/index.ts' },
       formats: ['es', 'cjs'],
-      fileName: (format) => (format === 'es' ? 'index.js' : 'index.cjs'),
+      fileName: (format, name) => `${name}.${format === 'es' ? 'js' : 'cjs'}`,
     },
     rolldownOptions: {
       external,

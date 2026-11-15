@@ -60,6 +60,6 @@ Associations behave like v6, including default scopes of included models (a scop
 
 ## API reference
 
-- [`Model`](/api/classes/Model) — `belongsTo`, `hasOne`, `hasMany`, `belongsToMany`
-- [`AssociationOptions`](/api/type-aliases/AssociationOptions), [`BelongsToManyOptions`](/api/type-aliases/BelongsToManyOptions)
-- [`IncludeOptions`](/api/type-aliases/IncludeOptions)
+- [`Model`](/api/index/classes/Model) — `belongsTo`, `hasOne`, `hasMany`, `belongsToMany`
+- [`AssociationOptions`](/api/index/type-aliases/AssociationOptions), [`BelongsToManyOptions`](/api/index/type-aliases/BelongsToManyOptions)
+- [`IncludeOptions`](/api/index/type-aliases/IncludeOptions)

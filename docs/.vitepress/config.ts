@@ -27,6 +27,7 @@ const guide = [
       { text: 'Bulk writes and COPY', link: '/guide/bulk-writes' },
       { text: 'Advanced queries', link: '/guide/advanced-queries' },
       { text: 'Sessions and scaling', link: '/guide/sessions' },
+      { text: 'Effect API', link: '/guide/effect' },
     ],
   },
   {

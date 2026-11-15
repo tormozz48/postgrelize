@@ -20,7 +20,16 @@ export default defineConfig({
       {
         ...dbProject('docs'),
         resolve: {
-          alias: { postgrelize: fileURLToPath(new URL('src/index.ts', import.meta.url)) },
+          alias: [
+            {
+              find: /^postgrelize\/effect$/,
+              replacement: fileURLToPath(new URL('src/effect/index.ts', import.meta.url)),
+            },
+            {
+              find: /^postgrelize$/,
+              replacement: fileURLToPath(new URL('src/index.ts', import.meta.url)),
+            },
+          ],
         },
       },
     ],

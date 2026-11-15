@@ -6,8 +6,13 @@ import {
   type PoolConfig,
   type QueryResultRow,
 } from 'pg';
+import { Effect, type Scope } from 'effect';
 import { CopyFromStdin, CopyToStdout } from './copy.ts';
-import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
+import {
+  ConnectionAcquireTimeoutError,
+  type BaseError,
+  type ConnectionError,
+} from '../errors/errors.ts';
 import { mapConnectionError, mapQueryError } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { LoggingFunction } from './options.ts';
@@ -35,8 +40,36 @@ export type ExecuteOptions = Readonly<{
 /** Runs a compiled query and maps driver errors to Sequelize v6 error classes. */
 export type Executor = (query: CompiledQuery, options?: ExecuteOptions) => Promise<QueryResult>;
 
+/**
+ * Effect programs of a connection manager. Failures are the Sequelize v6 error classes; pool clients
+ * are released when the program ends, also on failure or interruption.
+ */
+export type ConnectionEffects = Readonly<{
+  /** Runs a compiled query on `options.client` or on a pooled client. */
+  execute: (
+    query: CompiledQuery,
+    options?: ExecuteOptions,
+  ) => Effect.Effect<QueryResult, BaseError>;
+  /** A pooled client of the primary, released when the surrounding scope closes. */
+  client: Effect.Effect<Client, ConnectionError, Scope.Scope>;
+  /** A pooled client of the primary that the caller releases (transactions). */
+  acquire: Effect.Effect<Client, ConnectionError>;
+  /** Streams `lines` into `COPY ... FROM STDIN`; succeeds with the copied row count. */
+  copyFrom: (
+    text: string,
+    lines: AsyncIterable<string>,
+    options?: ExecuteOptions,
+  ) => Effect.Effect<number, BaseError>;
+  /** Opens a dedicated (non-pooled) client, e.g. for LISTEN. */
+  dedicated: Effect.Effect<PgClient, ConnectionError>;
+  /** Ends all pools. */
+  close: Effect.Effect<void>;
+}>;
+
 /** Owner of connections: acquires clients for transactions and closes the pool. */
 export type ConnectionManager = Readonly<{
+  /** The operations below as Effect programs. */
+  effects: ConnectionEffects;
   execute: Executor;
   acquire: () => Promise<Client>;
   /** Streams `lines` into `COPY ... FROM STDIN`; resolves with the copied row count. */
@@ -84,15 +117,28 @@ const log = (
   }
 };
 
-const acquireWith = async (pool: Pool): Promise<PoolClient> => {
-  try {
-    return await pool.connect();
-  } catch (error) {
-    throw isAcquireTimeout(error)
-      ? new ConnectionAcquireTimeoutError(error instanceof Error ? error : new Error(String(error)))
-      : mapConnectionError(error);
-  }
-};
+const acquireError = (error: unknown): ConnectionError =>
+  isAcquireTimeout(error)
+    ? new ConnectionAcquireTimeoutError(error instanceof Error ? error : new Error(String(error)))
+    : mapConnectionError(error);
+
+const connect = (pool: Pool): Effect.Effect<PoolClient, ConnectionError> =>
+  Effect.tryPromise({ try: () => pool.connect(), catch: acquireError });
+
+/** A pooled client released when the scope closes. */
+const scopedClient = (pool: Pool): Effect.Effect<Client, ConnectionError, Scope.Scope> =>
+  Effect.acquireRelease(connect(pool), release);
+
+/** `client` when given, else a scoped pooled client. */
+const clientFor = (
+  options: ExecuteOptions,
+  pool: Pool,
+): Effect.Effect<Client, ConnectionError, Scope.Scope> =>
+  options.client === undefined ? scopedClient(pool) : Effect.succeed(options.client);
+
+const release = (client: Client): Effect.Effect<void> => Effect.sync(() => client.release());
+
+type Submittable = Readonly<{ query: (submittable: CopyFromStdin | CopyToStdout) => unknown }>;
 
 /** Creates a connection manager over a `pg` pool. */
 export const createConnectionManager = (
@@ -117,58 +163,87 @@ export const createConnectionManager = (
     return reader;
   };
 
-  const execute: Executor = async (query, options = {}) => {
-    const client = options.client ?? (await acquireWith(poolFor(options)));
-    const started = performance.now();
-    try {
-      const result = await client.query({ text: query.text, values: [...query.values] });
-      log(query, options, defaults, performance.now() - started);
-      return { rows: result.rows, rowCount: result.rowCount ?? 0, command: result.command };
-    } catch (error) {
-      throw mapQueryError(error, { sql: query.text, parameters: query.values });
-    } finally {
-      if (options.client === undefined) {
-        client.release();
-      }
-    }
-  };
+  // Hot path: one tryPromise per statement (Effect overhead is per node, see bench/).
+  const runOn = (
+    client: Client,
+    query: CompiledQuery,
+    options: ExecuteOptions,
+  ): Effect.Effect<QueryResult, BaseError> =>
+    Effect.tryPromise({
+      try: async (): Promise<QueryResult> => {
+        const started = performance.now();
+        const result = await client.query({ text: query.text, values: [...query.values] });
+        log(query, options, defaults, performance.now() - started);
+        return { rows: result.rows, rowCount: result.rowCount ?? 0, command: result.command };
+      },
+      catch: (error) => mapQueryError(error, { sql: query.text, parameters: query.values }),
+    });
 
-  const copyFrom = async (
+  const execute = (
+    query: CompiledQuery,
+    options: ExecuteOptions = {},
+  ): Effect.Effect<QueryResult, BaseError> =>
+    options.client === undefined
+      ? Effect.acquireUseRelease(
+          connect(poolFor(options)),
+          (client) => runOn(client, query, options),
+          release,
+        )
+      : runOn(options.client, query, options);
+
+  const copyFrom = (
     text: string,
     lines: AsyncIterable<string>,
     options: ExecuteOptions = {},
-  ): Promise<number> => {
-    const client = options.client ?? (await acquireWith(pool));
-    const started = performance.now();
-    const copy = new CopyFromStdin(text, lines);
-    const done = copy.done();
-    try {
-      void (
-        client as unknown as Readonly<{ query: (submittable: CopyFromStdin) => unknown }>
-      ).query(copy);
-      const rowCount = await done;
-      log({ text, values: [] }, options, defaults, performance.now() - started);
-      return rowCount;
-    } catch (error) {
-      throw mapQueryError(error, { sql: text, parameters: [] });
-    } finally {
-      await copy.settled();
-      if (options.client === undefined) {
-        client.release();
-      }
-    }
-  };
+  ): Effect.Effect<number, BaseError> =>
+    Effect.scoped(
+      clientFor(options, pool).pipe(
+        Effect.flatMap((client) =>
+          Effect.acquireUseRelease(
+            Effect.sync(() => ({
+              copy: new CopyFromStdin(text, lines),
+              started: performance.now(),
+            })),
+            ({ copy, started }) => {
+              const done = copy.done();
+              void (client as unknown as Submittable).query(copy);
+              return Effect.tryPromise({
+                try: () => done,
+                catch: (error) => mapQueryError(error, { sql: text, parameters: [] }),
+              }).pipe(
+                Effect.tap(() =>
+                  Effect.sync(() =>
+                    log({ text, values: [] }, options, defaults, performance.now() - started),
+                  ),
+                ),
+              );
+            },
+            // pg detaches the query on error: wait until no more data is written before release.
+            ({ copy }) => Effect.promise(() => copy.settled()),
+          ),
+        ),
+      ),
+    );
+
+  const dedicated: Effect.Effect<PgClient, ConnectionError> = Effect.suspend(() => {
+    const client = new PgClient({ ...config, types: typeParsers });
+    return Effect.tryPromise({ try: () => client.connect(), catch: mapConnectionError }).pipe(
+      Effect.as(client),
+    );
+  });
+
+  const close: Effect.Effect<void> = Effect.promise(async () => {
+    await Promise.all([pool.end(), ...readers.map((reader) => reader.end())]);
+  });
 
   async function* copyTo(
     text: string,
     options: ExecuteOptions = {},
   ): AsyncGenerator<Buffer, void, undefined> {
-    const client = options.client ?? (await acquireWith(pool));
+    const client = options.client ?? (await Effect.runPromise(connect(pool)));
     const started = performance.now();
     const copy = new CopyToStdout(text);
-    void (client as unknown as Readonly<{ query: (submittable: CopyToStdout) => unknown }>).query(
-      copy,
-    );
+    void (client as unknown as Submittable).query(copy);
     let completed = false;
     try {
       yield* copy.chunks();
@@ -188,24 +263,20 @@ export const createConnectionManager = (
     }
   }
 
-  const dedicated = async (): Promise<PgClient> => {
-    const client = new PgClient({ ...config, types: typeParsers });
-    try {
-      await client.connect();
-    } catch (error) {
-      throw mapConnectionError(error);
-    }
-    return client;
-  };
-
   return {
-    execute,
-    acquire: () => acquireWith(pool),
-    copyFrom,
-    copyTo,
-    dedicated,
-    close: async () => {
-      await Promise.all([pool.end(), ...readers.map((reader) => reader.end())]);
+    effects: {
+      execute,
+      client: scopedClient(pool),
+      acquire: connect(pool),
+      copyFrom,
+      dedicated,
+      close,
     },
+    execute: (query, options) => Effect.runPromise(execute(query, options)),
+    acquire: () => Effect.runPromise(connect(pool)),
+    copyFrom: (text, lines, options) => Effect.runPromise(copyFrom(text, lines, options)),
+    copyTo,
+    dedicated: () => Effect.runPromise(dedicated),
+    close: () => Effect.runPromise(close),
   };
 };
