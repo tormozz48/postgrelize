@@ -4,5 +4,6 @@
 
 - Start with [`AGENTS.md`](../AGENTS.md): rules, commands, architecture (ADR-018), testing, documentation sync (ADR-019), release flow.
 - State: `@tormozz48/postgrelize@0.8.0` released; `main` green on PostgreSQL 16/17/18 × Node 20/22.
-- Open items: none. Earlier backlog stages are recorded in `.10x/specs/2026-11-14-backlog-2-roadmap-design.md` and `decisions/sde/postgrelize-mvp.md`.
+- Active: backlog 3 (`.10x/specs/2026-11-15-backlog-3-roadmap-design.md`): S5 injection assurance → S6 PostgreSQL coverage matrix → S7+ gap stages.
+- Open items: none besides backlog 3. Earlier backlog stages are recorded in `.10x/specs/2026-11-14-backlog-2-roadmap-design.md` and `decisions/sde/postgrelize-mvp.md`.
 - Releases need the maintainer's explicit approval.

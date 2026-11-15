@@ -14,7 +14,7 @@ export type QualifiedTable = Readonly<{
 
 const compiler = new SqlCompiler();
 
-const PLACEHOLDER = /'(?:[^']|'')*'|"(?:[^"]|"")*"|\$(\d+)/g;
+const PLACEHOLDER = /'(?:[^']|'')*'|"(?:[^"]|"")*"|(?<![\w$])\$(\d+)/g;
 
 /**
  * Renders values as PostgreSQL literals and table references as quoted names, for DDL where bind

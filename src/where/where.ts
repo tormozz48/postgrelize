@@ -105,7 +105,7 @@ const SQL_COMPARATOR =
   /^(?:[=<>!~*@&|?#+\-/%^]{1,3}|(?:NOT\s+)?(?:I?LIKE|IN|SIMILAR\s+TO)|IS(?:\s+NOT)?(?:\s+DISTINCT\s+FROM)?)$/i;
 
 const validComparator = (comparator: string): string => {
-  if (!SQL_COMPARATOR.test(comparator.trim())) {
+  if (!SQL_COMPARATOR.test(comparator.trim()) || /--|\/\*|\*\//.test(comparator)) {
     throw new Error(`Invalid comparator: ${comparator}`);
   }
   return comparator.trim();

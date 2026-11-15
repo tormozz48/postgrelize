@@ -32,6 +32,7 @@ const guide = [
   {
     text: 'Reference',
     items: [
+      { text: 'Security', link: '/security' },
       { text: 'Sequelize issues fixed', link: '/sequelize-issues' },
       { text: 'API reference', link: '/api/' },
       { text: 'Coverage report', link: 'https://tormozz48.github.io/postgrelize/coverage/' },
@@ -56,6 +57,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': guide,
       '/sequelize-issues': guide,
+      '/security': guide,
       '/api/': [{ text: 'API reference', items: apiSidebar }],
     },
     search: { provider: 'local' },

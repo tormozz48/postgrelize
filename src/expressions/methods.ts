@@ -105,12 +105,21 @@ export class Fn extends SqlExpression {
    */
   constructor(fn: string, args: readonly unknown[]) {
     super();
-    if (!FUNCTION_NAME.test(fn)) {
-      throw new Error(`Invalid function name: ${fn}`);
-    }
-    this.fn = fn;
+    this.fn = Fn.validName(fn);
     this.args = args;
     Object.freeze(this);
+  }
+
+  /**
+   * Checks that a function name is a plain or schema-qualified identifier.
+   *
+   * @internal
+   */
+  static validName(name: string): string {
+    if (typeof name !== 'string' || !FUNCTION_NAME.test(name)) {
+      throw new Error(`Invalid function name: ${String(name)}`);
+    }
+    return name;
   }
 
   /** @internal */

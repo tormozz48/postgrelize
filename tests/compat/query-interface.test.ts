@@ -173,3 +173,21 @@ describe('compat: QueryInterface', () => {
       ];
     }));
 });
+
+describe('compat: schemas', () => {
+  // Each compat file has its own database, so dropping every schema touches only this scenario.
+  it('creates, lists and drops schemas through the Sequelize instance', () =>
+    expectSameResult('', async (_lib, sequelize) => {
+      const ours = async () =>
+        (await sequelize.showAllSchemas({ logging: false })).filter((name) =>
+          name.startsWith('pgz_extra_'),
+        );
+      await sequelize.createSchema('pgz_extra_b', { logging: false });
+      await sequelize.createSchema('pgz_extra_a', { logging: false });
+      const created = await ours();
+      await sequelize.dropSchema('pgz_extra_a', { logging: false });
+      const afterDrop = await ours();
+      await sequelize.dropAllSchemas({ logging: false });
+      return [created, afterDrop, await sequelize.showAllSchemas({ logging: false })];
+    }));
+});

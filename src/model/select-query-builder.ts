@@ -1,5 +1,5 @@
 import { OrderDirection } from '../sql/order.ts';
-import { SqlExpression } from '../expressions/methods.ts';
+import { Fn, SqlExpression } from '../expressions/methods.ts';
 import {
   SqlAst,
   type ExprNode,
@@ -9,6 +9,7 @@ import {
   type OrderNode,
   type SelectNode,
 } from '../sql/ast.ts';
+import { LOCK } from '../transaction/transaction.ts';
 import type { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { ModelDefinition } from './model-definition.ts';
@@ -86,6 +87,14 @@ const invalidOrder = (): never => {
 const definedNumber = (value: number | null | undefined): number | undefined =>
   value === null || value === undefined ? undefined : value;
 
+const LOCK_STRENGTHS: ReadonlySet<string> = new Set(Object.values(LOCK));
+
+// Sequelize v6 emits FOR UPDATE for any lock level it does not know.
+const lockStrength = (level: unknown): LockNode['strength'] =>
+  typeof level === 'string' && LOCK_STRENGTHS.has(level)
+    ? (level as LockNode['strength'])
+    : LOCK.UPDATE;
+
 const lockOf = (options: SelectOptions): LockNode | undefined => {
   if (options.lock === undefined || options.lock === false) {
     return undefined;
@@ -99,9 +108,9 @@ const lockOf = (options: SelectOptions): LockNode | undefined => {
     options.lock === true
       ? { strength: 'UPDATE' }
       : typeof options.lock === 'string'
-        ? { strength: options.lock }
+        ? { strength: lockStrength(options.lock) }
         : {
-            strength: options.lock.level,
+            strength: lockStrength(options.lock.level),
             ...(options.lock.of === undefined ? {} : { of: [options.lock.of.name] }),
           };
   return wait === undefined ? base : { ...base, wait };
@@ -239,7 +248,7 @@ export class SelectQueryBuilder {
       kind: 'alias',
       expr: {
         kind: 'fn',
-        name: aggregateFunction,
+        name: Fn.validName(aggregateFunction),
         args: [target],
         ...(options.distinct === true ? { distinct: true } : {}),
       },

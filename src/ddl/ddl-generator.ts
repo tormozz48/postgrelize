@@ -144,6 +144,22 @@ type NamedUniqueKey = Readonly<{ fields: readonly string[]; nullsNotDistinct: bo
  * @internal
  */
 export class DdlGenerator {
+  static readonly #deferrableSql: ReadonlySet<string> = new Set(
+    Object.values(Deferrable).map((value) => value.sql),
+  );
+
+  /**
+   * SQL of a `Deferrable` value; anything that is not one of them is rejected.
+   *
+   * @internal
+   */
+  static deferrableSql(value: DeferrableValue): string {
+    if (!DdlGenerator.#deferrableSql.has((value as { sql?: unknown } | undefined)?.sql as string)) {
+      throw new Error(`Invalid deferrable: use one of the Deferrable constants`);
+    }
+    return value.sql;
+  }
+
   /**
    * Converts a normalized attribute to a column definition.
    *
@@ -250,7 +266,7 @@ export class DdlGenerator {
       `REFERENCES ${sqlLiteral.quoteTable(this.#referencedTable(references), defaultSchema)} (${SqlCompiler.quoteIdent(key)})`,
       column.onDelete === undefined ? '' : ` ON DELETE ${this.#validAction(column.onDelete)}`,
       column.onUpdate === undefined ? '' : ` ON UPDATE ${this.#validAction(column.onUpdate)}`,
-      deferrable === undefined ? '' : ` ${deferrable.sql}`,
+      deferrable === undefined ? '' : ` ${DdlGenerator.deferrableSql(deferrable)}`,
     ].join('');
   }
 
@@ -508,7 +524,9 @@ export class DdlGenerator {
             options.onUpdate === undefined
               ? ''
               : ` ON UPDATE ${this.#validAction(options.onUpdate)}`,
-            options.deferrable === undefined ? '' : ` ${options.deferrable.sql}`,
+            options.deferrable === undefined
+              ? ''
+              : ` ${DdlGenerator.deferrableSql(options.deferrable)}`,
           ].join('');
         }
         default:

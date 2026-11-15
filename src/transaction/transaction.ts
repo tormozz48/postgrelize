@@ -276,6 +276,12 @@ export class Transaction {
   }
 
   static #beginSql(options: TransactionOptions): string {
+    if (
+      options.isolationLevel !== undefined &&
+      !(Object.values(ISOLATION_LEVELS) as string[]).includes(options.isolationLevel)
+    ) {
+      throw new Error(`Invalid isolation level: ${String(options.isolationLevel)}`);
+    }
     return [
       'START TRANSACTION',
       options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
