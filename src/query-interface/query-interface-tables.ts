@@ -8,7 +8,7 @@ import type {
   ForeignKeyReference,
 } from './query-interface-types.ts';
 import { StatementRunner } from './statement-runner.ts';
-import { TableDdl } from './table-ddl.ts';
+import { TableCommands } from './table-commands.ts';
 import { TableIntrospector } from './table-introspector.ts';
 
 /**
@@ -18,7 +18,7 @@ export class QueryInterfaceTables {
   /** Owning `Sequelize` instance. */
   readonly sequelize: RuntimeOwner;
   readonly #introspector: TableIntrospector;
-  readonly #tables: TableDdl;
+  readonly #tables: TableCommands;
 
   /**
    * @param sequelize - Owning `Sequelize` instance.
@@ -27,7 +27,7 @@ export class QueryInterfaceTables {
     this.sequelize = sequelize;
     const runner = new StatementRunner(sequelize);
     this.#introspector = new TableIntrospector(runner);
-    this.#tables = new TableDdl(runner);
+    this.#tables = new TableCommands(runner);
   }
 
   /**

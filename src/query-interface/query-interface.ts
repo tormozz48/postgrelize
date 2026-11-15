@@ -4,9 +4,9 @@ import type { TableName } from '../ddl/sql-literal.ts';
 import type { AttributeOptions } from '../model/model-definition.ts';
 import type { QueryOptionsBase, RuntimeOwner } from '../model/runtime.ts';
 import { BulkData } from './bulk-data.ts';
-import { ColumnDdl } from './column-ddl.ts';
-import { EnumDdl } from './enum-ddl.ts';
-import { IndexDdl } from './index-ddl.ts';
+import { ColumnCommands } from './column-commands.ts';
+import { EnumCommands } from './enum-commands.ts';
+import { IndexCommands } from './index-commands.ts';
 import { QueryInterfaceTables } from './query-interface-tables.ts';
 import { StatementRunner } from './statement-runner.ts';
 
@@ -22,9 +22,9 @@ export type {
  * migrations (`sequelize-cli`, umzug).
  */
 export class QueryInterface extends QueryInterfaceTables {
-  readonly #columns: ColumnDdl;
-  readonly #indexes: IndexDdl;
-  readonly #enums: EnumDdl;
+  readonly #columns: ColumnCommands;
+  readonly #indexes: IndexCommands;
+  readonly #enums: EnumCommands;
   readonly #bulk: BulkData;
 
   /**
@@ -33,9 +33,9 @@ export class QueryInterface extends QueryInterfaceTables {
   constructor(sequelize: RuntimeOwner) {
     super(sequelize);
     const runner = new StatementRunner(sequelize);
-    this.#columns = new ColumnDdl(runner);
-    this.#indexes = new IndexDdl(runner);
-    this.#enums = new EnumDdl(runner);
+    this.#columns = new ColumnCommands(runner);
+    this.#indexes = new IndexCommands(runner);
+    this.#enums = new EnumCommands(runner);
     this.#bulk = new BulkData(runner);
   }
 

@@ -15,7 +15,7 @@ const sqlLiteral = new SqlLiteral();
  *
  * @internal
  */
-export class ColumnDdl {
+export class ColumnCommands {
   readonly #runner: StatementRunner;
 
   /**

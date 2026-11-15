@@ -23,6 +23,8 @@ export {
   type IndexOptions,
 } from './ddl-types.ts';
 
+const guards = new DdlGuards();
+
 /**
  * Generates DDL statements (tables, columns, enum types, indexes, constraints, comments,
  * references) for PostgreSQL. Values are inlined as escaped literals.
@@ -42,7 +44,7 @@ export class DdlGenerator {
    * @internal
    */
   static deferrableSql(value: DeferrableValue): string {
-    return DdlGuards.deferrableSql(value);
+    return guards.deferrableSql(value);
   }
 
   /**

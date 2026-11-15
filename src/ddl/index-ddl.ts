@@ -5,6 +5,8 @@ import { DdlGuards } from './ddl-guards.ts';
 import type { IndexField, IndexOptions } from './ddl-types.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
 
+const guards = new DdlGuards();
+
 const identity = new WhereCompiler({ resolve: (field) => ({ field }) });
 
 const sqlLiteral = new SqlLiteral();
@@ -49,7 +51,7 @@ export class IndexDdl {
     return [
       this.#head(options),
       `${SqlCompiler.quoteIdent(options.name ?? this.indexName(table, fields))} ON ${sqlLiteral.quoteTable(table, defaultSchema)}`,
-      options.using === undefined ? '' : ` USING ${DdlGuards.word(options.using, 'index method')}`,
+      options.using === undefined ? '' : ` USING ${guards.word(options.using, 'index method')}`,
       ` (${columns})`,
       options.include === undefined || options.include.length === 0
         ? ''
@@ -80,6 +82,6 @@ export class IndexDdl {
   }
 
   #operatorClass(operator: string | undefined): string {
-    return operator === undefined ? '' : ` ${DdlGuards.word(operator, 'operator class')}`;
+    return operator === undefined ? '' : ` ${guards.word(operator, 'operator class')}`;
   }
 }

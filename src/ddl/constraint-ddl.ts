@@ -4,6 +4,8 @@ import { DdlGuards } from './ddl-guards.ts';
 import type { ConstraintOptions } from './ddl-types.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
 
+const guards = new DdlGuards();
+
 const identity = new WhereCompiler({ resolve: (field) => ({ field }) });
 
 const sqlLiteral = new SqlLiteral();
@@ -70,6 +72,6 @@ export class ConstraintDdl {
       throw new Error('Foreign key constraint requires references');
     }
     const target = `FOREIGN KEY (${fields}) REFERENCES ${sqlLiteral.quoteTable(options.references.table, defaultSchema)} (${SqlCompiler.quoteIdent(options.references.field)})`;
-    return `${target}${DdlGuards.foreignKeySuffix(options.onDelete, options.onUpdate, options.deferrable)}`;
+    return `${target}${guards.foreignKeySuffix(options.onDelete, options.onUpdate, options.deferrable)}`;
   }
 }

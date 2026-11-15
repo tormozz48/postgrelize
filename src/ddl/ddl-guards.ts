@@ -28,7 +28,7 @@ export class DdlGuards {
    * @returns SQL of the mode.
    * @throws Error for anything but a `Deferrable` constant.
    */
-  static deferrableSql(value: DeferrableValue): string {
+  deferrableSql(value: DeferrableValue): string {
     if (!DEFERRABLE_SQL.has((value as { sql?: unknown } | undefined)?.sql as string)) {
       throw new Error(`Invalid deferrable: use one of the Deferrable constants`);
     }
@@ -42,7 +42,7 @@ export class DdlGuards {
    * @returns Upper-case action.
    * @throws Error for an action outside the allowlist.
    */
-  static action(action: string): string {
+  action(action: string): string {
     const normalized = action.trim().toUpperCase();
     if (!ACTIONS.has(normalized)) {
       throw new Error(`Invalid referential action: ${action}`);
@@ -58,7 +58,7 @@ export class DdlGuards {
    * @returns The word.
    * @throws Error for anything but `[A-Za-z_][\w]*`.
    */
-  static word(value: string, kind: string): string {
+  word(value: string, kind: string): string {
     if (!IDENTIFIER_PATTERN.test(value)) {
       throw new Error(`Invalid ${kind}: ${value}`);
     }
@@ -73,15 +73,15 @@ export class DdlGuards {
    * @param deferrable - Deferrable mode.
    * @returns SQL suffix.
    */
-  static foreignKeySuffix(
+  foreignKeySuffix(
     onDelete: string | undefined,
     onUpdate: string | undefined,
     deferrable: DeferrableValue | undefined,
   ): string {
     return [
-      onDelete === undefined ? '' : ` ON DELETE ${DdlGuards.action(onDelete)}`,
-      onUpdate === undefined ? '' : ` ON UPDATE ${DdlGuards.action(onUpdate)}`,
-      deferrable === undefined ? '' : ` ${DdlGuards.deferrableSql(deferrable)}`,
+      onDelete === undefined ? '' : ` ON DELETE ${this.action(onDelete)}`,
+      onUpdate === undefined ? '' : ` ON UPDATE ${this.action(onUpdate)}`,
+      deferrable === undefined ? '' : ` ${this.deferrableSql(deferrable)}`,
     ].join('');
   }
 }

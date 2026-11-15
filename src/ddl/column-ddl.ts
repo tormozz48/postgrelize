@@ -8,6 +8,8 @@ import type { ColumnDefinition, ColumnSqlOptions, DeferrableValue } from './ddl-
 import type { EnumDdl } from './enum-ddl.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
 
+const guards = new DdlGuards();
+
 const noContext = new WhereCompiler({ resolve: () => undefined });
 
 const sqlLiteral = new SqlLiteral();
@@ -115,7 +117,7 @@ export class ColumnDdl {
         ? (references as { deferrable?: DeferrableValue }).deferrable
         : undefined;
     const target = `REFERENCES ${sqlLiteral.quoteTable(this.#referencedTable(references), defaultSchema)} (${SqlCompiler.quoteIdent(key)})`;
-    return `${target}${DdlGuards.foreignKeySuffix(column.onDelete, column.onUpdate, deferrable)}`;
+    return `${target}${guards.foreignKeySuffix(column.onDelete, column.onUpdate, deferrable)}`;
   }
 
   /**

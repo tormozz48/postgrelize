@@ -13,7 +13,7 @@ const sqlLiteral = new SqlLiteral();
  *
  * @internal
  */
-export class EnumDdl {
+export class EnumCommands {
   readonly #runner: StatementRunner;
 
   /**

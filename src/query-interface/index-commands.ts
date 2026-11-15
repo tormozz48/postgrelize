@@ -18,7 +18,7 @@ const sqlLiteral = new SqlLiteral();
  *
  * @internal
  */
-export class IndexDdl {
+export class IndexCommands {
   readonly #runner: StatementRunner;
 
   /**
