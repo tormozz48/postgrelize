@@ -1,14 +1,16 @@
 {
   "name": "@tormozz48/postgrelize",
   "version": "0.8.1",
-  "description": "PostgreSQL-only ORM, drop-in compatible with the Sequelize v6 API",
+  "description": "PostgreSQL-only ORM, drop-in compatible with the Sequelize v6 API. Ships llm/USAGE.md and an Agent Skill for LLMs.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tormozz48/postgrelize.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "llm",
+    "skills"
   ],
   "type": "module",
   "sideEffects": false,
@@ -41,7 +43,8 @@
     "test:coverage": "vitest run --project unit --project integration --project compat --project docs --coverage && node scripts/coverage-badge.mjs",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down -v",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run llm:build && npm run build",
+    "llm:build": "node --experimental-strip-types scripts/generate-llm.ts",
     "docs": "typedoc && vitepress build docs",
     "docs:dev": "typedoc && vitepress dev docs",
     "docs:examples": "vitest run --project docs",

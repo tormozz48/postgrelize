@@ -51,6 +51,10 @@ Install with an alias to keep `import ... from 'postgrelize'`:
 npm install postgrelize@npm:@tormozz48/postgrelize pg
 ```
 
+### For LLMs and agents
+
+The package ships `llm/USAGE.md` (a compact, tested usage guide) and an Agent Skill in `skills/postgrelize/`, next to the typed `.d.ts` files with TSDoc. The docs site publishes [`llms.txt`](https://tormozz48.github.io/postgrelize/llms.txt) and [`llms-full.txt`](https://tormozz48.github.io/postgrelize/llms-full.txt). See [Using with LLMs and agents](https://tormozz48.github.io/postgrelize/guide/llm).
+
 ## Quick start
 
 ```ts
@@ -115,6 +119,7 @@ npm run db:up        # PostgreSQL 16 in Docker on port 54329
 npm run lint && npm run format:check && npm run typecheck
 npm test             # unit + integration + differential (vs sequelize@6)
 npm run build && npm run test:build
+npm run llm:build    # regenerate llm/USAGE.md and skills/ from docs/llm + docs/examples/llm-usage.ts
 npm run docs         # documentation site into docs/.vitepress/dist (npm run docs:dev to preview)
 npm run test:coverage # coverage report into coverage/
 ```

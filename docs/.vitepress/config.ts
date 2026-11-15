@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress';
 import apiSidebar from '../api/typedoc-sidebar.json' with { type: 'json' };
+import { LlmsWriter } from './llm/write-llms.ts';
 
 const guide = [
   {
@@ -7,6 +8,7 @@ const guide = [
     items: [
       { text: 'Getting started', link: '/guide/getting-started' },
       { text: 'Migrating from Sequelize', link: '/guide/migrating' },
+      { text: 'Using with LLMs and agents', link: '/guide/llm' },
     ],
   },
   {
@@ -48,7 +50,10 @@ export default defineConfig({
   base: '/postgrelize/',
   cleanUrls: true,
   lastUpdated: true,
-  srcExclude: ['examples/**'],
+  srcExclude: ['examples/**', 'llm/**'],
+  buildEnd: (siteConfig) => {
+    new LlmsWriter(siteConfig.srcDir, siteConfig.outDir).write();
+  },
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },

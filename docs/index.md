@@ -18,6 +18,9 @@ hero:
     - theme: alt
       text: API reference
       link: /api/
+    - theme: alt
+      text: For LLMs
+      link: /guide/llm
 
 features:
   - title: Drop-in for Sequelize v6
