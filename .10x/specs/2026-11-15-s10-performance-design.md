@@ -121,3 +121,33 @@ Builder-bound cases (finds, counts, `where`, transactions) already exceed the �
 4. PR D: #4 + #8 + #9.
 5. PR E: `docs/guide/performance.md` and #10 if the owner confirms the opt-in option (ADR first).
 6. Final commit of the last PR: `bench/baseline.json` re-recorded; owner summary table (before/after, v6 ratio) in that PR's description.
+
+## 8. Phase 2 results
+
+Status: items #1–#9 done (PRs #52, #53, #55, #56); #10 (named prepared statements, opt-in) and #11 (SQL template cache) not done: #10 needs an ADR and the owner's decision, #11 stays deferred. Stub mode, CPU µs/op, median of 5 runs × 15 rounds, interleaved A/B: `main` at 87a93d3 (before) vs after.
+
+| Case | postgrelize µs before | after | v6 ratio before | after |
+| --- | ---: | ---: | ---: | ---: |
+| findAll 100 rows | 72.9 | 33.4 | 1.57 | 3.29 |
+| findByPk | 15.6 | 10.7 | 2.69 | 3.86 |
+| count where | 8.0 | 7.0 | 4.90 | 5.09 |
+| findAll include belongsTo | 169.6 | 92.3 | 2.05 | 4.16 |
+| findAll include hasMany | 118.7 | 93.7 | 0.97 | 1.64 |
+| findAll include belongsToMany | 193.7 | 126.0 | 0.86 | 1.54 |
+| findAndCountAll | 55.5 | 34.0 | 2.11 | 4.04 |
+| where nested ops + json path | 35.9 | 26.9 | 3.21 | 5.02 |
+| where Op.in 5000 | 108.0 | 106.7 | 19.16 | 19.28 |
+| findAll 10000 rows | 8697.4 | 3228.2 | 0.96 | 2.02 |
+| findAll 10000 rows raw | 2217.3 | 939.9 | 0.43 | 1.00 |
+| create | 24.3 | 18.2 | 3.01 | 4.26 |
+| bulkCreate 100 | 488.7 | 299.9 | 2.18 | 4.25 |
+| bulkCreate 1000 | 4829.2 | 2635.0 | 2.01 | 3.69 |
+| insert onConflict 50 | 222.5 | 134.9 | 2.49 | 3.82 |
+| update instance (save) | 22.5 | 15.7 | 2.82 | 3.75 |
+| transaction + update | 18.0 | 13.0 | 6.21 | 7.08 |
+| transaction 3 queries | 48.0 | 33.3 | 3.29 | 4.67 |
+| build + toJSON | 3.8 | 2.1 | 1.60 | 3.07 |
+| model define | 19.6 | 16.6 | 8.12 | 8.33 |
+
+
+Targets: met for all cases except `findAll 10 000 rows raw` (target ≥ 1.2, reached parity 1.00: v6 returns the driver rows untouched, postgrelize still applies attribute mapping and type parsers in place). `bench/baseline.json` was re-recorded with the new stub (best of 5 runs, all 20 cases); the four gated cases stay gated.
