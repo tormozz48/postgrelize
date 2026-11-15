@@ -1,7 +1,7 @@
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { JoinSourceBuilder } from '../join-source-builder.ts';
-import type { ModelRegistry } from '../model-registry.ts';
+import type { ModelRegistry, ModelState } from '../model-registry.ts';
 import type { ModelValues } from '../model-values.ts';
 import type { AnyModel, ModelStatic, MutableOptions, UpdateOptions, Values } from '../options.ts';
 import type { ReturningOld } from '../returning-old.ts';
@@ -35,6 +35,7 @@ type UpdateResult<M> = [affectedCount: number, affectedRows?: M[]];
 // One `Model.update` call: the hook-visible options and the caller's options.
 type UpdateCall = Readonly<{
   model: ModelStatic<AnyModel>;
+  state: ModelState;
   opts: MutableOptions;
   options: UpdateOptions;
   where: unknown;
@@ -84,10 +85,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     opts: MutableOptions,
     options: UpdateOptions,
   ): Promise<UpdateResult<AnyModel>> {
-    const { definition } = this.services.registry.state(model);
+    const state = this.services.registry.state(model);
     const paranoid = opts['paranoid'] as boolean | undefined;
-    const where = this.services.columns.paranoid(definition, opts['where'], paranoid);
-    const call = { model, opts, options, where, individual: opts['individualHooks'] === true };
+    const where = this.services.columns.paranoid(state.definition, opts['where'], paranoid);
+    const individual = opts['individualHooks'] === true;
+    const call = { model, state, opts, options, where, individual };
     if (call.individual) {
       await this.#beforeEach(call);
     }
@@ -119,7 +121,7 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   }
 
   async #execute(call: UpdateCall): Promise<Readonly<{ count: number; rows: AnyModel[] }>> {
-    const { definition, runtime } = this.services.registry.state(call.model);
+    const { definition, runtime } = call.state;
     const { returningOld, compiler, written } = this.services;
     const old = await returningOld.enabled(runtime, call.options);
     const node = this.#statement(call);
@@ -130,7 +132,7 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   }
 
   #statement(call: UpdateCall) {
-    const { definition, runtime } = this.services.registry.state(call.model);
+    const { definition, runtime } = call.state;
     const { columns, joins, updates } = this.services;
     const from = joins.build(call.options.from);
     const ctx = columns.whereCompiler(definition, from.length === 0 ? undefined : definition.name);
@@ -147,8 +149,7 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     );
   }
 
-  #changes({ model, opts, options }: UpdateCall): Values {
-    const { definition } = this.services.registry.state(model);
+  #changes({ state: { definition }, opts, options }: UpdateCall): Values {
     const { values } = this.services;
     const fields = options.fields as readonly string[] | undefined;
     const picked = values.pick(opts['attributes'] as Values, fields);

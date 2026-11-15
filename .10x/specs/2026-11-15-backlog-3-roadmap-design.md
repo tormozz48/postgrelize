@@ -121,7 +121,7 @@ Proposed (detailed spec at stage start, owner approval):
 
 ## S10 — Performance (added 2026-11-15)
 
-Owner request: a separate stage to raise the library's performance. Detailed spec at stage start: profile the hot paths (query building, compilation, row mapping, instance construction, hooks) with the stub and real-database benchmarks, compare with Sequelize v6 on the same scenarios, add cases for associations/includes and large result sets, set targets per case, then optimise (caching compiled statements, prepared statements, cheaper instance construction, fewer allocations). The bench baseline is updated only after the stage.
+Owner request: a separate stage to raise the library's performance. Detailed spec at stage start: profile the hot paths (query building, compilation, row mapping, instance construction, hooks) with the stub and real-database benchmarks, compare with Sequelize v6 on the same scenarios, add cases for associations/includes and large result sets, set targets per case, then optimise (caching compiled statements, prepared statements, cheaper instance construction, fewer allocations). The bench baseline is updated only after the stage. Known input: the ungated `transaction + update` case is ~6% slower after S6b-2 (finer-grained async steps and the hook decorator on the update path).
 
 ## S11+ — Closing gaps
 
