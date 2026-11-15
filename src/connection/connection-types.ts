@@ -18,5 +18,7 @@ export type ExecuteOptions = Readonly<{
   route?: 'read' | 'write';
   logging?: LoggingFunction | false;
   benchmark?: boolean;
+  /** `statement_timeout` in milliseconds for this query only (`0` disables it). */
+  statementTimeout?: number;
   transactionId?: string;
 }>;

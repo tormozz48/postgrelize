@@ -103,6 +103,7 @@ for (const name of names) {
 
 for (const { name } of libs) {
   await scenarios[name]?.sequelize.close();
+  await Promise.all((scenarios[name]?.others ?? []).map((other) => other.close()));
 }
 if (!stub) {
   for (const { schema } of libs) {

@@ -14,14 +14,30 @@ export class TransactionStatements {
   }
 
   /**
-   * @param options - Isolation level and access mode of a top-level transaction.
+   * @param options - Isolation level, access mode and deferrable mode of a top-level transaction.
    * @returns `START TRANSACTION …`, or `SAVEPOINT …` when nested.
-   * @throws Error for an isolation level outside the allowlist.
+   * @throws Error for an isolation level outside the allowlist or a non-boolean `deferrable`.
    */
-  begin(options: Readonly<{ isolationLevel?: IsolationLevel; readOnly?: boolean }>): string {
+  begin(
+    options: Readonly<{
+      isolationLevel?: IsolationLevel;
+      readOnly?: boolean;
+      deferrable?: boolean;
+    }>,
+  ): string {
     if (this.#savepoint !== undefined) {
       return `SAVEPOINT ${this.#savepoint}`;
     }
+    return `START TRANSACTION${TransactionStatements.#modes(options)}`;
+  }
+
+  static #modes(
+    options: Readonly<{
+      isolationLevel?: IsolationLevel;
+      readOnly?: boolean;
+      deferrable?: boolean;
+    }>,
+  ): string {
     if (
       options.isolationLevel !== undefined &&
       !(Object.values(ISOLATION_LEVELS) as string[]).includes(options.isolationLevel)
@@ -29,10 +45,17 @@ export class TransactionStatements {
       throw new Error(`Invalid isolation level: ${String(options.isolationLevel)}`);
     }
     return [
-      'START TRANSACTION',
       options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
       options.readOnly === true ? ' READ ONLY' : '',
+      TransactionStatements.#deferrable(options.deferrable),
     ].join('');
+  }
+
+  static #deferrable(deferrable: unknown): string {
+    if (deferrable !== undefined && typeof deferrable !== 'boolean') {
+      throw new Error(`Invalid deferrable option: ${String(deferrable)}`);
+    }
+    return deferrable === undefined ? '' : deferrable ? ' DEFERRABLE' : ' NOT DEFERRABLE';
   }
 
   /**

@@ -412,11 +412,10 @@ Not available from v6: other dialects, `minifyAliases`, `Model.schema('tenant')`
 Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage> (generated from `docs/coverage/postgresql-features.ts`). "Planned" and "out of scope" rows; most can be done with `sequelize.query()` raw SQL or `literal()`:
 
 - **SELECT clauses**: Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING); CTE SEARCH / CYCLE clauses; ONLY (table inheritance)
-- **DML**: Bulk insert via UNNEST arrays
-- **Operators and functions**: Multirange operators and functions (range_agg, unnest); Geometric operators and functions; hstore operators (->, ?, @>); ltree operators (@>, <@, ~, ?)
-- **Data types**: timestamp without time zone; money; composite types; multirange types; xml; bit and bit varying; macaddr8; geometric types (point, line, lseg, box, path, polygon, circle); tsquery; pg_lsn, txid_snapshot and other system types; hstore (extension); ltree (extension); PostGIS geometry / geography
+- **Operators and functions**: Multirange operators and functions (range_agg, unnest); Geometric operators and functions
+- **Data types**: composite types; multirange types; geometric types (point, line, lseg, box, path, polygon, circle); pg_lsn, txid_snapshot and other system types; PostGIS geometry / geography
 - **DDL (sync and QueryInterface)**: EXCLUDE constraints; NOT VALID constraints and VALIDATE CONSTRAINT; NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD; Expression indexes (lower(email)); Views and materialized views; Sequences (CREATE SEQUENCE, setval); Functions and triggers; Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH); Extensions (CREATE EXTENSION); Row-level security policies; UNLOGGED and TEMPORARY tables; Rules (CREATE RULE)
-- **Session features**: DEFERRABLE transaction mode (SERIALIZABLE READ ONLY DEFERRABLE); Named prepared statements; Per-query statement timeout; Two-phase commit (PREPARE TRANSACTION)
+- **Session features**: Two-phase commit (PREPARE TRANSACTION)
 - **Out of scope**: Roles, GRANT / REVOKE, default privileges; Replication setup (publications, subscriptions, slots, logical decoding); Tablespaces; VACUUM, ANALYZE, REINDEX, CLUSTER, pg_stat views; Procedural languages (PL/pgSQL bodies, DO blocks, procedures); Extension internals (writing or configuring extensions); Foreign data wrappers and foreign tables; Server configuration (ALTER SYSTEM, pg_hba.conf, event triggers)
 
 ## Security rules

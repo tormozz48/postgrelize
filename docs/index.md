@@ -4,6 +4,9 @@ layout: home
 hero:
   name: postgrelize
   text: The Sequelize v6 API, PostgreSQL only
+  image:
+    src: /logo.svg
+    alt: postgrelize
   tagline: Drop-in for Sequelize v6 — plus upserts, MERGE, CTEs, COPY, LISTEN/NOTIFY and everything else PostgreSQL can do.
   actions:
     - theme: brand

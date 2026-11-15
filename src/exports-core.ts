@@ -55,6 +55,7 @@ export type {
   LoggingFunction,
   ModelDefaults,
   PoolOptions,
+  StatementCacheOptions,
   ReplicationMember,
   ReplicationOptions,
   SequelizeOptions,

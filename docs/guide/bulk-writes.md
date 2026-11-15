@@ -6,6 +6,14 @@ The examples use three models: `Stock` (`sku`, `qty`), `Delivery` (`sku`, `amoun
 
 <<< @/examples/bulk-writes.ts#models{ts}
 
+## Large inserts with `unnest` {#unnest}
+
+`bulkCreate` sends one bound parameter per cell, and PostgreSQL accepts at most 65 535 parameters per statement. `bulkCreate(rows, { unnest: true })` sends one array parameter per column instead (`INSERT … SELECT * FROM unnest($1::integer[], $2::text[])`), so one statement can insert hundreds of thousands of rows:
+
+<<< @/examples/bulk-writes.ts#unnest{ts}
+
+Every row must provide every column (there is no per-row `DEFAULT`), and `ARRAY` columns and the conflict options (`ignoreDuplicates`, `updateOnDuplicate`, `onConflict`) are not supported with `unnest`; those calls throw. Values, hooks, validation and returned instances behave as for the default path. For millions of rows prefer [`copyFrom`](#copy).
+
 ## `UPDATE ... FROM`
 
 The `from` option of `Model.update` joins other relations, keyed by alias. Reference their columns with `col('alias.attr')` in `where` and with `literal` or `col` in the new values:
