@@ -13,6 +13,7 @@ const Event = new Sequelize('postgres://unused@localhost:1/unused', { logging: f
 );
 const definition = registry.definition(Event);
 const stamp = '2024-01-02T03:04:05.000Z';
+const make = () => ({ id: 1, at: stamp, seen_at: stamp, title: 't', extra: 1 });
 
 describe('RowMapper.parse', () => {
   it('maps columns to attributes, parses values and keeps unknown columns', () => {
@@ -49,7 +50,6 @@ describe('RowMapper.parseOwned', () => {
   });
 
   it('matches parse, including key order, when a column is renamed', () => {
-    const make = () => ({ id: 1, at: stamp, seen_at: stamp, title: 't', extra: 1 });
     const owned = rowMapper.parseOwned(definition, make());
     const copied = rowMapper.parse(definition, make());
     expect(owned).toEqual(copied);
