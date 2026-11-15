@@ -1,6 +1,5 @@
-import type { Effect } from 'effect';
 import { ValidationError } from '../errors/errors.ts';
-import { runHooks, runHooksEffect, type HookType } from '../hooks/hooks.ts';
+import { runHooks, type HookType } from '../hooks/hooks.ts';
 import { Op } from '../expressions/op.ts';
 import { validateInstance } from '../validation/validate.ts';
 import type { ModelDefinition } from './definition.ts';
@@ -14,16 +13,6 @@ export const runModelHooks = (
 ): Promise<void> => {
   const { hooks, runtime } = stateOf(model);
   return runHooks([hooks, runtime.hooks()], type, model, ...args);
-};
-
-/** Runs model hooks, then Sequelize-level hooks, of `type` as an Effect program. */
-export const runModelHooksEffect = (
-  model: object,
-  type: HookType,
-  ...args: readonly unknown[]
-): Effect.Effect<void, unknown> => {
-  const { hooks, runtime } = stateOf(model);
-  return runHooksEffect([hooks, runtime.hooks()], type, model, ...args);
 };
 
 /** Options of `instance.validate()`. */

@@ -169,3 +169,23 @@ describe('transaction settings and advisory locks', () => {
       expect(order).toEqual(['a-start', 'a-end', 'b']);
     }));
 });
+
+describe('transaction start failures', () => {
+  it('rolls back and releases the client when BEGIN or settings fail', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = new Sequelize(testDatabaseUrl(), {
+        logging: false,
+        pool: { max: 1, acquire: 3000 },
+        dialectOptions: { options: `-c search_path=${schema}` },
+      });
+      opened.push(sequelize);
+      await expect(
+        sequelize.transaction({ settings: { statement_timeout: 'not a duration' } }),
+      ).rejects.toThrow(/statement_timeout/);
+      // The pool has a single connection: this only works if it was released outside a transaction.
+      const [row] = (await sequelize.query('SELECT 1 AS one', { type: 'SELECT' })) as {
+        one: number;
+      }[];
+      expect(row?.one).toBe(1);
+    }));
+});

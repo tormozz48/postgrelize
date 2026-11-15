@@ -21,11 +21,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./effect": {
-      "types": "./dist/effect/index.d.ts",
-      "import": "./dist/effect.js",
-      "require": "./dist/effect.cjs"
-    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -52,7 +47,6 @@
     "docs:examples": "vitest run --project docs"
   },
   "dependencies": {
-    "effect": "^4.1.4",
     "inflection": "~1.13.4",
     "validator": "^13.15.35"
   },

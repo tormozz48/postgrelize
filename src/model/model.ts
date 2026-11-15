@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import {
   dropModel,
   syncModel,
@@ -45,7 +44,6 @@ import {
 } from '../hooks/hooks.ts';
 import {
   runModelHooks,
-  runModelHooksEffect,
   validateWithHooks,
   withParanoid,
   type ValidateOptions,
@@ -1268,7 +1266,56 @@ export class Model<
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
   ): Promise<M[]> {
-    return Effect.runPromise(findAllProgram(this, options));
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      hooks: true,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+    };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeFind', opts);
+      await runModelHooks(this, 'beforeFindAfterExpandIncludeAll', opts);
+      await runModelHooks(this, 'beforeFindAfterOptions', opts);
+    }
+    const query = {
+      ...(opts as FindOptions),
+      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
+    };
+    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const base = buildSelect(
+      sourceDefinition(definition, (query as FindOptions).source),
+      {
+        ...(includes.length === 0 ? query : { ...query, order: undefined }),
+        ...cteSelectOptions(query as FindOptions),
+      } as SelectOptions,
+      runtime.inAsAnyThreshold,
+    );
+    const select =
+      includes.length === 0 ? base : withIncludes(definition, base, includes, query as FindOptions);
+    const result = await runtime.execute(compile(select), query, 'read');
+    const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
+    const found =
+      opts['raw'] === true
+        ? (result.rows
+            .map((row) =>
+              includes.length === 0 ? parseMain(row) : parseRawRow(includes, row, parseMain),
+            )
+            .map((row) => (opts['nest'] === true ? nestRow(row as Values) : row)) as unknown as M[])
+        : includes.length === 0
+          ? result.rows.map((row) => fromRow(this, row))
+          : (assembleInstances(
+              this,
+              includes,
+              result.rows,
+              parseMain,
+              (model, values) => new model(values, { isNewRecord: false, raw: true }),
+            ) as M[]);
+    if (opts['raw'] !== true && includes.length > 0) {
+      await loadSeparate(found, includes, query);
+    }
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'afterFind', found, opts);
+    }
+    return found;
   }
 
   /**
@@ -1336,7 +1383,42 @@ export class Model<
     this: ModelStatic<M>,
     options: CountOptions<Attributes<M>> = {},
   ): Promise<number> {
-    return Effect.runPromise(countProgram(this, options));
+    const { definition, runtime, scopes } = stateOf(this);
+    const opts: MutableOptions = {
+      hooks: true,
+      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
+    };
+    if (opts['hooks'] === true) {
+      await runModelHooks(this, 'beforeCount', opts);
+    }
+    const query = {
+      ...(opts as CountOptions),
+      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
+    };
+    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const countQuery = (
+      includes.length === 0 || query.col !== undefined
+        ? query
+        : {
+            ...query,
+            col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
+          }
+    ) as SelectOptions & CountOptions;
+    const counted = buildCount(
+      sourceDefinition(definition, query.source),
+      { ...countQuery, ...cteSelectOptions(query) },
+      runtime.inAsAnyThreshold,
+    );
+    const select =
+      includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
+    const result = await runtime.execute(compile(select), query, 'read');
+    if (query.group !== undefined) {
+      return result.rows.map((row) => ({
+        ...parseRow(definition, row),
+        count: Number(row['count']),
+      })) as unknown as number;
+    }
+    return Number(result.rows[0]?.['count'] ?? 0);
   }
 
   /**
@@ -2646,142 +2728,3 @@ const saveChildren = async (
     Promise.resolve(),
   );
 };
-
-/**
- * @internal `findAll` as an Effect program: hooks, query building (pure), execution, row mapping
- * (pure), separate includes and `afterFind`.
- */
-export const findAllProgram = <M extends AnyModel>(
-  model: ModelStatic<M>,
-  options: FindOptions<Attributes<M>> = {},
-): Effect.Effect<M[], unknown> =>
-  Effect.suspend(() => {
-    const { definition, runtime, scopes } = stateOf(model);
-    const opts: MutableOptions = {
-      hooks: true,
-      ...injectScope(activeScope(model), { ...options }, scopes.whereMergeStrategy),
-    };
-    const hooks = opts['hooks'] === true;
-    const before = hooks
-      ? runModelHooksEffect(model, 'beforeFind', opts).pipe(
-          Effect.andThen(runModelHooksEffect(model, 'beforeFindAfterExpandIncludeAll', opts)),
-          Effect.andThen(runModelHooksEffect(model, 'beforeFindAfterOptions', opts)),
-        )
-      : Effect.void;
-    return before.pipe(
-      Effect.andThen(
-        Effect.suspend(() => {
-          const query = {
-            ...(opts as FindOptions),
-            where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
-          };
-          const includes = normalizeIncludes(model, opts['include'] as IncludeOption | undefined);
-          const base = buildSelect(
-            sourceDefinition(definition, query.source),
-            {
-              ...(includes.length === 0 ? query : { ...query, order: undefined }),
-              ...cteSelectOptions(query),
-            } as SelectOptions,
-            runtime.inAsAnyThreshold,
-          );
-          const select =
-            includes.length === 0 ? base : withIncludes(definition, base, includes, query);
-          const separate =
-            opts['raw'] !== true && includes.length > 0
-              ? (found: M[]) =>
-                  Effect.tryPromise({
-                    try: () => loadSeparate(found, includes, query),
-                    catch: (error) => error,
-                  })
-              : undefined;
-          return runtime.executeEffect(compile(select), query, 'read').pipe(
-            Effect.map((result) => mapFoundRows(model, includes, result.rows, opts)),
-            (found) => (separate === undefined ? found : Effect.tap(found, separate)),
-          );
-        }),
-      ),
-      (found) =>
-        hooks
-          ? Effect.tap(found, (rows) => runModelHooksEffect(model, 'afterFind', rows, opts))
-          : found,
-    );
-  });
-
-const mapFoundRows = <M extends AnyModel>(
-  model: ModelStatic<M>,
-  includes: ReturnType<typeof normalizeIncludes>,
-  rows: readonly Readonly<Record<string, unknown>>[],
-  opts: MutableOptions,
-): M[] => {
-  const { definition } = stateOf(model);
-  const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
-  if (opts['raw'] === true) {
-    return rows
-      .map((row) =>
-        includes.length === 0 ? parseMain(row) : parseRawRow(includes, row, parseMain),
-      )
-      .map((row) => (opts['nest'] === true ? nestRow(row as Values) : row)) as unknown as M[];
-  }
-  return includes.length === 0
-    ? rows.map((row) => fromRow(model, row))
-    : (assembleInstances(
-        model,
-        includes,
-        rows,
-        parseMain,
-        (target, values) => new target(values, { isNewRecord: false, raw: true }),
-      ) as M[]);
-};
-
-/** @internal `count` as an Effect program. */
-export const countProgram = <M extends AnyModel>(
-  model: ModelStatic<M>,
-  options: CountOptions<Attributes<M>> = {},
-): Effect.Effect<number, unknown> =>
-  Effect.suspend(() => {
-    const { definition, runtime, scopes } = stateOf(model);
-    const opts: MutableOptions = {
-      hooks: true,
-      ...injectScope(activeScope(model), { ...options }, scopes.whereMergeStrategy),
-    };
-    const before =
-      opts['hooks'] === true ? runModelHooksEffect(model, 'beforeCount', opts) : Effect.void;
-    return before.pipe(
-      Effect.andThen(
-        Effect.suspend(() => {
-          const query = {
-            ...(opts as CountOptions),
-            where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
-          };
-          const includes = normalizeIncludes(model, opts['include'] as IncludeOption | undefined);
-          const countQuery = (
-            includes.length === 0 || query.col !== undefined
-              ? query
-              : {
-                  ...query,
-                  col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
-                }
-          ) as SelectOptions & CountOptions;
-          const counted = buildCount(
-            sourceDefinition(definition, query.source),
-            { ...countQuery, ...cteSelectOptions(query) },
-            runtime.inAsAnyThreshold,
-          );
-          const select =
-            includes.length === 0
-              ? counted
-              : { ...counted, joins: countJoins(definition, includes) };
-          return runtime.executeEffect(compile(select), query, 'read').pipe(
-            Effect.map((result) =>
-              query.group === undefined
-                ? Number(result.rows[0]?.['count'] ?? 0)
-                : (result.rows.map((row) => ({
-                    ...parseRow(definition, row),
-                    count: Number(row['count']),
-                  })) as unknown as number),
-            ),
-          );
-        }),
-      ),
-    );
-  });

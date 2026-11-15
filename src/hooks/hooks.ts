@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 /**
  * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks and `beforeConnect` run;
  * the other connection / sync / define hooks are accepted and not run yet.
@@ -143,36 +142,19 @@ export const hooksFromOption = (
     base,
   );
 
-/**
- * Runs hooks of `type` from each registry in order (model hooks first, then Sequelize-level hooks)
- * as an Effect program; a hook's exception or rejection is the failure. No hooks: `Effect.void`.
- */
-export const runHooksEffect = (
-  registries: readonly HookRegistry[],
-  type: HookType,
-  context: unknown,
-  ...args: readonly unknown[]
-): Effect.Effect<void, unknown> => {
-  const hooks = registries.flatMap((registry) => registry.get(type) ?? []);
-  return hooks.length === 0
-    ? Effect.void
-    : Effect.forEach(
-        hooks,
-        (hook) =>
-          Effect.tryPromise({
-            try: async () => {
-              await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, [...args]);
-            },
-            catch: (error) => error,
-          }),
-        { discard: true },
-      );
-};
-
 /** Runs hooks of `type` from each registry in order (model hooks first, then Sequelize-level hooks). */
-export const runHooks = (
+export const runHooks = async (
   registries: readonly HookRegistry[],
   type: HookType,
   context: unknown,
   ...args: readonly unknown[]
-): Promise<void> => Effect.runPromise(runHooksEffect(registries, type, context, ...args));
+): Promise<void> => {
+  const hooks = registries.flatMap((registry) => registry.get(type) ?? []);
+  await hooks.reduce<Promise<void>>(
+    (previous, hook) =>
+      previous.then(async () => {
+        await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, [...args]);
+      }),
+    Promise.resolve(),
+  );
+};
