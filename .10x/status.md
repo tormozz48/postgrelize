@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); release 0.9.0 awaits owner approval
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 0.9.0 released
 
 **S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
@@ -147,4 +147,7 @@
 - [x] S7b parity and robustness (PRs 47, 48, 50): bugs 1–5 fixed, v6 differences matched or documented; no `it.fails` left
 - [x] S8a LLM docs (PR 46), S8b TSDoc pass + enforcement (PR 49)
 - [x] S10 performance: bench + spec (51), rows/instances (52), includes (53), call overhead + SQL assembly (55), toJSON/change tracking/validation (56), guide page + re-baselined `bench/baseline.json` (this PR). Open: named prepared statements (spec #10, needs ADR) and SQL template cache (#11, deferred)
+
+## Release 0.9.0 (2026-11-15)
+- Tag `v0.9.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.9.0` published. Contents: SQL-injection hardening and audit (S5), refactor to small units with mixins and decorators plus public decorator API (S6), PostgreSQL matrix (S9), coverage 99.7% (S7), parity and robustness fixes (S7b), LLM docs and full TSDoc (S8), performance (S10). Next: backlog 4.
 
