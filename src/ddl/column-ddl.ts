@@ -94,9 +94,10 @@ export class ColumnDdl {
     if (value instanceof SqlExpression) {
       return sqlLiteral.inlineExpr(noContext.toExpr(value));
     }
-    return column.type.isJson === true
-      ? sqlLiteral.escape(JSON.stringify(value))
-      : sqlLiteral.escape(value);
+    if (column.type.isJson === true) {
+      return sqlLiteral.escape(JSON.stringify(value));
+    }
+    return sqlLiteral.escape(column.type.key === 'HSTORE' ? column.type.serialize?.(value) : value);
   }
 
   /**

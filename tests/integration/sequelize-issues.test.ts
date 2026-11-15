@@ -413,4 +413,16 @@ describe('Sequelize issues fixed in postgrelize', () => {
       const rows = await Comment.findAll({ raw: true, attributes: ['body', 'PostId'] });
       expect(rows).toEqual([{ body: 'built', PostId: post.get('id') }]);
     }));
+
+  // v6 maps HSTORE to objects through pg-hstore; postgrelize had left the values as text (fixed in S14).
+  it('HSTORE values are objects when written and read', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      await sequelize.query('CREATE EXTENSION IF NOT EXISTS hstore');
+      const Doc = sequelize.define('Doc', { meta: DataTypes.HSTORE });
+      await sequelize.sync();
+      await Doc.create({ meta: { a: '1', b: 'two words' } });
+      expect((await Doc.findOne())?.get('meta')).toEqual({ a: '1', b: 'two words' });
+      expect(await Doc.count({ where: { meta: { [Op.contains]: { a: '1' } } } })).toBe(1);
+    }));
 });

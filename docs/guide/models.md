@@ -47,20 +47,32 @@ Instances track changes as in v6: `changed()`, `previous()`, `save()` writes onl
 
 `DataTypes` contains the Sequelize v6 types that PostgreSQL supports:
 
-| Category       | Types                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------- |
-| Text           | `STRING(n)` (`VARCHAR`), `CHAR(n)`, `TEXT`, `CITEXT`                                  |
-| Numbers        | `INTEGER`, `SMALLINT`, `BIGINT`, `FLOAT`, `REAL`, `DOUBLE`, `DECIMAL(p, s)`           |
-| Date and time  | `DATE` (`TIMESTAMP WITH TIME ZONE`), `DATEONLY`, `TIME`, `INTERVAL`                   |
-| Other scalars  | `BOOLEAN`, `UUID`, `BLOB` (`BYTEA`), `INET`, `CIDR`, `MACADDR`, `TSVECTOR`            |
-| Structured     | `JSON`, `JSONB`, `HSTORE`, `ARRAY(type)`, `RANGE(type)`, `ENUM(...values)`            |
-| PostGIS        | `GEOMETRY`, `GEOGRAPHY`                                                               |
-| Not stored     | `VIRTUAL`                                                                             |
-| Default values | `DataTypes.NOW` (current time), `DataTypes.UUIDV4` (random UUID generated in Node.js) |
+| Category       | Types                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Text           | `STRING(n)` (`VARCHAR`), `CHAR(n)`, `TEXT`, `CITEXT`                                                                                              |
+| Numbers        | `INTEGER`, `SMALLINT`, `BIGINT`, `FLOAT`, `REAL`, `DOUBLE`, `DECIMAL(p, s)`                                                                       |
+| Date and time  | `DATE` (`TIMESTAMP WITH TIME ZONE`), `TIMESTAMP`, `DATEONLY`, `TIME`, `INTERVAL`                                                                  |
+| Other scalars  | `BOOLEAN`, `UUID`, `BLOB` (`BYTEA`), `INET`, `CIDR`, `MACADDR`, `MACADDR8`, `MONEY`, `XML`, `BIT(n)`, `VARBIT(n)`, `LTREE`, `TSVECTOR`, `TSQUERY` |
+| Structured     | `JSON`, `JSONB`, `HSTORE`, `ARRAY(type)`, `RANGE(type)`, `ENUM(...values)`                                                                        |
+| PostGIS        | `GEOMETRY`, `GEOGRAPHY`                                                                                                                           |
+| Not stored     | `VIRTUAL`                                                                                                                                         |
+| Default values | `DataTypes.NOW` (current time), `DataTypes.UUIDV4` (random UUID generated in Node.js)                                                             |
 
 As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precision loss. `INTERVAL` values are strings in PostgreSQL output format (`'1 year 2 mons'`). `RANGE` values are arrays of two bounds, `{ value, inclusive }` objects as in v6.
 
 `ENUM` creates a PostgreSQL enum type named `enum_<table>_<column>`. `sync({ alter: true })` adds new values to an existing enum type.
+
+## PostgreSQL-specific types
+
+<<< @/examples/types.ts#define{ts}
+
+<<< @/examples/types.ts#use{ts}
+
+- `HSTORE` values are objects with string (or `null`) values, like Sequelize v6 with `pg-hstore`; `Op.contains` and `Op.eq` accept objects. Run `CREATE EXTENSION hstore` first. `LTREE` needs `CREATE EXTENSION ltree`; use `literal()` for its operators (`<@`, `@>`, `~`).
+- `TIMESTAMP` is `TIMESTAMP WITHOUT TIME ZONE`. Values are `Date`s whose local wall-clock time is the stored time, so they depend on the process time zone.
+- `MONEY` is read as the server formats it (`lc_monetary`, for example `'$12.50'`). Write a number or a string.
+- `BIT(n)` and `VARBIT(n)` values are strings of `0` and `1`; `BIT` without a length is `BIT(1)`.
+- `XML`, `MACADDR8` and `TSQUERY` values are strings.
 
 ## Identity and generated columns
 
