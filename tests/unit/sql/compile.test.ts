@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { and, binary, ident, or, param, raw } from '../../../src/sql/ast.ts';
-import { compile, compileExpr, quoteIdent } from '../../../src/sql/compile.ts';
+import { SqlAst, type ExprNode, type StatementNode } from '../../../src/sql/ast.ts';
+import { SqlCompiler } from '../../../src/sql/compile.ts';
+
+const ast = new SqlAst();
+const compiler = new SqlCompiler();
+const compile = (node: StatementNode) => compiler.compile(node);
+const compileExpr = (node: ExprNode) => compiler.compileExpr(node);
 
 const users = { name: 'users' } as const;
 
 describe('quoteIdent', () => {
   it('wraps in double quotes and escapes embedded quotes', () => {
-    expect(quoteIdent('a"b')).toBe('"a""b"');
+    expect(SqlCompiler.quoteIdent('a"b')).toBe('"a""b"');
   });
 });
 
@@ -14,39 +19,46 @@ describe('compileExpr', () => {
   it('numbers params in order', () => {
     expect(
       compileExpr(
-        and([binary('=', ident('a'), param(1)), binary('>', ident('t', 'b'), param('x'))]),
+        ast.and([
+          ast.binary('=', ast.ident('a'), ast.param(1)),
+          ast.binary('>', ast.ident('t', 'b'), ast.param('x')),
+        ]),
       ),
     ).toEqual({ text: '("a" = $1 AND "t"."b" > $2)', values: [1, 'x'] });
   });
 
   it('renders empty and/or as constants', () => {
-    expect(compileExpr(and([])).text).toBe('TRUE');
-    expect(compileExpr(or([])).text).toBe('FALSE');
+    expect(compileExpr(ast.and([])).text).toBe('TRUE');
+    expect(compileExpr(ast.or([])).text).toBe('FALSE');
   });
 
   it('renders between, list, cast, fn, excluded, postfix, prefix, alias', () => {
     expect(
       compileExpr({
         kind: 'between',
-        expr: ident('n'),
-        low: param(1),
-        high: param(2),
+        expr: ast.ident('n'),
+        low: ast.param(1),
+        high: ast.param(2),
         negated: true,
       }).text,
     ).toBe('"n" NOT BETWEEN $1 AND $2');
-    expect(compileExpr({ kind: 'list', items: [param(1), param(2)] }).text).toBe('($1, $2)');
-    expect(compileExpr({ kind: 'cast', expr: param('1'), type: 'integer' }).text).toBe(
+    expect(compileExpr({ kind: 'list', items: [ast.param(1), ast.param(2)] }).text).toBe(
+      '($1, $2)',
+    );
+    expect(compileExpr({ kind: 'cast', expr: ast.param('1'), type: 'integer' }).text).toBe(
       'CAST($1 AS integer)',
     );
     expect(
-      compileExpr({ kind: 'fn', name: 'count', args: [ident('id')], distinct: true }).text,
+      compileExpr({ kind: 'fn', name: 'count', args: [ast.ident('id')], distinct: true }).text,
     ).toBe('count(DISTINCT "id")');
     expect(compileExpr({ kind: 'excluded', column: 'v' }).text).toBe('EXCLUDED."v"');
-    expect(compileExpr({ kind: 'postfix', op: 'IS NULL', expr: ident('a') }).text).toBe(
+    expect(compileExpr({ kind: 'postfix', op: 'IS NULL', expr: ast.ident('a') }).text).toBe(
       '"a" IS NULL',
     );
-    expect(compileExpr({ kind: 'prefix', op: 'NOT', expr: ident('a') }).text).toBe('NOT "a"');
-    expect(compileExpr({ kind: 'alias', expr: raw('1'), alias: 'one' }).text).toBe('1 AS "one"');
+    expect(compileExpr({ kind: 'prefix', op: 'NOT', expr: ast.ident('a') }).text).toBe('NOT "a"');
+    expect(compileExpr({ kind: 'alias', expr: ast.raw('1'), alias: 'one' }).text).toBe(
+      '1 AS "one"',
+    );
   });
 });
 
@@ -62,13 +74,13 @@ describe('compile select', () => {
           {
             type: 'LEFT OUTER',
             table: { name: 'posts', alias: 'p' },
-            on: binary('=', ident('p', 'userId'), ident('u', 'id')),
+            on: ast.binary('=', ast.ident('p', 'userId'), ast.ident('u', 'id')),
           },
         ],
-        where: binary('=', ident('u', 'active'), param(true)),
-        groupBy: [ident('u', 'id')],
-        having: binary('>', raw('count(*)'), param(1)),
-        orderBy: [{ expr: ident('u', 'id'), direction: 'DESC', nulls: 'LAST' }],
+        where: ast.binary('=', ast.ident('u', 'active'), ast.param(true)),
+        groupBy: [ast.ident('u', 'id')],
+        having: ast.binary('>', ast.raw('count(*)'), ast.param(1)),
+        orderBy: [{ expr: ast.ident('u', 'id'), direction: 'DESC', nulls: 'LAST' }],
         limit: 10,
         offset: 20,
         lock: { strength: 'UPDATE', of: ['u'], wait: 'NOWAIT' },
@@ -86,13 +98,13 @@ describe('compile select', () => {
     expect(
       compile({
         kind: 'select',
-        distinctOn: [ident('u')],
+        distinctOn: [ast.ident('u')],
         columns: [
           {
             kind: 'over',
-            expr: raw('row_number()'),
-            partitionBy: [ident('u')],
-            orderBy: [{ expr: ident('r'), direction: 'DESC' }],
+            expr: ast.raw('row_number()'),
+            partitionBy: [ast.ident('u')],
+            orderBy: [{ expr: ast.ident('r'), direction: 'DESC' }],
           },
         ],
         from: users,
@@ -103,7 +115,7 @@ describe('compile select', () => {
   });
 
   it('renders recursive CTEs and extra FROM relations', () => {
-    const base = { kind: 'select' as const, columns: [ident('id')], from: users };
+    const base = { kind: 'select' as const, columns: [ast.ident('id')], from: users };
     expect(
       compile({
         kind: 'select',
@@ -116,11 +128,11 @@ describe('compile select', () => {
               query: {
                 kind: 'union',
                 all: true,
-                left: { ...base, where: binary('=', ident('id'), param(1)) },
+                left: { ...base, where: ast.binary('=', ast.ident('id'), ast.param(1)) },
                 right: {
                   ...base,
                   extraFrom: [{ name: 'tree' }],
-                  where: binary('=', ident('users', 'parent'), ident('tree', 'id')),
+                  where: ast.binary('=', ast.ident('users', 'parent'), ast.ident('tree', 'id')),
                 },
               },
             },
@@ -139,9 +151,9 @@ describe('compile select', () => {
     expect(
       compile({
         kind: 'select',
-        columns: [raw('count(*)')],
+        columns: [ast.raw('count(*)')],
         from: {
-          subquery: { kind: 'select', columns: [ident('id')], from: users, limit: 5 },
+          subquery: { kind: 'select', columns: [ast.ident('id')], from: users, limit: 5 },
           alias: 'sub',
         },
       }),
@@ -160,8 +172,8 @@ describe('compile insert', () => {
         table: users,
         columns: ['a', 'b'],
         rows: [
-          [param(1), param(2)],
-          [param(3), raw('DEFAULT')],
+          [ast.param(1), ast.param(2)],
+          [ast.param(3), ast.raw('DEFAULT')],
         ],
         returning: [{ kind: 'star' }],
       }),
@@ -183,17 +195,17 @@ describe('compile insert', () => {
         kind: 'insert',
         table: { name: 'users', alias: 'User' },
         columns: ['email', 'v'],
-        rows: [[param('e'), param(2)]],
+        rows: [[ast.param('e'), ast.param(2)]],
         onConflict: {
           target: {
             kind: 'columns',
-            items: [ident('email')],
-            where: { kind: 'postfix', op: 'IS NULL', expr: ident('deletedAt') },
+            items: [ast.ident('email')],
+            where: { kind: 'postfix', op: 'IS NULL', expr: ast.ident('deletedAt') },
           },
           action: {
             kind: 'update',
             set: [{ column: 'v', value: { kind: 'excluded', column: 'v' } }],
-            where: binary('<', ident('User', 'v'), { kind: 'excluded', column: 'v' }),
+            where: ast.binary('<', ast.ident('User', 'v'), { kind: 'excluded', column: 'v' }),
           },
         },
       }).text,
@@ -210,7 +222,7 @@ describe('compile insert', () => {
         kind: 'insert',
         table: users,
         columns: ['a'],
-        rows: [[param(1)]],
+        rows: [[ast.param(1)]],
         onConflict: {
           target: { kind: 'constraint', name: 'users_a_key' },
           action: { kind: 'nothing' },
@@ -228,8 +240,8 @@ describe('compile update/delete/truncate', () => {
       compile({
         kind: 'update',
         table: users,
-        set: [{ column: 'a', value: param(1) }],
-        where: binary('=', ident('id'), param(2)),
+        set: [{ column: 'a', value: ast.param(1) }],
+        where: ast.binary('=', ast.ident('id'), ast.param(2)),
         returning: [{ kind: 'star' }],
       }),
     ).toEqual({ text: 'UPDATE "users" SET "a" = $1 WHERE "id" = $2 RETURNING *', values: [1, 2] });
@@ -237,7 +249,11 @@ describe('compile update/delete/truncate', () => {
 
   it('renders delete', () => {
     expect(
-      compile({ kind: 'delete', table: users, where: binary('=', ident('id'), param(1)) }).text,
+      compile({
+        kind: 'delete',
+        table: users,
+        where: ast.binary('=', ast.ident('id'), ast.param(1)),
+      }).text,
     ).toBe('DELETE FROM "users" WHERE "id" = $1');
   });
 

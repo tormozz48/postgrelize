@@ -79,7 +79,7 @@ await Person.scope('adults', 'young').findAll(); // 18 <= age < 30
 
 ## API reference
 
-- [`Model`](/api/index/classes/Model) — finders and aggregates
-- [`FindOptions`](/api/index/type-aliases/FindOptions), [`WhereOptions`](/api/index/type-aliases/WhereOptions)
-- [`Op`](/api/index/variables/Op), [`fn`](/api/index/functions/fn), [`col`](/api/index/functions/col), [`literal`](/api/index/functions/literal)
-- [`Sequelize.query`](/api/index/classes/Sequelize)
+- [`Model`](/api/classes/Model) — finders and aggregates
+- [`FindOptions`](/api/type-aliases/FindOptions), [`WhereOptions`](/api/type-aliases/WhereOptions)
+- [`Op`](/api/variables/Op), [`fn`](/api/functions/fn), [`col`](/api/functions/col), [`literal`](/api/functions/literal)
+- [`Sequelize.query`](/api/classes/Sequelize)

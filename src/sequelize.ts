@@ -1,110 +1,50 @@
-import { Effect } from 'effect';
 import type { PoolConfig } from 'pg';
+import { ConnectionConfig } from './connection/connection-config.ts';
 import {
-  createConnectionManager,
-  type ConnectionManager,
+  ConnectionManager,
   type ExecuteOptions,
   type QueryResult,
-} from './connection/executor.ts';
-import {
-  connectionConfig,
-  parseConstructorArgs,
-  replicationPoolConfigs,
-  type ConnectionConfig,
-  type SequelizeOptions,
+} from './connection/connection-manager.ts';
+import type {
+  ConnectionConfig as ConnectionSettings,
+  SequelizeOptions,
 } from './connection/options.ts';
+import { QueryLogger } from './connection/query-logger.ts';
 import { DataTypes } from './data-types/data-types.ts';
-import {
-  createNotifier,
-  type NotificationHandler,
-  type Notifier,
-} from './connection/notifications.ts';
-import {
-  addHook,
-  hasHook,
-  hooksFromOption,
-  removeHook,
-  runHooks,
-  type HookFunction,
-  type HookRegistry,
-} from './hooks/hooks.ts';
+import { NotificationListener, type NotificationHandler } from './connection/notifications.ts';
+import { PgErrorMapper } from './errors/map-pg-error.ts';
+import { HookRegistry, type HookFunction } from './hooks/hooks.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
-import { Model, definitionOf, parseModelRow } from './model/model.ts';
+import { Model } from './model/model.ts';
+import { ModelRegistry } from './model/model-registry.ts';
 import { QueryInterface } from './query-interface/query-interface.ts';
 import {
-  addDeferredReferences,
-  deferredReferences,
-  dependencyOrder,
-  dropModel,
-  syncModel,
+  SchemaSynchronizer,
   type DropOptions,
   type SyncOptions,
-} from './query-interface/sync.ts';
+} from './query-interface/schema-synchronizer.ts';
 import type { AnyModel, InitOptions, ModelStatic } from './model/options.ts';
-import type { ModelAttributes } from './model/definition.ts';
+import type { ModelAttributes } from './model/model-definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
-import { prepareRawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
+import { RawQuery } from './query/raw-query.ts';
+import { QueryResultShaper, QueryTypes, type QueryOptions } from './query/query-result-shaper.ts';
+import { RowMapper } from './model/row-mapper.ts';
 import type { CompiledQuery } from './sql/compile.ts';
 import {
-  currentTransaction,
-  runManagedTransaction,
   Transaction,
+  TransactionContext,
+  TransactionRunner,
   type AdvisoryLockKey,
   type TransactionOptions,
 } from './transaction/transaction.ts';
 
-/** Query types of `sequelize.query` (Sequelize v6 `QueryTypes`). */
-export const QueryTypes = {
-  /** Returns rows. */
-  SELECT: 'SELECT',
-  /** Returns `[rows, rowCount]`. */
-  INSERT: 'INSERT',
-  /** Returns `[rows, rowCount]`. */
-  UPDATE: 'UPDATE',
-  /** Returns `[rows, rowCount]`. */
-  UPSERT: 'UPSERT',
-  /** Returns nothing. */
-  DELETE: 'DELETE',
-  /** Returns nothing. */
-  BULKUPDATE: 'BULKUPDATE',
-  /** Returns nothing. */
-  BULKDELETE: 'BULKDELETE',
-  /** Returns `[rows, result]` (default). */
-  RAW: 'RAW',
-  /** Returns `[rows, result]`. */
-  SHOWTABLES: 'SHOWTABLES',
-  /** Returns `[rows, result]`. */
-  DESCRIBE: 'DESCRIBE',
-  /** Returns `[rows, result]`. */
-  VERSION: 'VERSION',
-  /** Returns `[rows, result]`. */
-  FOREIGNKEYS: 'FOREIGNKEYS',
-  /** Returns `[rows, result]`. */
-  SHOWINDEXES: 'SHOWINDEXES',
-} as const;
+export { QueryTypes } from './query/query-result-shaper.ts';
+export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';
 
-/** One of {@link QueryTypes}. */
-export type QueryType = (typeof QueryTypes)[keyof typeof QueryTypes];
-
-/** Options of `sequelize.query`. */
-export type QueryOptions = QueryOptionsBase &
-  Readonly<{
-    /** Shapes the result; default `RAW`. */
-    type?: QueryType;
-    /** Values for `?` / `:name` placeholders; bound as parameters. */
-    replacements?: Replacements;
-    /** Values for `$1` / `$name` placeholders. */
-    bind?: BindParameters;
-    /** Return only the first row (or `null`). */
-    plain?: boolean;
-    /** Build instances of this model from SELECT rows. */
-    model?: ModelStatic<AnyModel>;
-    /** Map column names to attribute names of `model`. */
-    mapToModel?: boolean;
-    /** Return plain rows even with `model`. */
-    raw?: boolean;
-  }>;
+const rawQuery = new RawQuery();
+const registry = new ModelRegistry();
+const resultShaper = new QueryResultShaper(new RowMapper(registry));
 
 /** Options of `sequelize.define`. */
 export type DefineOptions = Omit<InitOptions, 'sequelize'>;
@@ -142,11 +82,13 @@ export class Sequelize {
   static readonly json = json;
 
   static #cls = false;
+  static readonly #context = new TransactionContext();
+  static readonly #transactions = new TransactionRunner(Sequelize.#context);
 
   /** Normalized constructor options. */
   readonly options: SequelizeOptions;
   /** Connection settings. */
-  readonly config: ConnectionConfig;
+  readonly config: ConnectionSettings;
   /** Models registered with `define` / `Model.init`, by model name. */
   readonly models: Record<string, ModelStatic<AnyModel>> = {};
   /** Raw SQL fragment builder. */
@@ -167,7 +109,7 @@ export class Sequelize {
   #hooks: HookRegistry;
   #queryInterface: QueryInterface | undefined;
   #serverVersion: Promise<number> | undefined;
-  #notifier: Notifier | undefined;
+  #notifier: NotificationListener | undefined;
 
   /**
    * Creates an instance from a connection URI.
@@ -197,30 +139,30 @@ export class Sequelize {
    */
   constructor(options?: SequelizeOptions);
   constructor(...args: readonly unknown[]) {
-    this.options = parseConstructorArgs(args as Parameters<typeof parseConstructorArgs>[0]);
-    this.config = connectionConfig(this.options);
+    const connectionConfig = new ConnectionConfig(
+      args as ConstructorParameters<typeof ConnectionConfig>[0],
+    );
+    this.options = connectionConfig.options;
+    this.config = connectionConfig.settings();
     const logging = this.options.logging === undefined ? console.log : this.options.logging;
     const defaults: ExecuteOptions = {
       logging,
       ...(this.options.benchmark === undefined ? {} : { benchmark: this.options.benchmark }),
     };
-    this.#hooks = hooksFromOption(this.options.hooks);
-    const pools = replicationPoolConfigs(this.options);
+    this.#hooks = HookRegistry.fromOption(this.options.hooks);
+    const pools = connectionConfig.replicationPoolConfigs();
     const withHookPassword = (config: PoolConfig): PoolConfig => ({
       ...config,
       password: () => this.#connectPassword(config.password),
     });
-    this.#connections = createConnectionManager(
+    this.#connections = new ConnectionManager(
       withHookPassword(pools.write),
-      defaults,
       pools.read.map(withHookPassword),
+      new QueryLogger(defaults),
+      new PgErrorMapper(),
     );
     this.#runtime = {
       execute: (query, options, kind) => this.#execute(query, options, kind),
-      executeEffect: (query, options, kind) =>
-        Effect.suspend(() =>
-          this.#connections.effects.execute(query, this.#executeOptions(options, kind)),
-        ),
       transaction: (run, parent) =>
         this.transaction(
           parent === undefined || parent === null ? {} : { transaction: parent },
@@ -275,8 +217,8 @@ export class Sequelize {
   addHook(type: string, nameOrFn: string | HookFunction, hook?: HookFunction): this {
     this.#hooks =
       typeof nameOrFn === 'string'
-        ? addHook(this.#hooks, type, hook ?? missingHook(), nameOrFn)
-        : addHook(this.#hooks, type, nameOrFn);
+        ? this.#hooks.add(type, hook ?? Sequelize.#missingHook(), nameOrFn)
+        : this.#hooks.add(type, nameOrFn);
     return this;
   }
 
@@ -288,7 +230,7 @@ export class Sequelize {
    * @returns This instance.
    */
   removeHook(type: string, nameOrFn?: string | HookFunction): this {
-    this.#hooks = removeHook(this.#hooks, type, nameOrFn);
+    this.#hooks = this.#hooks.remove(type, nameOrFn);
     return this;
   }
 
@@ -299,7 +241,7 @@ export class Sequelize {
    * @returns True when at least one hook exists.
    */
   hasHook(type: string): boolean {
-    return hasHook(this.#hooks, type);
+    return this.#hooks.has(type);
   }
 
   /**
@@ -314,11 +256,11 @@ export class Sequelize {
 
   async #connectPassword(configured: PoolConfig['password']): Promise<string> {
     const password = typeof configured === 'function' ? await configured() : (configured ?? '');
-    if (!hasHook(this.#hooks, 'beforeConnect')) {
+    if (!this.#hooks.has('beforeConnect')) {
       return password;
     }
     const config = { ...this.config, password };
-    await runHooks([this.#hooks], 'beforeConnect', this, config);
+    await this.#hooks.run('beforeConnect', this, config);
     return config.password ?? '';
   }
 
@@ -393,16 +335,16 @@ export class Sequelize {
    */
   async query(sql: string | Literal, options: QueryOptions = {}): Promise<unknown> {
     const text = typeof sql === 'string' ? sql : sql.val;
-    const prepared = prepareRawQuery(text, {
+    const prepared = rawQuery.prepare(text, {
       ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
       ...(options.bind === undefined ? {} : { bind: options.bind }),
     });
     const result = await this.#execute(
       prepared,
       options,
-      effectiveType(options) === QueryTypes.SELECT ? 'read' : 'write',
+      resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write',
     );
-    return shapeResult(result, options);
+    return resultShaper.shape(result, options);
   }
 
   /**
@@ -438,13 +380,13 @@ export class Sequelize {
     const run = typeof optionsOrRun === 'function' ? optionsOrRun : maybeRun;
     const parent =
       options.transaction === undefined && Sequelize.#cls
-        ? currentTransaction()
+        ? Sequelize.#context.current()
         : options.transaction;
     const transaction = new Transaction(this.#connections, {
       ...options,
       ...(parent === undefined ? {} : { transaction: parent }),
     });
-    return run === undefined ? transaction.begin() : runManagedTransaction(transaction, run);
+    return run === undefined ? transaction.begin() : Sequelize.#transactions.run(transaction, run);
   }
 
   /**
@@ -469,46 +411,9 @@ export class Sequelize {
         `Database "${this.config.database ?? ''}" does not match sync match parameter "${String(options.match)}"`,
       );
     }
-    const definitions = dependencyOrder(
-      Object.values(this.models).map((model) => definitionOf(model)),
-    );
-    if (options.force === true) {
-      await definitions
-        .toReversed()
-        .reduce<Promise<unknown>>(
-          (previous, definition) =>
-            previous.then(() =>
-              dropModel(definition, this.getQueryInterface(), { ...options, cascade: true }),
-            ),
-          Promise.resolve(),
-        );
-    }
-    const deferred = deferredReferences(definitions);
-    await definitions.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          syncModel(
-            definition,
-            this.#runtime,
-            this.getQueryInterface(),
-            { ...options, force: false },
-            deferred.get(definition),
-          ),
-        ),
-      Promise.resolve(),
-    );
-    await definitions.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          addDeferredReferences(
-            definition,
-            deferred.get(definition) ?? [],
-            this.#runtime,
-            this.getQueryInterface(),
-            options,
-          ),
-        ),
-      Promise.resolve(),
+    await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).syncAll(
+      Object.values(this.models).map((model) => registry.definition(model)),
+      options,
     );
     return this;
   }
@@ -520,16 +425,10 @@ export class Sequelize {
    * @returns Resolves when done.
    */
   async drop(options: DropOptions = {}): Promise<void> {
-    const definitions = dependencyOrder(
-      Object.values(this.models).map((model) => definitionOf(model)),
+    await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).dropAll(
+      Object.values(this.models).map((model) => registry.definition(model)),
+      options,
     );
-    await definitions
-      .toReversed()
-      .reduce<Promise<unknown>>(
-        (previous, definition) =>
-          previous.then(() => dropModel(definition, this.getQueryInterface(), options)),
-        Promise.resolve(),
-      );
   }
 
   /**
@@ -541,7 +440,7 @@ export class Sequelize {
    * @returns Function that unsubscribes the handler.
    */
   listen(channel: string, handler: NotificationHandler): Promise<() => Promise<void>> {
-    this.#notifier ??= createNotifier(() => this.#connections.dedicated());
+    this.#notifier ??= new NotificationListener(() => this.#connections.dedicated());
     return this.#notifier.listen(channel, handler);
   }
 
@@ -610,11 +509,15 @@ export class Sequelize {
     await this.#connections.close();
   }
 
+  static #missingHook(): never {
+    throw new Error('addHook: hook function is required');
+  }
+
   #executeOptions(options: QueryOptionsBase, kind: 'read' | 'write' = 'write'): ExecuteOptions {
     const transaction =
       options.transaction === undefined
         ? Sequelize.#cls
-          ? currentTransaction()
+          ? Sequelize.#context.current()
           : undefined
         : (options.transaction ?? undefined);
     return {
@@ -635,42 +538,3 @@ export class Sequelize {
     return this.#connections.execute(query, this.#executeOptions(options, kind));
   }
 }
-
-const shapeRows = (result: QueryResult, options: QueryOptions): readonly unknown[] => {
-  const model = options.model;
-  if (model === undefined || options.raw === true) {
-    return result.rows;
-  }
-  return result.rows.map((row) =>
-    model.build(options.mapToModel === true ? parseModelRow(model, row) : row, {
-      isNewRecord: false,
-      raw: true,
-    }),
-  );
-};
-
-const effectiveType = (options: QueryOptions): QueryType | undefined =>
-  options.type ??
-  (options.model !== undefined || options.plain === true ? QueryTypes.SELECT : undefined);
-
-const shapeResult = (result: QueryResult, options: QueryOptions): unknown => {
-  const rows = shapeRows(result, options);
-  switch (effectiveType(options)) {
-    case QueryTypes.SELECT:
-      return options.plain === true ? (rows[0] ?? null) : rows;
-    case QueryTypes.INSERT:
-    case QueryTypes.UPDATE:
-    case QueryTypes.UPSERT:
-      return [rows, result.rowCount];
-    case QueryTypes.DELETE:
-    case QueryTypes.BULKDELETE:
-    case QueryTypes.BULKUPDATE:
-      return result.rowCount;
-    default:
-      return options.plain === true ? (rows[0] ?? null) : [rows, result];
-  }
-};
-
-const missingHook = (): never => {
-  throw new Error('addHook: hook function is required');
-};

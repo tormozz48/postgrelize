@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { DataTypes, toDataType } from '../../../src/data-types/data-types.ts';
+import { AbstractDataType } from '../../../src/data-types/abstract-data-type.ts';
+import { DataTypes } from '../../../src/data-types/data-types.ts';
 
 describe('DataTypes', () => {
   it('is usable bare or called', () => {
-    expect(toDataType(DataTypes.STRING).sqlType).toBe('VARCHAR(255)');
-    expect(toDataType(DataTypes.STRING(64)).sqlType).toBe('VARCHAR(64)');
-    expect(toDataType(DataTypes.DECIMAL(10, 2)).sqlType).toBe('DECIMAL(10,2)');
-    expect(toDataType(DataTypes.DECIMAL).sqlType).toBe('DECIMAL');
-    expect(toDataType(DataTypes.DATE).sqlType).toBe('TIMESTAMP WITH TIME ZONE');
-    expect(toDataType(DataTypes.GEOMETRY('POINT', 4326)).sqlType).toBe('GEOMETRY(POINT,4326)');
+    expect(AbstractDataType.from(DataTypes.STRING).sqlType).toBe('VARCHAR(255)');
+    expect(AbstractDataType.from(DataTypes.STRING(64)).sqlType).toBe('VARCHAR(64)');
+    expect(AbstractDataType.from(DataTypes.DECIMAL(10, 2)).sqlType).toBe('DECIMAL(10,2)');
+    expect(AbstractDataType.from(DataTypes.DECIMAL).sqlType).toBe('DECIMAL');
+    expect(AbstractDataType.from(DataTypes.DATE).sqlType).toBe('TIMESTAMP WITH TIME ZONE');
+    expect(AbstractDataType.from(DataTypes.GEOMETRY('POINT', 4326)).sqlType).toBe(
+      'GEOMETRY(POINT,4326)',
+    );
   });
 
   it('keeps MySQL modifiers as no-ops', () => {
@@ -29,7 +32,7 @@ describe('DataTypes', () => {
   });
 
   it('serializes and parses ranges like Sequelize v6', () => {
-    const range = toDataType(DataTypes.RANGE(DataTypes.INTEGER));
+    const range = AbstractDataType.from(DataTypes.RANGE(DataTypes.INTEGER));
     expect(range.sqlType).toBe('INT4RANGE');
     expect(range.serialize?.([1, 5])).toBe('[1,5)');
     expect(
@@ -54,7 +57,7 @@ describe('DataTypes', () => {
   });
 
   it('marks VIRTUAL and generates defaults', () => {
-    expect(toDataType(DataTypes.VIRTUAL).isVirtual).toBe(true);
+    expect(AbstractDataType.from(DataTypes.VIRTUAL).isVirtual).toBe(true);
     expect(DataTypes.UUIDV4.generate()).toMatch(/^[0-9a-f-]{36}$/);
     expect(DataTypes.NOW.generate()).toBeInstanceOf(Date);
   });

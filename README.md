@@ -20,7 +20,6 @@
 - **Drop-in for Sequelize v6.** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like v6. A differential test suite runs every scenario on both libraries and compares results.
 - **PostgreSQL first.** One dialect, so every feature can use PostgreSQL fully instead of the lowest common denominator.
 - **Safe by default.** Values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
-- **Effect API.** Optional `postgrelize/effect` entry point: model operations and transactions as [Effect](https://effect.website) programs with typed errors and interruption-safe rollback.
 - **Typed and documented.** Strict TypeScript, TSDoc on every export, [API reference](https://tormozz48.github.io/postgrelize/).
 
 ### What you get on top of Sequelize v6

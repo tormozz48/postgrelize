@@ -380,4 +380,22 @@ describe('Sequelize issues fixed in postgrelize', () => {
         ['c', []],
       ]);
     }));
+
+  it('describeTable reads enum values of the column type in its own schema, in declared order', () =>
+    withSchema(async ({ schema, client }) => {
+      const other = `${schema}_other`;
+      await client.query(`CREATE SCHEMA "${other}"`);
+      try {
+        await client.query(
+          `CREATE TYPE "${other}"."enum_T_state" AS ENUM ('x', 'y'); CREATE TYPE "enum_T_state" AS ENUM ('open', 'closed'); ALTER TYPE "enum_T_state" ADD VALUE 'archived' BEFORE 'closed'; CREATE TABLE "T" (state "enum_T_state")`,
+        );
+        const sequelize = connect(schema);
+        const described = await sequelize
+          .getQueryInterface()
+          .describeTable({ tableName: 'T', schema });
+        expect(described['state']?.special).toEqual(['open', 'archived', 'closed']);
+      } finally {
+        await client.query(`DROP SCHEMA IF EXISTS "${other}" CASCADE`);
+      }
+    }));
 });

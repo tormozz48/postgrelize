@@ -77,6 +77,6 @@ Serialization failures, deadlocks and `NOWAIT` lock failures surface as `Databas
 
 ## API reference
 
-- [`Transaction`](/api/index/classes/Transaction)
-- [`TransactionOptions`](/api/index/type-aliases/TransactionOptions)
-- [`Sequelize.transaction`](/api/index/classes/Sequelize)
+- [`Transaction`](/api/classes/Transaction)
+- [`TransactionOptions`](/api/type-aliases/TransactionOptions)
+- [`Sequelize.transaction`](/api/classes/Sequelize)

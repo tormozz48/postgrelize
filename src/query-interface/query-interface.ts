@@ -1,29 +1,27 @@
 import type { DataTypeInput } from '../data-types/data-types.ts';
 import {
-  addConstraintSql,
-  changeColumnSql,
-  columnCommentSql,
-  columnOf,
-  columnSql,
-  createEnumSql,
-  createIndexSql,
-  createTableSql,
-  enumTypeName,
-  indexName,
+  DdlGenerator,
+  type ColumnDefinition,
   type ConstraintOptions,
   type IndexField,
   type IndexOptions,
-} from '../ddl/ddl.ts';
-import { escapeLiteral, quoteTable, tableParts, type TableName } from '../ddl/literals.ts';
+} from '../ddl/ddl-generator.ts';
+import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
 import {
-  normalizeAttribute,
+  ModelDefinition,
   type AttributeOptions,
   type ModelAttributes,
-} from '../model/definition.ts';
+} from '../model/model-definition.ts';
 import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from '../model/runtime.ts';
-import { raw, type ExprNode } from '../sql/ast.ts';
-import { compile, quoteIdent } from '../sql/compile.ts';
-import { isEmptyWhere, toExpr, whereToAst, type WhereContext } from '../where/where.ts';
+import { SqlAst, type ExprNode } from '../sql/ast.ts';
+import { SqlCompiler } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
+
+const ast = new SqlAst();
+
+const ddl = new DdlGenerator();
+
+const sqlLiteral = new SqlLiteral();
 
 /** Column description returned by `describeTable` (Sequelize v6 shape). */
 export type ColumnDescription = Readonly<{
@@ -67,37 +65,9 @@ export type DropTableOptions = QueryOptionsBase &
     cascade?: boolean;
   }>;
 
-const identity: WhereContext = { resolve: (name) => ({ field: name }) };
+const identity = new WhereCompiler({ resolve: (name) => ({ field: name }) });
 
-const parseArray = (value: unknown): readonly string[] =>
-  Array.isArray(value)
-    ? value.map(String)
-    : typeof value === 'string' && value.startsWith('{')
-      ? value
-          .slice(1, -1)
-          .split(',')
-          .filter((item) => item !== '')
-          .map((item) => item.replace(/^"(.*)"$/, '$1'))
-      : [];
-
-const cleanDefault = (type: string, value: unknown): unknown => {
-  if (type === 'BOOLEAN') {
-    return value === 'true' ? true : value === 'false' ? false : null;
-  }
-  if (typeof value !== 'string') {
-    return value;
-  }
-  const literal = /^'((?:[^']|'')*)'(?:::[\w ."[\]]+)*$/.exec(value);
-  if (literal !== null) {
-    return (literal[1] ?? '').replaceAll("''", "'");
-  }
-  const unquoted = value.replaceAll("'", '');
-  const [head, tail] = unquoted.split('::');
-  return tail !== undefined && tail.toLowerCase() !== 'regclass)' ? head : unquoted;
-};
-
-const normalizeColumn = (name: string, attribute: DataTypeInput | AttributeOptions) =>
-  columnOf(normalizeAttribute(name, attribute, false));
+const sqlCompiler = new SqlCompiler();
 
 /**
  * Schema manipulation API (Sequelize v6 `QueryInterface`) for PostgreSQL. Used by `sync()` and by
@@ -129,6 +99,38 @@ export class QueryInterface {
     );
   }
 
+  #parseArray(value: unknown): readonly string[] {
+    return Array.isArray(value)
+      ? value.map(String)
+      : typeof value === 'string' && value.startsWith('{')
+        ? value
+            .slice(1, -1)
+            .split(',')
+            .filter((item) => item !== '')
+            .map((item) => item.replace(/^"(.*)"$/, '$1'))
+        : [];
+  }
+
+  #cleanDefault(type: string, value: unknown): unknown {
+    if (type === 'BOOLEAN') {
+      return value === 'true' ? true : value === 'false' ? false : null;
+    }
+    if (typeof value !== 'string') {
+      return value;
+    }
+    const literal = /^'((?:[^']|'')*)'(?:::[\w ."[\]]+)*$/.exec(value);
+    if (literal !== null) {
+      return (literal[1] ?? '').replaceAll("''", "'");
+    }
+    const unquoted = value.replaceAll("'", '');
+    const [head, tail] = unquoted.split('::');
+    return tail !== undefined && tail.toLowerCase() !== 'regclass)' ? head : unquoted;
+  }
+
+  #normalizeColumn(name: string, attribute: DataTypeInput | AttributeOptions): ColumnDefinition {
+    return ddl.columnOf(ModelDefinition.attribute(name, attribute, false));
+  }
+
   /**
    * Creates a schema if it does not exist.
    *
@@ -136,7 +138,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async createSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`CREATE SCHEMA IF NOT EXISTS ${quoteIdent(schema)}`, options);
+    await this.#run(`CREATE SCHEMA IF NOT EXISTS ${SqlCompiler.quoteIdent(schema)}`, options);
   }
 
   /**
@@ -146,7 +148,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async dropSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE`, options);
+    await this.#run(`DROP SCHEMA IF EXISTS ${SqlCompiler.quoteIdent(schema)} CASCADE`, options);
   }
 
   /**
@@ -176,10 +178,10 @@ export class QueryInterface {
     options: CreateTableOptions = {},
   ): Promise<void> {
     const columns = Object.entries(attributes).map(([name, attribute]) =>
-      normalizeColumn(name, attribute),
+      this.#normalizeColumn(name, attribute),
     );
     await this.#runAll(
-      createTableSql(
+      ddl.createTableSql(
         table,
         columns,
         options.comment === undefined ? {} : { comment: options.comment },
@@ -196,7 +198,7 @@ export class QueryInterface {
    */
   async dropTable(table: TableName, options: DropTableOptions = {}): Promise<void> {
     await this.#run(
-      `DROP TABLE IF EXISTS ${quoteTable(table)}${options.cascade === true ? ' CASCADE' : ''}`,
+      `DROP TABLE IF EXISTS ${sqlLiteral.quoteTable(table)}${options.cascade === true ? ' CASCADE' : ''}`,
       options,
     );
   }
@@ -213,7 +215,7 @@ export class QueryInterface {
       (name) => !(options.skip ?? []).includes(name),
     );
     await this.#runAll(
-      tables.map((name) => `DROP TABLE IF EXISTS ${quoteIdent(name)} CASCADE`),
+      tables.map((name) => `DROP TABLE IF EXISTS ${SqlCompiler.quoteIdent(name)} CASCADE`),
       options,
     );
   }
@@ -231,7 +233,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(before)} RENAME TO ${quoteIdent(tableParts(after).name)}`,
+      `ALTER TABLE ${sqlLiteral.quoteTable(before)} RENAME TO ${SqlCompiler.quoteIdent(sqlLiteral.tableParts(after).name)}`,
       options,
     );
   }
@@ -244,9 +246,9 @@ export class QueryInterface {
    * @returns True when the table exists.
    */
   async tableExists(table: TableName, options?: QueryOptionsBase): Promise<boolean> {
-    const { name, schema } = tableParts(table);
+    const { name, schema } = sqlLiteral.tableParts(table);
     const rows = await this.#run(
-      `SELECT 1 FROM information_schema.tables WHERE table_name = ${escapeLiteral(name)} AND table_schema = ${schema === undefined ? 'current_schema()' : escapeLiteral(schema)}`,
+      `SELECT 1 FROM information_schema.tables WHERE table_name = ${sqlLiteral.escape(name)} AND table_schema = ${schema === undefined ? 'current_schema()' : sqlLiteral.escape(schema)}`,
       options,
     );
     return rows.length > 0;
@@ -278,10 +280,10 @@ export class QueryInterface {
     table: TableName,
     options: QueryOptionsBase & Readonly<{ schema?: string }> = {},
   ): Promise<Record<string, ColumnDescription>> {
-    const { name, schema } = tableParts(table, options.schema);
-    const schemaSql = schema === undefined ? 'current_schema()' : escapeLiteral(schema);
+    const { name, schema } = sqlLiteral.tableParts(table, options.schema);
+    const schemaSql = schema === undefined ? 'current_schema()' : sqlLiteral.escape(schema);
     const rows = await this.#run(
-      `SELECT pk.constraint_type AS "Constraint", c.column_name AS "Field", c.column_default AS "Default", c.is_nullable AS "Null", (CASE WHEN c.udt_name = 'hstore' THEN c.udt_name ELSE c.data_type END) || (CASE WHEN c.character_maximum_length IS NOT NULL THEN '(' || c.character_maximum_length || ')' ELSE '' END) AS "Type", (SELECT array_agg(e.enumlabel::text) FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = c.udt_name) AS "special", (SELECT pgd.description FROM pg_catalog.pg_statio_all_tables AS st INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid = st.relid) WHERE c.ordinal_position = pgd.objsubid AND c.table_name = st.relname AND st.schemaname = c.table_schema) AS "Comment" FROM information_schema.columns c LEFT JOIN (SELECT tc.table_schema, tc.table_name, cu.column_name, tc.constraint_type FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage cu ON tc.table_schema = cu.table_schema AND tc.table_name = cu.table_name AND tc.constraint_name = cu.constraint_name AND tc.constraint_type = 'PRIMARY KEY') pk ON pk.table_schema = c.table_schema AND pk.table_name = c.table_name AND pk.column_name = c.column_name WHERE c.table_name = ${escapeLiteral(name)} AND c.table_schema = ${schemaSql} ORDER BY c.ordinal_position`,
+      `SELECT pk.constraint_type AS "Constraint", c.column_name AS "Field", c.column_default AS "Default", c.is_nullable AS "Null", (CASE WHEN c.udt_name = 'hstore' THEN c.udt_name ELSE c.data_type END) || (CASE WHEN c.character_maximum_length IS NOT NULL THEN '(' || c.character_maximum_length || ')' ELSE '' END) AS "Type", (SELECT array_agg(e.enumlabel::text ORDER BY e.enumsortorder) FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace tn ON tn.oid = t.typnamespace JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = c.udt_name AND tn.nspname = c.udt_schema) AS "special", (SELECT pgd.description FROM pg_catalog.pg_statio_all_tables AS st INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid = st.relid) WHERE c.ordinal_position = pgd.objsubid AND c.table_name = st.relname AND st.schemaname = c.table_schema) AS "Comment" FROM information_schema.columns c LEFT JOIN (SELECT tc.table_schema, tc.table_name, cu.column_name, tc.constraint_type FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage cu ON tc.table_schema = cu.table_schema AND tc.table_name = cu.table_name AND tc.constraint_name = cu.constraint_name AND tc.constraint_type = 'PRIMARY KEY') pk ON pk.table_schema = c.table_schema AND pk.table_name = c.table_name AND pk.column_name = c.column_name WHERE c.table_name = ${sqlLiteral.escape(name)} AND c.table_schema = ${schemaSql} ORDER BY c.ordinal_position`,
       options,
     );
     if (rows.length === 0) {
@@ -297,9 +299,9 @@ export class QueryInterface {
           {
             type,
             allowNull: row['Null'] === 'YES',
-            defaultValue: cleanDefault(type, row['Default']),
+            defaultValue: this.#cleanDefault(type, row['Default']),
             comment: (row['Comment'] as string | null) ?? null,
-            special: parseArray(row['special']),
+            special: this.#parseArray(row['special']),
             primaryKey: row['Constraint'] === 'PRIMARY KEY',
           },
         ];
@@ -321,13 +323,13 @@ export class QueryInterface {
     attribute: DataTypeInput | AttributeOptions,
     options?: QueryOptionsBase,
   ): Promise<void> {
-    const definition = normalizeColumn(column, attribute);
-    const enumSql = createEnumSql(table, definition);
+    const definition = this.#normalizeColumn(column, attribute);
+    const enumSql = ddl.createEnumSql(table, definition);
     await this.#runAll(
       [
         ...(enumSql === undefined ? [] : [enumSql]),
-        `ALTER TABLE ${quoteTable(table)} ADD COLUMN ${columnSql(table, definition, { inlinePrimaryKey: true })}`,
-        ...columnCommentSql(table, definition),
+        `ALTER TABLE ${sqlLiteral.quoteTable(table)} ADD COLUMN ${ddl.columnSql(table, definition, { inlinePrimaryKey: true })}`,
+        ...ddl.columnCommentSql(table, definition),
       ],
       options,
     );
@@ -341,7 +343,10 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async removeColumn(table: TableName, column: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`ALTER TABLE ${quoteTable(table)} DROP COLUMN ${quoteIdent(column)}`, options);
+    await this.#run(
+      `ALTER TABLE ${sqlLiteral.quoteTable(table)} DROP COLUMN ${SqlCompiler.quoteIdent(column)}`,
+      options,
+    );
   }
 
   /**
@@ -358,7 +363,10 @@ export class QueryInterface {
     attribute: DataTypeInput | AttributeOptions,
     options?: QueryOptionsBase,
   ): Promise<void> {
-    await this.#runAll(changeColumnSql(table, normalizeColumn(column, attribute)), options);
+    await this.#runAll(
+      ddl.changeColumnSql(table, this.#normalizeColumn(column, attribute)),
+      options,
+    );
   }
 
   /**
@@ -376,7 +384,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(table)} RENAME COLUMN ${quoteIdent(before)} TO ${quoteIdent(after)}`,
+      `ALTER TABLE ${sqlLiteral.quoteTable(table)} RENAME COLUMN ${SqlCompiler.quoteIdent(before)} TO ${SqlCompiler.quoteIdent(after)}`,
       options,
     );
   }
@@ -396,7 +404,7 @@ export class QueryInterface {
     const index: IndexOptions = Array.isArray(fieldsOrOptions)
       ? { ...options, fields: fieldsOrOptions as readonly IndexField[] }
       : { ...(fieldsOrOptions as IndexOptions), ...options };
-    await this.#run(createIndexSql(table, index), options);
+    await this.#run(ddl.createIndexSql(table, index), options);
   }
 
   /**
@@ -411,10 +419,13 @@ export class QueryInterface {
     nameOrFields: string | readonly IndexField[],
     options: QueryOptionsBase & Readonly<{ concurrently?: boolean }> = {},
   ): Promise<void> {
-    const { schema } = tableParts(table);
-    const name = typeof nameOrFields === 'string' ? nameOrFields : indexName(table, nameOrFields);
+    const { schema } = sqlLiteral.tableParts(table);
+    const name =
+      typeof nameOrFields === 'string' ? nameOrFields : ddl.indexName(table, nameOrFields);
     const qualified =
-      schema === undefined ? quoteIdent(name) : `${quoteIdent(schema)}.${quoteIdent(name)}`;
+      schema === undefined
+        ? SqlCompiler.quoteIdent(name)
+        : `${SqlCompiler.quoteIdent(schema)}.${SqlCompiler.quoteIdent(name)}`;
     await this.#run(
       `DROP INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}IF EXISTS ${qualified}`,
       options,
@@ -431,7 +442,7 @@ export class QueryInterface {
     table: TableName,
     options: ConstraintOptions & QueryOptionsBase,
   ): Promise<void> {
-    await this.#run(addConstraintSql(table, options), options);
+    await this.#run(ddl.addConstraintSql(table, options), options);
   }
 
   /**
@@ -447,7 +458,7 @@ export class QueryInterface {
     options?: QueryOptionsBase,
   ): Promise<void> {
     await this.#run(
-      `ALTER TABLE ${quoteTable(table)} DROP CONSTRAINT ${quoteIdent(name)}`,
+      `ALTER TABLE ${sqlLiteral.quoteTable(table)} DROP CONSTRAINT ${SqlCompiler.quoteIdent(name)}`,
       options,
     );
   }
@@ -459,7 +470,7 @@ export class QueryInterface {
    * @param options - Query options.
    */
   async dropEnum(name: string, options?: QueryOptionsBase): Promise<void> {
-    await this.#run(`DROP TYPE IF EXISTS ${quoteIdent(name)}`, options);
+    await this.#run(`DROP TYPE IF EXISTS ${SqlCompiler.quoteIdent(name)}`, options);
   }
 
   /**
@@ -473,7 +484,9 @@ export class QueryInterface {
       options,
     );
     await this.#runAll(
-      rows.map((row) => `DROP TYPE IF EXISTS ${quoteIdent(String(row['typname']))} CASCADE`),
+      rows.map(
+        (row) => `DROP TYPE IF EXISTS ${SqlCompiler.quoteIdent(String(row['typname']))} CASCADE`,
+      ),
       options,
     );
   }
@@ -484,11 +497,11 @@ export class QueryInterface {
     fields: readonly string[],
     options?: QueryOptionsBase,
   ): Promise<void> {
-    const { schema } = tableParts(table);
+    const { schema } = sqlLiteral.tableParts(table);
     await this.#runAll(
       fields.map((field) => {
-        const name = quoteIdent(enumTypeName(table, field));
-        return `DROP TYPE IF EXISTS ${schema === undefined ? name : `${quoteIdent(schema)}.${name}`}`;
+        const name = SqlCompiler.quoteIdent(ddl.enumTypeName(table, field));
+        return `DROP TYPE IF EXISTS ${schema === undefined ? name : `${SqlCompiler.quoteIdent(schema)}.${name}`}`;
       }),
       options,
     );
@@ -511,15 +524,15 @@ export class QueryInterface {
       return 0;
     }
     const columns = [...new Set(records.flatMap((record) => Object.keys(record)))];
-    const { name, schema } = tableParts(table);
+    const { name, schema } = sqlLiteral.tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'insert',
         table: { name, ...(schema === undefined ? {} : { schema }) },
         columns,
         rows: records.map((record) =>
           columns.map((column): ExprNode =>
-            record[column] === undefined ? raw('DEFAULT') : toExpr(record[column], identity),
+            record[column] === undefined ? ast.raw('DEFAULT') : identity.toExpr(record[column]),
           ),
         ),
       }),
@@ -543,16 +556,16 @@ export class QueryInterface {
     where: unknown,
     options: QueryOptionsBase = {},
   ): Promise<number> {
-    const { name, schema } = tableParts(table);
+    const { name, schema } = sqlLiteral.tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'update',
         table: { name, ...(schema === undefined ? {} : { schema }) },
         set: Object.entries(values).map(([column, value]) => ({
           column,
-          value: toExpr(value, identity),
+          value: identity.toExpr(value),
         })),
-        ...(isEmptyWhere(where) ? {} : { where: whereToAst(where, identity) }),
+        ...(WhereCompiler.isEmpty(where) ? {} : { where: identity.compile(where) }),
       }),
       options,
     );
@@ -572,12 +585,12 @@ export class QueryInterface {
     where: unknown = {},
     options: QueryOptionsBase = {},
   ): Promise<number> {
-    const { name, schema } = tableParts(table);
+    const { name, schema } = sqlLiteral.tableParts(table);
     const result = await this.sequelize[runtimeKey].execute(
-      compile({
+      sqlCompiler.compile({
         kind: 'delete',
         table: { name, ...(schema === undefined ? {} : { schema }) },
-        ...(isEmptyWhere(where) ? {} : { where: whereToAst(where, identity) }),
+        ...(WhereCompiler.isEmpty(where) ? {} : { where: identity.compile(where) }),
       }),
       options,
     );
@@ -595,9 +608,9 @@ export class QueryInterface {
     table: TableName,
     options?: QueryOptionsBase,
   ): Promise<ForeignKeyReference[]> {
-    const { name, schema } = tableParts(table);
+    const { name, schema } = sqlLiteral.tableParts(table);
     const rows = await this.#run(
-      `SELECT tc.constraint_name, kcu.column_name, ccu.table_name AS referenced_table_name, ccu.column_name AS referenced_column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${escapeLiteral(name)} AND tc.table_schema = ${schema === undefined ? 'current_schema()' : escapeLiteral(schema)}`,
+      `SELECT tc.constraint_name, kcu.column_name, ccu.table_name AS referenced_table_name, ccu.column_name AS referenced_column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${sqlLiteral.escape(name)} AND tc.table_schema = ${schema === undefined ? 'current_schema()' : sqlLiteral.escape(schema)}`,
       options,
     );
     return rows.map((row) => ({

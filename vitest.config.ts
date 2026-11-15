@@ -22,10 +22,6 @@ export default defineConfig({
         resolve: {
           alias: [
             {
-              find: /^postgrelize\/effect$/,
-              replacement: fileURLToPath(new URL('src/effect/index.ts', import.meta.url)),
-            },
-            {
               find: /^postgrelize$/,
               replacement: fileURLToPath(new URL('src/index.ts', import.meta.url)),
             },

@@ -85,7 +85,7 @@ Replicas lag behind the primary. To read your own writes immediately, pass `useM
 
 ## API reference
 
-- [`Sequelize`](/api/index/classes/Sequelize) — `listen`, `notify`, `withAdvisoryLock`
-- [`Transaction`](/api/index/classes/Transaction) — `advisoryLock`, `tryAdvisoryLock`
-- [`TransactionOptions`](/api/index/type-aliases/TransactionOptions), [`AdvisoryLockKey`](/api/index/type-aliases/AdvisoryLockKey)
-- [`ReplicationOptions`](/api/index/type-aliases/ReplicationOptions), [`NotificationHandler`](/api/index/type-aliases/NotificationHandler)
+- [`Sequelize`](/api/classes/Sequelize) — `listen`, `notify`, `withAdvisoryLock`
+- [`Transaction`](/api/classes/Transaction) — `advisoryLock`, `tryAdvisoryLock`
+- [`TransactionOptions`](/api/type-aliases/TransactionOptions), [`AdvisoryLockKey`](/api/type-aliases/AdvisoryLockKey)
+- [`ReplicationOptions`](/api/type-aliases/ReplicationOptions), [`NotificationHandler`](/api/type-aliases/NotificationHandler)

@@ -1,10 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import { Effect, Exit } from 'effect';
-import type { BaseError } from '../errors/errors.ts';
-import type { Client, ConnectionManager, ExecuteOptions } from '../connection/executor.ts';
+import type {
+  Client,
+  ConnectionManager,
+  ExecuteOptions,
+} from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
-import { quoteIdent } from '../sql/compile.ts';
+import { SqlCompiler } from '../sql/compile.ts';
 
 /** Transaction isolation levels (Sequelize v6 `Transaction.ISOLATION_LEVELS`). */
 export const ISOLATION_LEVELS = {
@@ -68,32 +70,6 @@ export type TransactionOptions = Readonly<{
 /** Advisory lock key: a 64-bit integer, or a string hashed by PostgreSQL. */
 export type AdvisoryLockKey = number | bigint | string;
 
-const advisoryLockQuery = (fn: string, key: AdvisoryLockKey, alias = 'lock') => ({
-  text:
-    typeof key === 'string'
-      ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
-      : `SELECT ${fn}($1::bigint) AS "${alias}"`,
-  values: [typeof key === 'string' ? key : String(key)],
-});
-
-const storage = new AsyncLocalStorage<Transaction>();
-
-/** @internal */
-export const currentTransaction = (): Transaction | undefined => storage.getStore();
-
-/** @internal */
-export const runWithTransaction = <T>(
-  transaction: Transaction,
-  run: () => Promise<T>,
-): Promise<T> => storage.run(transaction, run);
-
-const beginSql = (options: TransactionOptions): string =>
-  [
-    'START TRANSACTION',
-    options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
-    options.readOnly === true ? ' READ ONLY' : '',
-  ].join('');
-
 /**
  * Database transaction (Sequelize v6 `Transaction`). Obtain one from `sequelize.transaction()`;
  * pass it to queries with the `transaction` option.
@@ -152,103 +128,36 @@ export class Transaction {
     };
   }
 
-  /**
-   * @internal Starts the transaction (or savepoint) and applies `settings`. A root transaction holds
-   * a pooled client until commit / rollback; when starting fails the client is released.
-   */
-  beginEffect(): Effect.Effect<this, BaseError | Error> {
-    const opening = this.#run(
-      this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
-    );
-    const settings = Object.entries(this.options.settings ?? {});
-    // Kept to the minimum number of Effect nodes: this runs for every transaction (see bench/).
-    const start = (
-      settings.length === 0
-        ? opening
-        : opening.pipe(
-            Effect.andThen(
-              Effect.forEach(
-                settings,
-                ([name, value]) =>
-                  this.#connections.effects.execute(
-                    { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
-                    this.executeOptions(),
-                  ),
-                { discard: true },
-              ),
-            ),
-          )
-    ).pipe(Effect.as(this));
-    if (this.parent !== undefined) {
-      return start;
-    }
-    return this.#connections.effects.acquire.pipe(
-      Effect.flatMap((client) => {
-        this.#client = client;
-        return start.pipe(
-          // Never return a connection inside an open (possibly aborted) transaction to the pool.
-          Effect.onError(() =>
-            Effect.exit(this.#run('ROLLBACK')).pipe(
-              Effect.andThen(Effect.sync(() => this.#release())),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-
-  /** @internal Commits (or releases the savepoint), releases the client, runs `afterCommit` hooks. */
-  commitEffect(): Effect.Effect<void, BaseError | Error> {
-    return this.#finish(
-      'commit',
-      this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
-    ).pipe(
-      Effect.andThen(
-        Effect.suspend(() =>
-          this.#afterCommit.length === 0
-            ? Effect.void
-            : Effect.forEach(
-                this.#afterCommit,
-                (hook) =>
-                  Effect.tryPromise({
-                    try: async () => hook(this),
-                    catch: (error) => error as Error,
-                  }),
-                { discard: true },
-              ),
-        ),
-      ),
-    );
-  }
-
-  /** @internal Rolls back (or to the savepoint) and releases the client. */
-  rollbackEffect(): Effect.Effect<void, BaseError | Error> {
-    return this.#finish(
-      'rollback',
-      this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
-    );
-  }
-
-  #finish(state: 'commit' | 'rollback', sql: string): Effect.Effect<void, BaseError | Error> {
-    return Effect.suspend(() =>
-      this.finished === undefined
-        ? this.#run(sql).pipe(
-            Effect.map(() => {
-              this.finished = state;
-            }),
-            Effect.ensuring(Effect.sync(() => this.#release())),
-          )
-        : Effect.fail(
-            new Error(
-              `Transaction cannot be ${state === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
-            ),
-          ),
-    );
-  }
-
   /** @internal */
   async begin(): Promise<this> {
-    return Effect.runPromise(this.beginEffect());
+    if (this.parent === undefined) {
+      this.#client = await this.#connections.acquire();
+    }
+    try {
+      await this.#run(
+        this.parent === undefined
+          ? Transaction.#beginSql(this.options)
+          : `SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
+      );
+      await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
+        (previous, [name, value]) =>
+          previous.then(() =>
+            this.#connections.execute(
+              { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
+              this.executeOptions(),
+            ),
+          ),
+        Promise.resolve(),
+      );
+    } catch (error) {
+      if (this.parent === undefined) {
+        // Never return a connection inside an open (possibly aborted) transaction to the pool.
+        await this.#run('ROLLBACK').catch(() => undefined);
+        this.#release();
+      }
+      throw error;
+    }
+    return this;
   }
 
   /**
@@ -258,7 +167,21 @@ export class Transaction {
    * @throws Error when the transaction is already finished.
    */
   async commit(): Promise<void> {
-    return Effect.runPromise(this.commitEffect());
+    this.#assertActive('commit');
+    try {
+      await this.#run(
+        this.parent === undefined
+          ? 'COMMIT'
+          : `RELEASE SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
+      );
+      this.finished = 'commit';
+    } finally {
+      this.#release();
+    }
+    await this.#afterCommit.reduce<Promise<unknown>>(
+      (previous, hook) => previous.then(() => hook(this)),
+      Promise.resolve(),
+    );
   }
 
   /**
@@ -268,7 +191,17 @@ export class Transaction {
    * @throws Error when the transaction is already finished.
    */
   async rollback(): Promise<void> {
-    return Effect.runPromise(this.rollbackEffect());
+    this.#assertActive('rollback');
+    try {
+      await this.#run(
+        this.parent === undefined
+          ? 'ROLLBACK'
+          : `ROLLBACK TO SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
+      );
+      this.finished = 'rollback';
+    } finally {
+      this.#release();
+    }
   }
 
   /**
@@ -284,7 +217,7 @@ export class Transaction {
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<void> {
     await this.#connections.execute(
-      advisoryLockQuery(
+      Transaction.#advisoryLockQuery(
         options.shared === true ? 'pg_advisory_xact_lock_shared' : 'pg_advisory_xact_lock',
         key,
       ),
@@ -304,7 +237,7 @@ export class Transaction {
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<boolean> {
     const result = await this.#connections.execute(
-      advisoryLockQuery(
+      Transaction.#advisoryLockQuery(
         options.shared === true ? 'pg_try_advisory_xact_lock_shared' : 'pg_try_advisory_xact_lock',
         key,
         'locked',
@@ -323,13 +256,16 @@ export class Transaction {
     this.#afterCommit = [...this.#afterCommit, hook];
   }
 
-  #run(sql: string): Effect.Effect<void, BaseError | Error> {
-    return Effect.try({ try: () => this.executeOptions(), catch: (error) => error as Error }).pipe(
-      Effect.flatMap((options) =>
-        this.#connections.effects.execute({ text: sql, values: [] }, options),
-      ),
-      Effect.asVoid,
-    );
+  #assertActive(action: string): void {
+    if (this.finished !== undefined) {
+      throw new Error(
+        `Transaction cannot be ${action === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
+      );
+    }
+  }
+
+  async #run(sql: string): Promise<void> {
+    await this.#connections.execute({ text: sql, values: [] }, this.executeOptions());
   }
 
   #release(): void {
@@ -338,35 +274,83 @@ export class Transaction {
       this.#client = undefined;
     }
   }
+
+  static #beginSql(options: TransactionOptions): string {
+    return [
+      'START TRANSACTION',
+      options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
+      options.readOnly === true ? ' READ ONLY' : '',
+    ].join('');
+  }
+
+  static #advisoryLockQuery(fn: string, key: AdvisoryLockKey, alias = 'lock') {
+    return {
+      text:
+        typeof key === 'string'
+          ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
+          : `SELECT ${fn}($1::bigint) AS "${alias}"`,
+      values: [typeof key === 'string' ? key : String(key)],
+    };
+  }
 }
 
-/**
- * Runs `use` inside `transaction`: begins it, commits when `use` succeeds, and rolls back when it
- * fails or is interrupted. The rollback error, if any, is dropped in favour of the original failure.
- */
-export const managedTransaction = <A, E>(
-  transaction: Transaction,
-  use: (transaction: Transaction) => Effect.Effect<A, E>,
-): Effect.Effect<A, E | BaseError | Error> =>
-  Effect.acquireUseRelease(
-    transaction.beginEffect(),
-    (started) => use(started).pipe(Effect.tap(() => started.commitEffect())),
-    (started, exit) =>
-      Exit.isFailure(exit) && started.finished === undefined
-        ? Effect.asVoid(Effect.exit(started.rollbackEffect()))
-        : Effect.void,
-  );
+/** Continuation-local storage of the current transaction (`AsyncLocalStorage`, used by `Sequelize.useCLS`). */
+export class TransactionContext {
+  readonly #storage = new AsyncLocalStorage<Transaction>();
 
-/** Runs `run` inside a new transaction; commits on success, rolls back on error. */
-export const runManagedTransaction = <T>(
-  transaction: Transaction,
-  run: (transaction: Transaction) => Promise<T>,
-): Promise<T> =>
-  Effect.runPromise(
-    managedTransaction(transaction, (started) =>
-      Effect.tryPromise({
-        try: () => runWithTransaction(started, () => run(started)),
-        catch: (error) => error,
-      }),
-    ),
-  );
+  /**
+   * Transaction of the current async context.
+   *
+   * @returns The transaction, or `undefined` outside `run`.
+   */
+  current(): Transaction | undefined {
+    return this.#storage.getStore();
+  }
+
+  /**
+   * Runs `run` with `transaction` as the current transaction.
+   *
+   * @param transaction - Transaction to make current.
+   * @param run - Callback.
+   * @returns Result of `run`.
+   */
+  run<T>(transaction: Transaction, run: () => Promise<T>): Promise<T> {
+    return this.#storage.run(transaction, run);
+  }
+}
+
+/** Runs managed transactions: begins, runs the callback, commits on success and rolls back on error. */
+export class TransactionRunner {
+  readonly #context: TransactionContext;
+
+  /**
+   * @param context - Context the transaction is made current in while the callback runs.
+   */
+  constructor(context: TransactionContext) {
+    this.#context = context;
+  }
+
+  /**
+   * Runs `run` inside `transaction`.
+   *
+   * @param transaction - Transaction, not started yet.
+   * @param run - Callback receiving the transaction.
+   * @returns Result of `run`.
+   */
+  async run<T>(
+    transaction: Transaction,
+    run: (transaction: Transaction) => Promise<T>,
+  ): Promise<T> {
+    await transaction.begin();
+    try {
+      const result = await this.#context.run(transaction, () => run(transaction));
+      await transaction.commit();
+      return result;
+    } catch (error) {
+      if (transaction.finished === undefined) {
+        await transaction.rollback().catch(() => undefined);
+      }
+      throw error;
+    }
+  }
+}

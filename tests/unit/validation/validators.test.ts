@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { builtinValidator } from '../../../src/validation/validators.ts';
+import { BuiltinValidators } from '../../../src/validation/builtin-validators.ts';
+
+const builtinValidators = new BuiltinValidators();
 
 const check = (name: string, value: string, ...args: unknown[]) =>
-  builtinValidator(name)?.(value, ...args);
+  builtinValidators.find(name)?.(value, ...args);
 
 describe('built-in validators', () => {
   it('provides validator.js functions and Sequelize v6 extras', () => {
@@ -19,6 +21,6 @@ describe('built-in validators', () => {
     expect(check('notIn', 'a', ['a', 'b'])).toBe(false);
     expect(check('isDecimal', '1.5e3')).toBe(true);
     expect(check('contains', 'hello', 'ell')).toBe(true);
-    expect(builtinValidator('noSuchValidator')).toBeUndefined();
+    expect(builtinValidators.find('noSuchValidator')).toBeUndefined();
   });
 });

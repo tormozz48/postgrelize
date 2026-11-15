@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { cast, col, fn, json, literal, where } from '../../../src/expressions/methods.ts';
 import { Op } from '../../../src/expressions/op.ts';
-import { compileExpr } from '../../../src/sql/compile.ts';
-import { whereToAst, type AttributeRef, type WhereContext } from '../../../src/where/where.ts';
+import { SqlCompiler } from '../../../src/sql/compile.ts';
+import { WhereCompiler, type AttributeRef, type WhereContext } from '../../../src/where/where.ts';
 
 const refs: Record<string, AttributeRef> = {
   id: { field: 'id' },
@@ -12,8 +12,10 @@ const refs: Record<string, AttributeRef> = {
 
 const ctx: WhereContext = { tableAlias: 'User', resolve: (name) => refs[name] };
 
+const compiler = new SqlCompiler();
+
 const sql = (value: unknown, context: WhereContext = ctx) =>
-  compileExpr(whereToAst(value, context));
+  compiler.compileExpr(new WhereCompiler(context).compile(value));
 
 describe('whereToAst', () => {
   it('maps attributes to fields and qualifies with table alias', () => {

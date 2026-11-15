@@ -6,19 +6,20 @@ Open issues of [sequelize/sequelize](https://github.com/sequelize/sequelize/issu
 
 These fixes intentionally differ from Sequelize v6 ([ADR-016](https://github.com/tormozz48/postgrelize/blob/main/.10x/adrs/016-v6-bug-divergence.md)).
 
-| Issue                                                         | Fixed behaviour                                                                                               |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [#18617](https://github.com/sequelize/sequelize/issues/18617) | JSON `where` keys with `,`, `"` or `\` are matched correctly                                                  |
-| [#5173](https://github.com/sequelize/sequelize/issues/5173)   | jsonb operators (`Op.contains`, `Op.hasKey`, …) on nested JSON paths                                          |
-| [#16043](https://github.com/sequelize/sequelize/issues/16043) | `{ [Op.any]: [...] }` shorthand                                                                               |
-| [#14497](https://github.com/sequelize/sequelize/issues/14497) | `upsert` with `overriding` on `GENERATED ALWAYS` identity columns                                             |
-| [#12595](https://github.com/sequelize/sequelize/issues/12595) | `upsert` on a partial unique index uses its predicate                                                         |
-| [#16787](https://github.com/sequelize/sequelize/issues/16787) | `describeTable` unquotes literal defaults (`'it''s'`, `'x::y'`)                                               |
-| [#13167](https://github.com/sequelize/sequelize/issues/13167) | `sync({ alter })` keeps the sequence of non-key `autoIncrement` columns                                       |
-| [#18423](https://github.com/sequelize/sequelize/issues/18423) | `sync({ schema })` / `drop({ schema })` work in that schema only                                              |
-| [#18256](https://github.com/sequelize/sequelize/issues/18256) | `belongsToMany` with a custom `sourceKey` and `limit`                                                         |
-| [#12971](https://github.com/sequelize/sequelize/issues/12971) | top-level `$include.attr$` condition with a hasMany include and `limit`                                       |
-| —                                                             | `bulkCreate({ ignoreDuplicates })` assigns returned rows to the records that were inserted (v6 mixes them up) |
+| Issue                                                         | Fixed behaviour                                                                                                                      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [#18617](https://github.com/sequelize/sequelize/issues/18617) | JSON `where` keys with `,`, `"` or `\` are matched correctly                                                                         |
+| [#5173](https://github.com/sequelize/sequelize/issues/5173)   | jsonb operators (`Op.contains`, `Op.hasKey`, …) on nested JSON paths                                                                 |
+| [#16043](https://github.com/sequelize/sequelize/issues/16043) | `{ [Op.any]: [...] }` shorthand                                                                                                      |
+| [#14497](https://github.com/sequelize/sequelize/issues/14497) | `upsert` with `overriding` on `GENERATED ALWAYS` identity columns                                                                    |
+| [#12595](https://github.com/sequelize/sequelize/issues/12595) | `upsert` on a partial unique index uses its predicate                                                                                |
+| [#16787](https://github.com/sequelize/sequelize/issues/16787) | `describeTable` unquotes literal defaults (`'it''s'`, `'x::y'`)                                                                      |
+| [#13167](https://github.com/sequelize/sequelize/issues/13167) | `sync({ alter })` keeps the sequence of non-key `autoIncrement` columns                                                              |
+| [#18423](https://github.com/sequelize/sequelize/issues/18423) | `sync({ schema })` / `drop({ schema })` work in that schema only                                                                     |
+| [#18256](https://github.com/sequelize/sequelize/issues/18256) | `belongsToMany` with a custom `sourceKey` and `limit`                                                                                |
+| [#12971](https://github.com/sequelize/sequelize/issues/12971) | top-level `$include.attr$` condition with a hasMany include and `limit`                                                              |
+| —                                                             | `describeTable` reads enum values of the column's type in its own schema, in declared order (v6 matches the type name in any schema) |
+| —                                                             | `bulkCreate({ ignoreDuplicates })` assigns returned rows to the records that were inserted (v6 mixes them up)                        |
 
 ## Works correctly in postgrelize
 

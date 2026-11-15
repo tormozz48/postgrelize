@@ -70,7 +70,7 @@ Database constraint violations are reported separately, as `UniqueConstraintErro
 
 ## API reference
 
-- [`Model`](/api/index/classes/Model) — `addHook`, `removeHook`, `validate`
-- [`HOOK_TYPES`](/api/index/variables/HOOK_TYPES), [`HookFunction`](/api/index/type-aliases/HookFunction)
-- [`AttributeValidateOptions`](/api/index/type-aliases/AttributeValidateOptions), [`StandardSchemaV1`](/api/index/type-aliases/StandardSchemaV1)
-- [`ValidationError`](/api/index/classes/ValidationError), [`ValidationErrorItem`](/api/index/classes/ValidationErrorItem)
+- [`Model`](/api/classes/Model) — `addHook`, `removeHook`, `validate`
+- [`HOOK_TYPES`](/api/variables/HOOK_TYPES), [`HookFunction`](/api/type-aliases/HookFunction)
+- [`AttributeValidateOptions`](/api/type-aliases/AttributeValidateOptions), [`StandardSchemaV1`](/api/type-aliases/StandardSchemaV1)
+- [`ValidationError`](/api/classes/ValidationError), [`ValidationErrorItem`](/api/classes/ValidationErrorItem)

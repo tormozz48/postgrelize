@@ -1,22 +1,23 @@
 export { Sequelize, QueryTypes } from './sequelize.ts';
 export type { QueryOptions, QueryType, DefineOptions } from './sequelize.ts';
 export { Model } from './model/model.ts';
-export type { MergeActionName, MergeResult, NamedHookAdder } from './model/model.ts';
+export type { NamedHookAdder } from './model/model.ts';
+export type { MergeActionName, MergeResult } from './model/operations/merge-operation.ts';
+export type { JoinSources } from './model/join-source-builder.ts';
 export type {
-  JoinSources,
   MergeInsertAction,
   MergeMatchedAction,
   MergeOptions,
-} from './model/write-power.ts';
+} from './model/merge-query-builder.ts';
 export { HOOK_TYPES } from './hooks/hooks.ts';
 export type { Hook, HookFunction, HookRegistry, HookType, HooksOption } from './hooks/hooks.ts';
-export type { ValidateOptions } from './model/lifecycle.ts';
+export type { ValidateOptions } from './model/instance-lifecycle.ts';
 export type {
   ScopeDefinition,
   ScopeOptions,
   ScopeSelector,
   WhereMergeStrategy,
-} from './model/scopes.ts';
+} from './model/scope-registry.ts';
 export type {
   AttributeValidateOptions,
   AttributeValidatorFunction,
@@ -70,7 +71,7 @@ export type {
   ReferenceOptions,
   ReferencedTable,
   UniqueOptions,
-} from './model/definition.ts';
+} from './model/model-definition.ts';
 export type {
   AttributeSpec,
   FindAttributeOptions,
@@ -79,7 +80,7 @@ export type {
   Order,
   OrderItem,
   SelectOptions,
-} from './model/query-builders.ts';
+} from './model/select-query-builder.ts';
 export type { QueryOptionsBase, RuntimeOwner } from './model/runtime.ts';
 export type {
   OnConflictColumnsTarget,
@@ -88,7 +89,7 @@ export type {
   OnConflictTarget,
   OnConflictUpdate,
   OnConflictUpdateAction,
-} from './model/on-conflict.ts';
+} from './model/on-conflict-builder.ts';
 export type {
   AllowArray,
   AnyAll,
@@ -226,9 +227,18 @@ export type {
   CreateTableOptions,
   DropTableOptions,
 } from './query-interface/query-interface.ts';
-export type { AlterOptions, DropOptions, SyncOptions } from './query-interface/sync.ts';
-export { Deferrable } from './ddl/ddl.ts';
-export type { ConstraintOptions, DeferrableValue, IndexField, IndexOptions } from './ddl/ddl.ts';
-export type { QualifiedTable, TableName } from './ddl/literals.ts';
+export type {
+  AlterOptions,
+  DropOptions,
+  SyncOptions,
+} from './query-interface/schema-synchronizer.ts';
+export { Deferrable } from './ddl/ddl-generator.ts';
+export type {
+  ConstraintOptions,
+  DeferrableValue,
+  IndexField,
+  IndexOptions,
+} from './ddl/ddl-generator.ts';
+export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
-export type { CteDefinition, CteFindOptions, WithOption } from './model/cte.ts';
+export type { CteDefinition, CteFindOptions, WithOption } from './model/cte-builder.ts';

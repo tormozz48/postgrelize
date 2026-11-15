@@ -18,8 +18,7 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "postgrelize": ["./src/index.ts"],
-      "postgrelize/effect": ["./src/effect/index.ts"]
+      "postgrelize": ["./src/index.ts"]
     }
   },
   "include": ["src", "tests", "docs/examples", "*.config.ts"]

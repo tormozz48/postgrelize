@@ -1,16 +1,20 @@
+import { SqlAst, type ExprNode, type OrderNode } from '../sql/ast.ts';
+import { OrderDirection } from '../sql/order.ts';
 import {
-  and,
-  binary,
-  fnCall,
-  ident,
-  or,
-  param,
-  raw,
-  type ExprNode,
-  type OrderNode,
-} from '../sql/ast.ts';
-import { directionOf } from '../sql/order.ts';
-import { isExpression, methodKind, type SqlExpression } from '../expressions/methods.ts';
+  SqlExpression,
+  type Cast,
+  type Col,
+  type Excluded,
+  type Exists,
+  type Fn,
+  type Json,
+  type Literal,
+  type Over,
+  type SqlExpressionVisitor,
+  type Subquery,
+  type Tuple,
+  type Where,
+} from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
 
 /** Attribute facts the where compiler needs; supplied by the model layer. */
@@ -20,6 +24,7 @@ export type AttributeRef = Readonly<{
   serialize?: (value: unknown) => unknown;
 }>;
 
+/** Attribute resolver and options injected into a {@link WhereCompiler}. */
 export type WhereContext = Readonly<{
   tableAlias?: string;
   resolve: (attribute: string) => AttributeRef | undefined;
@@ -36,13 +41,15 @@ type Conditions = Readonly<Record<string | symbol, unknown>>;
 
 const DEFAULT_IN_AS_ANY_THRESHOLD = 100;
 
+const ast = new SqlAst();
+
 const isPlainObject = (value: unknown): value is Conditions =>
   typeof value === 'object' &&
   value !== null &&
   !Array.isArray(value) &&
   !(value instanceof Date) &&
   !Buffer.isBuffer(value) &&
-  !isExpression(value);
+  !(value instanceof SqlExpression);
 
 const ownKeys = (value: object): readonly (string | symbol)[] => Reflect.ownKeys(value);
 
@@ -51,103 +58,19 @@ const isOpKey = (key: string | symbol): key is symbol => typeof key === 'symbol'
 const hasOpKeys = (value: Conditions): boolean => ownKeys(value).some(isOpKey);
 
 const columnPath = (path: string): ExprNode =>
-  path === '*' ? { kind: 'star' } : ident(...path.split('.'));
+  path === '*' ? { kind: 'star' } : ast.ident(...path.split('.'));
 
 const serializeWith = (ref: AttributeRef | undefined, value: unknown): unknown =>
   ref?.serialize === undefined ? value : ref.serialize(value);
 
 // The path is bound as a text[] parameter, so keys with `,`, `"` or a backslash need no escaping.
 const jsonOperand = (json: JsonAccess): Operand => ({
-  node: binary('#>>', json.base, param(json.path)),
+  node: ast.binary('#>>', json.base, ast.param(json.path)),
   json,
 });
 
 /** jsonb value at the path of a JSON operand (`#>`), for jsonb operators. */
-const jsonbAt = (json: JsonAccess): ExprNode => binary('#>', json.base, param(json.path));
-
-/** Converts an expression builder or a plain value into an AST node. */
-export const toExpr = (value: unknown, ctx: WhereContext, ref?: AttributeRef): ExprNode =>
-  isExpression(value) ? expressionToAst(value, ctx) : param(serializeWith(ref, value));
-
-const expressionToAst = (value: SqlExpression, ctx: WhereContext): ExprNode => {
-  switch (value[methodKind]) {
-    case 'literal':
-      return raw(value.val);
-    case 'fn':
-      return fnCall(
-        value.fn,
-        value.args.map((arg) => toExpr(arg, ctx)),
-      );
-    case 'col':
-      return typeof value.col === 'string' ? columnPath(value.col) : ident(...value.col);
-    case 'cast':
-      return { kind: 'cast', expr: toExpr(value.val, ctx), type: value.type };
-    case 'json':
-      return value.conditions === undefined
-        ? jsonPathExpression(value.path ?? '', value, ctx)
-        : whereToAst(value.conditions, ctx);
-    case 'where':
-      return expressionCondition(value, ctx);
-    case 'subquery':
-      return { kind: 'subquery', query: value.build() };
-    case 'exists':
-      return {
-        kind: 'prefix',
-        op: value.negated ? 'NOT EXISTS' : 'EXISTS',
-        expr: { kind: 'subquery', query: value.subquery.build() },
-      };
-    case 'tuple':
-      return { kind: 'list', items: value.items.map((item) => toExpr(item, ctx)) };
-    case 'over':
-      return {
-        kind: 'over',
-        expr: toExpr(value.fn, ctx),
-        partitionBy: value.partitionBy.map((item) => windowTarget(item, ctx)),
-        orderBy: value.orderBy.map((item) => windowOrder(item, ctx)),
-      };
-    case 'excluded':
-      if (ctx.allowExcluded !== true) {
-        throw new Error('excluded() can only be used inside onConflict');
-      }
-      return { kind: 'excluded', column: ctx.resolve(value.column)?.field ?? value.column };
-  }
-};
-
-const windowTarget = (item: unknown, ctx: WhereContext): ExprNode =>
-  typeof item === 'string' ? attributeOperand(item, ctx).node : toExpr(item, ctx);
-
-const windowOrder = (item: unknown, ctx: WhereContext): OrderNode => {
-  if (Array.isArray(item)) {
-    const [target, direction]: readonly unknown[] = item;
-    return {
-      expr: windowTarget(target, ctx),
-      ...(direction === undefined ? {} : directionOf(direction)),
-    };
-  }
-  return { expr: windowTarget(item, ctx) };
-};
-
-const jsonPathExpression = (
-  path: string,
-  value: Readonly<{ value?: unknown }>,
-  ctx: WhereContext,
-): ExprNode => {
-  const accessor = attributeOperand(path, ctx).node;
-  return 'value' in value ? binary('=', accessor, param(value.value)) : accessor;
-};
-
-const expressionCondition = (
-  value: Extract<SqlExpression, { comparator: unknown }>,
-  ctx: WhereContext,
-): ExprNode => {
-  const left: Operand = { node: toExpr(value.attribute, ctx) };
-  if (typeof value.comparator === 'symbol') {
-    return applyOperator(value.comparator, left, value.logic, ctx);
-  }
-  return value.comparator === '='
-    ? attributeCondition(left, value.logic, ctx)
-    : binary(validComparator(value.comparator), left.node, toExpr(value.logic, ctx));
-};
+const jsonbAt = (json: JsonAccess): ExprNode => ast.binary('#>', json.base, ast.param(json.path));
 
 const ALLOWED_CAST_TYPES: ReadonlySet<string> = new Set([
   'integer',
@@ -191,35 +114,12 @@ const validComparator = (comparator: string): string => {
 const withCast = (operand: Operand, type: string | undefined): Operand =>
   type === undefined ? operand : { node: { kind: 'cast', expr: operand.node, type } };
 
-const attributeOperand = (key: string, ctx: WhereContext): Operand => {
-  if (key.startsWith('$') && key.endsWith('$')) {
-    return { node: columnPath(key.slice(1, -1)) };
-  }
-  const [name = key, castType] = key.split('::');
-  const [attribute = name, ...path] = name.split('.');
-  const ref = ctx.resolve(attribute);
-  const field = ref?.field ?? attribute;
-  const column = ctx.tableAlias === undefined ? ident(field) : ident(ctx.tableAlias, field);
-  const operand: Operand =
-    path.length > 0
-      ? jsonOperand({ base: column, path })
-      : ref === undefined
-        ? { node: column }
-        : { node: column, ref };
-  return withCast(operand, castType === undefined ? undefined : validCastType(castType));
-};
-
 const jsonCastFor = (value: unknown): string | undefined =>
   typeof value === 'number'
     ? 'double precision'
     : typeof value === 'boolean'
       ? 'boolean'
       : undefined;
-
-const valueNode = (left: Operand, value: unknown, ctx: WhereContext): ExprNode =>
-  left.json !== undefined && !isExpression(value)
-    ? param(typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value))
-    : toExpr(value, ctx, left.ref);
 
 const nullCheck = (left: Operand, negated: boolean): ExprNode => ({
   kind: 'postfix',
@@ -236,45 +136,6 @@ const quantifierOf = (value: unknown): 'ANY' | 'ALL' | undefined =>
         : undefined
     : undefined;
 
-const quantifiedOperand = (left: Operand, items: unknown, ctx: WhereContext): ExprNode =>
-  isPlainObject(items) && Array.isArray(items[Op.values])
-    ? {
-        kind: 'values',
-        rows: (items[Op.values] as readonly unknown[]).map((item) => [toExpr(item, ctx, left.ref)]),
-      }
-    : param(Array.isArray(items) ? items.map((item) => serializeWith(left.ref, item)) : items);
-
-const comparison = (sqlOp: string, left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
-  const quantifier = quantifierOf(value);
-  if (quantifier !== undefined && isPlainObject(value)) {
-    const items = value[quantifier === 'ANY' ? Op.any : Op.all];
-    return binary(sqlOp, left.node, fnCall(quantifier, [quantifiedOperand(left, items, ctx)]));
-  }
-  const operand = left.json === undefined ? left : withCast(left, jsonCastFor(value));
-  return binary(sqlOp, operand.node, valueNode(left, value, ctx));
-};
-
-const inList = (left: Operand, value: unknown, negated: boolean, ctx: WhereContext): ExprNode => {
-  if (isExpression(value)) {
-    return binary(negated ? 'NOT IN' : 'IN', left.node, toExpr(value, ctx));
-  }
-  const items: readonly unknown[] = Array.isArray(value) ? value : [value];
-  if (items.length === 0) {
-    return raw(negated ? 'TRUE' : 'FALSE');
-  }
-  if (items.length > (ctx.inAsAnyThreshold ?? DEFAULT_IN_AS_ANY_THRESHOLD)) {
-    return binary(
-      negated ? '<>' : '=',
-      left.node,
-      fnCall(negated ? 'ALL' : 'ANY', [param(items.map((item) => serializeWith(left.ref, item)))]),
-    );
-  }
-  return binary(negated ? 'NOT IN' : 'IN', left.node, {
-    kind: 'list',
-    items: items.map((item) => toExpr(item, ctx, left.ref)),
-  });
-};
-
 const isNullOrBoolean = (value: unknown): value is boolean | null =>
   value === null || typeof value === 'boolean';
 
@@ -285,7 +146,7 @@ const isCheck = (left: Operand, value: boolean | null, negated: boolean): ExprNo
 });
 
 const likePattern = (prefix: string, value: unknown, suffix: string): unknown =>
-  isExpression(value) ? value : `${prefix}${String(value)}${suffix}`;
+  value instanceof SqlExpression ? value : `${prefix}${String(value)}${suffix}`;
 
 const pairOf = (value: unknown): readonly [unknown, unknown] => {
   if (!Array.isArray(value) || value.length !== 2) {
@@ -323,132 +184,9 @@ const binaryOps: ReadonlyMap<symbol, string> = new Map<symbol, string>([
   [Op.hasAllKeys, '?&'],
 ]);
 
-const between = (left: Operand, value: unknown, negated: boolean, ctx: WhereContext): ExprNode => {
-  const [low, high] = pairOf(value);
-  return {
-    kind: 'between',
-    expr: left.node,
-    low: toExpr(low, ctx, left.ref),
-    high: toExpr(high, ctx, left.ref),
-    negated,
-  };
-};
-
-const logical = (op: symbol, left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
-  const items = (Array.isArray(value) ? value : [value]).map((item: unknown) =>
-    attributeCondition(left, item, ctx),
-  );
-  return op === Op.and ? and(items) : or(items);
-};
-
-const negation = (left: Operand, value: unknown, ctx: WhereContext): ExprNode =>
-  isNullOrBoolean(value)
-    ? isCheck(left, value, true)
-    : isPlainObject(value)
-      ? { kind: 'prefix', op: 'NOT', expr: attributeCondition(left, value, ctx) }
-      : comparison('<>', left, value, ctx);
-
 const KEY_OPERATORS: ReadonlySet<symbol> = new Set([Op.hasKey, Op.hasAnyKeys, Op.hasAllKeys]);
 
 const CONTAINMENT_OPERATORS: ReadonlySet<symbol> = new Set([Op.contains, Op.contained]);
-
-const jsonbOperator = (
-  sqlOp: string,
-  op: symbol,
-  json: JsonAccess,
-  value: unknown,
-  ctx: WhereContext,
-): ExprNode =>
-  binary(
-    sqlOp,
-    jsonbAt(json),
-    CONTAINMENT_OPERATORS.has(op) && !isExpression(value)
-      ? param(JSON.stringify(value))
-      : toExpr(value, ctx),
-  );
-
-const applyOperator = (op: symbol, left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
-  const sqlOp = binaryOps.get(op);
-  if (
-    sqlOp !== undefined &&
-    left.json !== undefined &&
-    (KEY_OPERATORS.has(op) || CONTAINMENT_OPERATORS.has(op))
-  ) {
-    return jsonbOperator(sqlOp, op, left.json, value, ctx);
-  }
-  if (sqlOp !== undefined) {
-    return comparison(sqlOp, KEY_OPERATORS.has(op) ? { node: left.node } : left, value, ctx);
-  }
-  switch (op) {
-    case Op.eq:
-      return value === null ? nullCheck(left, false) : comparison('=', left, value, ctx);
-    case Op.ne:
-      return value === null ? nullCheck(left, true) : comparison('<>', left, value, ctx);
-    case Op.is:
-      if (!isNullOrBoolean(value)) {
-        throw new Error('Op.is expects null, true or false');
-      }
-      return isCheck(left, value, false);
-    case Op.not:
-      return negation(left, value, ctx);
-    case Op.in:
-      return inList(left, value, false, ctx);
-    case Op.notIn:
-      return inList(left, value, true, ctx);
-    case Op.startsWith:
-      return comparison('LIKE', left, likePattern('', value, '%'), ctx);
-    case Op.endsWith:
-      return comparison('LIKE', left, likePattern('%', value, ''), ctx);
-    case Op.substring:
-      return comparison('LIKE', left, likePattern('%', value, '%'), ctx);
-    case Op.between:
-      return between(left, value, false, ctx);
-    case Op.notBetween:
-      return between(left, value, true, ctx);
-    case Op.col:
-      return binary('=', left.node, columnPath(String(value)));
-    case Op.and:
-    case Op.or:
-      return logical(op, left, value, ctx);
-    case Op.any:
-    case Op.all:
-      return comparison('=', left, { [op]: value }, ctx);
-    default:
-      throw new Error(`Unsupported operator: ${String(op)}`);
-  }
-};
-
-const jsonNested = (left: Operand, value: Conditions, ctx: WhereContext): ExprNode => {
-  const access: JsonAccess = left.json ?? { base: left.node, path: [] };
-  return and(
-    Object.entries(value).map(([key, nested]) =>
-      attributeCondition(
-        jsonOperand({ base: access.base, path: [...access.path, key] }),
-        nested,
-        ctx,
-      ),
-    ),
-  );
-};
-
-const attributeCondition = (left: Operand, value: unknown, ctx: WhereContext): ExprNode => {
-  if (isPlainObject(value)) {
-    if (hasOpKeys(value)) {
-      return and(
-        ownKeys(value)
-          .filter(isOpKey)
-          .map((op) => applyOperator(op, left, value[op], ctx)),
-      );
-    }
-    if (left.ref?.isJson === true || left.json !== undefined) {
-      return jsonNested(left, value, ctx);
-    }
-  }
-  if (Array.isArray(value) && left.ref?.isJson !== true) {
-    return inList(left, value, false, ctx);
-  }
-  return value === null ? nullCheck(left, false) : comparison('=', left, value, ctx);
-};
 
 const splitConditions = (value: unknown): readonly unknown[] =>
   Array.isArray(value)
@@ -457,44 +195,359 @@ const splitConditions = (value: unknown): readonly unknown[] =>
       ? ownKeys(value).map((key) => ({ [key]: value[key] }))
       : [value];
 
-const topLevelOperator = (op: symbol, value: unknown, ctx: WhereContext): ExprNode => {
-  const items = (): readonly ExprNode[] =>
-    splitConditions(value).map((item) => whereToAst(item, ctx));
-  switch (op) {
-    case Op.and:
-      return and(items());
-    case Op.or:
-      return or(items());
-    case Op.not:
-      return { kind: 'prefix', op: 'NOT', expr: whereToAst(value, ctx) };
-    default:
-      throw new Error(`Invalid top-level where operator: ${String(op)}`);
-  }
-};
+/**
+ * Compiles Sequelize v6 `where` / `having` values and expression builders into AST nodes.
+ * Attribute names are resolved through the injected {@link WhereContext}; one instance can be
+ * reused for any number of conditions over the same context.
+ */
+export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
+  /** Attribute resolver, table alias and options. */
+  readonly context: WhereContext;
 
-/** Compiles a Sequelize v6 `where` value (object, array or expression) into an AST condition. */
-export const whereToAst = (where: unknown, ctx: WhereContext): ExprNode => {
-  if (isExpression(where)) {
-    return toExpr(where, ctx);
+  /**
+   * @param context - Attribute resolver, table alias and options.
+   */
+  constructor(context: WhereContext) {
+    this.context = context;
   }
-  if (Array.isArray(where)) {
-    return and(where.map((item: unknown) => whereToAst(item, ctx)));
-  }
-  if (!isPlainObject(where)) {
-    throw new Error(`Invalid where value: ${String(where)}`);
-  }
-  return and(
-    ownKeys(where).map((key) =>
-      isOpKey(key)
-        ? topLevelOperator(key, where[key], ctx)
-        : attributeCondition(attributeOperand(key, ctx), where[key], ctx),
-    ),
-  );
-};
 
-/** True when a where value has no conditions. */
-export const isEmptyWhere = (where: unknown): boolean =>
-  where === undefined ||
-  where === null ||
-  (isPlainObject(where) && ownKeys(where).length === 0) ||
-  (Array.isArray(where) && where.length === 0);
+  /** True when a where value has no conditions. */
+  static isEmpty(where: unknown): boolean {
+    return (
+      where === undefined ||
+      where === null ||
+      (isPlainObject(where) && ownKeys(where).length === 0) ||
+      (Array.isArray(where) && where.length === 0)
+    );
+  }
+
+  /** Compiles a Sequelize v6 `where` value (object, array or expression) into an AST condition. */
+  compile(where: unknown): ExprNode {
+    if (where instanceof SqlExpression) {
+      return where.accept(this);
+    }
+    if (Array.isArray(where)) {
+      return ast.and(where.map((item: unknown) => this.compile(item)));
+    }
+    if (!isPlainObject(where)) {
+      throw new Error(`Invalid where value: ${String(where)}`);
+    }
+    return ast.and(
+      ownKeys(where).map((key) =>
+        isOpKey(key)
+          ? this.#topLevelOperator(key, where[key])
+          : this.#attributeCondition(this.#attributeOperand(key), where[key]),
+      ),
+    );
+  }
+
+  /** Converts an expression builder or a plain value (bound as a parameter) into an AST node. */
+  toExpr(value: unknown, ref?: AttributeRef): ExprNode {
+    return value instanceof SqlExpression
+      ? value.accept(this)
+      : ast.param(serializeWith(ref, value));
+  }
+
+  /** @internal */
+  visitLiteral(value: Literal): ExprNode {
+    return ast.raw(value.val);
+  }
+
+  /** @internal */
+  visitFn(value: Fn): ExprNode {
+    return ast.fnCall(
+      value.fn,
+      value.args.map((arg) => this.toExpr(arg)),
+    );
+  }
+
+  /** @internal */
+  visitCol(value: Col): ExprNode {
+    return typeof value.col === 'string' ? columnPath(value.col) : ast.ident(...value.col);
+  }
+
+  /** @internal */
+  visitCast(value: Cast): ExprNode {
+    return { kind: 'cast', expr: this.toExpr(value.val), type: value.type };
+  }
+
+  /** @internal */
+  visitJson(value: Json): ExprNode {
+    if (value.conditions !== undefined) {
+      return this.compile(value.conditions);
+    }
+    const accessor = this.#attributeOperand(value.path ?? '').node;
+    return value.value === undefined ? accessor : ast.binary('=', accessor, ast.param(value.value));
+  }
+
+  /** @internal */
+  visitWhere(value: Where): ExprNode {
+    const left: Operand = { node: this.toExpr(value.attribute) };
+    if (typeof value.comparator === 'symbol') {
+      return this.#applyOperator(value.comparator, left, value.logic);
+    }
+    return value.comparator === '='
+      ? this.#attributeCondition(left, value.logic)
+      : ast.binary(validComparator(value.comparator), left.node, this.toExpr(value.logic));
+  }
+
+  /** @internal */
+  visitSubquery(value: Subquery): ExprNode {
+    return { kind: 'subquery', query: value.build() };
+  }
+
+  /** @internal */
+  visitExists(value: Exists): ExprNode {
+    return {
+      kind: 'prefix',
+      op: value.negated ? 'NOT EXISTS' : 'EXISTS',
+      expr: { kind: 'subquery', query: value.subquery.build() },
+    };
+  }
+
+  /** @internal */
+  visitTuple(value: Tuple): ExprNode {
+    return { kind: 'list', items: value.items.map((item) => this.toExpr(item)) };
+  }
+
+  /** @internal */
+  visitOver(value: Over): ExprNode {
+    return {
+      kind: 'over',
+      expr: this.toExpr(value.fn),
+      partitionBy: value.partitionBy.map((item) => this.#windowTarget(item)),
+      orderBy: value.orderBy.map((item) => this.#windowOrder(item)),
+    };
+  }
+
+  /** @internal */
+  visitExcluded(value: Excluded): ExprNode {
+    if (this.context.allowExcluded !== true) {
+      throw new Error('excluded() can only be used inside onConflict');
+    }
+    return { kind: 'excluded', column: this.context.resolve(value.column)?.field ?? value.column };
+  }
+
+  #windowTarget(item: unknown): ExprNode {
+    return typeof item === 'string' ? this.#attributeOperand(item).node : this.toExpr(item);
+  }
+
+  #windowOrder(item: unknown): OrderNode {
+    if (Array.isArray(item)) {
+      const [target, direction]: readonly unknown[] = item;
+      return {
+        expr: this.#windowTarget(target),
+        ...(direction === undefined ? {} : OrderDirection.parse(direction)),
+      };
+    }
+    return { expr: this.#windowTarget(item) };
+  }
+
+  #attributeOperand(key: string): Operand {
+    if (key.startsWith('$') && key.endsWith('$')) {
+      return { node: columnPath(key.slice(1, -1)) };
+    }
+    const [name = key, castType] = key.split('::');
+    const [attribute = name, ...path] = name.split('.');
+    const ref = this.context.resolve(attribute);
+    const field = ref?.field ?? attribute;
+    const tableAlias = this.context.tableAlias;
+    const column = tableAlias === undefined ? ast.ident(field) : ast.ident(tableAlias, field);
+    const operand: Operand =
+      path.length > 0
+        ? jsonOperand({ base: column, path })
+        : ref === undefined
+          ? { node: column }
+          : { node: column, ref };
+    return withCast(operand, castType === undefined ? undefined : validCastType(castType));
+  }
+
+  #valueNode(left: Operand, value: unknown): ExprNode {
+    return left.json !== undefined && !(value instanceof SqlExpression)
+      ? ast.param(
+          typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value),
+        )
+      : this.toExpr(value, left.ref);
+  }
+
+  #quantifiedOperand(left: Operand, items: unknown): ExprNode {
+    return isPlainObject(items) && Array.isArray(items[Op.values])
+      ? {
+          kind: 'values',
+          rows: (items[Op.values] as readonly unknown[]).map((item) => [
+            this.toExpr(item, left.ref),
+          ]),
+        }
+      : ast.param(
+          Array.isArray(items) ? items.map((item) => serializeWith(left.ref, item)) : items,
+        );
+  }
+
+  #comparison(sqlOp: string, left: Operand, value: unknown): ExprNode {
+    const quantifier = quantifierOf(value);
+    if (quantifier !== undefined && isPlainObject(value)) {
+      const items = value[quantifier === 'ANY' ? Op.any : Op.all];
+      return ast.binary(
+        sqlOp,
+        left.node,
+        ast.fnCall(quantifier, [this.#quantifiedOperand(left, items)]),
+      );
+    }
+    const operand = left.json === undefined ? left : withCast(left, jsonCastFor(value));
+    return ast.binary(sqlOp, operand.node, this.#valueNode(left, value));
+  }
+
+  #inList(left: Operand, value: unknown, negated: boolean): ExprNode {
+    if (value instanceof SqlExpression) {
+      return ast.binary(negated ? 'NOT IN' : 'IN', left.node, this.toExpr(value));
+    }
+    const items: readonly unknown[] = Array.isArray(value) ? value : [value];
+    if (items.length === 0) {
+      return ast.raw(negated ? 'TRUE' : 'FALSE');
+    }
+    if (items.length > (this.context.inAsAnyThreshold ?? DEFAULT_IN_AS_ANY_THRESHOLD)) {
+      return ast.binary(
+        negated ? '<>' : '=',
+        left.node,
+        ast.fnCall(negated ? 'ALL' : 'ANY', [
+          ast.param(items.map((item) => serializeWith(left.ref, item))),
+        ]),
+      );
+    }
+    return ast.binary(negated ? 'NOT IN' : 'IN', left.node, {
+      kind: 'list',
+      items: items.map((item) => this.toExpr(item, left.ref)),
+    });
+  }
+
+  #between(left: Operand, value: unknown, negated: boolean): ExprNode {
+    const [low, high] = pairOf(value);
+    return {
+      kind: 'between',
+      expr: left.node,
+      low: this.toExpr(low, left.ref),
+      high: this.toExpr(high, left.ref),
+      negated,
+    };
+  }
+
+  #logical(op: symbol, left: Operand, value: unknown): ExprNode {
+    const items = (Array.isArray(value) ? value : [value]).map((item: unknown) =>
+      this.#attributeCondition(left, item),
+    );
+    return op === Op.and ? ast.and(items) : ast.or(items);
+  }
+
+  #negation(left: Operand, value: unknown): ExprNode {
+    return isNullOrBoolean(value)
+      ? isCheck(left, value, true)
+      : isPlainObject(value)
+        ? { kind: 'prefix', op: 'NOT', expr: this.#attributeCondition(left, value) }
+        : this.#comparison('<>', left, value);
+  }
+
+  #jsonbOperator(sqlOp: string, op: symbol, json: JsonAccess, value: unknown): ExprNode {
+    return ast.binary(
+      sqlOp,
+      jsonbAt(json),
+      CONTAINMENT_OPERATORS.has(op) && !(value instanceof SqlExpression)
+        ? ast.param(JSON.stringify(value))
+        : this.toExpr(value),
+    );
+  }
+
+  #applyOperator(op: symbol, left: Operand, value: unknown): ExprNode {
+    const sqlOp = binaryOps.get(op);
+    if (
+      sqlOp !== undefined &&
+      left.json !== undefined &&
+      (KEY_OPERATORS.has(op) || CONTAINMENT_OPERATORS.has(op))
+    ) {
+      return this.#jsonbOperator(sqlOp, op, left.json, value);
+    }
+    if (sqlOp !== undefined) {
+      return this.#comparison(sqlOp, KEY_OPERATORS.has(op) ? { node: left.node } : left, value);
+    }
+    switch (op) {
+      case Op.eq:
+        return value === null ? nullCheck(left, false) : this.#comparison('=', left, value);
+      case Op.ne:
+        return value === null ? nullCheck(left, true) : this.#comparison('<>', left, value);
+      case Op.is:
+        if (!isNullOrBoolean(value)) {
+          throw new Error('Op.is expects null, true or false');
+        }
+        return isCheck(left, value, false);
+      case Op.not:
+        return this.#negation(left, value);
+      case Op.in:
+        return this.#inList(left, value, false);
+      case Op.notIn:
+        return this.#inList(left, value, true);
+      case Op.startsWith:
+        return this.#comparison('LIKE', left, likePattern('', value, '%'));
+      case Op.endsWith:
+        return this.#comparison('LIKE', left, likePattern('%', value, ''));
+      case Op.substring:
+        return this.#comparison('LIKE', left, likePattern('%', value, '%'));
+      case Op.between:
+        return this.#between(left, value, false);
+      case Op.notBetween:
+        return this.#between(left, value, true);
+      case Op.col:
+        return ast.binary('=', left.node, columnPath(String(value)));
+      case Op.and:
+      case Op.or:
+        return this.#logical(op, left, value);
+      case Op.any:
+      case Op.all:
+        return this.#comparison('=', left, { [op]: value });
+      default:
+        throw new Error(`Unsupported operator: ${String(op)}`);
+    }
+  }
+
+  #jsonNested(left: Operand, value: Conditions): ExprNode {
+    const access: JsonAccess = left.json ?? { base: left.node, path: [] };
+    return ast.and(
+      Object.entries(value).map(([key, nested]) =>
+        this.#attributeCondition(
+          jsonOperand({ base: access.base, path: [...access.path, key] }),
+          nested,
+        ),
+      ),
+    );
+  }
+
+  #attributeCondition(left: Operand, value: unknown): ExprNode {
+    if (isPlainObject(value)) {
+      if (hasOpKeys(value)) {
+        return ast.and(
+          ownKeys(value)
+            .filter(isOpKey)
+            .map((op) => this.#applyOperator(op, left, value[op])),
+        );
+      }
+      if (left.ref?.isJson === true || left.json !== undefined) {
+        return this.#jsonNested(left, value);
+      }
+    }
+    if (Array.isArray(value) && left.ref?.isJson !== true) {
+      return this.#inList(left, value, false);
+    }
+    return value === null ? nullCheck(left, false) : this.#comparison('=', left, value);
+  }
+
+  #topLevelOperator(op: symbol, value: unknown): ExprNode {
+    switch (op) {
+      case Op.and:
+        return ast.and(splitConditions(value).map((item) => this.compile(item)));
+      case Op.or:
+        return ast.or(splitConditions(value).map((item) => this.compile(item)));
+      case Op.not:
+        return { kind: 'prefix', op: 'NOT', expr: this.compile(value) };
+      default:
+        throw new Error(`Invalid top-level where operator: ${String(op)}`);
+    }
+  }
+}

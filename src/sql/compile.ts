@@ -19,353 +19,409 @@ import type {
   UpdateNode,
 } from './ast.ts';
 
+/** Parameterized SQL text with its bound values. */
 export type CompiledQuery = Readonly<{ text: string; values: readonly unknown[] }>;
 
+/** Bound value inside a chunk list; the same chunk object maps to the same `$n`. */
 export type ParamChunk = Readonly<{ param: unknown }>;
+/** SQL text or a bound value. */
 export type Chunk = string | ParamChunk;
+/** Chunk list rendered by {@link SqlCompiler.finalize}. */
 export type Chunks = readonly Chunk[];
 
-export const quoteIdent = (name: string): string => `"${name.replaceAll('"', '""')}"`;
+type FromSource = SelectNode['from'];
 
-const join = (parts: readonly Chunks[], separator: string): Chunks =>
-  parts.flatMap((part, index) => (index === 0 ? part : [separator, ...part]));
+const quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
 
-const wrap = (chunks: Chunks): Chunks => ['(', ...chunks, ')'];
-
-const exprList = (items: readonly ExprNode[]): Chunks => join(items.map(expr), ', ');
-
-const tableRef = (table: TableRef): Chunks => [
-  [table.schema, table.name]
-    .filter((part): part is string => part !== undefined)
-    .map(quoteIdent)
-    .join('.'),
-  ...(table.alias === undefined || table.alias === table.name
-    ? []
-    : [` AS ${quoteIdent(table.alias)}`]),
-];
-
-const fromItem = (from: SelectNode['from']): Chunks =>
-  'subquery' in from
-    ? [...wrap(select(from.subquery)), ` AS ${quoteIdent(from.alias)}`]
-    : tableRef(from);
+const isParam = (chunk: Chunk): chunk is ParamChunk => typeof chunk !== 'string';
 
 const assertNever = (value: never): never => {
   throw new Error(`Unexpected AST node: ${JSON.stringify(value)}`);
 };
 
-const expr = (node: ExprNode): Chunks => {
-  switch (node.kind) {
-    case 'param':
-      return [{ param: node.value }];
-    case 'raw':
-      return [node.sql];
-    case 'ident':
-      return [node.path.map(quoteIdent).join('.')];
-    case 'star':
-      return [node.table === undefined ? '*' : `${quoteIdent(node.table)}.*`];
-    case 'fn':
-      return [
-        `${node.name}(`,
-        ...(node.distinct === true ? ['DISTINCT '] : []),
-        ...exprList(node.args),
-        ')',
-      ];
-    case 'cast':
-      return ['CAST(', ...expr(node.expr), ` AS ${node.type})`];
-    case 'binary':
-      return [...expr(node.left), ` ${node.op} `, ...expr(node.right)];
-    case 'prefix':
-      return [`${node.op} `, ...expr(node.expr)];
-    case 'postfix':
-      return [...expr(node.expr), ` ${node.op}`];
-    case 'and':
-    case 'or':
-      return node.items.length === 0
-        ? [node.kind === 'and' ? 'TRUE' : 'FALSE']
-        : node.items.length === 1 && node.items[0] !== undefined
-          ? expr(node.items[0])
-          : wrap(join(node.items.map(expr), ` ${node.kind.toUpperCase()} `));
-    case 'list':
-      return wrap(exprList(node.items));
-    case 'between':
-      return [
-        ...expr(node.expr),
-        node.negated ? ' NOT BETWEEN ' : ' BETWEEN ',
-        ...expr(node.low),
-        ' AND ',
-        ...expr(node.high),
-      ];
-    case 'excluded':
-      return [`EXCLUDED.${quoteIdent(node.column)}`];
-    case 'subquery':
-      return wrap(select(node.query));
-    case 'alias':
-      return [...expr(node.expr), ` AS ${quoteIdent(node.alias)}`];
-    case 'over':
-      return [
-        ...expr(node.expr),
-        ' OVER (',
-        ...join(
-          [
-            ...(node.partitionBy.length === 0
-              ? []
-              : [['PARTITION BY ', ...exprList(node.partitionBy)]]),
-            ...(node.orderBy.length === 0
-              ? []
-              : [['ORDER BY ', ...join(node.orderBy.map(orderItem), ', ')]]),
-          ],
-          ' ',
-        ),
-        ')',
-      ];
-    case 'values':
-      return [
-        'VALUES ',
-        ...join(
-          node.rows.map((row) => wrap(exprList(row))),
-          ', ',
-        ),
-      ];
-    default:
-      return assertNever(node);
+/** Compiles SQL AST nodes into parameterized text with `$n` placeholders. Stateless. */
+export class SqlCompiler {
+  /** Quotes an identifier: `"name"`, doubling embedded quotes. */
+  static quoteIdent(name: string): string {
+    return quote(name);
   }
-};
 
-const joinClause = (node: JoinNode): Chunks => [
-  ` ${node.type} JOIN `,
-  ...fromItem(node.table),
-  ' ON ',
-  ...expr(node.on),
-];
+  readonly #expr = (node: ExprNode): Chunks => this.#expression(node);
+  readonly #orderItem = (node: OrderNode): Chunks => this.#order(node);
+  readonly #fromItem = (from: FromSource): Chunks => this.#from(from);
+  readonly #row = (row: readonly ExprNode[]): Chunks => this.#wrap(this.#exprList(row));
+  readonly #joinClause = (node: JoinNode): Chunks => this.#join(node);
 
-const orderItem = (node: OrderNode): Chunks => [
-  ...expr(node.expr),
-  ...(node.direction === undefined ? [] : [` ${node.direction}`]),
-  ...(node.nulls === undefined ? [] : [` NULLS ${node.nulls}`]),
-];
+  /** Compiles a statement. */
+  compile(node: StatementNode): CompiledQuery {
+    return this.finalize(this.#statement(node));
+  }
 
-const lockClause = (node: LockNode): string =>
-  [
-    ` FOR ${node.strength}`,
-    node.of === undefined || node.of.length === 0
-      ? ''
-      : ` OF ${node.of.map(quoteIdent).join(', ')}`,
-    node.wait === undefined ? '' : ` ${node.wait}`,
-  ].join('');
+  /** Compiles a standalone expression. */
+  compileExpr(node: ExprNode): CompiledQuery {
+    return this.finalize(this.#expression(node));
+  }
 
-const optional = <T>(value: T | undefined, render: (value: T) => Chunks): Chunks =>
-  value === undefined ? [] : render(value);
+  /** Joins chunks into text, numbering distinct parameter chunks `$1`, `$2`, ... */
+  finalize(chunks: Chunks): CompiledQuery {
+    const params = [...new Set(chunks.filter(isParam))];
+    const positions = new Map(params.map((chunk, index) => [chunk, index + 1]));
+    return {
+      text: chunks
+        .map((chunk) => (typeof chunk === 'string' ? chunk : `$${positions.get(chunk)}`))
+        .join(''),
+      values: params.map((chunk) => chunk.param),
+    };
+  }
 
-const nonEmpty = <T>(
-  items: readonly T[] | undefined,
-  render: (items: readonly T[]) => Chunks,
-): Chunks => (items === undefined || items.length === 0 ? [] : render(items));
+  #joinAll(parts: readonly Chunks[], separator: string): Chunks {
+    return parts.flatMap((part, index) => (index === 0 ? part : [separator, ...part]));
+  }
 
-const returning = (items: readonly ExprNode[] | undefined, oldAlias?: string): Chunks =>
-  nonEmpty(items, (list) => [
-    ' RETURNING ',
-    oldAlias === undefined ? '' : `WITH (OLD AS ${quoteIdent(oldAlias)}) `,
-    ...exprList(list),
-  ]);
+  #wrap(chunks: Chunks): Chunks {
+    return ['(', ...chunks, ')'];
+  }
 
-const where = (node: ExprNode | undefined): Chunks =>
-  optional(node, (cond) => [' WHERE ', ...expr(cond)]);
+  #exprList(items: readonly ExprNode[]): Chunks {
+    return this.#joinAll(items.map(this.#expr), ', ');
+  }
 
-const queryExpr = (node: SelectNode | UnionNode): Chunks =>
-  node.kind === 'union'
-    ? [...select(node.left), node.all ? ' UNION ALL ' : ' UNION ', ...select(node.right)]
-    : select(node);
+  #columnList(columns: readonly string[]): Chunks {
+    return this.#wrap([columns.map(quote).join(', ')]);
+  }
 
-const withClause = (clause: WithClause): Chunks => [
-  clause.recursive ? 'WITH RECURSIVE ' : 'WITH ',
-  ...join(
-    clause.ctes.map((cte) => [
-      `${quoteIdent(cte.name)} AS `,
-      cte.materialized === undefined
-        ? ''
-        : cte.materialized
-          ? 'MATERIALIZED '
-          : 'NOT MATERIALIZED ',
-      ...wrap(queryExpr(cte.query)),
-    ]),
-    ', ',
-  ),
-  ' ',
-];
+  #tableRef(table: TableRef): Chunks {
+    return [
+      [table.schema, table.name]
+        .filter((part): part is string => part !== undefined)
+        .map(quote)
+        .join('.'),
+      ...(table.alias === undefined || table.alias === table.name
+        ? []
+        : [` AS ${quote(table.alias)}`]),
+    ];
+  }
 
-const select = (node: SelectNode): Chunks => [
-  ...optional(node.with, withClause),
-  node.distinct === true || (node.distinctOn ?? []).length > 0 ? 'SELECT DISTINCT ' : 'SELECT ',
-  ...nonEmpty(node.distinctOn, (items) => ['ON ', ...wrap(exprList(items)), ' ']),
-  ...exprList(node.columns),
-  ' FROM ',
-  ...fromItem(node.from),
-  ...(node.joins ?? []).flatMap(joinClause),
-  ...(node.extraFrom ?? []).flatMap((item) => [', ', ...fromItem(item)]),
-  ...where(node.where),
-  ...nonEmpty(node.groupBy, (items) => [' GROUP BY ', ...exprList(items)]),
-  ...optional(node.having, (cond) => [' HAVING ', ...expr(cond)]),
-  ...nonEmpty(node.orderBy, (items) => [' ORDER BY ', ...join(items.map(orderItem), ', ')]),
-  ...optional(node.limit, (limit) => [' LIMIT ', { param: limit }]),
-  ...optional(node.offset, (offset) => [' OFFSET ', { param: offset }]),
-  ...optional(node.lock, (lock) => [lockClause(lock)]),
-];
+  #from(from: FromSource): Chunks {
+    return 'subquery' in from
+      ? [...this.#wrap(this.#select(from.subquery)), ` AS ${quote(from.alias)}`]
+      : this.#tableRef(from);
+  }
 
-const setList = (items: readonly SetItem[]): Chunks =>
-  join(
-    items.map((item) => [`${quoteIdent(item.column)} = `, ...expr(item.value)]),
-    ', ',
-  );
-
-const conflictTarget = (target: ConflictTarget): Chunks =>
-  target.kind === 'constraint'
-    ? [` ON CONSTRAINT ${quoteIdent(target.name)}`]
-    : [' ', ...wrap(exprList(target.items)), ...where(target.where)];
-
-const onConflict = (node: OnConflictNode): Chunks => [
-  ' ON CONFLICT',
-  ...optional(node.target, conflictTarget),
-  ...(node.action.kind === 'nothing'
-    ? [' DO NOTHING']
-    : [' DO UPDATE SET ', ...setList(node.action.set), ...where(node.action.where)]),
-];
-
-const insertValues = (node: InsertNode): Chunks =>
-  node.select !== undefined
-    ? [' ', ...wrap([node.columns.map(quoteIdent).join(', ')]), ' ', ...select(node.select)]
-    : node.columns.length === 0
-      ? [' DEFAULT VALUES']
-      : [
-          ' ',
-          ...wrap([node.columns.map(quoteIdent).join(', ')]),
-          node.overriding === undefined
-            ? ''
-            : ` OVERRIDING ${node.overriding === 'system' ? 'SYSTEM' : 'USER'} VALUE`,
-          ' VALUES ',
-          ...join(
-            node.rows.map((row) => wrap(exprList(row))),
-            ', ',
-          ),
+  #expression(node: ExprNode): Chunks {
+    switch (node.kind) {
+      case 'param':
+        return [{ param: node.value }];
+      case 'raw':
+        return [node.sql];
+      case 'ident':
+        return [node.path.map(quote).join('.')];
+      case 'star':
+        return [node.table === undefined ? '*' : `${quote(node.table)}.*`];
+      case 'fn':
+        return [
+          `${node.name}(`,
+          ...(node.distinct === true ? ['DISTINCT '] : []),
+          ...this.#exprList(node.args),
+          ')',
         ];
-
-const insert = (node: InsertNode): Chunks => [
-  'INSERT INTO ',
-  ...tableRef(node.table),
-  ...insertValues(node),
-  ...optional(node.onConflict, onConflict),
-  ...returning(node.returning, node.returningOld),
-];
-
-const update = (node: UpdateNode): Chunks => [
-  'UPDATE ',
-  ...tableRef(node.table),
-  ' SET ',
-  ...setList(node.set),
-  ...nonEmpty(node.from, (items) => [' FROM ', ...join(items.map(fromItem), ', ')]),
-  ...where(node.where),
-  ...returning(node.returning, node.returningOld),
-];
-
-const remove = (node: DeleteNode): Chunks => [
-  'DELETE FROM ',
-  ...tableRef(node.table),
-  ...nonEmpty(node.using, (items) => [' USING ', ...join(items.map(fromItem), ', ')]),
-  ...where(node.where),
-  ...returning(node.returning),
-];
-
-const truncate = (node: TruncateNode): Chunks => [
-  'TRUNCATE ',
-  ...tableRef(node.table),
-  node.restartIdentity === true ? ' RESTART IDENTITY' : '',
-  node.cascade === true ? ' CASCADE' : '',
-];
-
-const mergeAction = (action: MergeAction): Chunks => {
-  switch (action.kind) {
-    case 'update':
-      return ['UPDATE SET ', ...setList(action.set)];
-    case 'delete':
-      return ['DELETE'];
-    case 'nothing':
-      return ['DO NOTHING'];
-    case 'insert':
-      return action.columns.length === 0
-        ? ['INSERT DEFAULT VALUES']
-        : [
-            'INSERT ',
-            ...wrap([action.columns.map(quoteIdent).join(', ')]),
-            ' VALUES ',
-            ...wrap(exprList(action.values)),
-          ];
-    default:
-      return assertNever(action);
-  }
-};
-
-const mergeSource = (source: MergeNode['source']): Chunks =>
-  source.kind === 'query'
-    ? [...wrap(select(source.query)), ` AS ${quoteIdent(source.alias)}`]
-    : [
-        ...wrap([
-          'VALUES ',
-          ...join(
-            source.rows.map((row) => wrap(exprList(row))),
-            ', ',
+      case 'cast':
+        return ['CAST(', ...this.#expression(node.expr), ` AS ${node.type})`];
+      case 'binary':
+        return [...this.#expression(node.left), ` ${node.op} `, ...this.#expression(node.right)];
+      case 'prefix':
+        return [`${node.op} `, ...this.#expression(node.expr)];
+      case 'postfix':
+        return [...this.#expression(node.expr), ` ${node.op}`];
+      case 'and':
+      case 'or':
+        return node.items.length === 0
+          ? [node.kind === 'and' ? 'TRUE' : 'FALSE']
+          : node.items.length === 1 && node.items[0] !== undefined
+            ? this.#expression(node.items[0])
+            : this.#wrap(this.#joinAll(node.items.map(this.#expr), ` ${node.kind.toUpperCase()} `));
+      case 'list':
+        return this.#wrap(this.#exprList(node.items));
+      case 'between':
+        return [
+          ...this.#expression(node.expr),
+          node.negated ? ' NOT BETWEEN ' : ' BETWEEN ',
+          ...this.#expression(node.low),
+          ' AND ',
+          ...this.#expression(node.high),
+        ];
+      case 'excluded':
+        return [`EXCLUDED.${quote(node.column)}`];
+      case 'subquery':
+        return this.#wrap(this.#select(node.query));
+      case 'alias':
+        return [...this.#expression(node.expr), ` AS ${quote(node.alias)}`];
+      case 'over':
+        return [
+          ...this.#expression(node.expr),
+          ' OVER (',
+          ...this.#joinAll(
+            [
+              ...(node.partitionBy.length === 0
+                ? []
+                : [['PARTITION BY ', ...this.#exprList(node.partitionBy)]]),
+              ...(node.orderBy.length === 0
+                ? []
+                : [['ORDER BY ', ...this.#joinAll(node.orderBy.map(this.#orderItem), ', ')]]),
+            ],
+            ' ',
           ),
-        ]),
-        ` AS ${quoteIdent(source.alias)} `,
-        ...wrap([source.columns.map(quoteIdent).join(', ')]),
-      ];
-
-const merge = (node: MergeNode): Chunks => [
-  'MERGE INTO ',
-  ...tableRef(node.table),
-  ' USING ',
-  ...mergeSource(node.source),
-  ' ON ',
-  ...expr(node.on),
-  ...node.when.flatMap((clause) => [
-    ` WHEN ${clause.match}`,
-    ...optional(clause.condition, (condition) => [' AND ', ...expr(condition)]),
-    ' THEN ',
-    ...mergeAction(clause.action),
-  ]),
-  ...returning(node.returning, node.returningOld),
-];
-
-const statement = (node: StatementNode): Chunks => {
-  switch (node.kind) {
-    case 'select':
-      return select(node);
-    case 'insert':
-      return insert(node);
-    case 'update':
-      return update(node);
-    case 'delete':
-      return remove(node);
-    case 'truncate':
-      return truncate(node);
-    case 'merge':
-      return merge(node);
-    default:
-      return assertNever(node);
+          ')',
+        ];
+      case 'values':
+        return ['VALUES ', ...this.#joinAll(node.rows.map(this.#row), ', ')];
+      default:
+        return assertNever(node);
+    }
   }
-};
 
-const isParam = (chunk: Chunk): chunk is ParamChunk => typeof chunk !== 'string';
+  #join(node: JoinNode): Chunks {
+    return [` ${node.type} JOIN `, ...this.#from(node.table), ' ON ', ...this.#expression(node.on)];
+  }
 
-export const finalize = (chunks: Chunks): CompiledQuery => {
-  const params = [...new Set(chunks.filter(isParam))];
-  const positions = new Map(params.map((chunk, index) => [chunk, index + 1]));
-  return {
-    text: chunks
-      .map((chunk) => (typeof chunk === 'string' ? chunk : `$${positions.get(chunk)}`))
-      .join(''),
-    values: params.map((chunk) => chunk.param),
-  };
-};
+  #order(node: OrderNode): Chunks {
+    return [
+      ...this.#expression(node.expr),
+      ...(node.direction === undefined ? [] : [` ${node.direction}`]),
+      ...(node.nulls === undefined ? [] : [` NULLS ${node.nulls}`]),
+    ];
+  }
 
-export const compile = (node: StatementNode): CompiledQuery => finalize(statement(node));
+  #lock(node: LockNode): string {
+    return [
+      ` FOR ${node.strength}`,
+      node.of === undefined || node.of.length === 0 ? '' : ` OF ${node.of.map(quote).join(', ')}`,
+      node.wait === undefined ? '' : ` ${node.wait}`,
+    ].join('');
+  }
 
-export const compileExpr = (node: ExprNode): CompiledQuery => finalize(expr(node));
+  #returning(items: readonly ExprNode[] | undefined, oldAlias?: string): Chunks {
+    return items === undefined || items.length === 0
+      ? []
+      : [
+          ' RETURNING ',
+          oldAlias === undefined ? '' : `WITH (OLD AS ${quote(oldAlias)}) `,
+          ...this.#exprList(items),
+        ];
+  }
+
+  #where(node: ExprNode | undefined): Chunks {
+    return node === undefined ? [] : [' WHERE ', ...this.#expression(node)];
+  }
+
+  #queryExpr(node: SelectNode | UnionNode): Chunks {
+    return node.kind === 'union'
+      ? [
+          ...this.#select(node.left),
+          node.all ? ' UNION ALL ' : ' UNION ',
+          ...this.#select(node.right),
+        ]
+      : this.#select(node);
+  }
+
+  #with(clause: WithClause): Chunks {
+    return [
+      clause.recursive ? 'WITH RECURSIVE ' : 'WITH ',
+      ...this.#joinAll(
+        clause.ctes.map((cte) => [
+          `${quote(cte.name)} AS `,
+          cte.materialized === undefined
+            ? ''
+            : cte.materialized
+              ? 'MATERIALIZED '
+              : 'NOT MATERIALIZED ',
+          ...this.#wrap(this.#queryExpr(cte.query)),
+        ]),
+        ', ',
+      ),
+      ' ',
+    ];
+  }
+
+  #select(node: SelectNode): Chunks {
+    const distinctOn = node.distinctOn ?? [];
+    return [
+      ...(node.with === undefined ? [] : this.#with(node.with)),
+      node.distinct === true || distinctOn.length > 0 ? 'SELECT DISTINCT ' : 'SELECT ',
+      ...(distinctOn.length === 0 ? [] : ['ON ', ...this.#wrap(this.#exprList(distinctOn)), ' ']),
+      ...this.#exprList(node.columns),
+      ' FROM ',
+      ...this.#from(node.from),
+      ...(node.joins ?? []).flatMap(this.#joinClause),
+      ...(node.extraFrom ?? []).flatMap((item) => [', ', ...this.#from(item)]),
+      ...this.#where(node.where),
+      ...(node.groupBy === undefined || node.groupBy.length === 0
+        ? []
+        : [' GROUP BY ', ...this.#exprList(node.groupBy)]),
+      ...(node.having === undefined ? [] : [' HAVING ', ...this.#expression(node.having)]),
+      ...(node.orderBy === undefined || node.orderBy.length === 0
+        ? []
+        : [' ORDER BY ', ...this.#joinAll(node.orderBy.map(this.#orderItem), ', ')]),
+      ...(node.limit === undefined ? [] : [' LIMIT ', { param: node.limit }]),
+      ...(node.offset === undefined ? [] : [' OFFSET ', { param: node.offset }]),
+      ...(node.lock === undefined ? [] : [this.#lock(node.lock)]),
+    ];
+  }
+
+  #setList(items: readonly SetItem[]): Chunks {
+    return this.#joinAll(
+      items.map((item) => [`${quote(item.column)} = `, ...this.#expression(item.value)]),
+      ', ',
+    );
+  }
+
+  #conflictTarget(target: ConflictTarget): Chunks {
+    return target.kind === 'constraint'
+      ? [` ON CONSTRAINT ${quote(target.name)}`]
+      : [' ', ...this.#wrap(this.#exprList(target.items)), ...this.#where(target.where)];
+  }
+
+  #onConflict(node: OnConflictNode): Chunks {
+    return [
+      ' ON CONFLICT',
+      ...(node.target === undefined ? [] : this.#conflictTarget(node.target)),
+      ...(node.action.kind === 'nothing'
+        ? [' DO NOTHING']
+        : [
+            ' DO UPDATE SET ',
+            ...this.#setList(node.action.set),
+            ...this.#where(node.action.where),
+          ]),
+    ];
+  }
+
+  #insertValues(node: InsertNode): Chunks {
+    return node.select !== undefined
+      ? [' ', ...this.#columnList(node.columns), ' ', ...this.#select(node.select)]
+      : node.columns.length === 0
+        ? [' DEFAULT VALUES']
+        : [
+            ' ',
+            ...this.#columnList(node.columns),
+            node.overriding === undefined
+              ? ''
+              : ` OVERRIDING ${node.overriding === 'system' ? 'SYSTEM' : 'USER'} VALUE`,
+            ' VALUES ',
+            ...this.#joinAll(node.rows.map(this.#row), ', '),
+          ];
+  }
+
+  #insert(node: InsertNode): Chunks {
+    return [
+      'INSERT INTO ',
+      ...this.#tableRef(node.table),
+      ...this.#insertValues(node),
+      ...(node.onConflict === undefined ? [] : this.#onConflict(node.onConflict)),
+      ...this.#returning(node.returning, node.returningOld),
+    ];
+  }
+
+  #update(node: UpdateNode): Chunks {
+    return [
+      'UPDATE ',
+      ...this.#tableRef(node.table),
+      ' SET ',
+      ...this.#setList(node.set),
+      ...(node.from === undefined || node.from.length === 0
+        ? []
+        : [' FROM ', ...this.#joinAll(node.from.map(this.#fromItem), ', ')]),
+      ...this.#where(node.where),
+      ...this.#returning(node.returning, node.returningOld),
+    ];
+  }
+
+  #delete(node: DeleteNode): Chunks {
+    return [
+      'DELETE FROM ',
+      ...this.#tableRef(node.table),
+      ...(node.using === undefined || node.using.length === 0
+        ? []
+        : [' USING ', ...this.#joinAll(node.using.map(this.#fromItem), ', ')]),
+      ...this.#where(node.where),
+      ...this.#returning(node.returning),
+    ];
+  }
+
+  #truncate(node: TruncateNode): Chunks {
+    return [
+      'TRUNCATE ',
+      ...this.#tableRef(node.table),
+      node.restartIdentity === true ? ' RESTART IDENTITY' : '',
+      node.cascade === true ? ' CASCADE' : '',
+    ];
+  }
+
+  #mergeAction(action: MergeAction): Chunks {
+    switch (action.kind) {
+      case 'update':
+        return ['UPDATE SET ', ...this.#setList(action.set)];
+      case 'delete':
+        return ['DELETE'];
+      case 'nothing':
+        return ['DO NOTHING'];
+      case 'insert':
+        return action.columns.length === 0
+          ? ['INSERT DEFAULT VALUES']
+          : [
+              'INSERT ',
+              ...this.#columnList(action.columns),
+              ' VALUES ',
+              ...this.#wrap(this.#exprList(action.values)),
+            ];
+      default:
+        return assertNever(action);
+    }
+  }
+
+  #mergeSource(source: MergeNode['source']): Chunks {
+    return source.kind === 'query'
+      ? [...this.#wrap(this.#select(source.query)), ` AS ${quote(source.alias)}`]
+      : [
+          ...this.#wrap(['VALUES ', ...this.#joinAll(source.rows.map(this.#row), ', ')]),
+          ` AS ${quote(source.alias)} `,
+          ...this.#columnList(source.columns),
+        ];
+  }
+
+  #merge(node: MergeNode): Chunks {
+    return [
+      'MERGE INTO ',
+      ...this.#tableRef(node.table),
+      ' USING ',
+      ...this.#mergeSource(node.source),
+      ' ON ',
+      ...this.#expression(node.on),
+      ...node.when.flatMap((clause) => [
+        ` WHEN ${clause.match}`,
+        ...(clause.condition === undefined ? [] : [' AND ', ...this.#expression(clause.condition)]),
+        ' THEN ',
+        ...this.#mergeAction(clause.action),
+      ]),
+      ...this.#returning(node.returning, node.returningOld),
+    ];
+  }
+
+  #statement(node: StatementNode): Chunks {
+    switch (node.kind) {
+      case 'select':
+        return this.#select(node);
+      case 'insert':
+        return this.#insert(node);
+      case 'update':
+        return this.#update(node);
+      case 'delete':
+        return this.#delete(node);
+      case 'truncate':
+        return this.#truncate(node);
+      case 'merge':
+        return this.#merge(node);
+      default:
+        return assertNever(node);
+    }
+  }
+}

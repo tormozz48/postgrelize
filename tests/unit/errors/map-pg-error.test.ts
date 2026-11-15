@@ -9,25 +9,26 @@ import {
   UniqueConstraintError,
   ValidationError,
 } from '../../../src/errors/errors.ts';
-import {
-  mapConnectionError,
-  mapQueryError,
-  parseKeyDetail,
-} from '../../../src/errors/map-pg-error.ts';
+import { PgErrorMapper } from '../../../src/errors/map-pg-error.ts';
+
+const mapper = new PgErrorMapper();
 
 const pgError = (code: string, extra: Record<string, string> = {}) =>
   Object.assign(new Error('boom'), { code, ...extra });
 
 describe('parseKeyDetail', () => {
   it('parses composite keys', () => {
-    expect(parseKeyDetail('Key (a, "b")=(1, x) already exists.')).toEqual({ a: '1', b: 'x' });
-    expect(parseKeyDetail(undefined)).toBeUndefined();
+    expect(mapper.parseKeyDetail('Key (a, "b")=(1, x) already exists.')).toEqual({
+      a: '1',
+      b: 'x',
+    });
+    expect(mapper.parseKeyDetail(undefined)).toBeUndefined();
   });
 });
 
 describe('mapQueryError', () => {
   it('maps unique violations with fields and items', () => {
-    const error = mapQueryError(
+    const error = mapper.mapQueryError(
       pgError('23505', { detail: 'Key (email)=(a@b.c) already exists.' }),
       {
         sql: 'INSERT',
@@ -48,13 +49,13 @@ describe('mapQueryError', () => {
   });
 
   it('maps foreign key, timeout and generic errors', () => {
-    const fk = mapQueryError(
+    const fk = mapper.mapQueryError(
       pgError('23503', { detail: 'Key (userId)=(9) is not present', table: 'posts' }),
     );
     expect(fk).toBeInstanceOf(ForeignKeyConstraintError);
     expect((fk as ForeignKeyConstraintError).fields).toEqual(['userId']);
-    expect(mapQueryError(pgError('57014'))).toBeInstanceOf(TimeoutError);
-    const generic = mapQueryError(pgError('42P01'), { sql: 'SELECT', parameters: [1] });
+    expect(mapper.mapQueryError(pgError('57014'))).toBeInstanceOf(TimeoutError);
+    const generic = mapper.mapQueryError(pgError('42P01'), { sql: 'SELECT', parameters: [1] });
     expect(generic).toBeInstanceOf(DatabaseError);
     expect(generic).toMatchObject({
       name: 'SequelizeDatabaseError',
@@ -64,9 +65,9 @@ describe('mapQueryError', () => {
   });
 
   it('maps connection failures', () => {
-    expect(mapQueryError(pgError('ECONNREFUSED'))).toBeInstanceOf(ConnectionRefusedError);
-    expect(mapConnectionError(pgError('28P01'))).toBeInstanceOf(AccessDeniedError);
-    expect(mapConnectionError(new Error('x'))).toBeInstanceOf(ConnectionError);
-    expect(mapConnectionError(pgError('28P01')).name).toBe('SequelizeAccessDeniedError');
+    expect(mapper.mapQueryError(pgError('ECONNREFUSED'))).toBeInstanceOf(ConnectionRefusedError);
+    expect(mapper.mapConnectionError(pgError('28P01'))).toBeInstanceOf(AccessDeniedError);
+    expect(mapper.mapConnectionError(new Error('x'))).toBeInstanceOf(ConnectionError);
+    expect(mapper.mapConnectionError(pgError('28P01')).name).toBe('SequelizeAccessDeniedError');
   });
 });

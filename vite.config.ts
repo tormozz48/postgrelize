@@ -16,7 +16,7 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
     lib: {
-      entry: { index: 'src/index.ts', effect: 'src/effect/index.ts' },
+      entry: { index: 'src/index.ts' },
       formats: ['es', 'cjs'],
       fileName: (format, name) => `${name}.${format === 'es' ? 'js' : 'cjs'}`,
     },
