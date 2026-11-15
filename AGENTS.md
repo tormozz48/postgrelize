@@ -13,7 +13,7 @@ Rules for anyone continuing this package, human or AI agent. Read it fully befor
 ## Golden rules
 
 1. **The v6 API is a contract.** Public names, option shapes, return values, error classes and hook order match Sequelize v6. Divergence is allowed only to fix a v6 bug ([ADR-016](.10x/adrs/016-v6-bug-divergence.md)), and every divergence is documented.
-2. **Values are always bound.** DML uses `$1..$n` parameters only ([ADR-002](.10x/adrs/002-pg-driver-bound-parameters.md)). DDL renders literals through `SqlLiteral` only ([ADR-010](.10x/adrs/010-ddl-literals.md)). Identifiers are always quoted by the shared quoting helper. Never concatenate user input into SQL.
+2. **Values are always bound.** DML uses `$1..$n` parameters only ([ADR-002](.10x/adrs/002-pg-driver-bound-parameters.md)). DDL renders literals through `SqlLiteral` only ([ADR-010](.10x/adrs/010-ddl-literals.md)). Identifiers are always quoted by the shared quoting helper. Enum-like strings (lock strengths, isolation levels, function names, types) go through an allowlist. Never concatenate user input into SQL. Every input that reaches SQL has a row on the Security page and tests in `tests/integration/security/` ([ADR-020](.10x/adrs/020-injection-assurance.md)).
 3. **Only `src/connection` imports `pg`.** No new runtime dependencies without an ADR. Current runtime deps: `inflection`, `validator`.
 4. **No change without a test that needs it** (YAGNI). Every bug fix gets a regression test.
 5. **Docs move with code.** A PR that changes behaviour updates its docs in the same PR (see [Documentation sync](#documentation-sync)).
@@ -89,7 +89,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
 - Exported functions and methods have explicit parameter and return types.
 - Files are `kebab-case.ts`; classes and types `PascalCase`; functions and members `camelCase`. Imports are relative inside `src`, with no barrels except `src/index.ts`.
 - Keep units small: a class does one thing; split files that grow past ~300 lines by responsibility.
-- Comments explain _why_, never _what_. TSDoc is for the public API.
+- Comments explain _why_, never _what_. TSDoc is for the public API (see [API documentation](#api-documentation)).
 - Match the surrounding style. Do not reformat or refactor unrelated code in a feature PR.
 
 ## Testing rules
@@ -104,6 +104,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
   - Each test project gets its own database per run, and each compat file its own database (`tests/support/global-setup-db.ts`, `tests/support/file-database.ts`).
   - Get the URL from `testDatabaseUrl()`, never hard-code it.
   - Database-wide names (LISTEN channels, advisory lock keys) are safe only because of these per-run databases. Don't share them between files of one project.
+- **Security tests** (`tests/integration/security/`) run on real PostgreSQL inside `withCanary` (from `tests/support/injection.ts`): use the `PAYLOADS` corpus and `fast-check` properties (`textValue()`, `identifier()`, `propertyParameters()`, fixed seed; reproduce with `PGZ_FC_SEED`). A `42601` syntax error means a payload escaped its quoting.
 - **No timing assumptions.** Don't rely on "X finishes within N ms". Order concurrent steps with explicit signals (resolve a promise when the lock is held, then start the competitor).
 - The suite must pass when run several times in parallel on one machine. If you see a flake, find the cause; don't retry or raise timeouts to hide it.
 
@@ -120,17 +121,18 @@ Docs live in four places. Each one is either checked by a tool or covered by a r
 
 **When you change X, update Y in the same PR:**
 
-| Change                                | Must update                                                                                                                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| New or changed public export / option | TSDoc (`@param`, `@returns`, `@throws`, `@example` for non-trivial API); the guide page for that area; an example region in `docs/examples` if users need code to use it |
-| New PostgreSQL feature                | Everything above, plus the "What you get on top of Sequelize v6" list in `README.md` and the PostgreSQL features section of the guide                                    |
-| New guide page                        | `docs/.vitepress/config.ts` sidebar (`guide` array)                                                                                                                      |
-| Fixed v6 bug (divergence)             | A row in `docs/sequelize-issues.md` → "Bugs fixed in postgrelize" + a regression test in `tests/integration/sequelize-issues.test.ts`                                    |
-| v6 parity fix                         | Differential test in `tests/compat`; `docs/sequelize-issues.md` if it was a listed issue                                                                                 |
-| Behaviour change visible to users     | The affected guide pages and examples; `docs/guide/migrating.md` if it affects people moving from v6                                                                     |
-| Breaking change                       | All of the above + a `!` commit (`feat!:` / `refactor!:`) + a minor version bump while < 1.0                                                                             |
-| Architecture or dependency decision   | New ADR; `AGENTS.md` if a rule changes                                                                                                                                   |
-| Dev workflow, scripts, CI             | `AGENTS.md` (Setup and commands) and the README "Development" section                                                                                                    |
+| Change                                               | Must update                                                                                                                                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| New or changed public export / option                | TSDoc (`@param`, `@returns`, `@throws`, `@example` for non-trivial API); the guide page for that area; an example region in `docs/examples` if users need code to use it |
+| New PostgreSQL feature                               | Everything above, plus the "What you get on top of Sequelize v6" list in `README.md` and the PostgreSQL features section of the guide                                    |
+| New guide page                                       | `docs/.vitepress/config.ts` sidebar (`guide` array)                                                                                                                      |
+| Fixed v6 bug (divergence)                            | A row in `docs/sequelize-issues.md` → "Bugs fixed in postgrelize" + a regression test in `tests/integration/sequelize-issues.test.ts`                                    |
+| New input that reaches SQL (option, method argument) | A row in the table on `docs/security.md` + payload test (and property test if bound / identifier) in `tests/integration/security/`                                       |
+| v6 parity fix                                        | Differential test in `tests/compat`; `docs/sequelize-issues.md` if it was a listed issue                                                                                 |
+| Behaviour change visible to users                    | The affected guide pages and examples; `docs/guide/migrating.md` if it affects people moving from v6                                                                     |
+| Breaking change                                      | All of the above + a `!` commit (`feat!:` / `refactor!:`) + a minor version bump while < 1.0                                                                             |
+| Architecture or dependency decision                  | New ADR; `AGENTS.md` if a rule changes                                                                                                                                   |
+| Dev workflow, scripts, CI                            | `AGENTS.md` (Setup and commands) and the README "Development" section                                                                                                    |
 
 **Rules for writing docs:**
 
@@ -139,6 +141,22 @@ Docs live in four places. Each one is either checked by a tool or covered by a r
 - Don't edit `docs/api`; it is generated.
 - Docs describe the released behaviour on `main`. Never describe planned features as if they exist.
 - Every rule in the "Must update" table also appears in the PR checklist (`.github/pull_request_template.md`). Reviewers block PRs that skip an item.
+
+## API documentation
+
+The API reference (`docs/api`, generated by TypeDoc from TSDoc) is read by people and by LLMs. Write it for a reader who sees only that page.
+
+- **Everything public is documented:** every export of `src/index.ts` and everything reachable from it — classes, constructors, methods, properties and fields, functions, type aliases, interfaces and their members, enum-like constants and their members, variables. `@internal` marks what is exported between modules but is not public; it is excluded from the reference.
+- **Each comment contains:**
+  - a first sentence that says what the item does or represents, without repeating its name;
+  - then what matters for using it: units, defaults, `null`/`undefined` meaning, side effects (queries run, hooks fired, transactions used), PostgreSQL version requirements, differences from Sequelize v6;
+  - `@param` for every parameter and `@returns` for non-void;
+  - `@throws` for the v6 error classes it can raise;
+  - `@defaultValue` for options with defaults;
+  - `@see` links to related API (`{@link Model.findAll}`) and guide pages;
+  - `@deprecated` with the replacement.
+- **Examples:** every public function, method and class has at least one `@example` with a complete, realistic TypeScript snippet (imports omitted, model names from the guide), unless the item is trivial (simple getters, constants whose description is the value). Options types show an example object. Examples must compile against the current API; when you change a signature, update its examples in the same commit.
+- **Kept current:** a PR that changes a public signature, option, default or behaviour updates the TSDoc in the same PR (see [Documentation sync](#documentation-sync)). `npm run docs` fails on undocumented public items; reviewers check that existing comments still match the code.
 
 ## Decision records
 
@@ -180,6 +198,7 @@ Everything lives in `.10x/`:
 | [017](.10x/adrs/017-effect-core.md)                     | Effect as internal effect system                             | Superseded by 018                                     |
 | [018](.10x/adrs/018-oop-architecture.md)                | OOP architecture, no Effect                                  | Accepted                                              |
 | [019](.10x/adrs/019-documentation-sync.md)              | `AGENTS.md` and documentation sync rules                     | Accepted                                              |
+| [020](.10x/adrs/020-injection-assurance.md)             | SQL-injection assurance policy                               | Accepted                                              |
 
 ## Git, PRs and releases
 

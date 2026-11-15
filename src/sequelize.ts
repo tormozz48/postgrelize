@@ -328,6 +328,8 @@ export class Sequelize {
 
   /**
    * Runs raw SQL. Replacements are bound as parameters (never inlined).
+   * The SQL text itself is sent as is: never build it from user input — pass user values through
+   * `replacements` or `bind`.
    *
    * @param sql - SQL text, or a literal.
    * @param options - Query options.

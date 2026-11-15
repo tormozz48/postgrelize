@@ -19,6 +19,8 @@ These fixes intentionally differ from Sequelize v6 ([ADR-016](https://github.com
 | [#18256](https://github.com/sequelize/sequelize/issues/18256) | `belongsToMany` with a custom `sourceKey` and `limit`                                                                                |
 | [#12971](https://github.com/sequelize/sequelize/issues/12971) | top-level `$include.attr$` condition with a hasMany include and `limit`                                                              |
 | —                                                             | `describeTable` reads enum values of the column's type in its own schema, in declared order (v6 matches the type name in any schema) |
+| —                                                             | `Model.aggregate` validates the function name (v6 inserts it into SQL unchecked)                                                     |
+| —                                                             | `transaction({ isolationLevel })` accepts only `ISOLATION_LEVELS` values (v6 inserts it into SQL unchecked)                          |
 | —                                                             | `bulkCreate({ ignoreDuplicates })` assigns returned rows to the records that were inserted (v6 mixes them up)                        |
 
 ## Works correctly in postgrelize

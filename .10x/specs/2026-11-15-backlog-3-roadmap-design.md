@@ -88,7 +88,12 @@ Surfaces to cover (at least):
 - Enforced by `coverage.thresholds` in `vitest.config.ts`, so CI fails below the target.
 - New tests follow AGENTS.md placement rules (unit / compat / integration); no tests that only touch lines without asserting behaviour.
 
-## S8 — LLM-facing documentation
+## S8 — API documentation and LLM-facing documentation
+
+Requirement (owner, 2026-11-15): all public classes, functions, class fields, types, interfaces and variables are documented in code for the API section, written for both people and LLMs, with usage examples wherever possible, and kept current with code changes (rules in AGENTS.md → API documentation, PR template).
+
+- TSDoc pass over the whole public surface (after S6, so it documents the final structure): summary, behaviour notes, `@param`/`@returns`/`@throws`/`@defaultValue`/`@see`, `@example` for every non-trivial item.
+- Enforcement: TypeDoc `requiredToBeDocumented` extended to properties, accessors, type aliases, interfaces, enum members and variables; a docs test that fails when a public function, method or class has no `@example` (allowlist for trivial items), and type-checks the examples.
 
 Proposed (detailed spec at stage start, owner approval):
 - `llms.txt` and `llms-full.txt` on the docs site, generated from the VitePress pages and API reference.

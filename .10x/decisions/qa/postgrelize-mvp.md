@@ -47,3 +47,10 @@ See `.10x/reviews/2026-11-14-mvp-qa-report.md` — 171 tests, 53 differential sc
   - Lock-ordering tests signal when the first holder has the lock.
   - DB test and hook timeouts raised to 60 s.
 - Verification: 10 sequential and 9 concurrent (3 at a time) full runs, all green; no leftover `pgz_*` databases.
+
+## 2026-11-15 — S5 SQL-injection assurance
+
+- Independent audit + 19 security tests on real PostgreSQL (`tests/integration/security/`): payload corpus, fast-check properties (seed 20261115), canary table, 42601 syntax-error signal.
+- 7 findings (F1–F7), all fixed with regression tests; see `.10x/reviews/2026-11-15-injection-review.md`.
+- Side finding: v6 parity — `Sequelize#createSchema/showAllSchemas/dropSchema/dropAllSchemas`, `QueryInterface#dropAllSchemas` added (differential test).
+- CodeQL `security-extended` workflow added. Policy: ADR-020.
