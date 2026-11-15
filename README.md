@@ -117,7 +117,7 @@ npm run docs         # documentation site into docs/.vitepress/dist (npm run doc
 npm run test:coverage # coverage report into coverage/
 ```
 
-Design records, ADRs and reviews live in `.10x/`.
+Contribution rules (architecture, tests, documentation sync, releases) are in [AGENTS.md](AGENTS.md). Design records, ADRs and reviews live in `.10x/`.
 
 ## License
 

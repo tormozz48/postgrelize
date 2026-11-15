@@ -1,6 +1,6 @@
 # ADR-017: Effect as the internal effect system
 
-**Status:** Accepted (supersedes the "plain Promise functions" part of ADR-005 and the "no new runtime dependencies" rule of ADR-012 for `effect`)
+**Status:** Superseded by ADR-018 (2026-11-15). Was: Accepted (supersedes the "plain Promise functions" part of ADR-005 and the "no new runtime dependencies" rule of ADR-012 for `effect`)
 **Date:** 2026-11-15
 **Feature:** backlog 2 / S4
 **Author:** 10x-Team (Architect + Staff Engineer)
