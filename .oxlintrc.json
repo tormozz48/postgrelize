@@ -94,16 +94,12 @@
         "src/connection/copy.ts",
         "src/ddl/ddl-generator.ts",
         "src/errors/errors.ts",
-        "src/expressions/methods.ts",
         "src/index.ts",
         "src/query-interface/query-interface.ts",
         "src/query-interface/schema-synchronizer.ts",
         "src/sequelize.ts",
-        "src/sql/ast.ts",
-        "src/sql/compile.ts",
         "src/transaction/transaction.ts",
-        "src/validation/instance-validator.ts",
-        "src/where/where.ts"
+        "src/validation/instance-validator.ts"
       ],
       "rules": {
         "max-lines": "off"
@@ -132,10 +128,8 @@
         "src/query-interface/schema-synchronizer.ts",
         "src/query/raw-query.ts",
         "src/sequelize.ts",
-        "src/sql/compile.ts",
         "src/transaction/transaction.ts",
-        "src/validation/instance-validator.ts",
-        "src/where/where.ts"
+        "src/validation/instance-validator.ts"
       ],
       "rules": {
         "max-lines-per-function": "off"
