@@ -124,6 +124,27 @@ export class InstanceLifecycle {
   }
 
   /**
+   * Runs a hook for each instance, one after another (individual hooks of bulk operations).
+   *
+   * @param model - Model class.
+   * @param type - Hook type.
+   * @param instances - Instances, passed as the first hook argument.
+   * @param args - Further hook arguments.
+   * @returns Resolves when all hooks finished.
+   */
+  async runEach(
+    model: object,
+    type: HookType,
+    instances: readonly object[],
+    ...args: readonly unknown[]
+  ): Promise<void> {
+    for (const instance of instances) {
+      // oxlint-disable-next-line no-await-in-loop -- hooks of one bulk call run in order, as in v6.
+      await this.runHooks(model, type, instance, ...args);
+    }
+  }
+
+  /**
    * Initializes a new instance (`new Model(values, options)`): defaults for new records, values
    * (raw or through setters), nested include instances and change tracking.
    *

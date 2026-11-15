@@ -18,7 +18,7 @@ Delivered as separate stages, each with its own branch, PR, and ADR where a deci
 | --- | --- |
 | Injection assurance level | Audit of every input surface + payload and property-based tests on real PostgreSQL + CodeQL in CI. No sqlmap/demo app. |
 | "All PostgreSQL features" | An explicit coverage matrix of PostgreSQL 16–18 features an ORM can reasonably expose. Each row: supported (with a test), via `literal`, or out of scope (with a reason). Gaps closed in later stages, in priority order. |
-| Order | S5 security → S6 refactor (decorators, mixins, size limits) → S7 coverage ~98% → S8 LLM-facing docs → S9 PostgreSQL matrix → S10+ gap stages |
+| Order | S5 security → S6 refactor (decorators, mixins, size limits) → S7 coverage ~98% → S8 LLM-facing docs → S9 PostgreSQL matrix → S10 performance → S11+ gap stages |
 | Decorators | Internal (cross-cutting concerns) and an optional public decorator API for models next to `init`/`define` |
 | Size limits | Functions ≤ 20 lines, classes (files) ≤ 150 lines, enforced by oxlint |
 | New dev dependency | `fast-check` (property-based tests). No new runtime dependencies. |
@@ -117,9 +117,13 @@ Proposed (detailed spec at stage start, owner approval):
   - It refreshes and replaces the 2026-11-14 gap analysis.
 - **Drift check:** a `docs` test asserts that every `supported` row references an existing test (file exists and contains the test name).
 - **Site page:** "PostgreSQL coverage" is rendered from the data file at docs build time.
-- **Done when:** the matrix covers all areas above, every supported row is test-backed, and the page is published. The `planned` rows are grouped into proposed S10+ stages for owner approval.
+- **Done when:** the matrix covers all areas above, every supported row is test-backed, and the page is published. The `planned` rows are grouped into proposed S11+ stages for owner approval.
 
-## S10+ — Closing gaps
+## S10 — Performance (added 2026-11-15)
+
+Owner request: a separate stage to raise the library's performance. Detailed spec at stage start: profile the hot paths (query building, compilation, row mapping, instance construction, hooks) with the stub and real-database benchmarks, compare with Sequelize v6 on the same scenarios, add cases for associations/includes and large result sets, set targets per case, then optimise (caching compiled statements, prepared statements, cheaper instance construction, fewer allocations). The bench baseline is updated only after the stage.
+
+## S11+ — Closing gaps
 
 - One stage per coherent group of `planned` rows (e.g. full-text search, range functions, partitioning DDL), in the priority order approved by the owner after S9.
 - Each stage:

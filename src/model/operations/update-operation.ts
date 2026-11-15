@@ -1,6 +1,5 @@
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
-import type { InstanceLifecycle } from '../instance-lifecycle.ts';
 import type { JoinSourceBuilder } from '../join-source-builder.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type { ModelValues } from '../model-values.ts';
@@ -8,56 +7,42 @@ import type { AnyModel, ModelStatic, MutableOptions, UpdateOptions, Values } fro
 import type { ReturningOld } from '../returning-old.ts';
 import type { UpdateQueryBuilder } from '../update-query-builder.ts';
 import type { WrittenRows } from '../written-rows.ts';
+import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link UpdateOperation}. */
-export type UpdateOperationServices = Readonly<{
-  /** Model state and scopes. */
-  registry: ModelRegistry;
-  /** Hooks. */
-  lifecycle: InstanceLifecycle;
-  /** Value rules. */
-  values: ModelValues;
-  /** SET items, paranoid filter. */
-  columns: AttributeColumns;
-  /** UPDATE builder. */
-  updates: UpdateQueryBuilder;
-  /** `from` relations. */
-  joins: JoinSourceBuilder;
-  /** `returningOld` support. */
-  returningOld: ReturningOld;
-  /** Instances of returned rows. */
-  written: WrittenRows;
-  /** SQL compiler. */
-  compiler: SqlCompiler;
+export type UpdateOperationServices = OperationServices &
+  Readonly<{
+    /** Model state and scopes. */
+    registry: ModelRegistry;
+    /** Value rules. */
+    values: ModelValues;
+    /** SET items, paranoid filter. */
+    columns: AttributeColumns;
+    /** UPDATE builder. */
+    updates: UpdateQueryBuilder;
+    /** `from` relations. */
+    joins: JoinSourceBuilder;
+    /** `returningOld` support. */
+    returningOld: ReturningOld;
+    /** Instances of returned rows. */
+    written: WrittenRows;
+    /** SQL compiler. */
+    compiler: SqlCompiler;
+  }>;
+
+type UpdateResult<M> = [affectedCount: number, affectedRows?: M[]];
+
+// One `Model.update` call: the hook-visible options and the caller's options.
+type UpdateCall = Readonly<{
+  model: ModelStatic<AnyModel>;
+  opts: MutableOptions;
+  options: UpdateOptions;
+  where: unknown;
+  individual: boolean;
 }>;
 
 /** `Model.update`: bulk UPDATE with validation, bulk / individual hooks, `from` and `returning`. */
-export class UpdateOperation {
-  readonly #registry: ModelRegistry;
-  readonly #lifecycle: InstanceLifecycle;
-  readonly #values: ModelValues;
-  readonly #columns: AttributeColumns;
-  readonly #updates: UpdateQueryBuilder;
-  readonly #joins: JoinSourceBuilder;
-  readonly #returningOld: ReturningOld;
-  readonly #written: WrittenRows;
-  readonly #compiler: SqlCompiler;
-
-  /**
-   * @param services - Collaborators.
-   */
-  constructor(services: UpdateOperationServices) {
-    this.#registry = services.registry;
-    this.#lifecycle = services.lifecycle;
-    this.#values = services.values;
-    this.#columns = services.columns;
-    this.#updates = services.updates;
-    this.#joins = services.joins;
-    this.#returningOld = services.returningOld;
-    this.#written = services.written;
-    this.#compiler = services.compiler;
-  }
-
+export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   /**
    * `Model.update`.
    *
@@ -71,95 +56,102 @@ export class UpdateOperation {
     model: ModelStatic<M>,
     values: Values,
     options: UpdateOptions,
-  ): Promise<[affectedCount: number, affectedRows?: M[]]> {
-    const { definition, runtime } = this.#registry.state(model);
+  ): Promise<UpdateResult<M>> {
     const opts: MutableOptions = {
       validate: true,
       hooks: true,
       individualHooks: false,
-      ...this.#registry.scoped(model, options),
+      ...this.services.registry.scoped(model, options),
       attributes: { ...values },
     };
     if (opts['validate'] === true) {
-      const probe = new model(values, { isNewRecord: false });
-      await probe.validate({
-        hooks: opts['hooks'] === true,
-        skip: [...definition.attributes.keys()].filter((name) => !(name in values)),
-      });
+      await this.#validate(model, values, opts);
     }
-    if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'beforeBulkUpdate', opts);
+    return (await this.#bulkUpdate(model, opts, options)) as UpdateResult<M>;
+  }
+
+  async #validate(model: ModelStatic<AnyModel>, values: Values, opts: MutableOptions) {
+    const { definition } = this.services.registry.state(model);
+    await new model(values, { isNewRecord: false }).validate({
+      hooks: opts['hooks'] === true,
+      skip: [...definition.attributes.keys()].filter((name) => !(name in values)),
+    });
+  }
+
+  @ModelOperation.bulkHooks('beforeBulkUpdate', 'afterBulkUpdate')
+  async #bulkUpdate(
+    model: ModelStatic<AnyModel>,
+    opts: MutableOptions,
+    options: UpdateOptions,
+  ): Promise<UpdateResult<AnyModel>> {
+    const { definition } = this.services.registry.state(model);
+    const paranoid = opts['paranoid'] as boolean | undefined;
+    const where = this.services.columns.paranoid(definition, opts['where'], paranoid);
+    const call = { model, opts, options, where, individual: opts['individualHooks'] === true };
+    if (call.individual) {
+      await this.#beforeEach(call);
     }
-    const where = this.#columns.paranoid(
-      definition,
-      opts['where'],
-      opts['paranoid'] as boolean | undefined,
-    );
-    const individual = opts['individualHooks'] === true;
-    const targets = individual
-      ? await model.findAll({
-          where: where as never,
-          ...this.#values.queryOptions(options),
-          paranoid: false,
-        })
-      : [];
-    const attributes = opts['attributes'] as Values;
-    if (individual) {
-      await targets.reduce<Promise<unknown>>(
-        (previous, instance) =>
-          previous.then(() => {
-            instance.set(attributes);
-            return this.#lifecycle.runHooks(model, 'beforeUpdate', instance, opts);
-          }),
-        Promise.resolve(),
-      );
+    UpdateOperation.#check(call);
+    const updated = await this.#execute(call);
+    if (call.individual) {
+      await this.services.lifecycle.runEach(model, 'afterUpdate', updated.rows, opts);
     }
-    const changes = this.#values.withTimestamps(
-      definition,
-      this.#values.pick(attributes, options.fields as readonly string[] | undefined),
-      new Date(),
-      false,
-      opts['silent'] === true,
-    );
+    return options.returning === true ? [updated.count, updated.rows] : [updated.count];
+  }
+
+  async #beforeEach({ model, where, opts, options }: UpdateCall) {
+    const targets = await model.findAll({
+      where: where as never,
+      ...this.services.values.queryOptions(options),
+      paranoid: false,
+    });
+    targets.forEach((instance) => instance.set(opts['attributes'] as Values));
+    await this.services.lifecycle.runEach(model, 'beforeUpdate', targets, opts);
+  }
+
+  static #check({ options, individual }: UpdateCall): void {
     if (individual && options.from !== undefined) {
       throw new Error('update: individualHooks cannot be combined with from');
     }
     if (options.returningOld === true && options.returning !== true) {
       throw new Error('update: returningOld requires returning: true');
     }
-    const old = await this.#returningOld.enabled(runtime, options);
-    const from = this.#joins.build(options.from);
-    const node = this.#updates.build(
+  }
+
+  async #execute(call: UpdateCall): Promise<Readonly<{ count: number; rows: AnyModel[] }>> {
+    const { definition, runtime } = this.services.registry.state(call.model);
+    const { returningOld, compiler, written } = this.services;
+    const old = await returningOld.enabled(runtime, call.options);
+    const node = this.#statement(call);
+    const statement = old ? returningOld.node(definition, node) : node;
+    const result = await runtime.execute(compiler.compile(statement), call.options);
+    const rows = result.rows.map((row) => written.instance(call.model, row, old));
+    return { count: result.rowCount, rows };
+  }
+
+  #statement(call: UpdateCall) {
+    const { definition, runtime } = this.services.registry.state(call.model);
+    const { columns, joins, updates } = this.services;
+    const from = joins.build(call.options.from);
+    const ctx = columns.whereCompiler(definition, from.length === 0 ? undefined : definition.name);
+    const threshold = runtime.inAsAnyThreshold;
+    return updates.build(
       definition,
-      this.#columns.setItems(
-        definition,
-        changes,
-        this.#columns.whereCompiler(definition, from.length === 0 ? undefined : definition.name),
-      ),
-      where,
+      columns.setItems(definition, this.#changes(call), ctx),
+      call.where,
       {
         ...(from.length === 0 ? {} : { from }),
-        ...(options.returning === true || individual ? { returning: true } : {}),
-        ...(runtime.inAsAnyThreshold === undefined
-          ? {}
-          : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
+        ...(call.options.returning === true || call.individual ? { returning: true } : {}),
+        ...(threshold === undefined ? {} : { inAsAnyThreshold: threshold }),
       },
     );
-    const result = await runtime.execute(
-      this.#compiler.compile(old ? this.#returningOld.node(definition, node) : node),
-      options,
-    );
-    const updated = result.rows.map((row) => this.#written.instance(model, row, old));
-    if (individual) {
-      await updated.reduce<Promise<unknown>>(
-        (previous, instance) =>
-          previous.then(() => this.#lifecycle.runHooks(model, 'afterUpdate', instance, opts)),
-        Promise.resolve(),
-      );
-    }
-    if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'afterBulkUpdate', opts);
-    }
-    return options.returning === true ? [result.rowCount, updated] : [result.rowCount];
+  }
+
+  #changes({ model, opts, options }: UpdateCall): Values {
+    const { definition } = this.services.registry.state(model);
+    const { values } = this.services;
+    const fields = options.fields as readonly string[] | undefined;
+    const picked = values.pick(opts['attributes'] as Values, fields);
+    return values.withTimestamps(definition, picked, new Date(), false, opts['silent'] === true);
   }
 }
