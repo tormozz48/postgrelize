@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 — S5, S6 and S9 done; S7 coverage in PR (99.7% lines); next S8 API/LLM docs, S10 performance, parity stage
+**Current phase:** Backlog 3 — S5, S6 and S9 done; S7 coverage in PR (99.7% lines); next S7b parity and robustness (spec 2026-11-15-s7b), then S8 API/LLM docs, S10 performance
 
 **S9 (PostgreSQL coverage matrix):** done in PR — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); proposed gap stages S11–S17 await owner approval: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
