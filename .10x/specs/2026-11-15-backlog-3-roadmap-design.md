@@ -18,7 +18,7 @@ Delivered as separate stages, each with its own branch, PR, and ADR where a deci
 | --- | --- |
 | Injection assurance level | Audit of every input surface + payload and property-based tests on real PostgreSQL + CodeQL in CI. No sqlmap/demo app. |
 | "All PostgreSQL features" | An explicit coverage matrix of PostgreSQL 16–18 features an ORM can reasonably expose. Each row: supported (with a test), via `literal`, or out of scope (with a reason). Gaps closed in later stages, in priority order. |
-| Order | S5 security → S6 refactor (decorators, mixins, size limits) → S7 coverage ~98% → S8 LLM-facing docs → S9 PostgreSQL matrix → S10 performance → S11+ gap stages |
+| Order | S5 security → S6 refactor (decorators, mixins, size limits) → S7 coverage ~98% (done: 99.7%) → S7b parity and robustness → S8 API/LLM docs → S9 PostgreSQL matrix → S10 performance → S11+ gap stages |
 | Decorators | Internal (cross-cutting concerns) and an optional public decorator API for models next to `init`/`define` |
 | Size limits | Functions ≤ 20 lines, classes (files) ≤ 150 lines, enforced by oxlint |
 | New dev dependency | `fast-check` (property-based tests). No new runtime dependencies. |
