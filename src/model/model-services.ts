@@ -22,6 +22,7 @@ import { ReturningOld } from './returning-old.ts';
 import { RowMapper } from './row-mapper.ts';
 import { SelectQueryBuilder } from './select-query-builder.ts';
 import { UpdateQueryBuilder } from './update-query-builder.ts';
+import { ValueCloner } from './value-cloner.ts';
 import { WrittenRows } from './written-rows.ts';
 
 // Shared, stateless services of all models (internal wiring of `Model`).
@@ -32,6 +33,7 @@ const isInstance = (value: unknown): value is AnyModel => InstanceState.has(valu
 export const registry = new ModelRegistry();
 export const attributeColumns = new AttributeColumns();
 export const modelValues = new ModelValues();
+export const valueCloner = new ValueCloner();
 export const rowMapper = new RowMapper(registry);
 export const sqlCompiler = new SqlCompiler();
 export const selectQueries = new SelectQueryBuilder(attributeColumns);

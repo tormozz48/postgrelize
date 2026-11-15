@@ -71,9 +71,11 @@ export class InstanceValidator {
     attributes: readonly AttributeDefinition[],
   ): Promise<readonly ValidationErrorItem[]> {
     const results = await Promise.all(
-      attributes.map((attribute) =>
-        this.#attributes.items(target, attribute, target.values[attribute.fieldName]),
-      ),
+      attributes
+        .filter((attribute) => this.#attributes.hasValidators(attribute))
+        .map((attribute) =>
+          this.#attributes.items(target, attribute, target.values[attribute.fieldName]),
+        ),
     );
     return results.flat();
   }

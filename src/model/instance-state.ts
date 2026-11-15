@@ -40,7 +40,10 @@ export class InstanceState {
     return typeof value === 'object' && value !== null && STATE in value;
   }
 
-  /** Changed attribute names (replaced, never mutated). */
+  /**
+   * Changed attribute names. The set belongs to this instance and grows in place; readers copy it
+   * (`[...changed]`) when they need a snapshot.
+   */
   changed: ReadonlySet<string> = UNCHANGED;
   /** Include tree of a nested build. */
   includes: readonly IncludeNode[] = NO_INCLUDES;
@@ -56,9 +59,13 @@ export class InstanceState {
    * @param changed - Changed flag.
    */
   mark(name: string, changed: boolean): void {
-    this.changed = changed
-      ? new Set([...this.changed, name])
-      : new Set([...this.changed].filter((item) => item !== name));
+    if (!changed) {
+      (this.changed as Set<string>).delete(name);
+    } else if (this.changed === UNCHANGED) {
+      this.changed = new Set([name]);
+    } else {
+      (this.changed as Set<string>).add(name);
+    }
   }
 
   /** Forgets all changes (after a load or save). */
