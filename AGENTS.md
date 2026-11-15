@@ -220,6 +220,7 @@ Everything lives in `.10x/`:
 | [020](.10x/adrs/020-injection-assurance.md)             | SQL-injection assurance policy                               | Accepted                                              |
 | [021](.10x/adrs/021-decorators-mixins-size-limits.md)   | TC39 decorators, mixins, size limits                         | Accepted                                              |
 | [022](.10x/adrs/022-public-decorator-api.md)            | Public model decorator API, `sequelize.addModels`            | Accepted                                              |
+| [023](.10x/adrs/023-named-prepared-statements.md)       | Opt-in named prepared statements (`statementCache`)          | Accepted                                              |
 
 ## Git, PRs and releases
 
