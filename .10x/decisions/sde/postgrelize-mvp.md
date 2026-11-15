@@ -173,3 +173,12 @@ Tests: integration +11 (`sequelize-issues`), unit expectations for JSON path par
 - separate include `limit` applied per parent (v6 parity; filtered after the per-association query, no SQL-side grouped limit yet).
 - `findEach` loads `separate: true` includes per batch inside the cursor transaction.
 Tests: compat +1 (per-parent limit vs v6), integration +1 (findEach separate include).
+
+## Backlog 2 / S4 — Effect core (step 1–3) — done 2026-11-15
+- `effect` 4.1.4 runtime dependency (ADR-017). Connection manager exposes `effects` (execute / client / acquire / copyFrom / dedicated / close as Effect programs); Promise methods are `Effect.runPromise` wrappers. Hot path flattened to one `acquireUseRelease` around one `tryPromise` (Effect cost is per node).
+- Transactions: `beginEffect` / `commitEffect` / `rollbackEffect`, `managedTransaction` (rollback on failure and interruption via `Exit`); Promise API unchanged.
+- Bugs fixed on the way: a failing `BEGIN` / `settings` statement leaked the pooled client, and after the leak fix the connection still went back inside an aborted transaction — now `ROLLBACK` + release.
+- `postgrelize/effect` entry (separate build entry + package export): findAll/findOne/findByPk/count/create/bulkCreate/insert/upsert/update/destroy/query/transaction; error channel = v6 error classes, other errors are defects.
+- Benchmark: `bench/orm.bench.ts` (`--stub` measures ORM overhead with an in-memory pg pool; I/O mode ±50% noise), `bench/compare.ts` gate. Final (best of 3 vs baseline): findAll +1.4%, create +8.1%, bulkCreate −2.1%, insert −0.7% (gate ≤ +10%); findByPk +0.7 µs, count +1.0 µs, managed transaction +4.0 µs absolute.
+- Docs: guide `effect.md` with executed example; API reference now has `index` and `effect` modules (links under `/api/index/...`).
+- Open: intermittent 15 s test timeouts under the full parallel suite (seen on main too, 1 of 3 runs) — needs investigation.

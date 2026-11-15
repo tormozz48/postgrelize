@@ -90,6 +90,6 @@ For exporting rows as text, [`copyTo`](./bulk-writes#export-with-copyto) is fast
 
 ## API reference
 
-- [`Model`](/api/classes/Model) — `subquery`, `findEach`
-- [`exists`](/api/functions/exists), [`notExists`](/api/functions/notExists), [`over`](/api/functions/over), [`tuple`](/api/functions/tuple), [`where`](/api/variables/where)
-- [`CteDefinition`](/api/type-aliases/CteDefinition), [`CteFindOptions`](/api/type-aliases/CteFindOptions), [`WindowOptions`](/api/type-aliases/WindowOptions)
+- [`Model`](/api/index/classes/Model) — `subquery`, `findEach`
+- [`exists`](/api/index/functions/exists), [`notExists`](/api/index/functions/notExists), [`over`](/api/index/functions/over), [`tuple`](/api/index/functions/tuple), [`where`](/api/index/variables/where)
+- [`CteDefinition`](/api/index/type-aliases/CteDefinition), [`CteFindOptions`](/api/index/type-aliases/CteFindOptions), [`WindowOptions`](/api/index/type-aliases/WindowOptions)

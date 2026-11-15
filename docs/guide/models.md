@@ -71,6 +71,6 @@ Defaults for all models go into the `define` option of the `Sequelize` construct
 
 ## API reference
 
-- [`Model`](/api/classes/Model)
-- [`DataTypes`](/api/variables/DataTypes)
-- [`AttributeOptions`](/api/type-aliases/AttributeOptions), [`InitOptions`](/api/type-aliases/InitOptions)
+- [`Model`](/api/index/classes/Model)
+- [`DataTypes`](/api/index/variables/DataTypes)
+- [`AttributeOptions`](/api/index/type-aliases/AttributeOptions), [`InitOptions`](/api/index/type-aliases/InitOptions)

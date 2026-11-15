@@ -21,6 +21,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./effect": {
+      "types": "./dist/effect/index.d.ts",
+      "import": "./dist/effect.js",
+      "require": "./dist/effect.cjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

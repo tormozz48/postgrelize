@@ -84,6 +84,6 @@ PostgreSQL 18 can return the row as it was before the statement (`RETURNING OLD.
 
 ## API reference
 
-- [`Model`](/api/classes/Model) — `insert`, `upsert`, `bulkCreate`, `wasInserted`, `oldValues`
-- [`OnConflictOptions`](/api/type-aliases/OnConflictOptions), [`InsertOptions`](/api/type-aliases/InsertOptions)
-- [`excluded`](/api/functions/excluded)
+- [`Model`](/api/index/classes/Model) — `insert`, `upsert`, `bulkCreate`, `wasInserted`, `oldValues`
+- [`OnConflictOptions`](/api/index/type-aliases/OnConflictOptions), [`InsertOptions`](/api/index/type-aliases/InsertOptions)
+- [`excluded`](/api/index/functions/excluded)

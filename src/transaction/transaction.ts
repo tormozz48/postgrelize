@@ -157,62 +157,65 @@ export class Transaction {
    * a pooled client until commit / rollback; when starting fails the client is released.
    */
   beginEffect(): Effect.Effect<this, BaseError | Error> {
-    const start = Effect.suspend(() =>
-      this.#run(
-        this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
-      ),
-    ).pipe(
-      Effect.andThen(
-        Effect.forEach(
-          Object.entries(this.options.settings ?? {}),
-          ([name, value]) =>
-            this.#connections.effects.execute(
-              { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
-              this.executeOptions(),
-            ),
-          { discard: true },
-        ),
-      ),
-      Effect.as(this),
+    const opening = this.#run(
+      this.parent === undefined ? beginSql(this.options) : `SAVEPOINT ${quoteIdent(this.id)}`,
     );
+    const settings = Object.entries(this.options.settings ?? {});
+    // Kept to the minimum number of Effect nodes: this runs for every transaction (see bench/).
+    const start = (
+      settings.length === 0
+        ? opening
+        : opening.pipe(
+            Effect.andThen(
+              Effect.forEach(
+                settings,
+                ([name, value]) =>
+                  this.#connections.effects.execute(
+                    { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
+                    this.executeOptions(),
+                  ),
+                { discard: true },
+              ),
+            ),
+          )
+    ).pipe(Effect.as(this));
     if (this.parent !== undefined) {
       return start;
     }
     return this.#connections.effects.acquire.pipe(
-      Effect.tap((client) =>
-        Effect.sync(() => {
-          this.#client = client;
-        }),
-      ),
-      Effect.andThen(start.pipe(Effect.onError(() => Effect.sync(() => this.#release())))),
+      Effect.flatMap((client) => {
+        this.#client = client;
+        return start.pipe(
+          // Never return a connection inside an open (possibly aborted) transaction to the pool.
+          Effect.onError(() =>
+            Effect.exit(this.#run('ROLLBACK')).pipe(
+              Effect.andThen(Effect.sync(() => this.#release())),
+            ),
+          ),
+        );
+      }),
     );
   }
 
   /** @internal Commits (or releases the savepoint), releases the client, runs `afterCommit` hooks. */
   commitEffect(): Effect.Effect<void, BaseError | Error> {
-    return this.#active('commit').pipe(
+    return this.#finish(
+      'commit',
+      this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
+    ).pipe(
       Effect.andThen(
         Effect.suspend(() =>
-          this.#run(
-            this.parent === undefined ? 'COMMIT' : `RELEASE SAVEPOINT ${quoteIdent(this.id)}`,
-          ),
-        ),
-      ),
-      Effect.tap(() =>
-        Effect.sync(() => {
-          this.finished = 'commit';
-        }),
-      ),
-      Effect.ensuring(Effect.sync(() => this.#release())),
-      Effect.andThen(
-        Effect.forEach(
-          this.#afterCommit,
-          (hook) =>
-            Effect.tryPromise({
-              try: async () => hook(this),
-              catch: (error) => error as Error,
-            }),
-          { discard: true },
+          this.#afterCommit.length === 0
+            ? Effect.void
+            : Effect.forEach(
+                this.#afterCommit,
+                (hook) =>
+                  Effect.tryPromise({
+                    try: async () => hook(this),
+                    catch: (error) => error as Error,
+                  }),
+                { discard: true },
+              ),
         ),
       ),
     );
@@ -220,20 +223,26 @@ export class Transaction {
 
   /** @internal Rolls back (or to the savepoint) and releases the client. */
   rollbackEffect(): Effect.Effect<void, BaseError | Error> {
-    return this.#active('rollback').pipe(
-      Effect.andThen(
-        Effect.suspend(() =>
-          this.#run(
-            this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
+    return this.#finish(
+      'rollback',
+      this.parent === undefined ? 'ROLLBACK' : `ROLLBACK TO SAVEPOINT ${quoteIdent(this.id)}`,
+    );
+  }
+
+  #finish(state: 'commit' | 'rollback', sql: string): Effect.Effect<void, BaseError | Error> {
+    return Effect.suspend(() =>
+      this.finished === undefined
+        ? this.#run(sql).pipe(
+            Effect.map(() => {
+              this.finished = state;
+            }),
+            Effect.ensuring(Effect.sync(() => this.#release())),
+          )
+        : Effect.fail(
+            new Error(
+              `Transaction cannot be ${state === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
+            ),
           ),
-        ),
-      ),
-      Effect.tap(() =>
-        Effect.sync(() => {
-          this.finished = 'rollback';
-        }),
-      ),
-      Effect.ensuring(Effect.sync(() => this.#release())),
     );
   }
 
@@ -312,18 +321,6 @@ export class Transaction {
    */
   afterCommit(hook: (transaction: Transaction) => unknown): void {
     this.#afterCommit = [...this.#afterCommit, hook];
-  }
-
-  #active(action: 'commit' | 'rollback'): Effect.Effect<void, Error> {
-    return Effect.suspend(() =>
-      this.finished === undefined
-        ? Effect.void
-        : Effect.fail(
-            new Error(
-              `Transaction cannot be ${action === 'commit' ? 'committed' : 'rolled back'} because it has been finished with state: ${this.finished}`,
-            ),
-          ),
-    );
   }
 
   #run(sql: string): Effect.Effect<void, BaseError | Error> {
