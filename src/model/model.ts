@@ -3,24 +3,15 @@ import {
   type DropOptions,
   type SyncOptions,
 } from '../query-interface/schema-synchronizer.ts';
-import {
-  assembleInstances,
-  countJoins,
-  loadSeparate,
-  normalizeIncludes,
-  parseRawRow,
-  toIncludeOptions,
-  type IncludeNode,
-  withIncludes,
-  type IncludeOption,
-} from '../associations/include.ts';
-import {
-  associationsOf,
-  belongsTo as defineBelongsTo,
-  belongsToMany as defineBelongsToMany,
-  hasMany as defineHasMany,
-  hasOne as defineHasOne,
-} from '../associations/associate.ts';
+import type { IncludeNode, IncludeOption } from '../associations/include.ts';
+import { IncludeLoader } from '../associations/include-loader.ts';
+import { IncludeQueryBuilder } from '../associations/include-query-builder.ts';
+import { IncludeResolver } from '../associations/include-resolver.ts';
+import { NestedCreator } from '../associations/nested-creator.ts';
+import { BelongsTo } from '../associations/belongs-to.ts';
+import { BelongsToMany } from '../associations/belongs-to-many.ts';
+import { HasMany } from '../associations/has-many.ts';
+import { HasOne } from '../associations/has-one.ts';
 import type {
   Association,
   AssociationOptions,
@@ -149,6 +140,13 @@ const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null
 const copyEncoder = new CopyEncoder();
 const sqlCompiler = new SqlCompiler();
 const sqlLiteral = new SqlLiteral();
+const includeResolver = new IncludeResolver();
+const includeQueryBuilder = new IncludeQueryBuilder();
+const includeLoader = new IncludeLoader(includeResolver);
+const nestedCreator = new NestedCreator(
+  includeResolver,
+  (value): value is AnyModel => value instanceof Model,
+);
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -253,7 +251,7 @@ export class Model<
     const includes =
       options.include === undefined
         ? []
-        : normalizeIncludes(this.constructor as ModelStatic<AnyModel>, options.include);
+        : includeResolver.normalize(this.constructor as ModelStatic<AnyModel>, options.include);
     const nested = new Set(includes.map((node) => node.as));
     const own = Object.fromEntries(
       Object.entries(values as Values).filter(([key]) => !nested.has(key)),
@@ -262,7 +260,7 @@ export class Model<
     includes.forEach((node) => {
       const value = (values as Values)[node.as];
       if (value !== undefined) {
-        (this.dataValues as Values)[node.as] = buildNested(node, value);
+        (this.dataValues as Values)[node.as] = nestedCreator.build(node, value);
       }
     });
     this.#includes = includes;
@@ -392,7 +390,7 @@ export class Model<
 
   /** Associations of the model by alias (Sequelize v6 `Model.associations`). */
   static get associations(): Readonly<Record<string, Association>> {
-    return Object.fromEntries(associationsOf(this));
+    return Object.fromEntries(stateOf(this).associations as ReadonlyMap<string, Association>);
   }
 
   /**
@@ -407,7 +405,7 @@ export class Model<
     target: ModelStatic<T>,
     options?: AssociationOptions,
   ): Association {
-    return defineBelongsTo(this, target, options);
+    return new BelongsTo(this, target, options);
   }
 
   /**
@@ -422,7 +420,7 @@ export class Model<
     target: ModelStatic<T>,
     options?: AssociationOptions,
   ): Association {
-    return defineHasOne(this, target, options);
+    return new HasOne(this, target, options);
   }
 
   /**
@@ -437,7 +435,7 @@ export class Model<
     target: ModelStatic<T>,
     options?: AssociationOptions,
   ): Association {
-    return defineHasMany(this, target, options);
+    return new HasMany(this, target, options);
   }
 
   /**
@@ -452,7 +450,7 @@ export class Model<
     target: ModelStatic<T>,
     options: BelongsToManyOptions,
   ): Association {
-    return defineBelongsToMany(this, target, options);
+    return new BelongsToMany(this, target, options);
   }
 
   /**
@@ -506,7 +504,7 @@ export class Model<
         scopes.whereMergeStrategy,
       ) as FindOptions;
       const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-      const includes = normalizeIncludes(this, query.include);
+      const includes = includeResolver.normalize(this, query.include);
       const base = buildSelect(
         sourceDefinition(definition, query.source),
         {
@@ -517,7 +515,9 @@ export class Model<
         undefined,
         as,
       );
-      return includes.length === 0 ? base : withIncludes(definition, base, includes, query);
+      return includes.length === 0
+        ? base
+        : includeQueryBuilder.build(definition, base, includes, query);
     });
   }
 
@@ -652,7 +652,7 @@ export class Model<
       { ...options },
       scopes.whereMergeStrategy,
     ) as FindOptions;
-    const includes = normalizeIncludes(this, scoped.include);
+    const includes = includeResolver.normalize(this, scoped.include);
     if (includes.some((node) => !node.separate)) {
       throw new Error('findEach does not support joined includes');
     }
@@ -682,7 +682,7 @@ export class Model<
         }
         const instances = batch.rows.map((row) => fromRow(this, row));
         if (includes.length > 0) {
-          await loadSeparate(instances, includes, { transaction });
+          await includeLoader.loadSeparate(instances, includes, { transaction });
         }
         yield* instances;
       }
@@ -786,7 +786,7 @@ export class Model<
       scopes.whereMergeStrategy,
     ) as FindOptions;
     const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-    const includes = normalizeIncludes(this, query.include);
+    const includes = includeResolver.normalize(this, query.include);
     const base = buildSelect(
       sourceDefinition(definition, query.source),
       {
@@ -795,7 +795,8 @@ export class Model<
       } as SelectOptions,
       runtime.inAsAnyThreshold,
     );
-    const select = includes.length === 0 ? base : withIncludes(definition, base, includes, query);
+    const select =
+      includes.length === 0 ? base : includeQueryBuilder.build(definition, base, includes, query);
     return runtime.copyTo(
       `COPY (${sqlLiteral.inlineValues(sqlCompiler.compile(select))}) TO STDOUT${copyFormatSql(options)}`,
       options,
@@ -1274,7 +1275,7 @@ export class Model<
       ...(opts as FindOptions),
       where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
-    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const includes = includeResolver.normalize(this, opts['include'] as IncludeOption | undefined);
     const base = buildSelect(
       sourceDefinition(definition, (query as FindOptions).source),
       {
@@ -1284,19 +1285,23 @@ export class Model<
       runtime.inAsAnyThreshold,
     );
     const select =
-      includes.length === 0 ? base : withIncludes(definition, base, includes, query as FindOptions);
+      includes.length === 0
+        ? base
+        : includeQueryBuilder.build(definition, base, includes, query as FindOptions);
     const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
     const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
     const found =
       opts['raw'] === true
         ? (result.rows
             .map((row) =>
-              includes.length === 0 ? parseMain(row) : parseRawRow(includes, row, parseMain),
+              includes.length === 0
+                ? parseMain(row)
+                : includeLoader.parseRawRow(includes, row, parseMain),
             )
             .map((row) => (opts['nest'] === true ? nestRow(row as Values) : row)) as unknown as M[])
         : includes.length === 0
           ? result.rows.map((row) => fromRow(this, row))
-          : (assembleInstances(
+          : (includeLoader.assemble(
               this,
               includes,
               result.rows,
@@ -1304,7 +1309,7 @@ export class Model<
               (model, values) => new model(values, { isNewRecord: false, raw: true }),
             ) as M[]);
     if (opts['raw'] !== true && includes.length > 0) {
-      await loadSeparate(found, includes, query);
+      await includeLoader.loadSeparate(found, includes, query);
     }
     if (opts['hooks'] === true) {
       await runModelHooks(this, 'afterFind', found, opts);
@@ -1389,7 +1394,7 @@ export class Model<
       ...(opts as CountOptions),
       where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
-    const includes = normalizeIncludes(this, opts['include'] as IncludeOption | undefined);
+    const includes = includeResolver.normalize(this, opts['include'] as IncludeOption | undefined);
     const countQuery = (
       includes.length === 0 || query.col !== undefined
         ? query
@@ -1404,7 +1409,9 @@ export class Model<
       runtime.inAsAnyThreshold,
     );
     const select =
-      includes.length === 0 ? counted : { ...counted, joins: countJoins(definition, includes) };
+      includes.length === 0
+        ? counted
+        : { ...counted, joins: includeQueryBuilder.countJoins(definition, includes) };
     const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
     if (query.group !== undefined) {
       return result.rows.map((row) => ({
@@ -2102,7 +2109,7 @@ export class Model<
     })();
     const now = new Date();
     if (isNew) {
-      await saveBelongsTo(this, this.#includes, options);
+      await nestedCreator.saveBelongsTo(this, this.#includes, options);
       const values = pickFields(
         withTimestamps(definition, this.dataValues as Values, now, true, opts['silent'] === true),
         explicitFields,
@@ -2117,7 +2124,7 @@ export class Model<
         options,
       );
       this.#refresh(definition, result.rows[0]);
-      await saveChildren(this, this.#includes, options);
+      await nestedCreator.saveChildren(this, this.#includes, options);
     } else {
       const version = definition.version;
       const current = this.dataValues as Values;
@@ -2613,116 +2620,4 @@ const copyFormatSql = (options: CopyToFormatOptions): string => {
     ...(options.nullString === undefined ? [] : [`NULL ${sqlLiteral.escape(options.nullString)}`]),
   ];
   return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
-};
-
-const toArray = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : [value]);
-
-const buildNested = (node: IncludeNode, value: unknown): unknown => {
-  const build = (item: unknown): unknown => {
-    if (item instanceof Model) {
-      return item;
-    }
-    const child = new node.model(
-      item as Values,
-      node.children.length === 0 ? {} : { include: node.children.map(toIncludeOptions) },
-    );
-    const through = node.association.through?.model;
-    const throughName = node.through?.definition.name;
-    if (
-      through !== undefined &&
-      throughName !== undefined &&
-      typeof item === 'object' &&
-      item !== null &&
-      throughName in item
-    ) {
-      const throughValue = (item as Values)[throughName];
-      (child.dataValues as Values)[throughName] =
-        throughValue instanceof Model ? throughValue : new through(throughValue as Values);
-    }
-    return child;
-  };
-  return value === null
-    ? null
-    : node.association.isMultiAssociation
-      ? toArray(value).map(build)
-      : build(value);
-};
-
-const nestedInstances = (instance: AnyModel, node: IncludeNode): readonly AnyModel[] =>
-  toArray((instance.dataValues as Values)[node.as]).filter(
-    (item): item is AnyModel => item instanceof Model,
-  );
-
-const saveBelongsTo = async (
-  instance: AnyModel,
-  includes: readonly IncludeNode[],
-  options: SaveOptions,
-): Promise<void> => {
-  await includes
-    .filter((node) => node.association.associationType === 'BelongsTo')
-    .reduce<Promise<unknown>>(
-      (previous, node) =>
-        previous.then(async () => {
-          const [parent] = nestedInstances(instance, node);
-          if (parent !== undefined) {
-            await parent.save(pickQueryOptions(options));
-            instance.set(node.association.foreignKey, parent.get(node.association.targetKey));
-          }
-        }),
-      Promise.resolve(),
-    );
-};
-
-const throughValues = (child: AnyModel, node: IncludeNode): Values => {
-  const value =
-    node.through === undefined
-      ? undefined
-      : (child.dataValues as Values)[node.through.definition.name];
-  return value instanceof Model
-    ? (value.get({ plain: true }) as Values)
-    : typeof value === 'object' && value !== null
-      ? (value as Values)
-      : {};
-};
-
-const saveChild = async (
-  instance: AnyModel,
-  node: IncludeNode,
-  child: AnyModel,
-  options: SaveOptions,
-): Promise<void> => {
-  const { association } = node;
-  const childOptions = pickQueryOptions(options);
-  if (association.associationType === 'BelongsToMany' && association.through !== undefined) {
-    await child.save(childOptions);
-    await association.through.model.create(
-      {
-        ...throughValues(child, node),
-        ...association.through.scope,
-        [association.foreignKey]: instance.get(association.sourceKey),
-        [association.otherKey ?? '']: child.get(association.targetKey),
-      } as never,
-      childOptions as never,
-    );
-    return;
-  }
-  child.set({
-    ...association.scope,
-    [association.foreignKey]: instance.get(association.sourceKey),
-  });
-  await child.save(childOptions);
-};
-
-const saveChildren = async (
-  instance: AnyModel,
-  includes: readonly IncludeNode[],
-  options: SaveOptions,
-): Promise<void> => {
-  const pairs = includes
-    .filter((node) => node.association.associationType !== 'BelongsTo')
-    .flatMap((node) => nestedInstances(instance, node).map((child) => [node, child] as const));
-  await pairs.reduce<Promise<unknown>>(
-    (previous, [node, child]) => previous.then(() => saveChild(instance, node, child, options)),
-    Promise.resolve(),
-  );
 };
