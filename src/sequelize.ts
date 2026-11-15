@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import type { PoolConfig } from 'pg';
 import {
   createConnectionManager,
@@ -216,6 +217,10 @@ export class Sequelize {
     );
     this.#runtime = {
       execute: (query, options, kind) => this.#execute(query, options, kind),
+      executeEffect: (query, options, kind) =>
+        Effect.suspend(() =>
+          this.#connections.effects.execute(query, this.#executeOptions(options, kind)),
+        ),
       transaction: (run, parent) =>
         this.transaction(
           parent === undefined || parent === null ? {} : { transaction: parent },

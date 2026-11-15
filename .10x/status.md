@@ -118,7 +118,8 @@
 - [x] S1 README: badges, self-hosted coverage on Pages (92.8% lines at start)
 - [x] S2 Sequelize PostgreSQL issues: 73 classified, S2a parity regressions, S2b inherited bugs, public page `docs/sequelize-issues.md`
 - [x] S3 VitePress documentation site (12 guides, executed examples, API reference)
-- [x] S4 steps 1–3: Effect connection/transaction layer + `postgrelize/effect` (later steps: query pipeline, hooks)
+- [x] S4 steps 1–3: Effect connection/transaction layer + `postgrelize/effect`
+- [x] S4 step 4: hooks and read pipeline (findAll / count) as Effect programs (next: write paths)
 
 ## Release 0.6.0 (2026-11-14)
 - Tag `v0.6.0` → release.yml green, `@tormozz48/postgrelize@0.6.0` published. Contents: README + coverage, Sequelize issue review fixes (S2a parity, S2b inherited bugs), fixed-issues page.

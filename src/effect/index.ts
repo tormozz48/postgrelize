@@ -20,7 +20,8 @@
  * @module
  */
 import { Effect, Exit } from 'effect';
-import { BaseError } from '../errors/errors.ts';
+import { BaseError, EmptyResultError } from '../errors/errors.ts';
+import { countProgram, findAllProgram } from '../model/model.ts';
 import type {
   AnyModel,
   Attributes,
@@ -59,7 +60,7 @@ const attempt = <A>(run: () => Promise<A>): Effect.Effect<A, PostgrelizeError> =
 export const findAll = <M extends AnyModel>(
   model: ModelStatic<M>,
   options?: FindOptions<Attributes<M>>,
-): Effect.Effect<M[], PostgrelizeError> => attempt(() => model.findAll(options));
+): Effect.Effect<M[], PostgrelizeError> => typed(findAllProgram(model, options));
 
 /**
  * `Model.findOne` as an Effect.
@@ -71,7 +72,20 @@ export const findAll = <M extends AnyModel>(
 export const findOne = <M extends AnyModel>(
   model: ModelStatic<M>,
   options?: FindOptions<Attributes<M>>,
-): Effect.Effect<M | null, PostgrelizeError> => attempt(() => model.findOne(options));
+): Effect.Effect<M | null, PostgrelizeError> =>
+  findAll(model, { ...options, limit: options?.limit ?? 1 }).pipe(
+    Effect.flatMap(([first]) =>
+      first === undefined && options?.rejectOnEmpty !== undefined && options.rejectOnEmpty !== false
+        ? typed(
+            Effect.fail(
+              options.rejectOnEmpty instanceof Error
+                ? options.rejectOnEmpty
+                : new EmptyResultError(),
+            ),
+          )
+        : Effect.succeed(first ?? null),
+    ),
+  );
 
 /**
  * `Model.findByPk` as an Effect.
@@ -85,7 +99,13 @@ export const findByPk = <M extends AnyModel>(
   model: ModelStatic<M>,
   key: unknown,
   options?: Omit<FindOptions<Attributes<M>>, 'where'>,
-): Effect.Effect<M | null, PostgrelizeError> => attempt(() => model.findByPk(key, options));
+): Effect.Effect<M | null, PostgrelizeError> =>
+  key === null || key === undefined
+    ? Effect.succeed(null)
+    : findOne(model, {
+        ...options,
+        where: { [model.primaryKeyAttributes[0] ?? 'id']: key },
+      } as FindOptions<Attributes<M>>);
 
 /**
  * `Model.count` as an Effect.
@@ -97,7 +117,7 @@ export const findByPk = <M extends AnyModel>(
 export const count = <M extends AnyModel>(
   model: ModelStatic<M>,
   options?: CountOptions<Attributes<M>>,
-): Effect.Effect<number, PostgrelizeError> => attempt(() => model.count(options));
+): Effect.Effect<number, PostgrelizeError> => typed(countProgram(model, options));
 
 /**
  * `Model.create` as an Effect.

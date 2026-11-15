@@ -1,6 +1,12 @@
 import { Effect, Exit, Fiber } from 'effect';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DataTypes, Sequelize, UniqueConstraintError } from '../../src/index.ts';
+import {
+  DataTypes,
+  EmptyResultError,
+  Op,
+  Sequelize,
+  UniqueConstraintError,
+} from '../../src/index.ts';
 import * as Db from '../../src/effect/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
@@ -83,5 +89,48 @@ describe('postgrelize/effect', () => {
         sequelize.transaction({ settings: { statement_timeout: 'not a duration' } }),
       ).rejects.toThrow(/statement_timeout/);
       expect(await User.count()).toBe(0);
+    }));
+
+  it('runs find hooks, rejectOnEmpty and findByPk in the Effect read pipeline', () =>
+    withSchema(async ({ schema }) => {
+      const { User } = await setup(schema);
+      await User.bulkCreate([{ email: 'a@x.io' }, { email: 'hidden@x.io' }]);
+      const seen: number[] = [];
+      User.addHook('beforeFind', (options: { where?: unknown }) => {
+        options.where ??= { email: { [Op.ne]: 'hidden@x.io' } };
+      });
+      User.addHook('afterFind', (found: unknown) => {
+        seen.push(Array.isArray(found) ? found.length : -1);
+      });
+      const program = Effect.gen(function* () {
+        const all = yield* Db.findAll(User);
+        const first = yield* Db.findByPk(User, 1);
+        const missing = yield* Effect.flip(
+          Db.findOne(User, { where: { email: 'nobody@x.io' }, rejectOnEmpty: true }),
+        );
+        const total = yield* Db.count(User);
+        return {
+          emails: all.map((user) => user.get('email')),
+          first: first?.get('email'),
+          missing,
+          total,
+        };
+      });
+      const result = await Effect.runPromise(program);
+      expect([result.emails, result.first, result.total]).toEqual([['a@x.io'], 'a@x.io', 2]);
+      expect(result.missing).toBeInstanceOf(EmptyResultError);
+      expect(seen).toEqual([1, 1, 0]);
+    }));
+
+  it('turns a throwing hook into a defect and keeps the Promise API rejecting with it', () =>
+    withSchema(async ({ schema }) => {
+      const { User } = await setup(schema);
+      const boom = new Error('hook failed');
+      User.addHook('beforeCount', () => {
+        throw boom;
+      });
+      const exit = await Effect.runPromiseExit(Db.count(User));
+      expect(Exit.isFailure(exit) && Exit.hasDies(exit)).toBe(true);
+      await expect(User.count()).rejects.toBe(boom);
     }));
 });
