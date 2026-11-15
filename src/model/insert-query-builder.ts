@@ -50,17 +50,8 @@ export class InsertQueryBuilder {
     rows: readonly Readonly<Record<string, unknown>>[],
     options: InsertBuildOptions = {},
   ): InsertNode {
-    const ctx = this.#columns.whereCompiler(definition, undefined);
-    const attributes = this.#insertable(definition, rows).filter(
-      (name) =>
-        !rows.every((row) => isAutoIncrementEmpty(definition.attributes.get(name), row[name])),
-    );
-    const returning =
-      options.returning === true
-        ? this.#columns.returningAll(definition)
-        : options.returning === false
-          ? undefined
-          : options.returning;
+    const attributes = this.#insertable(definition, rows);
+    const returning = this.#returning(definition, options.returning);
     return {
       kind: 'insert',
       table: this.#columns.table(
@@ -68,15 +59,7 @@ export class InsertQueryBuilder {
         options.onConflict === undefined ? undefined : definition.name,
       ),
       columns: attributes.map((name) => definition.attributes.get(name)?.field ?? name),
-      rows: rows.map((row) =>
-        attributes.map((name) => {
-          const attribute = definition.attributes.get(name);
-          const value = row[name];
-          return value === undefined || isAutoIncrementEmpty(attribute, value)
-            ? ast.raw('DEFAULT')
-            : this.#columns.value(attribute, value, ctx);
-        }),
-      ),
+      rows: this.#rows(definition, rows, attributes),
       ...(options.onConflict === undefined ? {} : { onConflict: options.onConflict }),
       ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
       ...(returning === undefined ? {} : { returning }),
@@ -122,6 +105,38 @@ export class InsertQueryBuilder {
       .stored(definition)
       .filter((attribute) => attribute.generated === undefined)
       .map((attribute) => attribute.fieldName)
-      .filter((name) => rows.some((row) => row[name] !== undefined));
+      .filter((name) => rows.some((row) => row[name] !== undefined))
+      .filter(
+        (name) =>
+          !rows.every((row) => isAutoIncrementEmpty(definition.attributes.get(name), row[name])),
+      );
+  }
+
+  #returning(
+    definition: ModelDefinition,
+    returning: InsertBuildOptions['returning'],
+  ): readonly ExprNode[] | undefined {
+    return returning === true
+      ? this.#columns.returningAll(definition)
+      : returning === false
+        ? undefined
+        : returning;
+  }
+
+  #rows(
+    definition: ModelDefinition,
+    rows: readonly Readonly<Record<string, unknown>>[],
+    attributes: readonly string[],
+  ): readonly (readonly ExprNode[])[] {
+    const ctx = this.#columns.whereCompiler(definition, undefined);
+    return rows.map((row) =>
+      attributes.map((name) => {
+        const attribute = definition.attributes.get(name);
+        const value = row[name];
+        return value === undefined || isAutoIncrementEmpty(attribute, value)
+          ? ast.raw('DEFAULT')
+          : this.#columns.value(attribute, value, ctx);
+      }),
+    );
   }
 }

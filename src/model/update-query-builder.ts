@@ -42,19 +42,15 @@ export class UpdateQueryBuilder {
   ): UpdateNode {
     const alias =
       options.from === undefined || options.from.length === 0 ? undefined : definition.name;
-    const condition = this.#columns.where(
-      where,
-      this.#columns.whereCompiler(definition, alias, options.inAsAnyThreshold),
-    );
+    const ctx = this.#columns.whereCompiler(definition, alias, options.inAsAnyThreshold);
+    const condition = this.#columns.where(where, ctx);
     return {
       kind: 'update',
       table: this.#columns.table(definition, alias),
       set,
       ...(alias === undefined ? {} : { from: options.from }),
       ...(condition === undefined ? {} : { where: condition }),
-      ...(options.returning === true
-        ? { returning: this.#columns.returningAll(definition, alias) }
-        : {}),
+      ...this.#returning(definition, alias, options.returning),
     };
   }
 
@@ -78,5 +74,13 @@ export class UpdateQueryBuilder {
         value: ast.binary(sign === 1 ? '+' : '-', ast.ident(field), ast.param(amount)),
       };
     });
+  }
+
+  #returning(
+    definition: ModelDefinition,
+    alias: string | undefined,
+    returning: boolean | undefined,
+  ): Pick<UpdateNode, 'returning'> {
+    return returning === true ? { returning: this.#columns.returningAll(definition, alias) } : {};
   }
 }

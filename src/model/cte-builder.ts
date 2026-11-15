@@ -1,5 +1,5 @@
 import type { Subquery } from '../expressions/methods.ts';
-import type { FromItem, WithClause } from '../sql/ast.ts';
+import type { CteNode, FromItem, WithClause } from '../sql/ast.ts';
 import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
 import { ModelDefinition } from './model-definition.ts';
 
@@ -55,23 +55,7 @@ export class CteBuilder {
     if (entries.length === 0) {
       return undefined;
     }
-    const ctes = entries.map(([name, value]) => {
-      const cte: CteDefinition = isDefinition(value) ? value : { query: value };
-      const base = cte.query.build();
-      return {
-        name,
-        query:
-          cte.recursive === undefined
-            ? base
-            : {
-                kind: 'union' as const,
-                left: base,
-                right: cte.recursive.build(),
-                all: cte.unionAll !== false,
-              },
-        ...(cte.materialized === undefined ? {} : { materialized: cte.materialized }),
-      };
-    });
+    const ctes = entries.map(([name, value]) => CteBuilder.#cte(name, value));
     return {
       recursive: entries.some(([, value]) => isDefinition(value) && value.recursive !== undefined),
       ctes,
@@ -116,6 +100,24 @@ export class CteBuilder {
     return {
       ...(withClause === undefined ? {} : { withClause }),
       ...(extraFrom.length === 0 ? {} : { extraFrom }),
+    };
+  }
+
+  static #cte(name: string, value: Subquery | CteDefinition): CteNode {
+    const cte: CteDefinition = isDefinition(value) ? value : { query: value };
+    const base = cte.query.build();
+    return {
+      name,
+      query:
+        cte.recursive === undefined
+          ? base
+          : {
+              kind: 'union' as const,
+              left: base,
+              right: cte.recursive.build(),
+              all: cte.unionAll !== false,
+            },
+      ...(cte.materialized === undefined ? {} : { materialized: cte.materialized }),
     };
   }
 }

@@ -8,6 +8,16 @@ const toNumber = (value: unknown): unknown =>
     ? Number(value)
     : value;
 
+const NUMERIC_KEYS: ReadonlySet<string | undefined> = new Set([
+  'INTEGER',
+  'SMALLINT',
+  'FLOAT',
+  'DOUBLE',
+  'REAL',
+  'DECIMAL',
+  'BIGINT',
+]);
+
 /**
  * Converts driver rows into attribute values and model instances: column names to attribute
  * names, data type parsers, nested `raw` rows and aggregate results.
@@ -103,17 +113,7 @@ export class RowMapper {
     if (value === null || value === undefined) {
       return value;
     }
-    const key = attribute?.type.key;
-    if (
-      aggregateFunction === 'count' ||
-      key === 'INTEGER' ||
-      key === 'SMALLINT' ||
-      key === 'FLOAT' ||
-      key === 'DOUBLE' ||
-      key === 'REAL' ||
-      key === 'DECIMAL' ||
-      key === 'BIGINT'
-    ) {
+    if (aggregateFunction === 'count' || NUMERIC_KEYS.has(attribute?.type.key)) {
       return toNumber(value);
     }
     return attribute?.type.parse === undefined ? value : attribute.type.parse(value);
