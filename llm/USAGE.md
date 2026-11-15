@@ -411,7 +411,7 @@ Not available from v6: other dialects, `minifyAliases`, `Model.schema('tenant')`
 
 Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage> (generated from `docs/coverage/postgresql-features.ts`). "Planned" and "out of scope" rows; most can be done with `sequelize.query()` raw SQL or `literal()`:
 
-- **SELECT clauses**: Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING); CTE SEARCH / CYCLE clauses; LATERAL joins; TABLESAMPLE; FETCH FIRST … WITH TIES; UNION / INTERSECT / EXCEPT [ALL]; Standalone VALUES lists and set-returning functions in FROM (unnest, generate_series, WITH ORDINALITY); ONLY (table inheritance)
+- **SELECT clauses**: Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING); CTE SEARCH / CYCLE clauses; LATERAL joins; TABLESAMPLE; Standalone VALUES lists and set-returning functions in FROM (unnest, generate_series, WITH ORDINALITY); ONLY (table inheritance)
 - **DML**: Bulk insert via UNNEST arrays
 - **Operators and functions**: JSON_TABLE; Multirange operators and functions (range_agg, unnest); Geometric operators and functions; hstore operators (->, ?, @>); ltree operators (@>, <@, ~, ?)
 - **Data types**: timestamp without time zone; money; composite types; multirange types; xml; bit and bit varying; macaddr8; geometric types (point, line, lseg, box, path, polygon, circle); tsquery; pg_lsn, txid_snapshot and other system types; hstore (extension); ltree (extension); PostGIS geometry / geography

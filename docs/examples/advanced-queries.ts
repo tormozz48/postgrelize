@@ -148,6 +148,31 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // rootChildren === 2
   // #endregion cte
 
+  // #region set-operations
+  const published = Post.subquery({ attributes: [['UserId', 'id']], where: { published: true } });
+  const withoutPosts = await User.findAll({
+    where: { id: { [Op.in]: User.subquery({ attributes: ['id'] }).except(published) } },
+  });
+  // withoutPosts: cid
+
+  const pair = await User.findAll({
+    source: User.subquery({ where: { name: 'ann' } }).union(
+      User.subquery({ where: { name: 'cid' } }),
+    ),
+    order: [['name', 'DESC']],
+  });
+  // pair: cid, ann — rows of the UNION, read as User instances
+  // #endregion set-operations
+
+  // #region with-ties
+  const topPublished = await Post.findAll({
+    order: [['published', 'DESC']],
+    limit: 1,
+    withTies: true,
+  });
+  // topPublished: a1, b1, b2 — every row that ties with the first on `published`
+  // #endregion with-ties
+
   // #region find-each
   const seen: string[] = [];
   for await (const post of Post.findEach({ order: [['id', 'ASC']] }, { batchSize: 2 })) {
@@ -166,6 +191,9 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     names(nextPage, 'title'),
     names(subtree),
     rootChildren,
+    names(withoutPosts),
+    names(pair),
+    names(topPublished, 'title').split(',').toSorted().join(','),
     seen.join(','),
   ]);
   const expected = JSON.stringify([
@@ -187,6 +215,9 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     'b1,a2',
     'a,a1,a1x',
     2,
+    'cid',
+    'cid,ann',
+    'a1,b1,b2',
     'a1,a2,b1,b2',
   ]);
   if (actual !== expected) {

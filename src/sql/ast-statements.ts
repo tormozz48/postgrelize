@@ -5,6 +5,7 @@ import type {
   LockNode,
   MergeWhen,
   OnConflictNode,
+  SetOperationNode,
   SetItem,
   TableRef,
   WithClause,
@@ -17,23 +18,28 @@ export type SelectNode = Readonly<{
   distinct?: boolean;
   distinctOn?: readonly ExprNode[];
   columns: readonly ExprNode[];
-  from: TableRef | Readonly<{ subquery: SelectNode; alias: string }>;
+  from: FromItem;
   joins?: readonly JoinNode[];
   where?: ExprNode;
   groupBy?: readonly ExprNode[];
   having?: ExprNode;
   orderBy?: readonly OrderNode[];
   limit?: number;
+  /** `FETCH FIRST n ROWS WITH TIES` instead of `LIMIT n`; needs `limit` and `orderBy`. */
+  withTies?: boolean;
   offset?: number;
   lock?: LockNode;
 }>;
+
+/** A query expression: a SELECT or a set operation over query expressions. */
+export type QueryNode = SelectNode | SetOperationNode;
 
 export type InsertNode = Readonly<{
   kind: 'insert';
   table: TableRef;
   columns: readonly string[];
   rows: readonly (readonly ExprNode[])[];
-  select?: SelectNode;
+  select?: QueryNode;
   overriding?: 'system' | 'user';
   onConflict?: OnConflictNode;
   returning?: readonly ExprNode[];
@@ -71,7 +77,7 @@ export type MergeNode = Readonly<{
   kind: 'merge';
   table: TableRef;
   source:
-    | Readonly<{ kind: 'query'; query: SelectNode; alias: string }>
+    | Readonly<{ kind: 'query'; query: QueryNode; alias: string }>
     | Readonly<{
         kind: 'values';
         columns: readonly string[];
@@ -87,6 +93,7 @@ export type MergeNode = Readonly<{
 
 export type StatementNode =
   | SelectNode
+  | SetOperationNode
   | InsertNode
   | UpdateNode
   | DeleteNode

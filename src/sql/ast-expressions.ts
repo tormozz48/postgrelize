@@ -1,4 +1,4 @@
-import type { SelectNode } from './ast-statements.ts';
+import type { QueryNode } from './ast-statements.ts';
 
 export type ParamNode = Readonly<{ kind: 'param'; value: unknown }>;
 export type RawNode = Readonly<{ kind: 'raw'; sql: string }>;
@@ -24,7 +24,7 @@ export type BetweenNode = Readonly<{
   negated: boolean;
 }>;
 export type ExcludedNode = Readonly<{ kind: 'excluded'; column: string }>;
-export type SubqueryNode = Readonly<{ kind: 'subquery'; query: SelectNode }>;
+export type SubqueryNode = Readonly<{ kind: 'subquery'; query: QueryNode }>;
 export type AliasNode = Readonly<{ kind: 'alias'; expr: ExprNode; alias: string }>;
 export type OverNode = Readonly<{
   kind: 'over';

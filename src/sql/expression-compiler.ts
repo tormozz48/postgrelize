@@ -6,12 +6,12 @@ import type {
   LogicalNode,
   OrderNode,
   OverNode,
-  SelectNode,
+  QueryNode,
 } from './ast.ts';
 import { ChunkBuilder, type Chunks } from './sql-chunks.ts';
 
 /** Compiles SELECT statements nested in expressions (subqueries). */
-export type SubqueryCompiler = Readonly<{ select(node: SelectNode): Chunks }>;
+export type SubqueryCompiler = Readonly<{ query(node: QueryNode): Chunks }>;
 
 // Dispatch is split in three switches to keep each short; the last one has the `never` check.
 type CompoundNode = Exclude<
@@ -142,7 +142,7 @@ export class ExpressionCompiler extends ChunkBuilder {
       case 'excluded':
         return [`EXCLUDED.${this.quote(node.column)}`];
       case 'subquery':
-        return this.wrap(this.#queries.select(node.query));
+        return this.wrap(this.#queries.query(node.query));
       case 'alias':
         return [...this.expression(node.expr), ` AS ${this.quote(node.alias)}`];
       case 'over':

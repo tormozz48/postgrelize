@@ -126,7 +126,8 @@ describe('compile select', () => {
               name: 'tree',
               materialized: false,
               query: {
-                kind: 'union',
+                kind: 'setop',
+                op: 'UNION',
                 all: true,
                 left: { ...base, where: ast.binary('=', ast.ident('id'), ast.param(1)) },
                 right: {

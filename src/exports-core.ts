@@ -31,6 +31,7 @@ export type {
   Literal,
   Over,
   SqlExpression,
+  SetOperationOptions,
   Subquery,
   Tuple,
   Where,

@@ -1,5 +1,5 @@
 import { literal } from '../expressions/methods.ts';
-import type { ExprNode, MergeNode, MergeWhen } from '../sql/ast.ts';
+import type { ExprNode, MergeNode, MergeWhen, QueryNode, SelectNode } from '../sql/ast.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
@@ -20,10 +20,14 @@ const timestamps = (definition: ModelDefinition, values: Values, creating: boole
   ...values,
 });
 
+// The column names of a set operation are those of its leftmost SELECT.
+const leftmost = (query: QueryNode): SelectNode =>
+  query.kind === 'setop' ? leftmost(query.left) : query;
+
 const sourceColumns = (source: MergeNode['source']): readonly string[] =>
   source.kind === 'values'
     ? source.columns
-    : source.query.columns.map((column) =>
+    : leftmost(source.query).columns.map((column) =>
         column.kind === 'alias'
           ? column.alias
           : column.kind === 'ident'

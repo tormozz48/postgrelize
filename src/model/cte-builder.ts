@@ -1,5 +1,5 @@
-import type { Subquery } from '../expressions/methods.ts';
-import type { CteNode, FromItem, WithClause } from '../sql/ast.ts';
+import { Subquery } from '../expressions/methods.ts';
+import type { CteNode, FromItem, QueryNode, WithClause } from '../sql/ast.ts';
 import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
 import { ModelDefinition } from './model-definition.ts';
 
@@ -45,8 +45,12 @@ export type WithOption = Readonly<Record<string, Subquery | CteDefinition>>;
 export type CteFindOptions = Readonly<{
   /** Common table expressions (`WITH [RECURSIVE] ...`). */
   with?: WithOption;
-  /** Read model rows from this relation (usually a CTE name) instead of the model table. */
-  source?: string;
+  /**
+   * Read model rows from this relation instead of the model table: a CTE or table name, or a
+   * subquery such as a set operation (`a.union(b)`), aliased with the model name. Columns are
+   * named like the attributes.
+   */
+  source?: string | Subquery;
   /** Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. */
   from?: JoinSources;
 }>;
@@ -92,12 +96,15 @@ export class CteBuilder {
    * @param source - `source` option.
    * @returns The definition itself without `source`.
    */
-  sourceDefinition(definition: ModelDefinition, source: string | undefined): ModelDefinition {
+  sourceDefinition(
+    definition: ModelDefinition,
+    source: string | Subquery | undefined,
+  ): ModelDefinition {
     return source === undefined
       ? definition
       : new ModelDefinition({
           ...definition,
-          tableName: source,
+          tableName: typeof source === 'string' ? source : definition.tableName,
           schema: undefined,
           attributes: new Map(
             [...definition.attributes].map(([name, attribute]) => [
@@ -115,14 +122,17 @@ export class CteBuilder {
    * @param options - Find options.
    * @returns `withClause` / `extraFrom` when present.
    */
-  selectOptions(
-    options: CteFindOptions,
-  ): Readonly<{ withClause?: WithClause; extraFrom?: readonly FromItem[] }> {
+  selectOptions(options: CteFindOptions): Readonly<{
+    withClause?: WithClause;
+    extraFrom?: readonly FromItem[];
+    fromQuery?: QueryNode;
+  }> {
     const withClause = this.withClause(options.with);
     const extraFrom = this.#joins.build(options.from);
     return {
       ...(withClause === undefined ? {} : { withClause }),
       ...(extraFrom.length === 0 ? {} : { extraFrom }),
+      ...(options.source instanceof Subquery ? { fromQuery: options.source.build() } : {}),
     };
   }
 
@@ -135,7 +145,8 @@ export class CteBuilder {
         cte.recursive === undefined
           ? base
           : {
-              kind: 'union' as const,
+              kind: 'setop' as const,
+              op: 'UNION' as const,
               left: base,
               right: cte.recursive.build(),
               all: cte.unionAll !== false,

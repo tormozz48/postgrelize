@@ -62,6 +62,20 @@ CTEs can also be used as filters:
 
 Data-modifying CTEs (`WITH x AS (UPDATE ...)`) and the `SEARCH` / `CYCLE` clauses are not supported.
 
+## Set operations
+
+`Subquery` has `union()`, `intersect()` and `except()` (pass `{ all: true }` for the `ALL` forms). The result is another subquery, so it works wherever a subquery does: in `Op.in`, in `with`, as a source of `insertFrom` or `merge`. Both sides must select the same columns.
+
+<<< @/examples/advanced-queries.ts#set-operations{ts}
+
+`source` also accepts a subquery: the finder then reads model rows from `(… UNION …) AS "User"`, and its own `order`, `limit` and `offset` apply to the combined result. Select all attributes in the operands for that (no `attributes` option), because the finder selects every attribute of the model.
+
+## `FETCH FIRST … WITH TIES`
+
+`withTies: true` with `limit` and `order` returns the first `limit` rows plus every row that ties with the last one on the `order` columns (`FETCH FIRST $1 ROWS WITH TIES`). PostgreSQL rejects it without `ORDER BY`; postgrelize throws `withTies requires a limit` when `limit` is missing.
+
+<<< @/examples/advanced-queries.ts#with-ties{ts}
+
 ## Extra relations with `from`
 
 `from` on finders adds relations to the `FROM` clause, keyed by alias, without an association. Correlate them in `where`:

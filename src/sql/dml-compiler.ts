@@ -128,7 +128,7 @@ export class DmlCompiler extends ChunkBuilder {
 
   #insertValues(node: InsertNode): Chunks {
     return node.select !== undefined
-      ? [' ', ...this.columnList(node.columns), ' ', ...this.#query.select(node.select)]
+      ? [' ', ...this.columnList(node.columns), ' ', ...this.#query.query(node.select)]
       : node.columns.length === 0
         ? [' DEFAULT VALUES']
         : [
