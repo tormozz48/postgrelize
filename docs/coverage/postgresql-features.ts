@@ -25,6 +25,7 @@ export type FeatureRow = Readonly<{
 }>;
 
 const PG = 'tests/integration/pg-coverage.test.ts';
+const TYPES_I = 'tests/integration/types-i.test.ts';
 const POWER = 'tests/integration/query-power.test.ts';
 const WRITE = 'tests/integration/write-power.test.ts';
 const CONFLICT = 'tests/integration/on-conflict.test.ts';
@@ -109,8 +110,8 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: OPS, feature: 'Full-text ranking and highlighting (ts_rank, ts_headline, setweight)', minPg: '16', status: 'literal', note: 'Through `fn()` in attributes and `order`; no dedicated helpers.' },
   { area: OPS, feature: 'Network operators (<<, <<=, >>, >>=, host(), network())', minPg: '16', status: 'literal', note: 'Subnet containment through `literal()` / `fn()`; equality and IN work on inet/cidr columns.' },
   { area: OPS, feature: 'Geometric operators and functions', minPg: '16', status: 'planned', note: 'Needs the geometric data types first.' },
-  { area: OPS, feature: 'hstore operators (->, ?, @>)', minPg: '16', status: 'planned', note: 'The HSTORE column type exists but values are not converted from/to objects; operators work through `literal()`.' },
-  { area: OPS, feature: 'ltree operators (@>, <@, ~, ?)', minPg: '16', status: 'planned', note: 'No LTREE data type. Operators work through `literal()` on a column created by raw DDL.' },
+  { area: OPS, feature: 'hstore operators (->, ?, @>)', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips hstore as objects and filters with hstore operators'), note: '`Op.contains` and `Op.eq` take objects; `->`, `?` and other operators through `literal()`.' },
+  { area: OPS, feature: 'ltree operators (@>, <@, ~, ?)', minPg: '16', status: 'literal', note: 'Equality and `IN` work on `DataTypes.LTREE` columns; `<@`, `@>`, `~` and `?` through `literal()` (see the ltree row in Data types).' },
   { area: OPS, feature: 'pg_trgm similarity (%, similarity(), word_similarity())', minPg: '16', status: 'literal', note: '`fn("similarity", …)` / `literal()`; the `gin_trgm_ops` index uses the `operator` index option.' },
   { area: OPS, feature: 'UUID functions (gen_random_uuid, uuidv7)', minPg: '16', status: 'supported', test: t(PG, 'calls any SQL function through fn() and literal()'), note: '`fn("gen_random_uuid")` as default or expression; `uuidv7()` needs PostgreSQL 18; `DataTypes.UUIDV4` generates client-side.' },
   { area: OPS, feature: 'Interval arithmetic and date functions (date_trunc, age, make_interval)', minPg: '16', status: 'literal', note: 'Through `fn()` / `literal()`; the INTERVAL column type is supported.' },
@@ -121,9 +122,9 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: TYPES, feature: 'numeric / decimal, real, double precision', minPg: '16', status: 'supported', test: t(PG, 'round-trips numeric, text, boolean and date types'), note: '`DECIMAL(p, s)` returned as string; `REAL`, `DOUBLE`, `FLOAT`.' },
   { area: TYPES, feature: 'text, varchar, char, boolean', minPg: '16', status: 'supported', test: t(PG, 'round-trips numeric, text, boolean and date types'), note: '`TEXT`, `STRING(n)`, `CHAR(n)`, `BOOLEAN`.' },
   { area: TYPES, feature: 'timestamptz, date, time', minPg: '16', status: 'supported', test: t(PG, 'round-trips numeric, text, boolean and date types'), note: '`DATE` (timestamptz), `DATEONLY`, `TIME`.' },
-  { area: TYPES, feature: 'timestamp without time zone', minPg: '16', status: 'planned', note: '`DATE` always maps to timestamptz. Workaround: custom type string in raw DDL.' },
+  { area: TYPES, feature: 'timestamp without time zone', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips timestamp columns as local wall-clock Dates'), note: '`DataTypes.TIMESTAMP(fsp?)`; values are `Date`s with the local wall-clock time.' },
   { area: TYPES, feature: 'interval', minPg: '16', status: 'supported', test: t(PG, 'round-trips inet, cidr, macaddr and interval'), note: '`DataTypes.INTERVAL`.' },
-  { area: TYPES, feature: 'money', minPg: '16', status: 'planned', note: 'No MONEY type. Use numeric.' },
+  { area: TYPES, feature: 'money', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips money and filters by amount'), note: '`DataTypes.MONEY`; read as the server formats it (`lc_monetary`, e.g. `$12.50`); write numbers or strings.' },
   { area: TYPES, feature: 'bytea', minPg: '16', status: 'supported', test: t(PG, 'round-trips uuid, bytea, jsonb and arrays'), note: '`DataTypes.BLOB` ↔ `Buffer`.' },
   { area: TYPES, feature: 'enum (CREATE TYPE … AS ENUM)', minPg: '16', status: 'supported', test: t(SCHEMA_POWER, 'adds new enum values to the existing type'), note: '`DataTypes.ENUM`; `sync({ alter })` adds new values.' },
   { area: TYPES, feature: 'composite types', minPg: '16', status: 'planned', note: 'No composite data type. Values can be read as text through raw queries.' },
@@ -132,18 +133,18 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: TYPES, feature: 'range types (int4range, int8range, numrange, daterange, tsrange, tstzrange)', minPg: '16', status: 'supported', test: t(PG, 'stores ranges and filters them with range operators'), note: '`DataTypes.RANGE(type)` with `[lower, upper]` values.' },
   { area: TYPES, feature: 'multirange types', minPg: '16', status: 'planned', note: 'No data type; values need parsing like ranges.' },
   { area: TYPES, feature: 'json and jsonb', minPg: '16', status: 'supported', test: t(PG, 'round-trips uuid, bytea, jsonb and arrays'), note: '`DataTypes.JSON`, `DataTypes.JSONB`.' },
-  { area: TYPES, feature: 'xml', minPg: '16', status: 'planned', note: 'No XML type; low demand.' },
-  { area: TYPES, feature: 'bit and bit varying', minPg: '16', status: 'planned', note: 'No BIT type; low demand.' },
+  { area: TYPES, feature: 'xml', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips xml'), note: '`DataTypes.XML`; values are XML text; `xpath()` through `literal()` / `fn()`.' },
+  { area: TYPES, feature: 'bit and bit varying', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips bit and bit varying'), note: '`DataTypes.BIT(n)`, `DataTypes.VARBIT(n)`; values are strings of `0` and `1`.' },
   { area: TYPES, feature: 'uuid', minPg: '16', status: 'supported', test: t(PG, 'round-trips uuid, bytea, jsonb and arrays'), note: '`DataTypes.UUID` with `UUIDV4` client default.' },
   { area: TYPES, feature: 'inet, cidr, macaddr', minPg: '16', status: 'supported', test: t(PG, 'round-trips inet, cidr, macaddr and interval'), note: '`DataTypes.INET`, `CIDR`, `MACADDR`.' },
-  { area: TYPES, feature: 'macaddr8', minPg: '16', status: 'planned', note: 'No MACADDR8 type.' },
+  { area: TYPES, feature: 'macaddr8', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips macaddr8'), note: '`DataTypes.MACADDR8`.' },
   { area: TYPES, feature: 'geometric types (point, line, lseg, box, path, polygon, circle)', minPg: '16', status: 'planned', note: 'No data types or value mapping yet.' },
   { area: TYPES, feature: 'tsvector', minPg: '16', status: 'supported', test: t(PG, 'stores tsvector and matches it with a tsquery'), note: '`DataTypes.TSVECTOR`.' },
-  { area: TYPES, feature: 'tsquery', minPg: '16', status: 'planned', note: 'No TSQUERY column type; queries are built with functions.' },
+  { area: TYPES, feature: 'tsquery', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips tsquery and matches tsvector against it'), note: '`DataTypes.TSQUERY`; values are query strings (`\'fat\' & \'rat\'`).' },
   { area: TYPES, feature: 'pg_lsn, txid_snapshot and other system types', minPg: '16', status: 'out-of-scope', note: 'Replication and internals types; read through raw queries.' },
   { area: TYPES, feature: 'citext (extension)', minPg: '16', status: 'supported', test: t(PG, 'stores citext with an extension'), note: '`DataTypes.CITEXT`; run `CREATE EXTENSION citext` first.' },
-  { area: TYPES, feature: 'hstore (extension)', minPg: '16', status: 'planned', note: '`DataTypes.HSTORE` creates the column but object values are not serialized. Pass hstore text.' },
-  { area: TYPES, feature: 'ltree (extension)', minPg: '16', status: 'planned', note: 'No LTREE type.' },
+  { area: TYPES, feature: 'hstore (extension)', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips hstore as objects and filters with hstore operators'), note: '`DataTypes.HSTORE`; values are objects of strings (or `null`); run `CREATE EXTENSION hstore` first.' },
+  { area: TYPES, feature: 'ltree (extension)', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips ltree paths and matches ltree operators'), note: '`DataTypes.LTREE`; values are strings (`\'Top.Science\'`); run `CREATE EXTENSION ltree` first.' },
   { area: TYPES, feature: 'PostGIS geometry / geography', minPg: '16', status: 'planned', note: '`GEOMETRY` / `GEOGRAPHY` types exist for DDL but no test or GeoJSON round trip runs against PostGIS.' },
   { area: TYPES, feature: 'Stored and virtual generated columns, identity columns', minPg: '16', status: 'supported', test: t(SCHEMA_POWER, 'creates identity and stored generated columns'), note: '`generated: { as, stored }` and `identity: "always" | "byDefault"` column options. `VIRTUAL` generated columns need PostgreSQL 18.' },
 

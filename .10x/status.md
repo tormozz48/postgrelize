@@ -4,6 +4,8 @@
 **Feature slug:** `postgrelize-mvp`
 **Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 0.9.0 released
 
+**S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.
+
 **S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
 ## Phases
