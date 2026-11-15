@@ -19,6 +19,11 @@ export default defineConfig({
     projects: [
       { extends: true, test: { name: 'unit', include: ['tests/unit/**/*.test.ts'] } },
       { extends: true, test: { name: 'build', include: ['tests/build/**/*.test.ts'] } },
+      {
+        extends: false,
+        plugins: [decoratorsPlugin({ legacy: true })],
+        test: { name: 'decorators-legacy', include: ['tests/legacy-decorators/**/*.test.ts'] },
+      },
       dbProject('integration'),
       {
         extends: true,

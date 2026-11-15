@@ -33,6 +33,7 @@
 | Queries         | CTEs incl. `WITH RECURSIVE`, subqueries (`Model.subquery`, `exists()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists | literals only                                          |
 | Sessions        | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks                                                                                                                                                                     | —                                                      |
 | Scaling         | read replicas with round-robin readers (`replication`, `useMaster`)                                                                                                                                                      | read replicas                                          |
+| Models          | optional decorators (`@Table`, `@Column`, `@HasMany`, hook decorators, …) and `sequelize.addModels`, in both TC39 and legacy decorator modes                                                                             | `Model.init` / `define` only                           |
 | Schema          | identity and generated columns, `INTERVAL`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation                                                                                            | —                                                      |
 
 ## Install
