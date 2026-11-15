@@ -45,20 +45,7 @@ export class DeleteQueryBuilder {
     const alias =
       options.using === undefined || options.using.length === 0 ? undefined : definition.name;
     const ctx = this.#columns.whereCompiler(definition, alias, options.inAsAnyThreshold);
-    const condition = this.#columns.where(where, ctx);
-    const limited: ExprNode | undefined =
-      options.limit === undefined
-        ? condition
-        : ast.binary('IN', ast.raw('ctid'), {
-            kind: 'subquery',
-            query: {
-              kind: 'select',
-              columns: [ast.raw('ctid')],
-              from: this.#columns.table(definition),
-              ...(condition === undefined ? {} : { where: condition }),
-              limit: options.limit,
-            },
-          });
+    const limited = this.#limited(definition, this.#columns.where(where, ctx), options.limit);
     return {
       kind: 'delete',
       table: this.#columns.table(definition, alias),
@@ -90,5 +77,24 @@ export class DeleteQueryBuilder {
       ...(options.cascade === true ? { cascade: true } : {}),
       ...(options.restartIdentity === true ? { restartIdentity: true } : {}),
     };
+  }
+
+  #limited(
+    definition: ModelDefinition,
+    condition: ExprNode | undefined,
+    limit: number | undefined,
+  ): ExprNode | undefined {
+    return limit === undefined
+      ? condition
+      : ast.binary('IN', ast.raw('ctid'), {
+          kind: 'subquery',
+          query: {
+            kind: 'select',
+            columns: [ast.raw('ctid')],
+            from: this.#columns.table(definition),
+            ...(condition === undefined ? {} : { where: condition }),
+            limit,
+          },
+        });
   }
 }

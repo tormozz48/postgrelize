@@ -1,88 +1,21 @@
-import { OrderDirection } from '../sql/order.ts';
-import { Fn, SqlExpression } from '../expressions/methods.ts';
-import {
-  SqlAst,
-  type ExprNode,
-  type LockNode,
-  type FromItem,
-  type WithClause,
-  type OrderNode,
-  type SelectNode,
-} from '../sql/ast.ts';
+import type { ExprNode, LockNode, OrderNode, SelectNode } from '../sql/ast.ts';
 import { LOCK } from '../transaction/transaction.ts';
 import type { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { ModelDefinition } from './model-definition.ts';
+import { SelectAggregates } from './select-aggregates.ts';
+import type { FindAttributeOptions, SelectOptions } from './select-options.ts';
+import { SelectTargets } from './select-targets.ts';
 
-const ast = new SqlAst();
-
-/** `attributes` option of finders. */
-export type FindAttributeOptions = readonly (string | readonly [unknown, string])[] | AttributeSpec;
-
-/** `attributes: { include, exclude }` form. */
-export type AttributeSpec = Readonly<{
-  /** Extra columns added to all attributes. */
-  include?: readonly (string | readonly [unknown, string])[];
-  /** Attributes left out. */
-  exclude?: readonly string[];
-}>;
-
-/** One `order` item: attribute name, `[attribute, direction]`, `[expression, direction]` or an expression. */
-export type OrderItem = string | unknown | readonly [unknown, string?];
-
-/** `order` option of finders. */
-export type Order = unknown | readonly OrderItem[];
-
-/** Model whose rows are locked by `lock.of`. */
-export type LockTarget = Readonly<{
-  /** Model name used as table alias. */
-  name: string;
-}>;
-
-/** `lock` option of finders. */
-export type LockOption =
-  | boolean
-  | LockNode['strength']
-  | Readonly<{
-      /** Lock strength. */
-      level: LockNode['strength'];
-      /** Model whose rows are locked (`FOR UPDATE OF`). */
-      of?: LockTarget;
-    }>;
-
-/** Options that shape a SELECT statement. */
-export type SelectOptions = Readonly<{
-  /** Filter. */
-  where?: unknown;
-  /** Selected attributes. */
-  attributes?: FindAttributeOptions;
-  /** Sort order. */
-  order?: Order;
-  /** `GROUP BY` attributes or expressions. */
-  group?: unknown;
-  /** `HAVING` condition. */
-  having?: unknown;
-  /** Maximum number of rows. */
-  limit?: number | null;
-  /** Rows to skip. */
-  offset?: number | null;
-  /** Row lock (`FOR UPDATE` etc.); requires a transaction. */
-  lock?: LockOption;
-  /** `SKIP LOCKED`. */
-  skipLocked?: boolean;
-  /** `NOWAIT`. PostgreSQL extension. */
-  noWait?: boolean;
-  /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
-  distinctOn?: readonly unknown[];
-  /** @internal Resolved `WITH` clause. */
-  withClause?: WithClause;
-  /** @internal Resolved extra FROM relations. */
-  extraFrom?: readonly FromItem[];
-}>;
-
-const invalidOrder = (): never => {
-  throw new Error('Order must be type of array or instance of a valid sequelize method.');
-};
+export type {
+  AttributeSpec,
+  FindAttributeOptions,
+  LockOption,
+  LockTarget,
+  Order,
+  OrderItem,
+  SelectOptions,
+} from './select-options.ts';
 
 const definedNumber = (value: number | null | undefined): number | undefined =>
   value === null || value === undefined ? undefined : value;
@@ -122,12 +55,16 @@ const lockOf = (options: SelectOptions): LockNode | undefined => {
  */
 export class SelectQueryBuilder {
   readonly #columns: AttributeColumns;
+  readonly #targets: SelectTargets;
+  readonly #aggregates: SelectAggregates;
 
   /**
    * @param columns - Attribute to column mapping.
    */
   constructor(columns: AttributeColumns) {
     this.#columns = columns;
+    this.#targets = new SelectTargets(columns);
+    this.#aggregates = new SelectAggregates(columns, this.#targets);
   }
 
   /**
@@ -149,31 +86,15 @@ export class SelectQueryBuilder {
   ): SelectNode {
     const alias = aliasOverride ?? definition.name;
     const ctx = this.#columns.whereCompiler(definition, alias, inAsAnyThreshold);
-    const where = this.#columns.where(options.where, ctx);
-    const having = this.#columns.where(options.having, ctx);
-    const limit = definedNumber(options.limit);
-    const offset = definedNumber(options.offset);
-    const lock = lockOf(options);
-    const group = this.#groupBy(definition, alias, ctx, options.group);
-    const distinctOn = (options.distinctOn ?? []).map((item) =>
-      this.#orderTarget(definition, alias, ctx, item),
-    );
+    const clauses = this.#clauses(definition, alias, ctx, options);
     return {
       kind: 'select',
-      ...(options.withClause === undefined ? {} : { with: options.withClause }),
-      ...(options.extraFrom === undefined || options.extraFrom.length === 0
-        ? {}
-        : { extraFrom: options.extraFrom }),
-      ...(distinctOn.length === 0 ? {} : { distinctOn }),
+      ...SelectQueryBuilder.#sources(options),
       columns: columnsOverride ?? this.columns(definition, alias, ctx, options.attributes),
       from: this.#columns.table(definition, alias),
-      ...(where === undefined ? {} : { where }),
-      ...(group.length === 0 ? {} : { groupBy: group }),
-      ...(having === undefined ? {} : { having }),
-      orderBy: this.#orderBy(definition, alias, ctx, options.order),
-      ...(limit === undefined ? {} : { limit }),
-      ...(offset === undefined ? {} : { offset }),
-      ...(lock === undefined ? {} : { lock }),
+      ...clauses,
+      orderBy: this.#targets.orderBy(definition, alias, ctx, options.order),
+      ...SelectQueryBuilder.#window(options),
     };
   }
 
@@ -190,35 +111,9 @@ export class SelectQueryBuilder {
     options: SelectOptions & Readonly<{ col?: string; distinct?: boolean }>,
     inAsAnyThreshold?: number,
   ): SelectNode {
-    const alias = definition.name;
-    const target: ExprNode =
-      options.col === undefined
-        ? options.distinct === true
-          ? ast.ident(
-              alias,
-              definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id',
-            )
-          : { kind: 'star' }
-        : this.#orderTarget(
-            definition,
-            alias,
-            this.#columns.whereCompiler(definition, alias),
-            options.col,
-          );
-    const count: ExprNode = {
-      kind: 'alias',
-      expr: {
-        kind: 'fn',
-        name: 'count',
-        args: [target],
-        ...(options.distinct === true ? { distinct: true } : {}),
-      },
-      alias: 'count',
-    };
-    const ctx = this.#columns.whereCompiler(definition, alias);
-    const groupColumns = this.#groupBy(definition, alias, ctx, options.group);
+    const columns = this.#aggregates.count(definition, options);
     const { order: _order, limit: _limit, offset: _offset, lock: _lock, ...rest } = options;
-    return this.build(definition, rest, inAsAnyThreshold, [...groupColumns, count]);
+    return this.build(definition, rest, inAsAnyThreshold, columns);
   }
 
   /**
@@ -238,27 +133,9 @@ export class SelectQueryBuilder {
     options: SelectOptions & Readonly<{ distinct?: boolean }>,
     inAsAnyThreshold?: number,
   ): SelectNode {
-    const alias = definition.name;
-    const ctx = this.#columns.whereCompiler(definition, alias);
-    const target =
-      field === '*'
-        ? ({ kind: 'star' } as const)
-        : this.#orderTarget(definition, alias, ctx, field);
-    const column: ExprNode = {
-      kind: 'alias',
-      expr: {
-        kind: 'fn',
-        name: Fn.validName(aggregateFunction),
-        args: [target],
-        ...(options.distinct === true ? { distinct: true } : {}),
-      },
-      alias: aggregateFunction,
-    };
+    const columns = this.#aggregates.aggregate(definition, field, aggregateFunction, options);
     const { order: _order, limit: _limit, offset: _offset, ...rest } = options;
-    return this.build(definition, rest, inAsAnyThreshold, [
-      ...this.#groupBy(definition, alias, ctx, options.group),
-      column,
-    ]);
+    return this.build(definition, rest, inAsAnyThreshold, columns);
   }
 
   /**
@@ -276,20 +153,7 @@ export class SelectQueryBuilder {
     ctx: WhereCompiler,
     attributes: FindAttributeOptions | undefined,
   ): readonly ExprNode[] {
-    const all = this.#columns.stored(definition).map((attribute) => attribute.fieldName);
-    if (attributes === undefined || !Array.isArray(attributes)) {
-      const spec = (attributes ?? {}) as AttributeSpec;
-      const excluded = new Set(spec.exclude ?? []);
-      return [
-        ...all
-          .filter((name) => !excluded.has(name))
-          .map((name) => this.#columnFor(definition, alias, name)),
-        ...(spec.include ?? []).map((item) => this.#attributeItem(definition, alias, ctx, item)),
-      ];
-    }
-    return (attributes as readonly (string | readonly [unknown, string])[]).map((item) =>
-      this.#attributeItem(definition, alias, ctx, item),
-    );
+    return this.#targets.columns(definition, alias, ctx, attributes);
   }
 
   /**
@@ -307,96 +171,44 @@ export class SelectQueryBuilder {
     ctx: WhereCompiler,
     item: unknown,
   ): OrderNode {
-    if (Array.isArray(item)) {
-      const [target, direction]: readonly unknown[] = item;
-      return {
-        expr: this.#orderTarget(definition, alias, ctx, target),
-        ...(direction === undefined ? {} : OrderDirection.parse(direction)),
-      };
-    }
-    return { expr: this.#orderTarget(definition, alias, ctx, item) };
+    return this.#targets.orderItem(definition, alias, ctx, item);
   }
 
-  #columnFor(definition: ModelDefinition, alias: string, name: string): ExprNode {
-    const attribute = definition.attributes.get(name);
-    const column = ast.ident(alias, attribute?.field ?? name);
-    return attribute === undefined || attribute.field === name
-      ? column
-      : { kind: 'alias', expr: column, alias: name };
-  }
-
-  #attributeItem(
+  #clauses(
     definition: ModelDefinition,
     alias: string,
     ctx: WhereCompiler,
-    item: string | readonly [unknown, string],
-  ): ExprNode {
-    if (typeof item === 'string') {
-      return this.#columnFor(definition, alias, item);
-    }
-    const [source, name] = item;
-    const expr =
-      typeof source === 'string'
-        ? ast.ident(alias, definition.attributes.get(source)?.field ?? source)
-        : ctx.toExpr(source);
-    return { kind: 'alias', expr, alias: name };
+    options: SelectOptions,
+  ): Partial<SelectNode> {
+    const where = this.#columns.where(options.where, ctx);
+    const having = this.#columns.where(options.having, ctx);
+    const lock = lockOf(options);
+    const group = this.#targets.list(definition, alias, ctx, options.group);
+    const distinctOn = this.#targets.distinctOn(definition, alias, ctx, options.distinctOn);
+    return {
+      ...(distinctOn.length === 0 ? {} : { distinctOn }),
+      ...(where === undefined ? {} : { where }),
+      ...(group.length === 0 ? {} : { groupBy: group }),
+      ...(having === undefined ? {} : { having }),
+      ...(lock === undefined ? {} : { lock }),
+    };
   }
 
-  /** `'jsonAttr.a.b'` orders by the jsonb value at that path (numbers sort numerically). */
-  #jsonPathOrder(definition: ModelDefinition, alias: string, target: string): ExprNode | undefined {
-    const [name = '', ...path] = target.split('.');
-    const attribute = definition.attributes.get(name);
-    return attribute === undefined ||
-      path.length === 0 ||
-      (attribute.type.key !== 'JSON' && attribute.type.key !== 'JSONB')
-      ? undefined
-      : ast.binary(
-          '#>',
-          attribute.type.key === 'JSON'
-            ? { kind: 'cast', expr: ast.ident(alias, attribute.field), type: 'JSONB' }
-            : ast.ident(alias, attribute.field),
-          ast.param(path),
-        );
+  static #sources(options: SelectOptions): Partial<SelectNode> {
+    return {
+      ...(options.withClause === undefined ? {} : { with: options.withClause }),
+      ...(options.extraFrom === undefined || options.extraFrom.length === 0
+        ? {}
+        : { extraFrom: options.extraFrom }),
+    };
   }
 
-  #orderTarget(
-    definition: ModelDefinition,
-    alias: string,
-    ctx: WhereCompiler,
-    target: unknown,
-  ): ExprNode {
-    return typeof target === 'string'
-      ? definition.attributes.has(target)
-        ? ast.ident(alias, definition.attributes.get(target)?.field ?? target)
-        : (this.#jsonPathOrder(definition, alias, target) ?? ast.ident(...target.split('.')))
-      : ctx.toExpr(target);
-  }
-
-  #orderBy(
-    definition: ModelDefinition,
-    alias: string,
-    ctx: WhereCompiler,
-    order: Order,
-  ): readonly OrderNode[] {
-    return order === undefined || order === null
-      ? []
-      : Array.isArray(order)
-        ? order.map((item: unknown) => this.orderItem(definition, alias, ctx, item))
-        : order instanceof SqlExpression
-          ? [{ expr: ctx.toExpr(order) }]
-          : invalidOrder();
-  }
-
-  #groupBy(
-    definition: ModelDefinition,
-    alias: string,
-    ctx: WhereCompiler,
-    group: unknown,
-  ): readonly ExprNode[] {
-    return group === undefined
-      ? []
-      : (Array.isArray(group) ? group : [group]).map((item: unknown) =>
-          this.#orderTarget(definition, alias, ctx, item),
-        );
+  static #window(options: SelectOptions): Partial<SelectNode> {
+    const limit = definedNumber(options.limit);
+    const offset = definedNumber(options.offset);
+    return {
+      ...(limit === undefined ? {} : { limit }),
+      ...(offset === undefined ? {} : { offset }),
+    };
   }
 }

@@ -1,49 +1,20 @@
-import { HookRegistry, type HookFunction, type HookType } from '../hooks/hooks.ts';
-import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
-import type { ModelValidatorFunction } from '../validation/types.ts';
-import {
-  ModelDefinition,
-  type DefinitionOptions,
-  type ModelAttributes,
-} from './model-definition.ts';
+import type { HookFunction, HookType } from '../hooks/hooks.ts';
+import type { ModelAttributes, ModelDefinition } from './model-definition.ts';
+import { ModelAccessors } from './model-accessors.ts';
+import { ModelStateFactory, type ModelState } from './model-state.ts';
 import type { InitOptions } from './options.ts';
-import { runtimeKey, type ModelRuntime, type RuntimeOwner } from './runtime.ts';
-import {
-  ScopeRegistry,
-  type ScopeDefinition,
-  type ScopeOptions,
-  type ScopeSelector,
-} from './scope-registry.ts';
+import type { RuntimeOwner } from './runtime.ts';
+import type { ScopeDefinition, ScopeOptions, ScopeSelector } from './scope-registry.ts';
 
-/** Internal state of an initialized model class. */
-export type ModelState = Readonly<{
-  definition: ModelDefinition;
-  runtime: ModelRuntime;
-  hooks: HookRegistry;
-  scopes: ScopeRegistry;
-  validators: Readonly<Record<string, ModelValidatorFunction>>;
-  schema: StandardSchemaV1 | undefined;
-  /** `init` input, kept to rebuild the definition when associations add attributes. */
-  input: Readonly<{
-    className: string;
-    attributes: ModelAttributes;
-    options: DefinitionOptions;
-    extra: ModelAttributes;
-  }>;
-  /** Associations by alias. */
-  associations: ReadonlyMap<string, unknown>;
-}>;
-
-type AttributeHost = Readonly<{
-  get: (name: string) => unknown;
-  set: (name: string, value: unknown) => unknown;
-}>;
+export type { ModelState } from './model-state.ts';
 
 const NOT_INITIALIZED = 'Model is not initialized. Call Model.init() or sequelize.define() first.';
 
 const states = new WeakMap<object, ModelState>();
 const selections = new WeakMap<object, readonly ScopeSelector[]>();
 const owners = new WeakMap<object, RuntimeOwner>();
+const accessors = new ModelAccessors();
+const factory = new ModelStateFactory();
 
 /**
  * Per-class state of models: definition, runtime, hooks, scopes, validators and associations of
@@ -65,36 +36,11 @@ export class ModelRegistry {
     attributes: ModelAttributes,
     options: InitOptions,
   ): void {
-    const {
-      sequelize,
-      hooks,
-      defaultScope,
-      scopes,
-      whereMergeStrategy,
-      validate,
-      validationSchema,
-      ...definitionOptions
-    } = options;
-    const runtime = sequelize[runtimeKey];
-    const definition = ModelDefinition.normalize(
-      model.name,
-      attributes,
-      definitionOptions,
-      runtime.defaults,
-    );
-    states.set(model, {
-      definition,
-      runtime,
-      hooks: HookRegistry.fromOption(hooks, HookRegistry.fromOption(runtime.defaults.hooks)),
-      scopes: new ScopeRegistry(defaultScope, scopes, whereMergeStrategy),
-      validators: validate ?? {},
-      schema: validationSchema,
-      input: { className: model.name, attributes, options: definitionOptions, extra: {} },
-      associations: new Map(),
-    });
-    owners.set(model, sequelize);
-    this.defineAttributeAccessors(model.prototype, definition);
-    runtime.register(definition.name, model);
+    const state = factory.create(model.name, attributes, options);
+    states.set(model, state);
+    owners.set(model, options.sequelize);
+    this.defineAttributeAccessors(model.prototype, state.definition);
+    state.runtime.register(state.definition.name, model);
   }
 
   /**
@@ -245,20 +191,7 @@ export class ModelRegistry {
    * @param definition - Model definition.
    */
   defineAttributeAccessors(prototype: object, definition: ModelDefinition): void {
-    [...definition.attributes.keys()]
-      .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
-      .forEach((name) =>
-        Object.defineProperty(prototype, name, {
-          configurable: true,
-          enumerable: false,
-          get(this: AttributeHost) {
-            return this.get(name);
-          },
-          set(this: AttributeHost, value: unknown) {
-            this.set(name, value);
-          },
-        }),
-      );
+    accessors.defineAttributes(prototype, definition);
   }
 
   /**
@@ -268,19 +201,7 @@ export class ModelRegistry {
    * @param alias - Association alias.
    */
   defineAssociationAccessor(prototype: object, alias: string): void {
-    if (Object.prototype.hasOwnProperty.call(prototype, alias)) {
-      return;
-    }
-    Object.defineProperty(prototype, alias, {
-      configurable: true,
-      enumerable: false,
-      get(this: Readonly<{ dataValues: Record<string, unknown> }>) {
-        return this.dataValues[alias];
-      },
-      set(this: Readonly<{ dataValues: Record<string, unknown> }>, value: unknown) {
-        this.dataValues[alias] = value;
-      },
-    });
+    accessors.defineAssociation(prototype, alias);
   }
 
   /**
@@ -291,20 +212,7 @@ export class ModelRegistry {
    * @returns The new definition.
    */
   addAssociationAttributes(model: object, attributes: ModelAttributes): ModelDefinition {
-    this.update(model, (state) => {
-      const extra = { ...state.input.extra, ...attributes };
-      return {
-        ...state,
-        input: { ...state.input, extra },
-        definition: ModelDefinition.normalize(
-          state.input.className,
-          state.input.attributes,
-          state.input.options,
-          state.runtime.defaults,
-          extra,
-        ),
-      };
-    });
+    this.update(model, (state) => factory.withAssociationAttributes(state, attributes));
     const { definition } = this.state(model);
     this.defineAttributeAccessors((model as { prototype: object }).prototype, definition);
     return definition;

@@ -105,21 +105,23 @@ export class WrittenRows {
       (state, input) => {
         const row = returned[state.next];
         const parsed = row === undefined ? undefined : this.#rows.parse(definition, row);
-        const matches =
-          parsed !== undefined &&
-          Object.entries(input).every(
-            ([name, value]) =>
-              value === undefined ||
-              (value === null && definition.attributes.get(name)?.autoIncrement === true) ||
-              value instanceof SqlExpression ||
-              !(name in parsed) ||
-              sameValue(parsed[name], value),
-          );
+        const matches = parsed !== undefined && this.#matches(definition, input, parsed);
         return matches
           ? { aligned: [...state.aligned, row], next: state.next + 1 }
           : { aligned: [...state.aligned, undefined], next: state.next };
       },
       { aligned: [], next: 0 },
     ).aligned;
+  }
+
+  #matches(definition: ModelDefinition, input: Values, parsed: Row): boolean {
+    return Object.entries(input).every(
+      ([name, value]) =>
+        value === undefined ||
+        (value === null && definition.attributes.get(name)?.autoIncrement === true) ||
+        value instanceof SqlExpression ||
+        !(name in parsed) ||
+        sameValue(parsed[name], value),
+    );
   }
 }
