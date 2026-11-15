@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** OOP rewrite + Effect removal (spec `.10x/specs/2026-11-15-oop-rewrite-design.md`, ADR-018); S4 stopped after step 4
+**Current phase:** Released 0.8.0 (OOP architecture, Effect removed); open: intermittent local suite timeouts
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -133,3 +133,6 @@
 - [x] SQL compiler, where, expressions
 - [x] data types, validation, DDL, QueryInterface, sync
 - [x] model internals, associations, includes
+
+## Release 0.8.0 (2026-11-15)
+- Tag `v0.8.0` → release.yml green, `@tormozz48/postgrelize@0.8.0` published. Breaking: `postgrelize/effect` removed. Contents: object-oriented architecture (ADR-018), describeTable enum fix.
