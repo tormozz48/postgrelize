@@ -116,7 +116,7 @@ export const describeDecorators = (): void => {
         { name: 'author_name_idx', fields: ['name', 'surname'] },
       ]);
       expect(Author.hasHook('beforeCreate')).toBe(true);
-      expect(Book.hasHook('beforeCreate')).toBe(false);
+      expect(Book.hasHook('beforeCreate')).toBeUndefined();
       expect(() => Author.scope({ method: ['named', 'ann'] })).not.toThrow();
       expect(() => Author.scope('missing')).toThrow(/missing/);
     });

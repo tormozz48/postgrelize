@@ -71,6 +71,57 @@ export class ModelValues {
   }
 
   /**
+   * Explicit `fields` of `save` / `create` extended like v6: `updatedAt` and the version
+   * attribute (when anything is written), and for an INSERT `createdAt` and primary keys that
+   * have a default.
+   *
+   * @param definition - Model definition.
+   * @param fields - Fields as given, or `undefined`.
+   * @param creating - Whether the row is inserted.
+   * @returns Fields to write (`undefined` when none were given).
+   */
+  saveFields(
+    definition: ModelDefinition,
+    fields: readonly string[] | undefined,
+    creating: boolean,
+  ): readonly string[] | undefined {
+    if (fields === undefined) {
+      return undefined;
+    }
+    const keys = definition.primaryKeys.filter(
+      (name) => definition.attributes.get(name)?.defaultValue !== undefined,
+    );
+    const extra = [
+      ...(fields.length > 0 ? [definition.updatedAt, definition.version] : []),
+      ...(creating ? [definition.createdAt] : []),
+    ].filter((name): name is string => name !== undefined);
+    return [...new Set([...(creating ? keys : []), ...fields, ...extra])];
+  }
+
+  /**
+   * Explicit `fields` of `bulkCreate` extended with the timestamp attributes, like v6.
+   *
+   * @param definition - Model definition.
+   * @param fields - Fields as given, or `undefined`.
+   * @returns Fields to write (`undefined` when none were given).
+   */
+  bulkFields(
+    definition: ModelDefinition,
+    fields: readonly string[] | undefined,
+  ): readonly string[] | undefined {
+    return fields === undefined
+      ? undefined
+      : [
+          ...new Set([
+            ...fields,
+            ...[definition.createdAt, definition.updatedAt].filter(
+              (name): name is string => name !== undefined,
+            ),
+          ]),
+        ];
+  }
+
+  /**
    * Query options passed on to nested queries: `transaction`, `logging`, `benchmark`.
    *
    * @param options - Options of the outer call.

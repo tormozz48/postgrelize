@@ -12,10 +12,7 @@ describe('instance change tracking without a database', () => {
     expect(loadedNote().changed()).toBe(false);
   });
 
-  // Sequelize v6 keeps an attribute marked as changed after it is set back to the stored value
-  // (observed with set() on 6.37). postgrelize clears the flag. Not documented as a divergence
-  // in docs/sequelize-issues.md: reported as a finding, expectation below is the v6 behaviour.
-  it.fails('keeps an attribute changed after it is set back to its stored value (v6)', () => {
+  it('keeps an attribute changed after it is set back to its stored value (v6)', () => {
     const note = loadedNote();
     note.set('title', 'uno');
     note.set('title', 'one');

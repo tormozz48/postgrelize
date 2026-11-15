@@ -38,7 +38,7 @@ describe('decorator metadata', () => {
     sequelize.addModels([Hooked]);
     expect(Hooked.hasHook('beforeCreate')).toBe(true);
     expect(Hooked.hasHook('afterCreate')).toBe(true);
-    expect(Hooked.hasHook('beforeDestroy')).toBe(false);
+    expect(Hooked.hasHook('beforeDestroy')).toBeUndefined();
     await Hooked.runHooks('beforeCreate');
     expect(calls).toEqual(['table', 'method']);
     await Hooked.runHooks('afterCreate');

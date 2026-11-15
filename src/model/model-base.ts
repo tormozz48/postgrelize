@@ -1,3 +1,4 @@
+import { SqlCompiler } from '../sql/compile.ts';
 import { InstanceState } from './instance-state.ts';
 import type {
   AttributeDefinition,
@@ -119,14 +120,24 @@ export class ModelBase {
   }
 
   /**
-   * Table name, or `{ tableName, schema }` when the model has a schema.
+   * Table name, or the qualified table (`{ tableName, schema, delimiter, ... }`, like v6) when the
+   * model has a schema. `String(qualified)` is the quoted `"schema"."table"` reference.
    *
    * @returns Table name or qualified table.
    */
   static getTableName(): string | QualifiedTableName {
     const { definition } = registry.state(this);
-    return definition.schema === undefined
-      ? definition.tableName
-      : { tableName: definition.tableName, schema: definition.schema, delimiter: '.' };
+    const { tableName, schema } = definition;
+    return schema === undefined
+      ? tableName
+      : {
+          tableName,
+          table: tableName,
+          name: definition.name,
+          schema,
+          delimiter: definition.options.schemaDelimiter ?? '.',
+          toString: (): string =>
+            `${SqlCompiler.quoteIdent(schema)}.${SqlCompiler.quoteIdent(tableName)}`,
+        };
   }
 }

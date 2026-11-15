@@ -7,6 +7,7 @@ import { ModelFinders } from './mixins/model-finders.ts';
 import { ModelHooks } from './mixins/model-hooks.ts';
 import { ModelPostgres } from './mixins/model-postgres.ts';
 import { ModelSchema } from './mixins/model-schema.ts';
+import { ModelSchemaBinding } from './mixins/model-schema-binding.ts';
 import { ModelScopes } from './mixins/model-scopes.ts';
 import { ModelWriters } from './mixins/model-writers.ts';
 import type { BuildOptions, Values } from './options.ts';
@@ -16,7 +17,9 @@ export type { NamedHookAdder } from './mixins/named-hooks.ts';
 const ModelStatics = ModelPostgres(
   ModelWriters(
     ModelAggregates(
-      ModelFinders(ModelScopes(ModelHooks(ModelSchema(ModelAssociations(ModelBase))))),
+      ModelFinders(
+        ModelSchemaBinding(ModelScopes(ModelHooks(ModelSchema(ModelAssociations(ModelBase))))),
+      ),
     ),
   ),
 );

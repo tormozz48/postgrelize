@@ -61,10 +61,16 @@ export type ModelStatic<M extends AnyModel> = Omit<typeof Model, 'prototype'> & 
 export type QualifiedTableName = Readonly<{
   /** Table name. */
   tableName: string;
+  /** Table name (v6 alias of `tableName`). */
+  table: string;
+  /** Model name. */
+  name: string;
   /** Schema name. */
   schema: string;
   /** Separator between schema and table. */
   delimiter: string;
+  /** Quoted `"schema"."table"` reference. */
+  toString: () => string;
 }>;
 
 /** Options of `Model.init`. */

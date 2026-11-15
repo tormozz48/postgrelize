@@ -158,6 +158,27 @@ export class ModelRegistry {
   }
 
   /**
+   * Gives `bound` (a subclass of `model`) its own state bound to a schema, and the scope
+   * selection of `model`.
+   *
+   * @param model - Model class the copy extends.
+   * @param bound - Schema-bound subclass.
+   * @param schema - Schema name.
+   * @param delimiter - Separator reported by `getTableName`.
+   */
+  bindSchema(model: object, bound: object, schema: string, delimiter: string | undefined): void {
+    states.set(bound, factory.withSchema(this.state(model), schema, delimiter));
+    const owner = owners.get(this.#owner(model) as object);
+    if (owner !== undefined) {
+      owners.set(bound, owner);
+    }
+    const selected = selections.get(model);
+    if (selected !== undefined) {
+      selections.set(bound, selected);
+    }
+  }
+
+  /**
    * Scope options in effect for `model`: its selected scopes, or the default scope.
    *
    * @param model - Model class.

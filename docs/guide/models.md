@@ -33,7 +33,15 @@ Models can also be declared with decorators (`@Table`, `@Column`, `@HasMany`, â€
 
 <<< @/examples/models.ts#use{ts}
 
-Instances track changes as in v6: `changed()`, `previous()`, `save()` writes only changed attributes, `reload()` reads the row again, and `toJSON()` returns plain values.
+Instances track changes as in v6: `changed()`, `previous()`, `save()` writes only changed attributes, `reload()` reads the row again, and `toJSON()` returns plain values. Like v6, an attribute that was assigned a different value stays in `changed()` even when you set it back to the stored value.
+
+`create` and `bulkCreate` accept `fields` to restrict which attributes are written. As in v6, the timestamps (`createdAt`, `updatedAt`), the version attribute and primary keys with a default are added to the list for you:
+
+<<< @/examples/models.ts#fields{ts}
+
+`Model.schema(name)` returns a copy of the model whose queries target another PostgreSQL schema, e.g. one per tenant. `getTableName()` of the copy returns `{ tableName, schema, delimiter }`; the copy keeps the scope selection of the model it was made from, and `unscoped()` / `scope()` work on it. Hooks, scopes and associations are copied when `schema()` is called; later changes to the original are not seen by the copy.
+
+<<< @/examples/models.ts#schema{ts}
 
 ## Data types
 
