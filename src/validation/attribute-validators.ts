@@ -3,6 +3,7 @@ import type { AttributeDefinition } from '../model/model-definition.ts';
 import { BuiltinAttributeValidator } from './builtin-attribute-validator.ts';
 import { CustomValidators } from './custom-validators.ts';
 import { SchemaItems } from './schema-items.ts';
+import type { StandardSchemaV1 } from './standard-schema.ts';
 import type { AttributeValidateOptions, AttributeValidatorFunction } from './types.ts';
 import type { ValidationTarget } from './validation-target.ts';
 
@@ -45,9 +46,7 @@ export class AttributeValidators {
     value: unknown,
   ): Promise<readonly ValidationErrorItem[]> {
     if (name === 'schema' && this.#schema.isSchema(test)) {
-      return value === undefined
-        ? []
-        : this.#schema.items(target, test, value, attribute.fieldName);
+      return this.#schemaItems(target, attribute.fieldName, test, value);
     }
     if (typeof test === 'function') {
       return this.#customItems(
@@ -59,6 +58,17 @@ export class AttributeValidators {
       );
     }
     return this.#builtinItems(target, attribute, name, test, value);
+  }
+
+  #schemaItems(
+    target: ValidationTarget,
+    path: string,
+    schema: StandardSchemaV1,
+    value: unknown,
+  ): Promise<readonly ValidationErrorItem[]> {
+    return value === undefined
+      ? Promise.resolve([])
+      : this.#schema.items(target, schema, value, path);
   }
 
   async #customItems(
