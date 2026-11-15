@@ -69,6 +69,11 @@ export class InstanceValues {
   ): void {
     if (typeof keyOrValues === 'object') {
       const options = (valueOrOptions ?? {}) as SetOptions;
+      if (options.raw === true) {
+        // Raw values bypass setters, so they can be copied in one step (as v6 does).
+        Object.assign(instance.dataValues as Values, keyOrValues);
+        return;
+      }
       Object.entries(keyOrValues).forEach(([key, value]) =>
         instance.set(key, value as never, options),
       );
@@ -104,11 +109,11 @@ export class InstanceValues {
   }
 
   #setOne(instance: AnyModel, key: string, value: unknown, options: SetOptions): void {
-    const attribute = this.#registry.definition(instance.constructor).attributes.get(key);
     if (options.raw === true) {
       (instance.dataValues as Values)[key] = value;
       return;
     }
+    const attribute = this.#registry.definition(instance.constructor).attributes.get(key);
     if (attribute === undefined) {
       return;
     }
