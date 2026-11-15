@@ -80,9 +80,14 @@ describe('payloads on PostgreSQL-specific surfaces', () => {
     withCanary(async ({ sequelize }) => {
       for (const payload of PAYLOADS.slice(0, 30)) {
         const received: (string | undefined)[] = [];
+        let delivered: (() => void) | undefined;
+        const arrived = new Promise<void>((resolve) => {
+          delivered = resolve;
+        });
         const channel = await settle(
           sequelize.listen(payload, (message) => {
             received.push(message);
+            delivered?.();
           }),
         );
         expect({ payload, syntaxError: syntaxError(channel) }).toEqual({
@@ -90,7 +95,7 @@ describe('payloads on PostgreSQL-specific surfaces', () => {
           syntaxError: false,
         });
         await sequelize.notify(payload, payload);
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await arrived;
         expect(typeof channel).toBe('function');
         await (channel as () => Promise<void>)();
         expect(received).toEqual([payload]);
