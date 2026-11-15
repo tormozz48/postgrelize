@@ -54,6 +54,8 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       reporter: ['text-summary', 'json-summary', 'html', 'lcov'],
       reportsDirectory: 'coverage',
+      // S7: measured 99.7 / 99.5 / 99.2 / 91.7 (lines / statements / functions / branches).
+      thresholds: { lines: 98, statements: 98, functions: 98, branches: 90 },
     },
   },
 });
