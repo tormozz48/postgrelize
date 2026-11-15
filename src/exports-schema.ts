@@ -1,0 +1,36 @@
+export type {
+  Association,
+  AssociationName,
+  AssociationOptions,
+  AssociationThrough,
+  AssociationType,
+  BelongsToManyOptions,
+  ForeignKeyOptions,
+  ThroughOptions,
+} from './associations/types.ts';
+export type {
+  IncludeOption,
+  IncludeOptions,
+  IncludeThroughOptions,
+} from './associations/include.ts';
+export { QueryInterface } from './query-interface/query-interface.ts';
+export type {
+  ColumnDescription,
+  CreateTableOptions,
+  DropTableOptions,
+} from './query-interface/query-interface.ts';
+export type {
+  AlterOptions,
+  DropOptions,
+  SyncOptions,
+} from './query-interface/schema-synchronizer.ts';
+export { Deferrable } from './ddl/ddl-generator.ts';
+export type {
+  ConstraintOptions,
+  DeferrableValue,
+  IndexField,
+  IndexOptions,
+} from './ddl/ddl-generator.ts';
+export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
+export type { NotificationHandler } from './connection/notifications.ts';
+export type { CteDefinition, CteFindOptions, WithOption } from './model/cte-builder.ts';
