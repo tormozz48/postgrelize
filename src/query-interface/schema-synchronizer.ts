@@ -1,9 +1,10 @@
-import { DdlGenerator, type ColumnDefinition } from '../ddl/ddl-generator.ts';
-import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
-import type { AttributeDefinition, ModelDefinition } from '../model/model-definition.ts';
+import { SqlLiteral } from '../ddl/sql-literal.ts';
+import type { ModelDefinition } from '../model/model-definition.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
-import { SqlCompiler } from '../sql/compile.ts';
+import { AlterPlanner } from './alter-planner.ts';
+import { ModelTables } from './model-tables.ts';
 import type { QueryInterface } from './query-interface.ts';
+import { SyncPlanner } from './sync-planner.ts';
 
 /** `alter` options of `sync()`. */
 export type AlterOptions = Readonly<{
@@ -33,9 +34,11 @@ export type DropOptions = QueryOptionsBase &
     schema?: string;
   }>;
 
-const ddl = new DdlGenerator();
-
 const sqlLiteral = new SqlLiteral();
+
+const planner = new SyncPlanner();
+
+const tables = new ModelTables();
 
 /**
  * Creates, alters and drops the tables of model definitions (`sync()` / `drop()`): dependency
@@ -46,6 +49,7 @@ const sqlLiteral = new SqlLiteral();
 export class SchemaSynchronizer {
   readonly #runtime: ModelRuntime;
   readonly #queryInterface: QueryInterface;
+  readonly #alter: AlterPlanner;
 
   /**
    * @param runtime - Runtime executing the statements.
@@ -54,6 +58,7 @@ export class SchemaSynchronizer {
   constructor(runtime: ModelRuntime, queryInterface: QueryInterface) {
     this.#runtime = runtime;
     this.#queryInterface = queryInterface;
+    this.#alter = new AlterPlanner(queryInterface, tables);
   }
 
   /**
@@ -64,30 +69,18 @@ export class SchemaSynchronizer {
    * @param options - `force`, `alter`, `schema` and query options.
    */
   async syncAll(definitions: readonly ModelDefinition[], options: SyncOptions = {}): Promise<void> {
-    const ordered = this.#dependencyOrder(definitions);
+    const ordered = planner.dependencyOrder(definitions);
     if (options.force === true) {
-      await ordered
-        .toReversed()
-        .reduce<Promise<unknown>>(
-          (previous, definition) =>
-            previous.then(() => this.drop(definition, { ...options, cascade: true })),
-          Promise.resolve(),
-        );
+      await this.#each(ordered.toReversed(), (definition) =>
+        this.drop(definition, { ...options, cascade: true }),
+      );
     }
-    const deferred = this.#deferredReferences(ordered);
-    await ordered.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          this.sync(definition, { ...options, force: false }, deferred.get(definition)),
-        ),
-      Promise.resolve(),
+    const deferred = planner.deferredReferences(ordered);
+    await this.#each(ordered, (definition) =>
+      this.sync(definition, { ...options, force: false }, deferred.get(definition)),
     );
-    await ordered.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          this.#addDeferredReferences(definition, deferred.get(definition) ?? [], options),
-        ),
-      Promise.resolve(),
+    await this.#each(ordered, (definition) =>
+      this.#addDeferredReferences(definition, deferred.get(definition) ?? [], options),
     );
   }
 
@@ -98,12 +91,9 @@ export class SchemaSynchronizer {
    * @param options - `cascade`, `schema` and query options.
    */
   async dropAll(definitions: readonly ModelDefinition[], options: DropOptions = {}): Promise<void> {
-    await this.#dependencyOrder(definitions)
-      .toReversed()
-      .reduce<Promise<unknown>>(
-        (previous, definition) => previous.then(() => this.drop(definition, options)),
-        Promise.resolve(),
-      );
+    await this.#each(planner.dependencyOrder(definitions).toReversed(), (definition) =>
+      this.drop(definition, options),
+    );
   }
 
   /**
@@ -118,42 +108,12 @@ export class SchemaSynchronizer {
     options: SyncOptions = {},
     deferred: readonly string[] = [],
   ): Promise<void> {
-    const definition = this.#inSchema(model, options.schema);
-    const table = this.#tableOf(definition);
+    const definition = tables.inSchema(model, options.schema);
     if (options.force === true) {
       await this.drop(definition, { ...options, cascade: true });
     }
-    const exists =
-      options.force !== true && (await this.#queryInterface.tableExists(table, options));
-    const statements =
-      exists && options.alter !== undefined && options.alter !== false
-        ? await this.#alterStatements(definition, options.alter, options)
-        : exists
-          ? []
-          : ddl.createTableSql(
-              table,
-              this.#storedColumns(definition).map((column) =>
-                deferred.includes(column.field) ? this.#withoutReferences(column) : column,
-              ),
-              {
-                ...(definition.options.comment === undefined
-                  ? {}
-                  : { comment: definition.options.comment }),
-                ...(options.schema === undefined ? {} : { defaultSchema: options.schema }),
-              },
-            );
-    const indexes = (definition.options.indexes ?? []).map((index) =>
-      ddl.createIndexSql(table, {
-        ...index,
-        ifNotExists: true,
-        fields: (index.fields ?? []).map((field) =>
-          typeof field === 'string'
-            ? (definition.attributes.get(field)?.field ?? field)
-            : { ...field, name: definition.attributes.get(field.name)?.field ?? field.name },
-        ),
-      }),
-    );
-    await this.#run([...statements, ...indexes], options);
+    const statements = await this.#tableStatements(definition, options, deferred);
+    await this.#run([...statements, ...tables.indexStatements(definition)], options);
   }
 
   /**
@@ -163,8 +123,8 @@ export class SchemaSynchronizer {
    * @param options - `cascade`, `schema` and query options.
    */
   async drop(model: ModelDefinition, options: DropOptions = {}): Promise<void> {
-    const definition = this.#inSchema(model, options.schema);
-    const table = this.#tableOf(definition);
+    const definition = tables.inSchema(model, options.schema);
+    const table = tables.tableOf(definition);
     await this.#queryInterface.dropTable(table, options);
     const enumFields = [...definition.attributes.values()]
       .filter(
@@ -174,131 +134,34 @@ export class SchemaSynchronizer {
     await this.#queryInterface.dropEnumsOf(table, enumFields, options);
   }
 
-  #withoutReferences(column: ColumnDefinition): ColumnDefinition {
-    return Object.fromEntries(
-      Object.entries(column).filter(([key]) => key !== 'references'),
-    ) as ColumnDefinition;
+  async #tableStatements(
+    definition: ModelDefinition,
+    options: SyncOptions,
+    deferred: readonly string[],
+  ): Promise<readonly string[]> {
+    const exists =
+      options.force !== true &&
+      (await this.#queryInterface.tableExists(tables.tableOf(definition), options));
+    if (exists && options.alter !== undefined && options.alter !== false) {
+      return await this.#alter.statements(definition, options.alter, options);
+    }
+    return exists ? [] : tables.createStatements(definition, deferred, options.schema);
   }
 
-  #inSchema(definition: ModelDefinition, schema: string | undefined): ModelDefinition {
-    return schema === undefined ? definition : { ...definition, schema };
-  }
-
-  #tableOf(definition: ModelDefinition): TableName {
-    return definition.schema === undefined
-      ? definition.tableName
-      : { tableName: definition.tableName, schema: definition.schema };
-  }
-
-  #storedColumns(definition: ModelDefinition): readonly ColumnDefinition[] {
-    return [...definition.attributes.values()]
-      .filter((attribute) => attribute.type.isVirtual !== true)
-      .map((attribute) => ddl.columnOf(attribute));
+  async #each(
+    definitions: readonly ModelDefinition[],
+    action: (definition: ModelDefinition) => Promise<void>,
+  ): Promise<void> {
+    await definitions.reduce<Promise<unknown>>(
+      (previous, definition) => previous.then(() => action(definition)),
+      Promise.resolve(),
+    );
   }
 
   async #run(statements: readonly string[], options: QueryOptionsBase): Promise<void> {
     await statements.reduce<Promise<unknown>>(
       (previous, text) => previous.then(() => this.#runtime.execute({ text, values: [] }, options)),
       Promise.resolve(),
-    );
-  }
-
-  async #alterStatements(
-    definition: ModelDefinition,
-    alter: boolean | Readonly<{ drop?: boolean }>,
-    options: QueryOptionsBase & Readonly<{ schema?: string }>,
-  ): Promise<readonly string[]> {
-    const { schema } = options;
-    const table = this.#tableOf(definition);
-    const qualified = sqlLiteral.quoteTable(table);
-    const described = await this.#queryInterface.describeTable(table, options);
-    const columns = this.#storedColumns(definition);
-    const foreignKeys = new Set(
-      (await this.#queryInterface.getForeignKeyReferencesForTable(table, options)).map(
-        (reference) => reference.columnName,
-      ),
-    );
-    const fields = new Set(columns.map((column) => column.field));
-    const added = columns
-      .filter((column) => described[column.field] === undefined)
-      .flatMap((column) => {
-        const enumSql = ddl.createEnumSql(table, column);
-        return [
-          ...(enumSql === undefined ? [] : [enumSql]),
-          `ALTER TABLE ${qualified} ADD COLUMN ${ddl.columnSql(table, column)}`,
-          ...ddl.columnCommentSql(table, column),
-        ];
-      });
-    const changed = columns
-      .filter(
-        (column) =>
-          described[column.field] !== undefined &&
-          !column.primaryKey &&
-          column.generated === undefined &&
-          column.identity === undefined,
-      )
-      .flatMap((column) => [
-        ...ddl.addEnumValuesSql(table, column),
-        ...ddl.changeColumnSql(table, column),
-      ]);
-    const references = columns
-      .filter(
-        (column) =>
-          described[column.field] !== undefined &&
-          column.references !== undefined &&
-          !foreignKeys.has(column.field),
-      )
-      .map(
-        (column) =>
-          `ALTER TABLE ${qualified} ADD FOREIGN KEY (${SqlCompiler.quoteIdent(column.field)}) ${ddl.referencesSql(column, schema) ?? ''}`,
-      );
-    const dropped =
-      typeof alter === 'object' && alter.drop === false
-        ? []
-        : Object.keys(described)
-            .filter((field) => !fields.has(field))
-            .map(
-              (field) => `ALTER TABLE ${qualified} DROP COLUMN ${SqlCompiler.quoteIdent(field)}`,
-            );
-    return [...added, ...changed, ...references, ...dropped];
-  }
-
-  #referencedTable(references: AttributeDefinition['references']): string | undefined {
-    return references === undefined
-      ? undefined
-      : typeof references === 'string'
-        ? references
-        : typeof references.model === 'string'
-          ? references.model
-          : references.model.tableName;
-  }
-
-  #referencedTables(definition: ModelDefinition): readonly string[] {
-    return [...definition.attributes.values()].flatMap((attribute) => {
-      const table = this.#referencedTable(attribute.references);
-      return table === undefined ? [] : [table];
-    });
-  }
-
-  /**
-   * Columns (by field) of each definition whose foreign key points to a table created later in
-   * `ordered` — a reference cycle. Their tables are created without these constraints, which are
-   * added once every table exists.
-   */
-  #deferredReferences(
-    ordered: readonly ModelDefinition[],
-  ): ReadonlyMap<ModelDefinition, readonly string[]> {
-    const position = new Map(ordered.map((definition, index) => [definition.tableName, index]));
-    return new Map(
-      ordered.map((definition, index) => [
-        definition,
-        [...definition.attributes.values()]
-          .filter((attribute) => {
-            const target = position.get(this.#referencedTable(attribute.references) ?? '');
-            return target !== undefined && target > index;
-          })
-          .map((attribute) => attribute.field),
-      ]),
     );
   }
 
@@ -312,50 +175,15 @@ export class SchemaSynchronizer {
       return;
     }
     const { schema } = options;
-    const definition = this.#inSchema(model, schema);
-    const table = this.#tableOf(definition);
-    const existing = new Set(
-      (await this.#queryInterface.getForeignKeyReferencesForTable(table, options)).map(
-        (reference) => reference.columnName,
-      ),
-    );
+    const definition = tables.inSchema(model, schema);
+    const table = tables.tableOf(definition);
+    const existing = await this.#alter.foreignKeyColumns(table, options);
     await this.#run(
-      this.#storedColumns(definition)
+      tables
+        .storedColumns(definition)
         .filter((column) => fields.includes(column.field) && !existing.has(column.field))
-        .map(
-          (column) =>
-            `ALTER TABLE ${sqlLiteral.quoteTable(table)} ADD FOREIGN KEY (${SqlCompiler.quoteIdent(column.field)}) ${ddl.referencesSql(column, schema) ?? ''}`,
-        ),
+        .map((column) => tables.foreignKeySql(sqlLiteral.quoteTable(table), column, schema)),
       options,
-    );
-  }
-
-  /** Orders definitions so that referenced tables come first. */
-  #dependencyOrder(definitions: readonly ModelDefinition[]): readonly ModelDefinition[] {
-    const byTable = new Map(definitions.map((definition) => [definition.tableName, definition]));
-    const visit = (
-      definition: ModelDefinition,
-      seen: ReadonlySet<string>,
-      ordered: readonly ModelDefinition[],
-    ): readonly ModelDefinition[] => {
-      if (ordered.includes(definition) || seen.has(definition.tableName)) {
-        return ordered;
-      }
-      const nextSeen = new Set([...seen, definition.tableName]);
-      const withDependencies = this.#referencedTables(definition)
-        .map((table) => byTable.get(table))
-        .filter(
-          (dependency): dependency is ModelDefinition =>
-            dependency !== undefined && dependency !== definition,
-        )
-        .reduce((acc, dependency) => visit(dependency, nextSeen, acc), ordered);
-      return withDependencies.includes(definition)
-        ? withDependencies
-        : [...withDependencies, definition];
-    };
-    return definitions.reduce<readonly ModelDefinition[]>(
-      (ordered, definition) => visit(definition, new Set(), ordered),
-      [],
     );
   }
 }

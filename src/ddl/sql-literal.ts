@@ -34,33 +34,18 @@ export class SqlLiteral {
     if (value === null || value === undefined) {
       return 'NULL';
     }
-    if (typeof value === 'boolean') {
-      return value ? 'true' : 'false';
+    switch (typeof value) {
+      case 'boolean':
+        return value ? 'true' : 'false';
+      case 'number':
+        return this.#escapeNumber(value);
+      case 'bigint':
+        return value.toString();
+      case 'object':
+        return this.#escapeObject(value);
+      default:
+        return this.#escapeString(String(value));
     }
-    if (typeof value === 'number') {
-      if (!Number.isFinite(value)) {
-        throw new Error(`Cannot render non-finite number ${String(value)} as SQL literal`);
-      }
-      return String(value);
-    }
-    if (typeof value === 'bigint') {
-      return value.toString();
-    }
-    if (value instanceof Date) {
-      return this.#escapeString(value.toISOString());
-    }
-    if (Buffer.isBuffer(value)) {
-      return `'\\x${value.toString('hex')}'::bytea`;
-    }
-    if (Array.isArray(value)) {
-      return value.length === 0
-        ? "'{}'"
-        : `ARRAY[${value.map((item: unknown) => this.escape(item)).join(', ')}]`;
-    }
-    if (typeof value === 'object') {
-      return this.#escapeString(JSON.stringify(value));
-    }
-    return this.#escapeString(String(value));
   }
 
   /**
@@ -113,6 +98,28 @@ export class SqlLiteral {
     return schema === undefined
       ? SqlCompiler.quoteIdent(name)
       : `${SqlCompiler.quoteIdent(schema)}.${SqlCompiler.quoteIdent(name)}`;
+  }
+
+  #escapeNumber(value: number): string {
+    if (!Number.isFinite(value)) {
+      throw new Error(`Cannot render non-finite number ${String(value)} as SQL literal`);
+    }
+    return String(value);
+  }
+
+  #escapeObject(value: object): string {
+    if (value instanceof Date) {
+      return this.#escapeString(value.toISOString());
+    }
+    if (Buffer.isBuffer(value)) {
+      return `'\\x${value.toString('hex')}'::bytea`;
+    }
+    if (Array.isArray(value)) {
+      return value.length === 0
+        ? "'{}'"
+        : `ARRAY[${value.map((item: unknown) => this.escape(item)).join(', ')}]`;
+    }
+    return this.#escapeString(JSON.stringify(value));
   }
 
   #escapeString(text: string): string {
