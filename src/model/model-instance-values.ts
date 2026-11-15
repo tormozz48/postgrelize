@@ -1,4 +1,4 @@
-import { instanceValues } from './model-services.ts';
+import { instanceValues, valueCloner } from './model-services.ts';
 import type { Model } from './model.ts';
 import type { AnyModel, Values } from './options.ts';
 
@@ -190,6 +190,6 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * ```
    */
   toJSON(): TAttributes {
-    return structuredClone(this.get({ plain: true }));
+    return valueCloner.clone(this.get({ plain: true }));
   }
 }

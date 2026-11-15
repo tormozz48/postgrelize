@@ -7,6 +7,8 @@ import type { StandardSchemaV1 } from './standard-schema.ts';
 import type { AttributeValidateOptions } from './types.ts';
 import type { ValidationTarget } from './validation-target.ts';
 
+const NO_ITEMS: Promise<readonly ValidationErrorItem[]> = Promise.resolve([]);
+
 /** Runs the `validate` options of one attribute: built-in, custom and Standard Schema validators. */
 export class AttributeValidators {
   readonly #builtin = new BuiltinAttributeValidator();
@@ -21,19 +23,43 @@ export class AttributeValidators {
    * @param value - Current value of the attribute.
    * @returns Failures of all validators of the attribute.
    */
-  async items(
+  items(
     target: ValidationTarget,
     attribute: AttributeDefinition,
     value: unknown,
   ): Promise<readonly ValidationErrorItem[]> {
     if ((value === null || value === undefined) && attribute.allowNull === false) {
-      return [];
+      return NO_ITEMS;
     }
-    const validate = (attribute.validate ?? {}) as AttributeValidateOptions;
+    const tests = AttributeValidators.#tests(attribute);
+    return tests.length === 0 ? NO_ITEMS : this.#run(target, attribute, tests, value);
+  }
+
+  /**
+   * Whether the attribute has validators to run (everything in `validate` except `notNull`).
+   *
+   * @param attribute - Attribute definition.
+   * @returns True when {@link AttributeValidators.items} can report failures.
+   */
+  hasValidators(attribute: AttributeDefinition): boolean {
+    return AttributeValidators.#tests(attribute).length > 0;
+  }
+
+  static #tests(attribute: AttributeDefinition): readonly (readonly [string, unknown])[] {
+    const validate = attribute.validate as AttributeValidateOptions | undefined;
+    return validate === undefined
+      ? []
+      : Object.entries(validate).filter(([name]) => name !== 'notNull');
+  }
+
+  async #run(
+    target: ValidationTarget,
+    attribute: AttributeDefinition,
+    tests: readonly (readonly [string, unknown])[],
+    value: unknown,
+  ): Promise<readonly ValidationErrorItem[]> {
     const results = await Promise.all(
-      Object.entries(validate)
-        .filter(([name]) => name !== 'notNull')
-        .map(([name, test]) => this.#validatorItems(target, attribute, name, test, value)),
+      tests.map(([name, test]) => this.#validatorItems(target, attribute, name, test, value)),
     );
     return results.flat();
   }
