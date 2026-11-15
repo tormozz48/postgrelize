@@ -1,6 +1,6 @@
 # ADR-005: Functional core, thin class shell; SOLID + YAGNI
 
-**Status:** Accepted
+**Status:** Superseded by ADR-018 (2026-11-15)
 **Date:** 2026-11-14
 **Feature:** postgrelize-mvp
 **Author:** 10x-Team (Architect + Staff Engineer)

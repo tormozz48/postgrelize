@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Released 0.8.0 (OOP architecture, Effect removed); test isolation fixed (database per run/project, per compat file)
+**Current phase:** Released 0.8.0 (OOP architecture, Effect removed); test isolation fixed; AGENTS.md + documentation sync rules (ADR-019)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`

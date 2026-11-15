@@ -1,5 +1,7 @@
 # Staff Engineer — Coding standards (postgrelize)
 
+> 2026-11-15: the "Style" section below is superseded by ADR-018 (OOP architecture). Current rules for contributors live in [`AGENTS.md`](../../../AGENTS.md).
+
 ## Style (ADR-005, user requirement 2026-11-14)
 - Functional style: pure functions, `readonly` types, no input mutation, expressions over statements, `map/filter/reduce` over loops where it reads clearly.
 - Classes only for v6-required public API (`Sequelize`, `Model`, `Transaction`, error classes). Methods delegate to core functions; no business logic in class bodies.
