@@ -166,6 +166,16 @@ export class QueryInterface {
   }
 
   /**
+   * Drops every user schema listed by {@link QueryInterface.showAllSchemas} with everything in it.
+   *
+   * @param options - Query options.
+   */
+  async dropAllSchemas(options?: QueryOptionsBase): Promise<void> {
+    const schemas = await this.showAllSchemas(options);
+    await Promise.all(schemas.map((schema) => this.dropSchema(schema, options)));
+  }
+
+  /**
    * Creates a table (and its enum types) if it does not exist.
    *
    * @param table - Table name or `{ tableName, schema }`.

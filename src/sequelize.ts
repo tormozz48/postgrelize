@@ -400,6 +400,45 @@ export class Sequelize {
   }
 
   /**
+   * Creates a schema if it does not exist.
+   *
+   * @param schema - Schema name.
+   * @param options - Query options.
+   */
+  async createSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
+    await this.getQueryInterface().createSchema(schema, options);
+  }
+
+  /**
+   * Lists user schemas (without `public`, `information_schema` and `pg_*`).
+   *
+   * @param options - Query options.
+   * @returns Schema names.
+   */
+  async showAllSchemas(options?: QueryOptionsBase): Promise<string[]> {
+    return await this.getQueryInterface().showAllSchemas(options);
+  }
+
+  /**
+   * Drops a schema with everything in it.
+   *
+   * @param schema - Schema name.
+   * @param options - Query options.
+   */
+  async dropSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
+    await this.getQueryInterface().dropSchema(schema, options);
+  }
+
+  /**
+   * Drops every user schema with everything in it.
+   *
+   * @param options - Query options.
+   */
+  async dropAllSchemas(options?: QueryOptionsBase): Promise<void> {
+    await this.getQueryInterface().dropAllSchemas(options);
+  }
+
+  /**
    * Creates (or alters / re-creates) the tables of all defined models in foreign-key order.
    *
    * @param options - `force`, `alter`, `match` and query options.
