@@ -48,12 +48,16 @@ describe('compat: hasOne setter', () => {
       return rows(Profile);
     }));
 
-  // TODO(parity): v6 returns a stub built from the primary key; postgrelize returns the loaded row.
-  it.fails('returns the same value as v6 when set by primary key', () =>
+  it('returns the same value as v6 when set by primary key', () =>
     run(async ({ User, Profile }) => {
       const ann = (await User.findByPk(1)) as unknown as Accessors;
       await Profile.create({ bio: 'by key' });
-      return ann['setProfile']?.(1);
+      const stub = (await ann['setProfile']?.(1)) as { id: unknown; UserId: unknown };
+      return {
+        id: stub.id,
+        UserId: stub.UserId,
+        isNew: (stub as { isNewRecord?: unknown }).isNewRecord,
+      };
     }));
 
   it('resolves to null for an unknown primary key and unlinks the current profile', () =>
@@ -82,8 +86,7 @@ describe('compat: hasOne setter', () => {
       return rows(Profile);
     }));
 
-  // TODO(parity): v6 returns null when the profile is already linked; postgrelize returns it.
-  it.fails('returns null like v6 when the profile is already linked', () =>
+  it('returns null like v6 when the profile is already linked', () =>
     run(async ({ User }) => {
       const ann = (await User.findByPk(1)) as unknown as Accessors;
       const profile = (await ann['createProfile']?.({ bio: 'same' })) as object;

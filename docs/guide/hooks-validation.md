@@ -44,7 +44,7 @@ Hooks receive the options of the operation, including `options.transaction`. Pas
 
 ## Validators
 
-Attribute validators go into `validate`: the validator.js-based built-ins of v6 (`isEmail`, `isUrl`, `len`, `min`, `max`, `isIn`, `notEmpty`, `is`, `not`, ...) with optional `{ args, msg }`, and custom functions that throw. Model-level validators go into the `validate` model option and run with the instance as `this`:
+Attribute validators go into `validate`: the validator.js-based built-ins of v6 (`isEmail`, `isUrl`, `len`, `min`, `max`, `isIn`, `notEmpty`, `is`, `not`, ...) with optional `{ args, msg }`, and custom functions that throw. An unknown validator name fails validation with `Invalid validator function: <name>` as a `ValidationErrorItem`, like v6. Model-level validators go into the `validate` model option and run with the instance as `this`:
 
 <<< @/examples/hooks-validation.ts#validators{ts}
 

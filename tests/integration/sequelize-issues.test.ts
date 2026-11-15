@@ -398,4 +398,19 @@ describe('Sequelize issues fixed in postgrelize', () => {
         await client.query(`DROP SCHEMA IF EXISTS "${other}" CASCADE`);
       }
     }));
+
+  it('nested create saves built instances given as children instead of dropping them', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Post = sequelize.define('Post', { title: DataTypes.TEXT });
+      const Comment = sequelize.define('Comment', { body: DataTypes.TEXT });
+      Post.hasMany(Comment);
+      await sequelize.sync();
+      const post = await Post.create(
+        { title: 'p', Comments: [Comment.build({ body: 'built' })] } as never,
+        { include: [Comment] },
+      );
+      const rows = await Comment.findAll({ raw: true, attributes: ['body', 'PostId'] });
+      expect(rows).toEqual([{ body: 'built', PostId: post.get('id') }]);
+    }));
 });

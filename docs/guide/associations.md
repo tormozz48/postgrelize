@@ -35,7 +35,12 @@ Instances get the v6 accessor methods:
 
 <<< @/examples/associations.ts#accessors{ts}
 
-`get<Names>` and `count<Names>` take find options (`where`, `order`, `limit`, `transaction`, ...).
+`get<Names>` and `count<Names>` take find options (`where`, `order`, `limit`, `transaction`, ...). Return values follow v6:
+
+- `hasOne` `set<Name>` accepts an instance, a primary key (a stub is built from the key, no lookup) or `null`. It resolves to the saved instance, or to `null` when the instance is already linked or the association is cleared.
+- `belongsTo` `set<Name>(value, { save: false })` only sets the foreign key and resolves to `undefined`.
+- `belongsToMany` `get<Names>` attaches the junction row under the junction model name. `joinTableAttributes` picks its columns (`[]` omits it); with `raw: true` the rows are flat and carry `Junction.column` keys.
+- Including a model with an unknown `as`, or a model associated several times without `as`, rejects with `EagerLoadingError`.
 
 ## Eager loading
 
@@ -53,10 +58,11 @@ Counting with includes: `count({ include })` counts joined rows, as in v6; add `
 
 ## Differences from Sequelize v6
 
-Associations behave like v6, including default scopes of included models (a scoped include with a `where` becomes required) and `Model.unscoped()` or `Model.scope(...)` passed as the include `model`. Two v6 bugs are fixed (see [Sequelize issues fixed](/sequelize-issues)):
+Associations behave like v6, including default scopes of included models (a scoped include with a `where` becomes required) and `Model.unscoped()` or `Model.scope(...)` passed as the include `model`. Three v6 bugs are fixed (see [Sequelize issues fixed](/sequelize-issues)):
 
 - `belongsToMany` with a custom `sourceKey` and `limit` returns the right rows.
 - A top-level `$include.attr$` condition with a `hasMany` include and `limit` produces valid SQL: the limit subquery is turned off, so `limit` counts joined rows.
+- Nested `create` with a built instance as a child (`Post.create({ Comments: [Comment.build(...)] }, { include: [Comment] })`) saves and links the instance; v6 silently drops it.
 
 ## API reference
 

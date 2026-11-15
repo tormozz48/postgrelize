@@ -16,7 +16,7 @@ export class BuiltinAttributeValidator {
    * @param test - Validator option: `false`, arguments, or `{ args, msg }`.
    * @param value - Current value of the attribute.
    * @returns The failure, or `undefined` when the value passed or the validator is disabled.
-   * @throws Error for an unknown validator name.
+   * @remarks An unknown validator name fails with `Invalid validator function: <name>`, like v6.
    */
   run(
     target: ValidationTarget,
@@ -29,11 +29,29 @@ export class BuiltinAttributeValidator {
       return undefined;
     }
     const field = attribute.fieldName;
+    if (name !== 'isImmutable' && builtinValidators.find(name) === undefined) {
+      return this.#unknown(target, field, name, value);
+    }
     const normalized = BuiltinAttributeValidator.#normalize(name, test);
     const args = BuiltinAttributeValidator.#args(normalized, name, field, target);
     return BuiltinAttributeValidator.#passes(target, field, name, args, value)
       ? undefined
       : BuiltinAttributeValidator.#failure(target, field, name, normalized, args, value);
+  }
+
+  #unknown(
+    target: ValidationTarget,
+    field: string,
+    name: string,
+    value: unknown,
+  ): ValidationErrorItem {
+    return new ValidationErrorItem(
+      `Invalid validator function: ${name}`,
+      'Validation error',
+      field,
+      value,
+      target.instance,
+    );
   }
 
   static #failure(
@@ -66,11 +84,7 @@ export class BuiltinAttributeValidator {
     if (name === 'isImmutable') {
       return target.isNewRecord || target.values[field] === target.previous[field];
     }
-    const fn = builtinValidators.find(name);
-    if (fn === undefined) {
-      throw new Error(`Invalid validator function: ${name}`);
-    }
-    return fn(String(value), ...args);
+    return builtinValidators.find(name)?.(String(value), ...args) ?? false;
   }
 
   static #normalize(name: string, test: unknown): unknown {

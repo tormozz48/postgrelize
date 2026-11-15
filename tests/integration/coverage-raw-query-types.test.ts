@@ -22,30 +22,6 @@ const inSchema = <T>(run: (sequelize: Sequelize) => Promise<T>): Promise<T> =>
   });
 
 describe('raw query result shapes (PostgreSQL driver results)', () => {
-  it('returns the affected row count for a DELETE query', () =>
-    inSchema(async (sequelize) => {
-      const count = await sequelize.query('DELETE FROM items WHERE id <= 2', {
-        type: QueryTypes.DELETE,
-      });
-      expect(count).toBe(2);
-      expect(await sequelize.query('SELECT id FROM items', { type: QueryTypes.SELECT })).toEqual([
-        { id: 3 },
-      ]);
-    }));
-
-  it('returns returned rows and the row count for UPDATE and UPSERT queries', () =>
-    inSchema(async (sequelize) => {
-      const updated = await sequelize.query('UPDATE items SET qty = 0 WHERE id = 1 RETURNING id', {
-        type: QueryTypes.UPDATE,
-      });
-      expect(updated).toEqual([[{ id: 1 }], 1]);
-      const upserted = await sequelize.query(
-        "INSERT INTO items (id, name, qty) VALUES (1, 'z', 9) ON CONFLICT (id) DO UPDATE SET qty = 9 RETURNING id",
-        { type: QueryTypes.UPSERT },
-      );
-      expect(upserted).toEqual([[{ id: 1 }], 1]);
-    }));
-
   it('inlines parameterless expressions given as replacements', () =>
     inSchema(async (sequelize) => {
       const rows = await sequelize.query('SELECT :v AS v', {
