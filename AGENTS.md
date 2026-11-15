@@ -111,6 +111,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
   - Get the URL from `testDatabaseUrl()`, never hard-code it.
   - Database-wide names (LISTEN channels, advisory lock keys) are safe only because of these per-run databases. Don't share them between files of one project.
 - **Security tests** (`tests/integration/security/`) run on real PostgreSQL inside `withCanary` (from `tests/support/injection.ts`): use the `PAYLOADS` corpus and `fast-check` properties (`textValue()`, `identifier()`, `propertyParameters()`, fixed seed; reproduce with `PGZ_FC_SEED`). A `42601` syntax error means a payload escaped its quoting.
+- **Coverage** is enforced in CI (`npm run test:coverage` fails below 98% lines/statements/functions and 90% branches). New code arrives with tests that assert its behaviour; code that the public API cannot reach is removed, not tested artificially. `it.fails` marks a known bug or v6 difference with a `TODO(parity)` comment: when the bug is fixed the test turns red, flip it to `it` and update the docs. Findings: `.10x/reviews/2026-11-15-coverage-findings.md`.
 - **No timing assumptions.** Don't rely on "X finishes within N ms". Order concurrent steps with explicit signals (resolve a promise when the lock is held, then start the competitor).
 - The suite must pass when run several times in parallel on one machine. If you see a flake, find the cause; don't retry or raise timeouts to hide it.
 

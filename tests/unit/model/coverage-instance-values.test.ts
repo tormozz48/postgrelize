@@ -1,0 +1,24 @@
+import { describe, expect, it } from 'vitest';
+import { DataTypes, Sequelize } from '../../../src/index.ts';
+
+const loadedNote = () => {
+  const sequelize = new Sequelize('postgres://unused@localhost:1/unused', { logging: false });
+  const Note = sequelize.define('Note', { title: DataTypes.STRING }, { timestamps: false });
+  return Note.build({ id: 1, title: 'one' }, { isNewRecord: false, raw: true });
+};
+
+describe('instance change tracking without a database', () => {
+  it('starts clean for an instance built from stored values', () => {
+    expect(loadedNote().changed()).toBe(false);
+  });
+
+  // Sequelize v6 keeps an attribute marked as changed after it is set back to the stored value
+  // (observed with set() on 6.37). postgrelize clears the flag. Not documented as a divergence
+  // in docs/sequelize-issues.md: reported as a finding, expectation below is the v6 behaviour.
+  it.fails('keeps an attribute changed after it is set back to its stored value (v6)', () => {
+    const note = loadedNote();
+    note.set('title', 'uno');
+    note.set('title', 'one');
+    expect(note.changed()).toEqual(['title']);
+  });
+});
