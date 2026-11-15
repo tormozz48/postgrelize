@@ -2,12 +2,14 @@ import { Op } from '../expressions/op.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
+import { OwnerKeys } from './owner-keys.ts';
 import type { AssociationOptions } from './types.ts';
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
 const keys = new AssociationKeys();
+const ownerKeys = new OwnerKeys(keys);
 
 /** `source.hasMany(target)` (Sequelize v6 `HasMany`): the foreign key lives on the target. */
 export class HasMany extends Association {
@@ -21,7 +23,7 @@ export class HasMany extends Association {
    * @param options - Association options.
    */
   constructor(source: Model, target: Model, options: AssociationOptions = {}) {
-    const resolved = keys.targetKeys(true, source, target, options);
+    const resolved = ownerKeys.hasOneOrMany(true, source, target, options);
     super('HasMany', source, target, options, resolved.name, resolved.keys);
     this.#targetPk = keys.primaryKey(target);
     this.install();

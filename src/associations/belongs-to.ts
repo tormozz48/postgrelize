@@ -1,16 +1,13 @@
-import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
+import { OwnerKeys } from './owner-keys.ts';
 import type { AssociationOptions } from './types.ts';
-
-const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
-const keys = new AssociationKeys();
+const ownerKeys = new OwnerKeys(new AssociationKeys());
 
 /** `source.belongsTo(target)` (Sequelize v6 `BelongsTo`): the foreign key lives on the source. */
 export class BelongsTo extends Association {
@@ -22,39 +19,8 @@ export class BelongsTo extends Association {
    * @param options - Association options.
    */
   constructor(source: Model, target: Model, options: AssociationOptions = {}) {
-    const name = keys.aliasNames(options.as, keys.modelName(target), false);
-    const targetKey = options.targetKey ?? keys.primaryKey(target);
-    const foreignKey =
-      keys.foreignKeyName(options.foreignKey) ??
-      keys.camelize(`${name.singular}_${keys.primaryKey(target)}`);
-    registry.addAssociationAttributes(source, {
-      [foreignKey]: keys.keyAttribute(
-        keys.attributeOf(target, targetKey),
-        keys.foreignKeyExtras(options.foreignKey),
-        keys.reference(
-          {
-            model: target,
-            key: targetKey,
-            onDelete: options.onDelete,
-            onUpdate: options.onUpdate,
-            constraints: options.constraints,
-          },
-          keys.foreignKeyExtras(options.foreignKey).allowNull !== false,
-          {
-            onDelete: 'auto',
-            onUpdate: 'CASCADE',
-          },
-        ),
-      ),
-    } as ModelAttributes);
-    super('BelongsTo', source, target, options, name, {
-      foreignKey,
-      identifierField: keys.fieldOf(source, foreignKey),
-      sourceKey: foreignKey,
-      targetKey,
-      otherKey: undefined,
-      through: undefined,
-    });
+    const resolved = ownerKeys.belongsTo(source, target, options);
+    super('BelongsTo', source, target, options, resolved.name, resolved.keys);
     this.install();
   }
 

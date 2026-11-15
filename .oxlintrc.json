@@ -85,11 +85,6 @@
     },
     {
       "files": [
-        "src/associations/association-keys.ts",
-        "src/associations/association.ts",
-        "src/associations/belongs-to-many.ts",
-        "src/associations/include-loader.ts",
-        "src/associations/include-query-builder.ts",
         "src/connection/connection-manager.ts",
         "src/connection/copy.ts",
         "src/errors/errors.ts",
@@ -104,15 +99,6 @@
     },
     {
       "files": [
-        "src/associations/association-keys.ts",
-        "src/associations/association.ts",
-        "src/associations/belongs-to-many.ts",
-        "src/associations/belongs-to.ts",
-        "src/associations/has-one.ts",
-        "src/associations/include-loader.ts",
-        "src/associations/include-query-builder.ts",
-        "src/associations/include-resolver.ts",
-        "src/associations/nested-creator.ts",
         "src/connection/connection-config.ts",
         "src/connection/connection-manager.ts",
         "src/connection/copy.ts",
