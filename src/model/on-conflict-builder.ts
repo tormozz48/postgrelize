@@ -50,11 +50,12 @@ export type OnConflictUpdateAction<T> = Readonly<{
  *
  * @example
  * ```ts
- * await Counter.bulkCreate(rows, {
+ * const rows = [{ tenantId: 1, key: 'views', hits: 1, version: 2 }];
+ * await Product.bulkCreate(rows, {
  *   onConflict: {
  *     target: ['tenantId', 'key'],
  *     action: {
- *       update: { hits: literal('"Counter"."hits" + EXCLUDED."hits"'), updatedAt: fn('now') },
+ *       update: { hits: literal('"Product"."hits" + EXCLUDED."hits"'), updatedAt: fn('now') },
  *       where: { version: { [Op.lt]: excluded('version') } },
  *     },
  *   },

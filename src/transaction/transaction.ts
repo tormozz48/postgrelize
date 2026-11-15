@@ -18,7 +18,22 @@ export { ISOLATION_LEVELS, LOCK, TRANSACTION_TYPES } from './transaction-constan
 export type { AdvisoryLockKey } from './advisory-locks.ts';
 export type { IsolationLevel, LockStrength } from './transaction-constants.ts';
 
-/** Options of `sequelize.transaction()`. */
+/**
+ * Options of `sequelize.transaction()`.
+ *
+ * All fields are optional.
+ *
+ * @example
+ * ```ts
+ * const options: TransactionOptions = {
+ *   isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
+ *   readOnly: true,
+ *   settings: { 'app.user_id': '42', statement_timeout: '5s' },
+ * };
+ * const t = await sequelize.transaction(options);
+ * await t.commit();
+ * ```
+ */
 export type TransactionOptions = Readonly<{
   /** Isolation level of a new transaction. */
   isolationLevel?: IsolationLevel;
@@ -38,11 +53,27 @@ export type TransactionOptions = Readonly<{
 }>;
 
 /**
- * Database transaction (Sequelize v6 `Transaction`). Obtain one from `sequelize.transaction()`;
- * pass it to queries with the `transaction` option.
+ * Handle of an open database transaction or savepoint (Sequelize v6 `Transaction`).
+ *
+ * Obtain one from `sequelize.transaction()` and pass it to queries with the `transaction` option.
+ * Unmanaged transactions must be finished with {@link Transaction.commit} or
+ * {@link Transaction.rollback}; the connection is released to the pool when that happens.
+ *
+ * @example
+ * ```ts
+ * const t = await sequelize.transaction();
+ * try {
+ *   const created = await User.create({ name: 'Ann' }, { transaction: t });
+ *   await Post.create({ title: 'Hi', userId: created.id }, { transaction: t });
+ *   await t.commit();
+ * } catch (e) {
+ *   await t.rollback();
+ *   throw e;
+ * }
+ * ```
  */
 export class Transaction {
-  /** Isolation levels. */
+  /** Values for the `isolationLevel` option, e.g. `SERIALIZABLE` or `READ_COMMITTED`. */
   static readonly ISOLATION_LEVELS = ISOLATION_LEVELS;
   /** Row lock strengths. */
   static readonly LOCK = LOCK;
@@ -65,6 +96,8 @@ export class Transaction {
   #afterCommit: readonly ((transaction: Transaction) => unknown)[] = [];
 
   /**
+   * Creates an unstarted transaction; use `sequelize.transaction()` instead of calling this directly.
+   *
    * @param connections - Connection manager of the owning `Sequelize` instance.
    * @param options - Transaction options.
    */
@@ -117,8 +150,15 @@ export class Transaction {
   /**
    * Commits the transaction (or releases the savepoint) and runs `afterCommit` hooks.
    *
-   * @returns Resolves when committed.
+   * @returns Resolves when committed and all `afterCommit` hooks have run.
    * @throws Error when the transaction is already finished.
+   *
+   * @example
+   * ```ts
+   * const t = await sequelize.transaction();
+   * await User.create({ name: 'Ann' }, { transaction: t });
+   * await t.commit();
+   * ```
    */
   async commit(): Promise<void> {
     this.#assertActive('commit');
@@ -139,6 +179,17 @@ export class Transaction {
    *
    * @returns Resolves when rolled back.
    * @throws Error when the transaction is already finished.
+   *
+   * @example
+   * ```ts
+   * const t = await sequelize.transaction();
+   * try {
+   *   await User.create({ name: 'Ann' }, { transaction: t });
+   *   await t.commit();
+   * } catch (e) {
+   *   await t.rollback();
+   * }
+   * ```
    */
   async rollback(): Promise<void> {
     this.#assertActive('rollback');
@@ -157,6 +208,14 @@ export class Transaction {
    * @param key - Integer key, or a string hashed with `hashtextextended`.
    * @param options - `shared: true` for a shared lock.
    * @returns Resolves when the lock is held.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   await t.advisoryLock('invoice-42');
+   *   await Invoice.update({ status: 'sent' }, { where: { id: 42 }, transaction: t });
+   * });
+   * ```
    */
   async advisoryLock(
     key: AdvisoryLockKey,
@@ -171,6 +230,15 @@ export class Transaction {
    * @param key - Integer key, or a string hashed with `hashtextextended`.
    * @param options - `shared: true` for a shared lock.
    * @returns True when the lock was acquired.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   if (await t.tryAdvisoryLock(42, { shared: true })) {
+   *     await Task.findAll({ transaction: t });
+   *   }
+   * });
+   * ```
    */
   async tryAdvisoryLock(
     key: AdvisoryLockKey,
@@ -182,7 +250,16 @@ export class Transaction {
   /**
    * Registers a callback run after a successful commit.
    *
-   * @param hook - Callback receiving this transaction.
+   * @param hook - Callback receiving this transaction; hooks run in registration order after the
+   * transaction is committed and are awaited by `commit()`. They never run after a rollback.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   t.afterCommit(() => console.log('committed, safe to notify'));
+   *   await User.create({ name: 'Ann' }, { transaction: t });
+   * });
+   * ```
    */
   afterCommit(hook: (transaction: Transaction) => unknown): void {
     this.#afterCommit = [...this.#afterCommit, hook];

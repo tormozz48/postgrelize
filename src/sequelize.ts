@@ -39,7 +39,7 @@ export class Sequelize extends SequelizeMembers {
   static readonly DataTypes = DataTypes;
   /** Query operators. */
   static readonly Op: typeof Op = Op;
-  /** Query types. */
+  /** Result shapes accepted by the `type` option of {@link Sequelize.query}, e.g. `QueryTypes.SELECT`. */
   static readonly QueryTypes = QueryTypes;
   /** Transaction class. */
   static readonly Transaction = Transaction;
@@ -65,6 +65,17 @@ export class Sequelize extends SequelizeMembers {
    *
    * @param _namespace - Ignored.
    * @returns The `Sequelize` class.
+   * @see {@link Sequelize.transaction}
+   *
+   * @example
+   * ```ts
+   * Sequelize.useCLS();
+   * await sequelize.transaction(async () => {
+   *   // No `{ transaction }` option needed: the queries join the managed transaction.
+   *   const user = await User.create({ name: 'Ada' });
+   *   await Post.create({ title: 'Hello', userId: user.id });
+   * });
+   * ```
    */
   static useCLS(_namespace?: unknown): typeof Sequelize {
     transactionScope.enableCls();

@@ -17,5 +17,18 @@
     "invalidLink": true,
     "notDocumented": true
   },
+  "requiredToBeDocumented": [
+    "Enum",
+    "EnumMember",
+    "Variable",
+    "Function",
+    "Class",
+    "Constructor",
+    "Interface",
+    "Property",
+    "Method",
+    "Accessor",
+    "TypeAlias"
+  ],
   "treatWarningsAsErrors": true
 }

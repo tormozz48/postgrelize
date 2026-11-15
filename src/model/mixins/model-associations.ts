@@ -27,11 +27,18 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
     }
 
     /**
-     * Adds a belongsTo association: the foreign key is stored on this model.
+     * Declares that each row of this model refers to one row of the target; the foreign key column
+     * lives on this model's table. Adds accessors such as `getX` / `setX` / `createX` to instances.
      *
+     * @param this - The source model class.
      * @param target - Associated model.
      * @param options - Association options.
      * @returns The association.
+     * @example
+     * ```ts
+     * Post.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
+     * ```
+     * @see [Associations guide](/guide/associations)
      */
     static belongsTo<M extends AnyModel, T extends AnyModel>(
       this: ModelStatic<M>,
@@ -42,11 +49,17 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
     }
 
     /**
-     * Adds a hasOne association: the foreign key is stored on the target.
+     * Declares that each row of this model has at most one related target row; the foreign key column
+     * lives on the target's table.
      *
+     * @param this - The source model class.
      * @param target - Associated model.
      * @param options - Association options.
      * @returns The association.
+     * @example
+     * ```ts
+     * User.hasOne(Profile, { foreignKey: 'userId' });
+     * ```
      */
     static hasOne<M extends AnyModel, T extends AnyModel>(
       this: ModelStatic<M>,
@@ -57,11 +70,17 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
     }
 
     /**
-     * Adds a hasMany association: the foreign key is stored on the target.
+     * Declares that each row of this model has many related target rows; the foreign key column
+     * lives on the target's table.
      *
+     * @param this - The source model class.
      * @param target - Associated model.
      * @param options - Association options.
      * @returns The association.
+     * @example
+     * ```ts
+     * User.hasMany(Post, { foreignKey: 'authorId', as: 'posts' });
+     * ```
      */
     static hasMany<M extends AnyModel, T extends AnyModel>(
       this: ModelStatic<M>,
@@ -72,11 +91,16 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
     }
 
     /**
-     * Adds a belongsToMany association through a junction model.
+     * Declares a many-to-many relation between this model and the target through a junction table.
      *
+     * @param this - The source model class.
      * @param target - Associated model.
      * @param options - Association options with `through`.
      * @returns The association.
+     * @example
+     * ```ts
+     * Project.belongsToMany(Task, { through: 'ProjectTasks' });
+     * ```
      */
     static belongsToMany<M extends AnyModel, T extends AnyModel>(
       this: ModelStatic<M>,

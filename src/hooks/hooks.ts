@@ -144,8 +144,15 @@ export class HookRegistry {
    * @param type - Hook type.
    * @param fn - Hook function.
    * @param name - Name to remove the hook by.
-   * @returns New registry.
+   * @returns New registry; the receiver is not modified.
    * @throws Error for an unknown hook type.
+   *
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * const next = registry.add('beforeCreate', () => {}, 'audit');
+   * next.has('beforeCreate');
+   * ```
    */
   add(type: string, fn: HookFunction, name?: string): HookRegistry {
     const hook: Hook = name === undefined ? { fn } : { name, fn };
@@ -163,8 +170,15 @@ export class HookRegistry {
    *
    * @param type - Hook type.
    * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
-   * @returns New registry.
+   * @returns New registry; the receiver is not modified.
    * @throws Error for an unknown hook type.
+   *
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * const next = registry.remove('beforeCreate', 'audit');
+   * next.has('beforeCreate');
+   * ```
    */
   remove(type: string, nameOrFn?: string | HookFunction): HookRegistry {
     const types = HookRegistry.#targets(type);
@@ -185,6 +199,14 @@ export class HookRegistry {
    * @param type - Hook type.
    * @returns True when at least one hook exists.
    * @throws Error for an unknown hook type.
+   *
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * if (registry.has('afterCreate')) {
+   *   console.log('afterCreate hooks registered');
+   * }
+   * ```
    */
   has(type: string): boolean {
     return (this.#hooks.get(HookRegistry.#assertHookType(type)) ?? []).length > 0;
@@ -197,6 +219,11 @@ export class HookRegistry {
    * @param type - Hook type.
    * @returns Whether hooks exist, `undefined` when none was ever added.
    * @throws Error for an unknown hook type.
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * const known = registry.hasOrUndefined('beforeCreate'); // undefined until a hook was added
+   * ```
    */
   hasOrUndefined(type: string): boolean | undefined {
     const hooks = this.#hooks.get(HookRegistry.#assertHookType(type));
@@ -209,7 +236,13 @@ export class HookRegistry {
    * @param type - Hook type.
    * @param context - `this` of the hook functions.
    * @param args - Hook arguments.
-   * @returns Resolves when all hooks finished.
+   * @returns Resolves when all hooks finished; a rejecting hook stops the chain.
+   *
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * await registry.run('beforeCreate', User, { name: 'Ann' }, {});
+   * ```
    */
   run(type: HookType, context: unknown, ...args: readonly unknown[]): Promise<void> {
     return HookRegistry.runAll([this], type, context, ...args);

@@ -1,9 +1,17 @@
 import type { FromItem, LockNode, WithClause } from '../sql/ast.ts';
 
-/** `attributes` option of finders. */
+/**
+ * Selected attributes: a list of names or `[expression, alias]` pairs, or an `{ include, exclude }` spec.
+ *
+ * @example
+ * ```ts
+ * const list: FindAttributeOptions = ['id', 'name', [fn('count', col('id')), 'total']];
+ * const spec: FindAttributeOptions = { include: [[literal('1'), 'one']], exclude: ['password'] };
+ * ```
+ */
 export type FindAttributeOptions = readonly (string | readonly [unknown, string])[] | AttributeSpec;
 
-/** `attributes: { include, exclude }` form. */
+/** The `attributes: { include, exclude }` form: all attributes plus/minus some. */
 export type AttributeSpec = Readonly<{
   /** Extra columns added to all attributes. */
   include?: readonly (string | readonly [unknown, string])[];
@@ -14,16 +22,16 @@ export type AttributeSpec = Readonly<{
 /** One `order` item: attribute name, `[attribute, direction]`, `[expression, direction]` or an expression. */
 export type OrderItem = string | unknown | readonly [unknown, string?];
 
-/** `order` option of finders. */
+/** `order` option of finders: a single expression or a list of {@link OrderItem}. */
 export type Order = unknown | readonly OrderItem[];
 
 /** Model whose rows are locked by `lock.of`. */
 export type LockTarget = Readonly<{
-  /** Model name used as table alias. */
+  /** Model name, which is the table alias in the query. */
   name: string;
 }>;
 
-/** `lock` option of finders. */
+/** `lock` option of finders: `true` (`FOR UPDATE`), a lock strength, or `{ level, of }`. */
 export type LockOption =
   | boolean
   | LockNode['strength']
@@ -34,27 +42,43 @@ export type LockOption =
       of?: LockTarget;
     }>;
 
-/** Options that shape a SELECT statement. */
+/**
+ * Options that shape a SELECT statement, shared by finders and `copyTo`.
+ *
+ * Finders extend this with flags such as `raw` and `include` ({@link FindOptions}).
+ *
+ * @example
+ * ```ts
+ * const opts: SelectOptions = {
+ *   attributes: ['status', [fn('count', col('id')), 'n']],
+ *   group: ['status'],
+ *   having: { n: { [Op.gt]: 1 } },
+ *   order: [['status', 'DESC']],
+ *   limit: 20,
+ *   offset: 40,
+ * };
+ * ```
+ */
 export type SelectOptions = Readonly<{
-  /** Filter. */
+  /** Filter; finders type this as {@link WhereOptions}. */
   where?: unknown;
-  /** Selected attributes. */
+  /** Selected attributes. All attributes when omitted. */
   attributes?: FindAttributeOptions;
-  /** Sort order. */
+  /** Sort order: attribute names, `[attribute, 'ASC' | 'DESC']` pairs or expressions. */
   order?: Order;
   /** `GROUP BY` attributes or expressions. */
   group?: unknown;
   /** `HAVING` condition. */
   having?: unknown;
-  /** Maximum number of rows. */
+  /** Maximum number of rows; `null` or `undefined` for no limit. */
   limit?: number | null;
-  /** Rows to skip. */
+  /** Number of rows to skip; `null` or `undefined` to skip none. */
   offset?: number | null;
   /** Row lock (`FOR UPDATE` etc.); requires a transaction. */
   lock?: LockOption;
-  /** `SKIP LOCKED`. */
+  /** Add `SKIP LOCKED` to the row lock; only with `lock`. */
   skipLocked?: boolean;
-  /** `NOWAIT`. PostgreSQL extension. */
+  /** Add `NOWAIT` to the row lock so the query fails instead of waiting; only with `lock`. PostgreSQL extension. */
   noWait?: boolean;
   /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
   distinctOn?: readonly unknown[];

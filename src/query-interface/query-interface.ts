@@ -19,7 +19,20 @@ export type {
 
 /**
  * Schema manipulation API (Sequelize v6 `QueryInterface`) for PostgreSQL. Used by `sync()` and by
- * migrations (`sequelize-cli`, umzug).
+ * migrations (`sequelize-cli`, umzug). Obtain the instance with {@link Sequelize.getQueryInterface}.
+ * Table names are `string` or `{ tableName, schema }`; identifiers are always quoted and values bound or
+ * escaped, never concatenated raw.
+ *
+ * @example
+ * ```ts
+ * const queryInterface = sequelize.getQueryInterface();
+ * await queryInterface.createTable('users', {
+ *   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+ *   name: { type: DataTypes.STRING, allowNull: false },
+ * });
+ * await queryInterface.addIndex('users', ['name'], { unique: true });
+ * ```
+ * @see [Schema guide](/guide/schema)
  */
 export class QueryInterface extends QueryInterfaceTables {
   readonly #columns: ColumnCommands;
@@ -28,7 +41,14 @@ export class QueryInterface extends QueryInterfaceTables {
   readonly #bulk: BulkData;
 
   /**
+   * Creates the schema API bound to a `Sequelize` instance; prefer {@link Sequelize.getQueryInterface}.
+   *
    * @param sequelize - Owning `Sequelize` instance.
+   * @example
+   * ```ts
+   * const api = new QueryInterface(sequelize);
+   * await api.showAllTables();
+   * ```
    */
   constructor(sequelize: RuntimeOwner) {
     super(sequelize);
@@ -40,12 +60,17 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Adds a column.
+   * Adds a column with `ALTER TABLE ... ADD COLUMN`; a plain data type or a full attribute definition (nullability, default, references, ...) is accepted.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param column - Column name.
    * @param attribute - Column definition.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.addColumn('users', 'nickname', { type: DataTypes.STRING, allowNull: true });
+   * ```
    */
   async addColumn(
     table: TableName,
@@ -57,23 +82,33 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Removes a column.
+   * Drops a column with `ALTER TABLE ... DROP COLUMN`.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param column - Column name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.removeColumn('users', 'nickname');
+   * ```
    */
   async removeColumn(table: TableName, column: string, options?: QueryOptionsBase): Promise<void> {
     await this.#columns.removeColumn(table, column, options);
   }
 
   /**
-   * Changes type, nullability, default and comment of a column.
+   * Alters the type, nullability, default and comment of an existing column in one go.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param column - Column name.
    * @param attribute - New column definition.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.changeColumn('users', 'name', { type: DataTypes.STRING(100), allowNull: false });
+   * ```
    */
   async changeColumn(
     table: TableName,
@@ -85,12 +120,17 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Renames a column.
+   * Renames a column with `ALTER TABLE ... RENAME COLUMN`.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param before - Current column name.
    * @param after - New column name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.renameColumn('users', 'name', 'full_name');
+   * ```
    */
   async renameColumn(
     table: TableName,
@@ -102,11 +142,16 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Creates an index.
+   * Creates an index on a table, optionally unique, partial, covering or `CONCURRENTLY`.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param fieldsOrOptions - Indexed fields or index options.
    * @param options - Index options when fields are given separately.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.addIndex('users', ['email'], { unique: true, name: 'users_email_unique' });
+   * ```
    */
   async addIndex(
     table: TableName,
@@ -117,11 +162,16 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Drops an index by name or by its fields (default name).
+   * Drops an index identified by name, or by the fields it was created on (the default generated name is derived from them).
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param nameOrFields - Index name or indexed fields.
    * @param options - `concurrently` and query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.removeIndex('users', 'users_email_unique');
+   * ```
    */
   async removeIndex(
     table: TableName,
@@ -132,10 +182,20 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Adds a constraint.
+   * Adds a `CHECK`, `UNIQUE`, `PRIMARY KEY` or `FOREIGN KEY` constraint to a table.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - Constraint definition.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.addConstraint('products', {
+   *   type: 'check',
+   *   fields: ['price'],
+   *   name: 'products_price_positive',
+   *   where: { price: { [Op.gt]: 0 } },
+   * });
+   * ```
    */
   async addConstraint(
     table: TableName,
@@ -145,11 +205,16 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Drops a constraint.
+   * Drops a named constraint from a table.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param name - Constraint name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.removeConstraint('products', 'products_price_positive');
+   * ```
    */
   async removeConstraint(
     table: TableName,
@@ -160,19 +225,29 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Drops an enum type.
+   * Runs `DROP TYPE IF EXISTS` for an enum type.
    *
    * @param name - Enum type name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropEnum('enum_users_role');
+   * ```
    */
   async dropEnum(name: string, options?: QueryOptionsBase): Promise<void> {
     await this.#enums.dropEnum(name, options);
   }
 
   /**
-   * Drops all enum types of the current schema.
+   * Drops every enum type of the current schema with `CASCADE`, which also drops dependent columns' defaults. Destructive.
    *
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropAllEnums();
+   * ```
    */
   async dropAllEnums(options?: QueryOptionsBase): Promise<void> {
     await this.#enums.dropAllEnums(options);
@@ -188,12 +263,20 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Inserts rows (used by seeders). Values are bound as parameters.
+   * Inserts several rows with one `INSERT` (used by seeders). Values are bound as parameters.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param records - Rows keyed by column name.
    * @param options - Query options.
    * @returns Number of inserted rows.
+   *
+   * @example
+   * ```ts
+   * const inserted = await queryInterface.bulkInsert('users', [
+   *   { name: 'Ada', email: 'ada@example.com' },
+   *   { name: 'Alan', email: 'alan@example.com' },
+   * ]);
+   * ```
    */
   async bulkInsert(
     table: TableName,
@@ -204,13 +287,18 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Updates rows matching `where`.
+   * Updates every row matching a where object with one `UPDATE`, without model hooks or validation.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param values - New column values.
    * @param where - Filter (where object keyed by column).
    * @param options - Query options.
    * @returns Number of updated rows.
+   *
+   * @example
+   * ```ts
+   * const updated = await queryInterface.bulkUpdate('users', { active: false }, { name: 'Ada' });
+   * ```
    */
   async bulkUpdate(
     table: TableName,
@@ -222,12 +310,17 @@ export class QueryInterface extends QueryInterfaceTables {
   }
 
   /**
-   * Deletes rows matching `where`.
+   * Deletes every row matching a where object with one `DELETE`, without model hooks.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param where - Filter (where object keyed by column); empty deletes all rows.
    * @param options - Query options.
    * @returns Number of deleted rows.
+   *
+   * @example
+   * ```ts
+   * const removed = await queryInterface.bulkDelete('users', { active: false });
+   * ```
    */
   async bulkDelete(
     table: TableName,

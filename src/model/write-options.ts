@@ -4,24 +4,54 @@ import type { Values } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
 import type { WhereOptions } from './types.ts';
 
-/** Options of `create` and `save`. */
+/**
+ * Options of `create` and instance `save`.
+ *
+ * Runs `beforeSave` / `beforeCreate` / `beforeUpdate` hooks (and their `after` counterparts) unless `hooks` is `false`.
+ *
+ * @see {@link Model.create}
+ *
+ * @example
+ * ```ts
+ * const opts: SaveOptions<User> = { fields: ['name', 'email'], validate: true, transaction };
+ * await user.save(opts);
+ * ```
+ */
 export type SaveOptions<T = Values> = QueryOptionsBase &
   Readonly<{
-    /** Attributes to save; others are ignored. */
+    /** Attributes to save; others are ignored. Default: all changed attributes. */
     fields?: readonly (keyof T & string)[];
-    /** Do not update `updatedAt`. */
+    /** Do not update `updatedAt`.
+     * @defaultValue false */
     silent?: boolean;
-    /** Return all columns after insert/update (always enabled for PostgreSQL). */
+    /** Return all columns after insert/update; PostgreSQL always uses `RETURNING`, so this is accepted for v6 compatibility.
+     * @defaultValue true */
     returning?: boolean;
-    /** Run lifecycle hooks. Default true. */
+    /** Run lifecycle hooks.
+     * @defaultValue true */
     hooks?: boolean;
-    /** Run validations. Default true (false for `bulkCreate`). */
+    /** Run validations.
+     * @defaultValue true (`false` for `bulkCreate`) */
     validate?: boolean;
     /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension. */
     overriding?: 'system' | 'user';
   }>;
 
-/** Options of `create`. */
+/**
+ * Options of `create`.
+ *
+ * Extends {@link SaveOptions}.
+ *
+ * @see {@link Model.create}
+ *
+ * @example
+ * ```ts
+ * const post = await Post.create(
+ *   { title: 'Hello', author: { name: 'Ann' } },
+ *   { include: [{ association: 'author' }], transaction },
+ * );
+ * ```
+ */
 export type CreateOptions<T = Values> = SaveOptions<T> &
   Readonly<{
     /** Advanced `ON CONFLICT` handling. PostgreSQL extension. */
@@ -30,10 +60,24 @@ export type CreateOptions<T = Values> = SaveOptions<T> &
     include?: IncludeOption;
   }>;
 
-/** Options of `upsert`. */
+/**
+ * Options of `upsert`.
+ *
+ * Extends {@link SaveOptions}. With `onConflict` the result of `upsert` becomes `[instance, created]`.
+ *
+ * @see {@link Model.upsert}
+ *
+ * @example
+ * ```ts
+ * const [user] = await User.upsert(
+ *   { email: 'a@example.com', name: 'Ann' },
+ *   { conflictFields: ['email'] },
+ * );
+ * ```
+ */
 export type UpsertOptions<T = Values> = SaveOptions<T> &
   Readonly<{
-    /** Conflict target columns. Default: unique key of an updated attribute, else primary key. */
+    /** Conflict target columns. Default: unique key containing a given attribute, else the primary key. */
     conflictFields?: readonly string[];
     /** Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension. */
     onConflict?: OnConflictOptions<T>;
@@ -41,16 +85,33 @@ export type UpsertOptions<T = Values> = SaveOptions<T> &
     overriding?: 'system' | 'user';
   }>;
 
-/** Options of `Model.insert`. PostgreSQL extension. */
+/**
+ * Options of `Model.insert`. PostgreSQL extension.
+ *
+ * Rows are inserted with a single `INSERT` and no per-row save hooks; only the bulk-create hooks run.
+ *
+ * @see {@link Model.insert}
+ *
+ * @example
+ * ```ts
+ * const opts: InsertOptions<User> = {
+ *   onConflict: { target: ['email'], action: 'nothing' },
+ *   hooks: false,
+ * };
+ * const rows = await User.insert([{ email: 'a@example.com' }], opts);
+ * ```
+ */
 export type InsertOptions<T = Values> = QueryOptionsBase &
   Readonly<{
-    /** Attributes to insert; others are ignored. */
+    /** Attributes to insert; others are ignored. Default: all given attributes. */
     fields?: readonly (keyof T & string)[];
     /** Advanced `ON CONFLICT` handling. */
     onConflict?: OnConflictOptions<T>;
-    /** Run `beforeBulkCreate` / `afterBulkCreate` hooks. Default true. */
+    /** Run `beforeBulkCreate` / `afterBulkCreate` hooks.
+     * @defaultValue true */
     hooks?: boolean;
-    /** Validate rows before inserting. Default false. */
+    /** Validate rows before inserting.
+     * @defaultValue false */
     validate?: boolean;
     /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
     overriding?: 'system' | 'user';
@@ -58,7 +119,19 @@ export type InsertOptions<T = Values> = QueryOptionsBase &
     returningOld?: boolean;
   }>;
 
-/** Options of `Model.insertFrom`. PostgreSQL extension. */
+/**
+ * Options of `Model.insertFrom`, which inserts the result of a subquery (`INSERT ... SELECT`). PostgreSQL extension.
+ *
+ * @see {@link Model.insertFrom}
+ *
+ * @example
+ * ```ts
+ * const opts: InsertFromOptions<Task> = {
+ *   columns: ['title', 'projectId'],
+ *   onConflict: { action: 'nothing' },
+ * };
+ * ```
+ */
 export type InsertFromOptions<T = Values> = QueryOptionsBase &
   Readonly<{
     /** Target attributes, in the order of the subquery columns. */
@@ -69,14 +142,30 @@ export type InsertFromOptions<T = Values> = QueryOptionsBase &
     returningOld?: boolean;
   }>;
 
-/** Options of `increment` / `decrement`. */
+/**
+ * Options of `increment` and `decrement`.
+ *
+ * Runs one `UPDATE ... SET col = col + n` and updates `updatedAt` unless `silent`.
+ *
+ * @see {@link Model.increment}
+ *
+ * @example
+ * ```ts
+ * await Product.increment('stock', { by: 5, where: { id: 1 } });
+ * const opts: IncrementOptions<Product> = { by: 2, silent: true, transaction };
+ * const product = await Product.findByPk(1);
+ * await product!.decrement('stock', opts);
+ * ```
+ */
 export type IncrementOptions<T = Values> = QueryOptionsBase &
   Readonly<{
-    /** Rows to change (static form). */
+    /** Rows to change; required for the static form, ignored on instances. */
     where?: WhereOptions<T>;
-    /** Amount, default 1. */
+    /** Amount to add (`increment`) or subtract (`decrement`).
+     * @defaultValue 1 */
     by?: number;
-    /** Do not update `updatedAt`. */
+    /** Do not update `updatedAt`.
+     * @defaultValue false */
     silent?: boolean;
   }>;
 

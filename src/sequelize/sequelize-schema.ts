@@ -41,49 +41,77 @@ const runSync = async (sequelize: SequelizeBase, options: SyncOptions): Promise<
 export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase) =>
   class SchemaCapability extends Base {
     /**
-     * Creates a schema if it does not exist.
+     * Runs `CREATE SCHEMA IF NOT EXISTS` for a schema.
      *
      * @param schema - Schema name.
      * @param options - Query options.
+     *
+     * @example
+     * ```ts
+     * await sequelize.createSchema('tenant_1');
+     * ```
      */
     async createSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
       await this.getQueryInterface().createSchema(schema, options);
     }
 
     /**
-     * Lists user schemas (without `public`, `information_schema` and `pg_*`).
+     * Lists the schemas that belong to the application (without `public`, `information_schema` and `pg_*`).
      *
      * @param options - Query options.
      * @returns Schema names.
+     *
+     * @example
+     * ```ts
+     * const schemas = await sequelize.showAllSchemas(); // e.g. ['tenant_1']
+     * ```
      */
     async showAllSchemas(options?: QueryOptionsBase): Promise<string[]> {
       return await this.getQueryInterface().showAllSchemas(options);
     }
 
     /**
-     * Drops a schema with everything in it.
+     * Runs `DROP SCHEMA IF EXISTS ... CASCADE`, removing the schema and every object in it.
      *
      * @param schema - Schema name.
      * @param options - Query options.
+     *
+     * @example
+     * ```ts
+     * await sequelize.dropSchema('tenant_1');
+     * ```
      */
     async dropSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
       await this.getQueryInterface().dropSchema(schema, options);
     }
 
     /**
-     * Drops every user schema with everything in it.
+     * Drops every schema returned by {@link Sequelize.showAllSchemas} with `CASCADE`. Destructive.
      *
      * @param options - Query options.
+     *
+     * @example
+     * ```ts
+     * await sequelize.dropAllSchemas();
+     * ```
      */
     async dropAllSchemas(options?: QueryOptionsBase): Promise<void> {
       await this.getQueryInterface().dropAllSchemas(options);
     }
 
     /**
-     * Creates (or alters / re-creates) the tables of all defined models in foreign-key order.
+     * Creates (or alters / re-creates) the tables of all defined models in foreign-key order. Reference cycles use deferred foreign keys.
      *
      * @param options - `force`, `alter`, `match` and query options.
      * @returns This instance.
+     * @throws Error when `options.match` does not match the database name.
+     * @see {@link Model.sync}
+     *
+     * @example
+     * ```ts
+     * await sequelize.sync({ alter: { drop: false } });
+     * await sequelize.sync({ force: true, match: /_test$/ });
+     * ```
      */
     async sync(options: SyncOptions = {}): Promise<this> {
       if (options.match !== undefined && !options.match.test(this.config.database ?? '')) {
@@ -96,10 +124,15 @@ export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase)
     }
 
     /**
-     * Drops the tables of all defined models in reverse foreign-key order.
+     * Drops the tables of all defined models in reverse foreign-key order. Destructive.
      *
      * @param options - `cascade` and query options.
      * @returns Resolves when done.
+     *
+     * @example
+     * ```ts
+     * await sequelize.drop({ cascade: true });
+     * ```
      */
     async drop(options: DropOptions = {}): Promise<void> {
       await synchronizer(this).dropAll(definitions(this), options);

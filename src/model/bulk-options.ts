@@ -6,12 +6,32 @@ import type { QueryOptionsBase } from './runtime.ts';
 import type { WhereOptions } from './types.ts';
 import type { SaveOptions } from './write-options.ts';
 
-/** Options of `bulkCreate`. */
+/**
+ * Options of `bulkCreate`.
+ *
+ * Extends {@link SaveOptions}. Rows are inserted with one `INSERT` unless `individualHooks` or `include` is set. Validation is off by default (unlike `create`).
+ *
+ * @see {@link Model.bulkCreate}
+ * @see {@link OnConflictOptions}
+ *
+ * @example
+ * ```ts
+ * const rows = [{ email: 'a@example.com', name: 'Ann' }];
+ * await User.bulkCreate(rows, {
+ *   updateOnDuplicate: ['name'],
+ *   conflictAttributes: ['email'],
+ *   transaction,
+ * });
+ * const opts: BulkCreateOptions<User> = { ignoreDuplicates: true };
+ * ```
+ */
 export type BulkCreateOptions<T = Values> = SaveOptions<T> &
   Readonly<{
-    /** `ON CONFLICT DO NOTHING`. */
+    /** Add `ON CONFLICT DO NOTHING`, skipping rows that violate a unique constraint.
+     * @defaultValue false */
     ignoreDuplicates?: boolean;
-    /** Run per-instance `create` hooks (rows are then inserted one by one, like v6). */
+    /** Run per-instance `create` hooks (rows are then inserted one by one, like v6).
+     * @defaultValue false */
     individualHooks?: boolean;
     /** Create associated rows from nested values (rows are inserted one by one). */
     include?: IncludeOption;
@@ -25,71 +45,137 @@ export type BulkCreateOptions<T = Values> = SaveOptions<T> &
     onConflict?: OnConflictOptions<T>;
   }>;
 
-/** Options shared by bulk `update`, `destroy` and `restore`. */
+/**
+ * Hook switches shared by bulk `update`, `destroy` and `restore`.
+ *
+ * @example
+ * ```ts
+ * const opts: BulkHookOptions = { hooks: true, individualHooks: true };
+ * await User.destroy({ where: { active: false }, ...opts });
+ * ```
+ */
 export type BulkHookOptions = Readonly<{
-  /** Run bulk hooks. Default true. */
+  /** Run the bulk hooks (`beforeBulkUpdate`, `beforeBulkDestroy`, ...).
+   * @defaultValue true */
   hooks?: boolean;
-  /** Also run per-instance hooks (rows are loaded first). */
+  /** Also run per-instance hooks; rows are loaded first, which costs an extra query.
+   * @defaultValue false */
   individualHooks?: boolean;
 }>;
 
-/** Options of static `update`. */
+/**
+ * Options of static `update`.
+ *
+ * Extends {@link BulkHookOptions}. Updates `updatedAt` unless `silent`.
+ *
+ * @see {@link Model.update}
+ *
+ * @example
+ * ```ts
+ * const [count] = await User.update(
+ *   { active: false },
+ *   { where: { lastLogin: { [Op.lt]: new Date('2020-01-01') } }, transaction },
+ * );
+ * const opts: UpdateOptions<Task> = { where: { done: false }, returning: true };
+ * ```
+ */
 export type UpdateOptions<T = Values> = QueryOptionsBase &
   Readonly<{
     /** Rows to update. */
     where: WhereOptions<T>;
     /** Attributes to update; others are ignored. */
     fields?: readonly (keyof T & string)[];
-    /** Do not update `updatedAt`. */
+    /** Do not update `updatedAt`.
+     * @defaultValue false */
     silent?: boolean;
     /** Return updated rows as the second element of the result. */
     returning?: boolean;
     /** With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL 18+. */
     returningOld?: boolean;
-    /** Validate the new values. Default true. */
+    /** Validate the new values.
+     * @defaultValue true */
     validate?: boolean;
-    /** For paranoid models: `false` also updates soft-deleted rows. */
+    /** For paranoid models: `false` also updates soft-deleted rows.
+     * @defaultValue true */
     paranoid?: boolean;
     /** Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension. */
     from?: JoinSources;
   }> &
   BulkHookOptions;
 
-/** Options of static `destroy`. */
+/**
+ * Options of static `destroy`.
+ *
+ * Extends {@link BulkHookOptions}. Paranoid models are soft-deleted (`deletedAt` set) unless `force`.
+ *
+ * @see {@link Model.destroy}
+ *
+ * @example
+ * ```ts
+ * await Post.destroy({ where: { draft: true }, force: true });
+ * const opts: DestroyOptions<Task> = { truncate: true, cascade: true, restartIdentity: true };
+ * ```
+ */
 export type DestroyOptions<T = Values> = QueryOptionsBase &
   Readonly<{
     /** Rows to delete. */
     where?: WhereOptions<T>;
     /** Delete at most this many rows. */
     limit?: number;
-    /** Use `TRUNCATE` instead of `DELETE`. */
+    /** Use `TRUNCATE` instead of `DELETE`.
+     * @defaultValue false */
     truncate?: boolean;
-    /** With `truncate`: `CASCADE`. */
+    /** With `truncate`: add `CASCADE`.
+     * @defaultValue false */
     cascade?: boolean;
-    /** With `truncate`: `RESTART IDENTITY`. */
+    /** With `truncate`: add `RESTART IDENTITY`.
+     * @defaultValue false */
     restartIdentity?: boolean;
     /** Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension. */
     returning?: boolean;
-    /** For paranoid models: delete rows instead of setting `deletedAt`. */
+    /** For paranoid models: delete rows instead of setting `deletedAt`.
+     * @defaultValue false */
     force?: boolean;
     /** Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension. */
     using?: JoinSources;
   }> &
   BulkHookOptions;
 
-/** Options of static `restore`. */
+/**
+ * Options of static `restore`, which clears `deletedAt` of soft-deleted rows of paranoid models.
+ *
+ * @see {@link Model.restore}
+ *
+ * @example
+ * ```ts
+ * await Post.restore({ where: { authorId: 1 }, transaction });
+ * const opts: RestoreOptions<Post> = { hooks: false };
+ * ```
+ */
 export type RestoreOptions<T = Values> = QueryOptionsBase &
   Readonly<{
-    /** Rows to restore. */
+    /** Rows to restore; all soft-deleted rows when omitted. */
     where?: WhereOptions<T>;
   }> &
   BulkHookOptions;
 
-/** Options of instance `destroy`. */
+/**
+ * Options of instance `destroy`.
+ *
+ * @see {@link Model.destroy}
+ *
+ * @example
+ * ```ts
+ * await post.destroy({ force: true, transaction });
+ * const opts: InstanceDestroyOptions = { hooks: false };
+ * ```
+ */
 export type InstanceDestroyOptions = QueryOptionsBase &
   Readonly<{
-    /** For paranoid models: delete the row instead of setting `deletedAt`. */
+    /** For paranoid models: delete the row instead of setting `deletedAt`.
+     * @defaultValue false */
     force?: boolean;
-    /** Run `beforeDestroy` / `afterDestroy` hooks. Default true. */
+    /** Run `beforeDestroy` / `afterDestroy` hooks.
+     * @defaultValue true */
     hooks?: boolean;
   }>;

@@ -5,43 +5,74 @@ import type { Association } from './types.ts';
 
 type Model = ModelStatic<AnyModel>;
 
-/** Through-table options of an include. */
+/**
+ * Options of the junction table of an included belongsToMany association.
+ *
+ * @example
+ * ```ts
+ * const through: IncludeThroughOptions = { attributes: ['role'], where: { role: 'owner' } };
+ * const rows = await Project.findAll({ include: [{ model: User, through }] });
+ * ```
+ */
 export type IncludeThroughOptions = Readonly<{
-  /** Junction attributes to select (`[]` for none). */
+  /** Junction attributes to select (`[]` for none). Default: all. */
   attributes?: FindAttributeOptions;
-  /** Filter on junction rows. */
+  /** Filter on junction rows; see {@link WhereOptions}. */
   where?: unknown;
 }>;
 
-/** One `include` entry (Sequelize v6 `IncludeOptions`). */
+/**
+ * One `include` entry (Sequelize v6 `IncludeOptions`): which association to load and how.
+ *
+ * Name the association with `model`, `as` or `association`. Eager loading uses JOINs (see the guide), except `separate`, which runs another query.
+ *
+ * @see {@link FindOptions}
+ *
+ * @example
+ * ```ts
+ * const opts: IncludeOptions = {
+ *   model: Post,
+ *   as: 'posts',
+ *   where: { published: true },
+ *   required: false,
+ *   attributes: ['id', 'title'],
+ *   include: [{ model: Tag }],
+ * };
+ * const users = await User.findAll({ include: [opts] });
+ * ```
+ */
 export type IncludeOptions = Readonly<{
-  /** Associated model. */
+  /** Associated model; the association is looked up by model (and `as`). */
   model?: Model;
-  /** Alias of the association. */
+  /** Alias of the association, as given when it was defined. */
   as?: string;
   /** Association object or alias. */
   association?: Association | string;
-  /** Filter on the included rows; makes the include required unless `required: false`. */
+  /** Filter on the included rows; makes the include required unless `required: false`. See {@link WhereOptions}. */
   where?: unknown;
   /** `INNER JOIN` (true) or `LEFT OUTER JOIN` (false). */
   required?: boolean;
-  /** `RIGHT OUTER JOIN`. */
+  /** Use `RIGHT OUTER JOIN`.
+   * @defaultValue false */
   right?: boolean;
   /** Selected attributes. */
   attributes?: FindAttributeOptions;
   /** Nested includes. */
   include?: IncludeOption;
-  /** Load a hasMany association with a separate query. */
+  /** Load a hasMany association with a separate query instead of a JOIN.
+   * @defaultValue false */
   separate?: boolean;
   /** Junction options for belongsToMany. */
   through?: IncludeThroughOptions;
   /** Order of a separate include. */
   order?: unknown;
-  /** Limit of a separate include. */
+  /** Maximum rows per include of a separate include. */
   limit?: number;
-  /** For paranoid targets: `false` includes soft-deleted rows. */
+  /** For paranoid targets: `false` includes soft-deleted rows.
+   * @defaultValue true */
   paranoid?: boolean;
-  /** Include every association (`{ all: true }`). */
+  /** Include every association of the model (`{ all: true }`).
+   * @defaultValue false */
   all?: boolean;
 }>;
 

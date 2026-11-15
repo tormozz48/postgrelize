@@ -12,12 +12,19 @@ import type { ModelConstructor } from './model-constructor.ts';
 export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => {
   return class AggregatesCapability extends Base {
     /**
-     * Runs an aggregate function over a column.
+     * Runs one SQL aggregate function over a column (`SELECT fn(col) ...`), applying the default scope
+     * and the paranoid filter. The function name is checked against a safe name pattern, never
+     * concatenated unchecked.
      *
+     * @param this - The model class.
      * @param field - Attribute name or `'*'`.
      * @param aggregateFunction - SQL aggregate function name, e.g. `'max'`.
-     * @param options - Options.
-     * @returns Aggregated value.
+     * @param options - Options (`where`, `distinct`, `group`, `plain: false` to get rows, query options).
+     * @returns Aggregated value: a number for `count` and numeric attributes, otherwise parsed like the attribute; rows with `plain: false`.
+     * @example
+     * ```ts
+     * const avgPrice = await Product.aggregate('price', 'avg', { where: { active: true } });
+     * ```
      */
     static aggregate<M extends AnyModel, T = unknown>(
       this: ModelStatic<M>,
@@ -34,11 +41,16 @@ export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => 
     }
 
     /**
-     * Maximum value of an attribute.
+     * Finds the largest value of an attribute with `max()`.
      *
+     * @param this - The model class.
      * @param field - Attribute name.
-     * @param options - Options.
-     * @returns Maximum or `null`.
+     * @param options - Options, see {@link Model.aggregate}.
+     * @returns Maximum or `null` when there are no rows.
+     * @example
+     * ```ts
+     * const highest = await Product.max('price');
+     * ```
      */
     static max<M extends AnyModel, T = unknown>(
       this: ModelStatic<M>,
@@ -54,11 +66,16 @@ export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => 
     }
 
     /**
-     * Minimum value of an attribute.
+     * Finds the smallest value of an attribute with `min()`.
      *
+     * @param this - The model class.
      * @param field - Attribute name.
-     * @param options - Options.
-     * @returns Minimum or `null`.
+     * @param options - Options, see {@link Model.aggregate}.
+     * @returns Minimum or `null` when there are no rows.
+     * @example
+     * ```ts
+     * const lowest = await Product.min('price', { where: { active: true } });
+     * ```
      */
     static min<M extends AnyModel, T = unknown>(
       this: ModelStatic<M>,
@@ -74,11 +91,16 @@ export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => 
     }
 
     /**
-     * Sum of an attribute.
+     * Adds up the values of an attribute with `sum()`.
      *
+     * @param this - The model class.
      * @param field - Attribute name.
-     * @param options - Options.
-     * @returns Sum or `null`.
+     * @param options - Options, see {@link Model.aggregate}.
+     * @returns Sum, or `null` when there are no rows (as returned by PostgreSQL).
+     * @example
+     * ```ts
+     * const total = await Invoice.sum('amount', { where: { paid: true } });
+     * ```
      */
     static sum<M extends AnyModel>(
       this: ModelStatic<M>,

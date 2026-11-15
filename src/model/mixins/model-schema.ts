@@ -18,10 +18,17 @@ import type { ModelConstructor } from './model-constructor.ts';
 export const ModelSchema = <TBase extends ModelConstructor>(Base: TBase) => {
   return class SchemaCapability extends Base {
     /**
-     * Creates (or alters / re-creates) the table of this model.
+     * Creates the table of this model and its indexes when missing. `force: true` drops it first
+     * (with `CASCADE`); `alter` changes an existing table to match the model.
      *
-     * @param options - `force`, `alter` and query options.
+     * @param this - The model class.
+     * @param options - `force`, `alter`, `match`, `schema` and query options.
      * @returns The model class.
+     * @example
+     * ```ts
+     * await User.sync({ alter: true });
+     * ```
+     * @see [Schema guide](/guide/schema)
      */
     static async sync<MS extends ModelStatic<AnyModel>>(
       this: MS,
@@ -35,10 +42,14 @@ export const ModelSchema = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Drops the table of this model and its enum types.
+     * Drops the table of this model and the enum types it owns.
      *
-     * @param options - `cascade` and query options.
+     * @param options - `cascade`, `schema` and query options.
      * @returns Resolves when done.
+     * @example
+     * ```ts
+     * await Task.drop({ cascade: true });
+     * ```
      */
     static async drop(options: DropOptions = {}): Promise<void> {
       const { definition, runtime } = registry.state(this);
@@ -46,10 +57,14 @@ export const ModelSchema = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Empties the table.
+     * Removes all rows with `TRUNCATE`, without running hooks.
      *
      * @param options - `cascade`, `restartIdentity` and query options.
      * @returns Resolves when done.
+     * @example
+     * ```ts
+     * await Task.truncate({ restartIdentity: true, cascade: true });
+     * ```
      */
     static truncate(
       options: QueryOptionsBase & Readonly<{ cascade?: boolean; restartIdentity?: boolean }> = {},

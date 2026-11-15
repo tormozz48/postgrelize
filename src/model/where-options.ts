@@ -20,89 +20,89 @@ type Comparable<V> = V | SqlValue;
 
 /** Operators applicable to an attribute of type `V`. */
 export type WhereOperators<V = unknown> = {
-  /** See `Op.eq`. */
+  /** `= value`; `IS NULL` when the value is `null`. */
   [Op.eq]?: Comparable<V> | null;
-  /** See `Op.ne`. */
+  /** `<> value`; `IS NOT NULL` when the value is `null`. */
   [Op.ne]?: Comparable<V> | null;
-  /** See `Op.is`. */
+  /** `IS value`, for `null`, `true` or `false`. */
   [Op.is]?: boolean | null;
-  /** See `Op.not`. */
+  /** `IS NOT value` for `null`/booleans, otherwise negates a nested condition. */
   [Op.not]?: Comparable<V> | boolean | null | WhereOperators<V>;
-  /** See `Op.gt`. */
+  /** `> value`. */
   [Op.gt]?: Comparable<V> | AnyAll<V>;
-  /** See `Op.gte`. */
+  /** `>= value`. */
   [Op.gte]?: Comparable<V> | AnyAll<V>;
-  /** See `Op.lt`. */
+  /** `< value`. */
   [Op.lt]?: Comparable<V> | AnyAll<V>;
-  /** See `Op.lte`. */
+  /** `<= value`. */
   [Op.lte]?: Comparable<V> | AnyAll<V>;
-  /** See `Op.in`. */
+  /** `IN (...)`; long lists compile to `= ANY($n)`. */
   [Op.in]?: readonly V[] | Literal | Subquery;
-  /** See `Op.notIn`. */
+  /** `NOT IN (...)`; long lists compile to `<> ALL($n)`. */
   [Op.notIn]?: readonly V[] | Literal | Subquery;
-  /** See `Op.between`. */
+  /** `BETWEEN a AND b`, value is `[a, b]`. */
   [Op.between]?: readonly [Comparable<V>, Comparable<V>];
-  /** See `Op.notBetween`. */
+  /** `NOT BETWEEN a AND b`, value is `[a, b]`. */
   [Op.notBetween]?: readonly [Comparable<V>, Comparable<V>];
-  /** See `Op.like`. */
+  /** `LIKE pattern`. */
   [Op.like]?: string | SqlValue | AnyAll<string>;
-  /** See `Op.notLike`. */
+  /** `NOT LIKE pattern`. */
   [Op.notLike]?: string | SqlValue | AnyAll<string>;
-  /** See `Op.iLike`. */
+  /** `ILIKE pattern`. */
   [Op.iLike]?: string | SqlValue | AnyAll<string>;
-  /** See `Op.notILike`. */
+  /** `NOT ILIKE pattern`. */
   [Op.notILike]?: string | SqlValue | AnyAll<string>;
-  /** See `Op.startsWith`. */
+  /** `LIKE 'value%'`. */
   [Op.startsWith]?: string | SqlValue;
-  /** See `Op.endsWith`. */
+  /** `LIKE '%value'`. */
   [Op.endsWith]?: string | SqlValue;
-  /** See `Op.substring`. */
+  /** `LIKE '%value%'`. */
   [Op.substring]?: string | SqlValue;
-  /** See `Op.regexp`. */
+  /** `~ pattern` (POSIX regular expression). */
   [Op.regexp]?: string | SqlValue;
-  /** See `Op.notRegexp`. */
+  /** `!~ pattern`. */
   [Op.notRegexp]?: string | SqlValue;
-  /** See `Op.iRegexp`. */
+  /** `~* pattern` (case-insensitive regular expression). */
   [Op.iRegexp]?: string | SqlValue;
-  /** See `Op.notIRegexp`. */
+  /** `!~* pattern`. */
   [Op.notIRegexp]?: string | SqlValue;
-  /** See `Op.overlap`. */
+  /** `&&` — arrays or ranges overlap. */
   [Op.overlap]?: unknown;
-  /** See `Op.contains`. */
+  /** `@>` — array, range or jsonb contains the value. */
   [Op.contains]?: unknown;
-  /** See `Op.contained`. */
+  /** `<@` — array, range or jsonb is contained by the value. */
   [Op.contained]?: unknown;
-  /** See `Op.adjacent`. */
+  /** `-|-` — ranges are adjacent. */
   [Op.adjacent]?: unknown;
-  /** See `Op.strictLeft`. */
+  /** `<<` — range is strictly left of the value. */
   [Op.strictLeft]?: unknown;
-  /** See `Op.strictRight`. */
+  /** `>>` — range is strictly right of the value. */
   [Op.strictRight]?: unknown;
-  /** See `Op.noExtendLeft`. */
+  /** `&>` — range does not extend to the left of the value. */
   [Op.noExtendLeft]?: unknown;
-  /** See `Op.noExtendRight`. */
+  /** `&<` — range does not extend to the right of the value. */
   [Op.noExtendRight]?: unknown;
-  /** See `Op.match`. */
+  /** `@@` — tsvector matches tsquery. */
   [Op.match]?: SqlValue;
-  /** See `Op.col`. */
+  /** Compares with another column, value is a column reference such as `'user.id'`. */
   [Op.col]?: string;
-  /** See `Op.and`. */
+  /** Logical AND of nested conditions. */
   [Op.and]?: AllowArray<Comparable<V> | WhereOperators<V>>;
-  /** See `Op.or`. */
+  /** Logical OR of nested conditions. */
   [Op.or]?: AllowArray<Comparable<V> | WhereOperators<V>>;
-  /** See `Op.any`. */
+  /** `ANY (ARRAY[...])`, combined with a comparison operator. */
   [Op.any]?: readonly V[] | Literal;
-  /** See `Op.all`. */
+  /** `ALL (ARRAY[...])`, combined with a comparison operator. */
   [Op.all]?: readonly V[] | Literal;
-  /** See `Op.isDistinctFrom`. */
+  /** `IS DISTINCT FROM value` (null-safe `<>`). PostgreSQL extension. */
   [Op.isDistinctFrom]?: Comparable<V> | null;
-  /** See `Op.isNotDistinctFrom`. */
+  /** `IS NOT DISTINCT FROM value` (null-safe `=`). PostgreSQL extension. */
   [Op.isNotDistinctFrom]?: Comparable<V> | null;
-  /** See `Op.hasKey`. */
+  /** jsonb `?` — top-level key exists. PostgreSQL extension. */
   [Op.hasKey]?: string;
-  /** See `Op.hasAnyKeys`. */
+  /** jsonb `?|` — any of the keys exist. PostgreSQL extension. */
   [Op.hasAnyKeys]?: readonly string[];
-  /** See `Op.hasAllKeys`. */
+  /** jsonb `?&` — all of the keys exist. PostgreSQL extension. */
   [Op.hasAllKeys]?: readonly string[];
 };
 
@@ -133,11 +133,11 @@ export type WhereAttributeValue<V> =
 
 /** Logical combinators allowed at any level of a where object. */
 export type WhereLogic<T> = {
-  /** See `Op.and`. */
+  /** Logical AND of nested conditions. */
   [Op.and]?: AllowArray<WhereOptions<T>>;
-  /** See `Op.or`. */
+  /** Logical OR of nested conditions. */
   [Op.or]?: AllowArray<WhereOptions<T>>;
-  /** See `Op.not`. */
+  /** `IS NOT value` for `null`/booleans, otherwise negates a nested condition. */
   [Op.not]?: WhereOptions<T>;
 };
 
@@ -146,7 +146,25 @@ export type WhereAttributeHash<T> = { [K in keyof T]?: WhereAttributeValue<T[K]>
   [key: `$${string}$` | `${string}.${string}` | `${string}::${string}`]: unknown;
 } & WhereLogic<T>;
 
-/** `where` option of queries (Sequelize v6 `WhereOptions`). */
+/**
+ * `where` option of queries (Sequelize v6 `WhereOptions`).
+ *
+ * A condition is an object keyed by attribute (equality, `IN` for arrays, or operators), a list of conditions (`OR`), or an expression (`where()`, `literal()`, `fn()`, ...). Values are always bound parameters.
+ *
+ * @see {@link Op}
+ *
+ * @example
+ * ```ts
+ * const w: WhereOptions<User> = {
+ *   active: true,
+ *   age: { [Op.between]: [18, 65] },
+ *   role: ['admin', 'editor'],
+ *   [Op.or]: [{ name: { [Op.iLike]: 'a%' } }, { email: { [Op.endsWith]: '@example.com' } }],
+ *   '$posts.title$': 'Hello',
+ * };
+ * const rows = await User.findAll({ where: w, include: [Post] });
+ * ```
+ */
 export type WhereOptions<T = Record<string, unknown>> =
   | WhereAttributeHash<T>
   | readonly WhereOptions<T>[]

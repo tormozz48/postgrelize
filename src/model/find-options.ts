@@ -6,7 +6,7 @@ import type { QueryOptionsBase } from './runtime.ts';
 import type { SelectOptions } from './select-query-builder.ts';
 import type { WhereOptions } from './types.ts';
 
-/** Result of `findAndCountAll`. */
+/** Result of `findAndCountAll`: one page of rows plus the total count. */
 export type FindAndCountResult<M> = {
   /** Total number of matching rows, ignoring `limit` / `offset`. */
   count: number;
@@ -14,52 +14,106 @@ export type FindAndCountResult<M> = {
   rows: M[];
 };
 
-/** Options of finders (Sequelize v6 `FindOptions`, without `include`). */
+/**
+ * Options of the finders (`findAll`, `findOne`, `findByPk`, ...), without association loading details.
+ *
+ * Extends the query options (`transaction`, `logging`, ...) and the SELECT options with finder flags and the PostgreSQL CTE extension. `include` is typed through {@link IncludeOption}.
+ * A `beforeFind` hook may change these options before the query runs.
+ *
+ * @see {@link Model.findAll}
+ * @see {@link WhereOptions}
+ *
+ * @example
+ * ```ts
+ * const opts: FindOptions<User> = {
+ *   where: { active: true, age: { [Op.gte]: 18 } },
+ *   attributes: ['id', 'name'],
+ *   order: [['name', 'ASC']],
+ *   limit: 10,
+ *   include: [Post],
+ * };
+ * const rows = await User.findAll(opts);
+ * ```
+ */
 export type FindOptions<T = Values> = QueryOptionsBase &
   Omit<SelectOptions, 'where'> &
   Readonly<{
-    /** Filter. */
+    /** Filter rows; see {@link WhereOptions}. All rows when omitted. */
     where?: WhereOptions<T>;
-    /** Return plain objects instead of instances. */
+    /** Return plain row objects instead of model instances.
+     * @defaultValue false */
     raw?: boolean;
-    /** With `raw`, build nested objects from dotted keys. */
+    /** With `raw`, build nested objects from dotted keys such as `'posts.title'`.
+     * @defaultValue false */
     nest?: boolean;
-    /** Return a single row (used by `findOne`). */
+    /** Return a single row instead of an array (set internally by `findOne`).
+     * @defaultValue false */
     plain?: boolean;
-    /** Throw `EmptyResultError` (or the given error) when no row is found. */
+    /** Throw `EmptyResultError` (or the given `Error`) when no row is found.
+     * @defaultValue false */
     rejectOnEmpty?: boolean | Error;
-    /** For paranoid models: `false` includes soft-deleted rows. */
+    /** For paranoid models: `false` includes soft-deleted rows.
+     * @defaultValue true */
     paranoid?: boolean;
-    /** Run `beforeFind` / `afterFind` hooks. Default true. */
+    /** Run `beforeFind` / `afterFind` hooks.
+     * @defaultValue true */
     hooks?: boolean;
-    /** Eager-load associations. */
+    /** Eager-load associations through JOINs (or separate queries for `separate` includes). */
     include?: IncludeOption;
-    /** `false` disables the sub-query used for `limit` with multi includes. */
+    /** `false` disables the sub-query used for `limit` combined with multi-row includes. */
     subQuery?: boolean;
   }> &
   CteFindOptions;
 
-/** Options of `count`. */
+/**
+ * Options of `count`.
+ *
+ * Includes joins and CTE options; `count` fires `beforeCount` hooks.
+ *
+ * @see {@link Model.count}
+ *
+ * @example
+ * ```ts
+ * const total = await Post.count({ where: { published: true }, distinct: true, col: 'authorId' });
+ * const opts: CountOptions<Post> = { group: 'authorId' };
+ * const perAuthor = await Post.count(opts); // [{ authorId, count }, ...]
+ * ```
+ */
 export type CountOptions<T = Values> = QueryOptionsBase &
   Readonly<{
-    /** Filter. */
+    /** Filter rows; see {@link WhereOptions}. */
     where?: WhereOptions<T>;
-    /** Column to count. */
+    /** Column to count. Default: `*` (primary key with `distinct`). */
     col?: string;
-    /** `count(DISTINCT ...)`. */
+    /** Use `count(DISTINCT ...)`.
+     * @defaultValue false */
     distinct?: boolean;
     /** Group by attributes; the result becomes an array of `{ count, ...groups }`. */
     group?: string | readonly string[];
-    /** For paranoid models: `false` includes soft-deleted rows. */
+    /** For paranoid models: `false` includes soft-deleted rows.
+     * @defaultValue true */
     paranoid?: boolean;
-    /** Run `beforeCount` hooks. Default true. */
+    /** Run `beforeCount` hooks.
+     * @defaultValue true */
     hooks?: boolean;
     /** Join associations (rows are counted per joined row unless `distinct`). */
     include?: IncludeOption;
   }> &
   CteFindOptions;
 
-/** Options of `aggregate`, `max`, `min`, `sum`. */
+/**
+ * Options of `aggregate`, `max`, `min` and `sum`.
+ *
+ * Same as {@link CountOptions} plus `plain`.
+ *
+ * @see {@link Model.aggregate}
+ *
+ * @example
+ * ```ts
+ * const opts: AggregateOptions<Product> = { where: { active: true }, paranoid: false };
+ * const highest = await Product.max('price', opts);
+ * ```
+ */
 export type AggregateOptions<T = Values> = CountOptions<T> &
   Readonly<{
     /**
@@ -77,9 +131,23 @@ export type AggregateOptions<T = Values> = CountOptions<T> &
     dataType?: DataTypeInput;
   }>;
 
-/** Options of `findOrCreate` / `findOrBuild`. */
+/**
+ * Options of `findOrCreate` and `findOrBuild`.
+ *
+ * Extends {@link FindOptions}; the `where` values are also used when creating the row.
+ *
+ * @see {@link Model.findOrCreate}
+ *
+ * @example
+ * ```ts
+ * const [user, created] = await User.findOrCreate({
+ *   where: { email: 'a@example.com' },
+ *   defaults: { name: 'Ann' },
+ * });
+ * ```
+ */
 export type FindOrCreateOptions<T = Values> = FindOptions<T> &
   Readonly<{
-    /** Values used in addition to `where` when creating. */
+    /** Values used in addition to the plain equality values of `where` when the row is created. */
     defaults?: Partial<T>;
   }>;

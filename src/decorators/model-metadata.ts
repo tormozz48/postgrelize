@@ -9,7 +9,14 @@ import type { DecoratorTarget } from './decorator-signature.ts';
 /** Lazily resolved model class, so decorators can refer to classes defined later in the file. */
 export type ModelGetter = () => ModelStatic<AnyModel>;
 
-/** Table options of `@Table`: `Model.init` options without the `sequelize` instance. */
+/**
+ * Table options of `@Table`: the `Model.init` options without the `sequelize` instance.
+ *
+ * @example
+ * ```ts
+ * const options: TableOptions = { tableName: 'users', schema: 'app', paranoid: true, timestamps: true };
+ * ```
+ */
 export type TableOptions = Omit<InitOptions, 'sequelize'>;
 
 /** Named scopes given to `@Scopes`. */

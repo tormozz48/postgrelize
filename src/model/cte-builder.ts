@@ -3,7 +3,18 @@ import type { CteNode, FromItem, WithClause } from '../sql/ast.ts';
 import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
 import { ModelDefinition } from './model-definition.ts';
 
-/** Common table expression of the `with` option. PostgreSQL extension. */
+/**
+ * Common table expression of the `with` option. PostgreSQL extension.
+ *
+ * @example
+ * ```ts
+ * const cte: CteDefinition = {
+ *   query: Task.subquery({ attributes: ['id'], where: { parentId: null } }),
+ *   unionAll: true,
+ *   materialized: false,
+ * };
+ * ```
+ */
 export type CteDefinition = Readonly<{
   /** Non-recursive part. */
   query: Subquery;
@@ -18,7 +29,19 @@ export type CteDefinition = Readonly<{
 /** `with` option: CTEs by name. */
 export type WithOption = Readonly<Record<string, Subquery | CteDefinition>>;
 
-/** CTE-related find options. PostgreSQL extension. */
+/**
+ * CTE-related find options. PostgreSQL extension.
+ *
+ * Combined into {@link FindOptions} and {@link CountOptions}.
+ *
+ * @example
+ * ```ts
+ * const opts: CteFindOptions = {
+ *   with: { recent: { query: Post.subquery({ where: { published: true } }) } },
+ *   source: 'recent',
+ * };
+ * ```
+ */
 export type CteFindOptions = Readonly<{
   /** Common table expressions (`WITH [RECURSIVE] ...`). */
   with?: WithOption;

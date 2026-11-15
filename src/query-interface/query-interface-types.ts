@@ -28,14 +28,30 @@ export type ForeignKeyReference = Readonly<{
   referencedColumnName: string;
 }>;
 
-/** Options of `createTable`. */
+/**
+ * Options of `createTable`: a table comment plus the common query options.
+ *
+ * @example
+ * ```ts
+ * const options: CreateTableOptions = { comment: 'Blog posts', transaction };
+ * await queryInterface.createTable('posts', { title: DataTypes.STRING }, options);
+ * ```
+ */
 export type CreateTableOptions = QueryOptionsBase &
   Readonly<{
     /** Table comment. */
     comment?: string;
   }>;
 
-/** Options of `dropTable`. */
+/**
+ * Options of `dropTable`: `cascade` plus the common query options.
+ *
+ * @example
+ * ```ts
+ * const options: DropTableOptions = { cascade: true };
+ * await queryInterface.dropTable('posts', options);
+ * ```
+ */
 export type DropTableOptions = QueryOptionsBase &
   Readonly<{
     /** `DROP TABLE ... CASCADE`. */

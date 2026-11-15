@@ -73,18 +73,39 @@ export type QualifiedTableName = Readonly<{
   toString: () => string;
 }>;
 
-/** Options of `Model.init`. */
+/**
+ * Options of `Model.init`: table-level options plus hooks, scopes and validation.
+ *
+ * Extends {@link DefinitionOptions}.
+ *
+ * @see {@link Model.init}
+ *
+ * @example
+ * ```ts
+ * User.init(
+ *   { name: DataTypes.STRING, email: DataTypes.STRING },
+ *   {
+ *     sequelize,
+ *     modelName: 'User',
+ *     paranoid: true,
+ *     defaultScope: { where: { active: true } },
+ *     scopes: { admins: { where: { role: 'admin' } } },
+ *   },
+ * );
+ * ```
+ */
 export type InitOptions = DefinitionOptions &
   Readonly<{
     /** Owning `Sequelize` instance. */
     sequelize: RuntimeOwner;
-    /** Lifecycle hooks. */
+    /** Lifecycle hooks, by hook name. */
     hooks?: HooksOption;
     /** Scope applied to every query unless `unscoped()` / `scope()` is used. */
     defaultScope?: ScopeOptions;
     /** Named scopes: options or functions returning options. */
     scopes?: Readonly<Record<string, ScopeDefinition>>;
-    /** How `where` of merged scopes combine: `'overwrite'` same keys (default) or `'and'`. */
+    /** How `where` of merged scopes combine: `'overwrite'` replaces same keys, `'and'` joins them with `Op.and`.
+     * @defaultValue 'overwrite' */
     whereMergeStrategy?: WhereMergeStrategy;
     /** Model-level validators; throw to fail. */
     validate?: Readonly<Record<string, ModelValidatorFunction>>;
@@ -92,11 +113,23 @@ export type InitOptions = DefinitionOptions &
     validationSchema?: StandardSchemaV1;
   }>;
 
-/** Options of `Model.build`. */
+/**
+ * Options of `Model.build` (and the model constructor).
+ *
+ * @see {@link Model.build}
+ *
+ * @example
+ * ```ts
+ * const opts: BuildOptions = { isNewRecord: false, raw: true };
+ * const user = User.build({ id: 1, name: 'Ann' }, opts);
+ * ```
+ */
 export type BuildOptions = Readonly<{
-  /** Whether the instance represents a row that does not exist yet. Default true. */
+  /** Whether the instance represents a row that does not exist yet; `save()` inserts when true, updates when false.
+   * @defaultValue true */
   isNewRecord?: boolean;
-  /** Set values without setters and without change tracking. */
+  /** Set values without setters and without change tracking.
+   * @defaultValue false */
   raw?: boolean;
   /** Build associated instances from nested values (Sequelize v6 nested creation). */
   include?: IncludeOption;

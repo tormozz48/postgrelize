@@ -8,7 +8,7 @@ See [AGENTS.md → Documentation sync](../AGENTS.md#documentation-sync).
 
 - [ ] Tests: unit / compat (v6 behaviour) / integration (PostgreSQL-only, fixed v6 bugs); no timing assumptions
 - [ ] `npm run lint`, `format:check`, `typecheck`, `test`, `docs` pass locally
-- [ ] Public API: TSDoc updated for every changed class, method, field, type, interface and constant (`@param`, `@returns`, `@throws`, `@defaultValue`, `@example`) — see AGENTS.md → API documentation
+- [ ] Public API: TSDoc updated for every changed class, method, field, type, interface and constant (`@param`, `@returns`, `@throws`, `@defaultValue`, `@example`) — every `@example` is type-checked by `tests/docs/tsdoc-examples.test.ts`; see AGENTS.md → API documentation
 - [ ] Guide page and `docs/examples` region updated (new guide code comes from an example)
 - [ ] Public API or behaviour change: `docs/examples/llm-usage.ts` region updated and `npm run llm:build` run (regenerates `llm/USAGE.md` and `skills/postgrelize/**`)
 - [ ] New guide page added to the sidebar in `docs/.vitepress/config.ts`

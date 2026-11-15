@@ -11,7 +11,15 @@ export type AssociationName = Readonly<{
   plural: string;
 }>;
 
-/** Foreign key given as an object. */
+/**
+ * Foreign key given as an object instead of a plain name.
+ *
+ * @example
+ * ```ts
+ * const fk: ForeignKeyOptions = { name: 'authorId', field: 'author_id', allowNull: false };
+ * User.hasMany(Post, { foreignKey: fk });
+ * ```
+ */
 export type ForeignKeyOptions = Readonly<{
   /** Attribute name. */
   name?: string;
@@ -21,9 +29,25 @@ export type ForeignKeyOptions = Readonly<{
   allowNull?: boolean;
 }>;
 
-/** Options shared by all association methods (Sequelize v6 `AssociationOptions`). */
+/**
+ * Options shared by all association methods (Sequelize v6 `AssociationOptions`).
+ *
+ * Used by `hasOne`, `hasMany`, `belongsTo` and (extended) `belongsToMany`.
+ *
+ * @see {@link Model.hasMany}
+ *
+ * @example
+ * ```ts
+ * const opts: AssociationOptions = {
+ *   as: 'posts',
+ *   foreignKey: { name: 'authorId', allowNull: false },
+ *   onDelete: 'CASCADE',
+ * };
+ * User.hasMany(Post, opts);
+ * ```
+ */
 export type AssociationOptions = Readonly<{
-  /** Alias: string, or `{ singular, plural }` for multi associations. */
+  /** Alias: string, or `{ singular, plural }` for multi associations. Default: the target model name. */
   as?: string | AssociationName;
   /** Foreign key attribute name or options. */
   foreignKey?: string | ForeignKeyOptions;
@@ -33,15 +57,24 @@ export type AssociationOptions = Readonly<{
   targetKey?: string;
   /** Attribute values applied to associated rows (filter on read, values on write). */
   scope?: Readonly<Record<string, unknown>>;
-  /** Create foreign key constraints on sync (M5). */
+  /** Create foreign key constraints on `sync()`.
+   * @defaultValue true */
   constraints?: boolean;
-  /** `ON DELETE` action of the foreign key constraint. */
+  /** `ON DELETE` action of the foreign key constraint, e.g. `'CASCADE'`. */
   onDelete?: string;
-  /** `ON UPDATE` action of the foreign key constraint. */
+  /** `ON UPDATE` action of the foreign key constraint, e.g. `'CASCADE'`. */
   onUpdate?: string;
 }>;
 
-/** Junction table of a belongsToMany association. */
+/**
+ * Junction table of a belongsToMany association given as an object.
+ *
+ * @example
+ * ```ts
+ * const through: ThroughOptions = { model: 'ProjectTask', scope: { kind: 'member' } };
+ * Project.belongsToMany(Task, { through });
+ * ```
+ */
 export type ThroughOptions = Readonly<{
   /** Junction model, or the name of an implicit junction model to create. */
   model: string | ModelStatic<AnyModel>;
@@ -49,12 +82,24 @@ export type ThroughOptions = Readonly<{
   scope?: Readonly<Record<string, unknown>>;
 }>;
 
-/** Options of `belongsToMany`. */
+/**
+ * Options of `belongsToMany`.
+ *
+ * Extends {@link AssociationOptions}; `foreignKey` is the junction column pointing at the source, `otherKey` the one pointing at the target.
+ *
+ * @see {@link Model.belongsToMany}
+ *
+ * @example
+ * ```ts
+ * const opts: BelongsToManyOptions = { through: 'ProjectTask', foreignKey: 'projectId', otherKey: 'taskId' };
+ * Project.belongsToMany(Task, opts);
+ * ```
+ */
 export type BelongsToManyOptions = AssociationOptions &
   Readonly<{
     /** Junction model, its name, or options. */
     through: string | ModelStatic<AnyModel> | ThroughOptions;
-    /** Junction foreign key pointing at the target. */
+    /** Junction foreign key pointing at the target. Default: derived from the target model name. */
     otherKey?: string | ForeignKeyOptions;
   }>;
 

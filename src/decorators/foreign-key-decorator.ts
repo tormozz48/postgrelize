@@ -14,7 +14,11 @@ export type ForeignKey<T> = ForeignKeyType<T>;
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @ForeignKey(() => User) @Column(DataTypes.INTEGER) userId!: number;
+ * class Post extends Model {
+ *   @ForeignKey(() => User)
+ *   @Column(DataTypes.INTEGER)
+ *   userId!: number;
+ * }
  * ```
  */
 export const ForeignKey = (target: ModelGetter): ModelPropertyDecorator =>

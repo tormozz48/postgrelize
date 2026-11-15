@@ -15,9 +15,26 @@ export type DriverError = Error &
     column?: string;
   }>;
 
-/** Base class of all postgrelize errors (Sequelize v6 `BaseError`). */
+/**
+ * Root of the error hierarchy, so one `instanceof` check catches every error postgrelize throws (Sequelize v6 `BaseError`).
+ *
+ * Programmer mistakes (such as committing a finished transaction) still throw a plain `Error`.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await User.findOne({ where: { id: 1 }, rejectOnEmpty: true });
+ * } catch (e) {
+ *   if (e instanceof BaseError) {
+ *     console.error(e.name, e.message);
+ *   }
+ * }
+ * ```
+ */
 export class BaseError extends Error {
   /**
+   * Creates the error and sets `name` to `'SequelizeBaseError'`.
+   *
    * @param message - Error message.
    * @param options - Standard error options (`cause`).
    */

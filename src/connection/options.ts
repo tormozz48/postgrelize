@@ -4,7 +4,15 @@ import type { HooksOption } from '../hooks/hooks.ts';
 /** Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms. */
 export type LoggingFunction = (sql: string, timingOrOptions?: unknown) => void;
 
-/** Connection pool settings (Sequelize v6 `PoolOptions`). */
+/**
+ * Connection pool settings (Sequelize v6 `PoolOptions`), given as the `pool` option of {@link SequelizeOptions}.
+ *
+ * @example
+ * ```ts
+ * const pool: PoolOptions = { max: 10, idle: 10_000, acquire: 30_000 };
+ * const db = new Sequelize('postgres://user:pass@localhost:5432/app', { pool });
+ * ```
+ */
 export type PoolOptions = Readonly<{
   /** Maximum number of connections. Default 5. */
   max?: number;
@@ -50,7 +58,20 @@ export type ReplicationMember = Readonly<{
   database?: string;
 }>;
 
-/** `replication` option: readers receive SELECTs outside transactions, the writer everything else. */
+/**
+ * The `replication` option: readers receive SELECTs outside transactions, the writer everything else.
+ *
+ * Members inherit missing connection settings from the top-level options. See {@link ReplicationMember}.
+ *
+ * @example
+ * ```ts
+ * const replication: ReplicationOptions = {
+ *   read: [{ host: 'replica-1.internal' }, { host: 'replica-2.internal' }],
+ *   write: { host: 'primary.internal' },
+ * };
+ * const db = new Sequelize('app', 'user', 'pass', { dialect: 'postgres', replication });
+ * ```
+ */
 export type ReplicationOptions = Readonly<{
   /** Reader(s). */
   read: ReplicationMember | readonly ReplicationMember[];
@@ -58,7 +79,24 @@ export type ReplicationOptions = Readonly<{
   write?: ReplicationMember;
 }>;
 
-/** Options of the {@link Sequelize} constructor (PostgreSQL subset of Sequelize v6 `Options`). */
+/**
+ * Options of the {@link Sequelize} constructor (PostgreSQL subset of Sequelize v6 `Options`).
+ *
+ * All fields are optional; values given in a connection URL are overridden by these fields.
+ *
+ * @example
+ * ```ts
+ * const options: SequelizeOptions = {
+ *   dialect: 'postgres',
+ *   host: 'localhost',
+ *   port: 5432,
+ *   pool: { max: 10 },
+ *   logging: false,
+ *   define: { underscored: true },
+ * };
+ * const db = new Sequelize('app', 'user', 'pass', options);
+ * ```
+ */
 export type SequelizeOptions = Readonly<{
   /** Must be `'postgres'` when given. */
   dialect?: 'postgres';

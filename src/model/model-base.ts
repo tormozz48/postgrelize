@@ -54,12 +54,12 @@ export class ModelBase {
     return (this.constructor as typeof ModelBase).sequelize;
   }
 
-  /** Model name. */
+  /** Name the model was registered under, as given by `modelName` in the init options (default: the class name). */
   static get modelName(): string {
     return registry.state(this).definition.name;
   }
 
-  /** Table name. */
+  /** Name of the database table backing the model (pluralized model name unless `tableName` was set). */
   static get tableName(): string {
     return registry.state(this).definition.tableName;
   }
@@ -95,11 +95,21 @@ export class ModelBase {
   }
 
   /**
-   * Defines attributes and options of the model and registers it in `sequelize.models`.
+   * Defines attributes and options of the model and registers it in `sequelize.models`. Does not
+   * touch the database; call {@link Model.sync} or run migrations to create the table.
    *
+   * @param this - The model class being initialized.
    * @param attributes - Attribute definitions.
    * @param options - Model options, including the `sequelize` instance.
    * @returns The model class.
+   * @example
+   * ```ts
+   * class Project extends Model {}
+   * Project.init(
+   *   { id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true }, name: DataTypes.STRING },
+   *   { sequelize, modelName: 'Project', paranoid: true },
+   * );
+   * ```
    */
   static init<MS extends ModelStatic<AnyModel>>(
     this: MS,
@@ -111,9 +121,14 @@ export class ModelBase {
   }
 
   /**
-   * Normalized attributes keyed by attribute name.
+   * Returns the normalized attribute definitions, same as {@link Model.rawAttributes}.
    *
    * @returns Attribute definitions.
+   * @example
+   * ```ts
+   * const attributes = User.getAttributes();
+   * Object.keys(attributes);
+   * ```
    */
   static getAttributes(): Readonly<Record<string, AttributeDefinition>> {
     return this.rawAttributes;
@@ -124,6 +139,10 @@ export class ModelBase {
    * model has a schema. `String(qualified)` is the quoted `"schema"."table"` reference.
    *
    * @returns Table name or qualified table.
+   * @example
+   * ```ts
+   * const table = User.getTableName();
+   * ```
    */
   static getTableName(): string | QualifiedTableName {
     const { definition } = registry.state(this);
