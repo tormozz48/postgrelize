@@ -1,3 +1,5 @@
+import type { LateralKeys } from './lateral-keys-builder.ts';
+import type { TableSampleOptions } from './source-options.ts';
 import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
 
 /**
@@ -87,6 +89,10 @@ export type SelectOptions = Readonly<{
    * last one on the `order` columns. Needs `limit` and `order`. PostgreSQL extension.
    */
   withTies?: boolean;
+  /** Read only a random sample of the model table (`TABLESAMPLE`). PostgreSQL extension. */
+  sample?: TableSampleOptions;
+  /** @internal Top-N-per-parent read of a lateral include. */
+  lateralKeys?: LateralKeys;
   /** @internal Resolved `source` subquery: rows come from it instead of the model table. */
   fromQuery?: QueryNode;
   /** @internal Resolved `WITH` clause. */

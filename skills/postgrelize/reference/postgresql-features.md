@@ -150,8 +150,8 @@ for await (const post of Post.findEach({ order: [['id', 'ASC']] }, { batchSize: 
 
 Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage>. Missing features (use `sequelize.query()` raw SQL or `literal()`):
 
-- **SELECT clauses**: Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING); CTE SEARCH / CYCLE clauses; LATERAL joins; TABLESAMPLE; Standalone VALUES lists and set-returning functions in FROM (unnest, generate_series, WITH ORDINALITY); ONLY (table inheritance)
-- **Operators and functions**: JSON_TABLE; Multirange operators and functions (range_agg, unnest); Geometric operators and functions
+- **SELECT clauses**: Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING); CTE SEARCH / CYCLE clauses; ONLY (table inheritance)
+- **Operators and functions**: Multirange operators and functions (range_agg, unnest); Geometric operators and functions
 - **Data types**: composite types; multirange types; geometric types (point, line, lseg, box, path, polygon, circle); pg_lsn, txid_snapshot and other system types; PostGIS geometry / geography
 - **DDL (sync and QueryInterface)**: EXCLUDE constraints; NOT VALID constraints and VALIDATE CONSTRAINT; NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD; Expression indexes (lower(email)); Views and materialized views; Sequences (CREATE SEQUENCE, setval); Functions and triggers; Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH); Extensions (CREATE EXTENSION); Row-level security policies; UNLOGGED and TEMPORARY tables; Rules (CREATE RULE)
 - **Session features**: Two-phase commit (PREPARE TRANSACTION)

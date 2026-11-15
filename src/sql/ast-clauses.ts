@@ -1,7 +1,50 @@
 import type { ExprNode } from './ast-expressions.ts';
 import type { QueryNode } from './ast-statements.ts';
 
-export type TableRef = Readonly<{ name: string; schema?: string; alias?: string }>;
+/** `TABLESAMPLE method (percent) [REPEATABLE (seed)]` of a FROM table. */
+export type TableSample = Readonly<{
+  method: 'BERNOULLI' | 'SYSTEM';
+  percent: ExprNode;
+  seed?: ExprNode;
+}>;
+
+export type TableRef = Readonly<{
+  name: string;
+  schema?: string;
+  alias?: string;
+  /** Only rendered where the table is a FROM source. */
+  sample?: TableSample;
+}>;
+
+export type SubquerySource = Readonly<{ subquery: QueryNode; alias: string; lateral?: boolean }>;
+
+/** `(VALUES (...), ...) AS alias(columns)`. */
+export type ValuesSource = Readonly<{
+  values: readonly (readonly ExprNode[])[];
+  alias: string;
+  columns: readonly string[];
+}>;
+
+/** `fn(args) [WITH ORDINALITY] AS alias[(columns)]`; `function` is the identifier path of the name. */
+export type FunctionSource = Readonly<{
+  function: readonly string[];
+  args: readonly ExprNode[];
+  alias: string;
+  columns?: readonly string[];
+  /** Name of the ordinality column, which `columns` must list last. */
+  ordinality?: string;
+}>;
+
+/** One column of `JSON_TABLE`; `path` is an already escaped SQL string literal. */
+export type JsonTableColumn =
+  | Readonly<{ name: string; kind: 'ordinality' }>
+  | Readonly<{ name: string; kind: 'value' | 'exists'; type: string; path?: string }>;
+
+/** `JSON_TABLE(doc, path COLUMNS (...)) AS alias` (PostgreSQL 17+); `path` is an escaped literal. */
+export type JsonTableSource = Readonly<{
+  jsonTable: Readonly<{ doc: ExprNode; path: string; columns: readonly JsonTableColumn[] }>;
+  alias: string;
+}>;
 
 export type JoinNode = Readonly<{
   type: 'INNER' | 'LEFT OUTER' | 'RIGHT OUTER';
@@ -9,7 +52,7 @@ export type JoinNode = Readonly<{
   on: ExprNode;
 }>;
 
-export type FromItem = TableRef | Readonly<{ subquery: QueryNode; alias: string }>;
+export type FromItem = TableRef | SubquerySource | ValuesSource | FunctionSource | JsonTableSource;
 
 export type LockNode = Readonly<{
   strength: 'UPDATE' | 'NO KEY UPDATE' | 'SHARE' | 'KEY SHARE';

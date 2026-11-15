@@ -27,7 +27,7 @@ await Post.findAll({ source: { jsonTable: { … } } });  // PG17
 await Post.findAll({ with: { moved: { query: Task.deleteStatement({ where: { done: true }, returning: true }) } }, source: 'moved' });
 await Node.findAll({ with: { t: { query, recursive, search: { by: ['id'], mode: 'depth', set: 'ord' }, cycle: { columns: ['id'], set: 'loop', using: 'path' } } }, source: 't' });
 ```
-Source options (`values`, `function`, `jsonTable`, `lateral`, `model` + `sample`) are accepted by `from` entries and by `source` (then the model's attribute names are the columns, aliased with the model name).
+Source options (`values`, `function`, `jsonTable`, `lateral`, `model` + `sample`) are accepted by `from` entries. `source` stays a relation name or a `Subquery`. Lateral includes: `separate` + `limit` + `lateral: true`; the child query is `unnest(keys) JOIN LATERAL (per-parent select) ON TRUE` (internal `lateralKeys`).
 
 ## Rules
 - Values bound; names quoted; keywords through allowlists (see ADR-024 §5).
@@ -36,7 +36,7 @@ Source options (`values`, `function`, `jsonTable`, `lateral`, `model` + `sample`
 - `sample` percent must be a finite number in [0, 100]; seed an integer; method one of `BERNOULLI`, `SYSTEM`. Applies to the model table only.
 - Set-operation operands must expose the same column list; PostgreSQL validates it.
 - Data-modifying CTEs force the writer connection. They are supported only in `findAll`-style reads (top-level `SELECT`).
-- `jsonTable` throws `Error` before the query on servers older than 17.
+- `jsonTable` needs PostgreSQL 17; older servers reject the statement (no client-side version check). Paths are rendered as escaped literals (PostgreSQL accepts only constants there); column types go through the cast-type allowlist.
 
 ## Tests
 Unit (`tests/unit/sql`): compilation of every new node and the parenthesis rules. Integration (`tests/integration/set-ops-from.test.ts`, PG17 cases gated through `minimumServerVersion`): each option on real PostgreSQL. Security (`tests/integration/security/`): payloads on every new input. No differential tests: Sequelize v6 has none of these features.

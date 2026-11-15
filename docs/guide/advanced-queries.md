@@ -60,7 +60,7 @@ CTEs can also be used as filters:
 
 <<< @/examples/advanced-queries.ts#cte{ts}
 
-Data-modifying CTEs (`WITH x AS (UPDATE ...)`) and the `SEARCH` / `CYCLE` clauses are not supported.
+Data-modifying CTEs (`WITH x AS (UPDATE ...)`) and the `SEARCH` / `CYCLE` clauses are not supported yet.
 
 ## Set operations
 
@@ -89,6 +89,40 @@ const parents = await Category.findAll({
   raw: true,
 });
 ```
+
+### VALUES, set-returning functions and `JSON_TABLE`
+
+A `from` entry can also be an object that produces rows. Every value is a bound parameter; names are quoted identifiers.
+
+| Entry                                                   | SQL                                                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `{ values: { columns, rows } }`                         | `(VALUES (…), …) AS "alias"("col", …)`                                                 |
+| `{ function, args?, columns?, ordinality? }`            | `fn(args) [WITH ORDINALITY] AS "alias"("col", …)`; `ordinality` names the extra column |
+| `{ lateral: subquery }`                                 | `LATERAL (subquery) AS "alias"`                                                        |
+| `{ model, sample }`                                     | the model table with `TABLESAMPLE`                                                     |
+| `{ jsonTable: { doc, path, columns } }` (PostgreSQL 17) | `JSON_TABLE(doc, path COLUMNS (…)) AS "alias"`                                         |
+
+<<< @/examples/advanced-queries.ts#from-sources{ts}
+
+PostgreSQL cannot always infer the type of a bound parameter in a function call or `VALUES` cell (`generate_series($1, $2)` is ambiguous). Wrap such values in `cast(value, 'integer')`.
+
+`JSON_TABLE` turns a JSON document, given as a value or an expression such as `col('Order.data')`, into rows. The `path` and each column `path` are jsonpath strings, which PostgreSQL only accepts as constants, so they are rendered as escaped string literals. Column `type` is checked against the same list as `'attr::type'` casts. It needs PostgreSQL 17; older servers reject the query. Nested paths (`NESTED PATH`) are not supported.
+
+<<< @/examples/json-table.ts#json-table{ts}
+
+## `LATERAL` joins and top-N per parent
+
+A `LATERAL` subquery may reference relations that come before it in `FROM`, so it runs once per row. Use it for "latest N per parent" queries. A lateral entry in `from` behaves like an inner join: rows without a match disappear.
+
+For includes, `lateral: true` on a `separate` include with `limit` makes the database return only the first `limit` rows per parent (`unnest(keys)` joined with a `LATERAL` subquery), instead of loading every child and trimming in memory. `order` applies per parent. It cannot have nested includes.
+
+<<< @/examples/advanced-queries.ts#lateral{ts}
+
+## `TABLESAMPLE`
+
+`sample: { method, percent, seed? }` on `findAll` and `count` reads a random part of the table: `BERNOULLI` samples row by row, `SYSTEM` block by block (faster, clustered). `percent` is from 0 to 100; the same `seed` gives the same sample while the data is unchanged (`REPEATABLE`). The same option works on a `from` entry: `{ model, sample }`.
+
+<<< @/examples/advanced-queries.ts#tablesample{ts}
 
 ## Server-side cursors with `findEach`
 

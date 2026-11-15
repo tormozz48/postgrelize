@@ -2,6 +2,7 @@ import type { ExprNode, FromItem, OrderNode, SelectNode, TableRef } from '../sql
 import type { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { ModelDefinition } from './model-definition.ts';
+import { TableSampleBuilder } from './table-sample-builder.ts';
 import { SelectLock } from './select-lock.ts';
 import { SelectAggregates } from './select-aggregates.ts';
 import type { FindAttributeOptions, SelectOptions } from './select-options.ts';
@@ -29,6 +30,7 @@ export class SelectQueryBuilder {
   readonly #targets: SelectTargets;
   readonly #aggregates: SelectAggregates;
   readonly #locks = new SelectLock();
+  readonly #samples = new TableSampleBuilder();
 
   /**
    * @param columns - Attribute to column mapping.
@@ -63,7 +65,7 @@ export class SelectQueryBuilder {
       kind: 'select',
       ...SelectQueryBuilder.#sources(options),
       columns: columnsOverride ?? this.columns(definition, alias, ctx, options.attributes),
-      from: SelectQueryBuilder.#from(this.#columns.table(definition, alias), alias, options),
+      from: this.#from(this.#columns.table(definition, alias), alias, options),
       ...clauses,
       orderBy: this.#targets.orderBy(definition, alias, ctx, options.order),
       ...SelectQueryBuilder.#window(options),
@@ -166,8 +168,13 @@ export class SelectQueryBuilder {
     };
   }
 
-  static #from(table: TableRef, alias: string, options: SelectOptions): FromItem {
-    return options.fromQuery === undefined ? table : { subquery: options.fromQuery, alias };
+  #from(table: TableRef, alias: string, options: SelectOptions): FromItem {
+    if (options.fromQuery !== undefined) {
+      return { subquery: options.fromQuery, alias };
+    }
+    return options.sample === undefined
+      ? table
+      : { ...table, sample: this.#samples.build(options.sample) };
   }
 
   static #sources(options: SelectOptions): Partial<SelectNode> {

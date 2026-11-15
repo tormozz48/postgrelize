@@ -8,6 +8,7 @@ import type {
   SetOperationNode,
   WithClause,
 } from './ast.ts';
+import { FromCompiler } from './from-compiler.ts';
 import { ExpressionCompiler } from './expression-compiler.ts';
 import { ChunkBuilder, type Chunks } from './sql-chunks.ts';
 
@@ -15,6 +16,7 @@ import { ChunkBuilder, type Chunks } from './sql-chunks.ts';
 export class QueryCompiler extends ChunkBuilder {
   /** Expression compiler that compiles subqueries through this compiler. */
   readonly expr: ExpressionCompiler;
+  readonly #sources: FromCompiler;
   readonly #fromItem = (from: FromItem): Chunks => this.from(from);
   readonly #joinClause = (node: JoinNode): Chunks => this.#join(node);
   readonly #cte = (cte: CteNode): Chunks => this.#cteItem(cte);
@@ -22,6 +24,7 @@ export class QueryCompiler extends ChunkBuilder {
   constructor() {
     super();
     this.expr = new ExpressionCompiler(this);
+    this.#sources = new FromCompiler(this.expr);
   }
 
   /**
@@ -51,9 +54,20 @@ export class QueryCompiler extends ChunkBuilder {
    * @returns Chunks.
    */
   from(from: FromItem): Chunks {
-    return 'subquery' in from
-      ? [...this.wrap(this.query(from.subquery)), ` AS ${this.quote(from.alias)}`]
-      : this.tableRef(from);
+    if ('subquery' in from) {
+      return [
+        from.lateral === true ? 'LATERAL ' : '',
+        ...this.wrap(this.query(from.subquery)),
+        ` AS ${this.quote(from.alias)}`,
+      ];
+    }
+    if ('values' in from) {
+      return this.#sources.values(from);
+    }
+    if ('function' in from) {
+      return this.#sources.function(from);
+    }
+    return 'jsonTable' in from ? this.#sources.jsonTable(from) : this.#sources.table(from);
   }
 
   /**
