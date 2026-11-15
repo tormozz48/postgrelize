@@ -12,13 +12,13 @@ export const QueryTypes = {
   INSERT: 'INSERT',
   /** Returns `[rows, rowCount]`. */
   UPDATE: 'UPDATE',
-  /** Returns `[rows, rowCount]`. */
+  /** Returns `[undefined, null]` like v6 on PostgreSQL (the statement runs; its rows are not returned). */
   UPSERT: 'UPSERT',
-  /** Returns nothing. */
+  /** Returns the rows of the statement (`[]` without `RETURNING`). */
   DELETE: 'DELETE',
-  /** Returns nothing. */
+  /** Returns the number of affected rows. */
   BULKUPDATE: 'BULKUPDATE',
-  /** Returns nothing. */
+  /** Returns the number of affected rows. */
   BULKDELETE: 'BULKDELETE',
   /** Returns `[rows, result]` (default). */
   RAW: 'RAW',
@@ -97,9 +97,11 @@ export class QueryResultShaper {
         return options.plain === true ? (rows[0] ?? null) : rows;
       case QueryTypes.INSERT:
       case QueryTypes.UPDATE:
-      case QueryTypes.UPSERT:
         return [rows, result.rowCount];
+      case QueryTypes.UPSERT:
+        return [undefined, null];
       case QueryTypes.DELETE:
+        return rows;
       case QueryTypes.BULKDELETE:
       case QueryTypes.BULKUPDATE:
         return result.rowCount;

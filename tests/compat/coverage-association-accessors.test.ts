@@ -66,8 +66,8 @@ describe('compat: belongsTo accessors', () => {
   it('setX with a key value and save: false only changes the instance', () =>
     run(async ({ Post }) => {
       const post = await accessors(Post, 2);
-      await post['setAuthor']?.(2, { save: false });
-      return [post['UserId' as never], await Post.findByPk(2, { raw: true })];
+      const returned = await post['setAuthor']?.(2, { save: false });
+      return [returned, post['UserId' as never], await Post.findByPk(2, { raw: true })];
     }));
 
   it('getX with an extra where condition and an alias', () =>
@@ -98,12 +98,29 @@ describe('compat: belongsToMany accessors', () => {
       ];
     }));
 
-  // TODO(parity): v6 honours joinTableAttributes: []; postgrelize still returns the junction row.
-  it.fails('getX omits the junction attributes when joinTableAttributes is empty like v6', () =>
+  it('getX omits the junction attributes when joinTableAttributes is empty like v6', () =>
     run(async ({ User }) => {
       const ann = await accessors(User, 1);
       await ann['addRoles']?.([1, 2]);
       return ann['getRoles']?.({ order: [['id', 'ASC']], joinTableAttributes: [] });
+    }));
+
+  it('getX with raw: true returns flat rows with the junction columns like v6', () =>
+    run(async ({ User }) => {
+      const ann = await accessors(User, 1);
+      await ann['addRoles']?.([1, 2]);
+      return ann['getRoles']?.({ order: [['id', 'ASC']], raw: true });
+    }));
+
+  it('getX with raw: true and joinTableAttributes returns only those junction columns', () =>
+    run(async ({ User }) => {
+      const ann = await accessors(User, 1);
+      await ann['addRoles']?.([1, 2]);
+      return ann['getRoles']?.({
+        order: [['id', 'ASC']],
+        raw: true,
+        joinTableAttributes: ['createdAt'],
+      });
     }));
 
   it('addX applies through attributes only to new links', () =>
@@ -115,8 +132,7 @@ describe('compat: belongsToMany accessors', () => {
 });
 
 describe('compat: include resolution errors', () => {
-  // TODO(parity): v6 throws SequelizeEagerLoadingError here; postgrelize throws a plain Error.
-  it.fails('rejects an include with an alias that does not match like v6', () =>
+  it('rejects an include with an alias that does not match like v6', () =>
     run(
       async ({ User, Post }) => User.findAll({ include: [{ model: Post, as: 'nothing' }] }),
       expectSameError,
@@ -134,8 +150,7 @@ describe('compat: include resolution errors', () => {
       return User.findAll({ include: [Tag] });
     }, expectSameError));
 
-  // TODO(parity): v6 throws SequelizeEagerLoadingError here; postgrelize throws a plain Error.
-  it.fails('rejects an include of a model associated several times without an alias', () =>
+  it('rejects an include of a model associated several times without an alias', () =>
     run(async ({ Post, User }) => Post.findAll({ include: [User] }), expectSameError));
 
   it('resolves an include by association name and by association object', () =>

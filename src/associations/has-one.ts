@@ -56,13 +56,16 @@ export class HasOne extends Association {
   ): Promise<Instance | null> {
     const value = instance.get(this.sourceKey);
     const current = await this.#current(value, options);
-    const next = await this.#resolve(associated, options);
-    await this.#unlink(current, next, options);
-    if (next !== null) {
-      next.set({ [this.foreignKey]: value, ...this.scope });
-      await next.save(this.passThrough(options) as never);
+    if (this.#isLinked(current, associated)) {
+      return null;
     }
-    return next;
+    await this.#unlink(current, options);
+    if (associated === null || associated === undefined) {
+      return null;
+    }
+    const next = this.#toInstance(associated);
+    next.set({ [this.foreignKey]: value, ...this.scope });
+    return (await next.save(this.passThrough(options) as never)) as Instance;
   }
 
   /**
@@ -91,25 +94,29 @@ export class HasOne extends Association {
     } as never)) as Instance | null;
   }
 
-  async #resolve(associated: unknown, options: AccessorOptions): Promise<Instance | null> {
-    if (associated === null || associated === undefined) {
-      return null;
+  #isLinked(current: Instance | null, associated: unknown): boolean {
+    if (current === null || associated === null || associated === undefined) {
+      return false;
     }
-    return typeof associated === 'object' && 'get' in (associated as object)
-      ? (associated as Instance)
-      : ((await this.target.findByPk(
-          associated,
-          this.passThrough(options) as never,
-        )) as Instance | null);
+    const pk = keys.primaryKey(this.target);
+    const other = this.#isInstance(associated) ? associated.get(pk) : associated;
+    return current.get(pk) === other;
   }
 
-  async #unlink(
-    current: Instance | null,
-    next: Instance | null,
-    options: AccessorOptions,
-  ): Promise<void> {
-    const targetPk = keys.primaryKey(this.target);
-    if (current !== null && (next === null || current.get(targetPk) !== next.get(targetPk))) {
+  #isInstance(value: unknown): value is Instance {
+    return typeof value === 'object' && value !== null && 'get' in value;
+  }
+
+  #toInstance(associated: unknown): Instance {
+    return this.#isInstance(associated)
+      ? associated
+      : (this.target.build({ [keys.primaryKey(this.target)]: associated } as never, {
+          isNewRecord: false,
+        }) as Instance);
+  }
+
+  async #unlink(current: Instance | null, options: AccessorOptions): Promise<void> {
+    if (current !== null) {
       current.set(this.foreignKey, null);
       await current.save({ ...this.passThrough(options), fields: [this.foreignKey] } as never);
     }

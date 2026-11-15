@@ -66,6 +66,13 @@ export class AssociationLookup {
     return association;
   }
 
+  #aliases(source: Model, item: IncludeOptions): readonly string[] {
+    const { model } = item;
+    return [...this.#associationsOf(source).values()]
+      .filter((association) => model === undefined || this.#sameModel(association.target, model))
+      .map((association) => association.as);
+  }
+
   #byAlias(source: Model, alias: string, item: IncludeOptions): Association {
     const association = this.#associationsOf(source).get(alias);
     if (
@@ -73,8 +80,8 @@ export class AssociationLookup {
       (item.model !== undefined && !this.#sameModel(association.target, item.model))
     ) {
       const targetName = item.model === undefined ? alias : this.#nameOf(item.model);
-      throw new Error(
-        `${targetName} is associated to ${this.#nameOf(source)} using an alias. You've included an alias (${alias}), but it does not match the alias(es) defined in your association.`,
+      throw new EagerLoadingError(
+        `${targetName} is associated to ${this.#nameOf(source)} using an alias. You've included an alias (${alias}), but it does not match the alias(es) defined in your association (${this.#aliases(source, item).join(', ')}).`,
       );
     }
     return association;
@@ -89,7 +96,7 @@ export class AssociationLookup {
       throw new EagerLoadingError(`${targetName} is not associated to ${this.#nameOf(source)}!`);
     }
     if (candidates.length > 1) {
-      throw new Error(
+      throw new EagerLoadingError(
         `${targetName} is associated to ${this.#nameOf(source)} multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.`,
       );
     }

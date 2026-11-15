@@ -17,17 +17,17 @@ Coverage went from 94.4 / 94.2 / 93.5 / 82.6 to **99.7 / 99.5 / 99.2 / 91.7** (l
 | # | Behaviour | v6 | postgrelize | Pinned by |
 |---|---|---|---|---|
 | 6 | `set` / `setDataValue` back to the stored value | attribute stays marked changed | change flag cleared. **Matched v6 (S7b-2)** | `coverage-instance-values.test.ts`, `tests/compat/model-api-parity.test.ts` |
-| 7 | `hasOne` `setX(pk)` | returns a stub from the key, no lookup | loads the row; `null` for unknown key | `coverage-has-one.test.ts` |
-| 8 | `hasOne` `setX(sameInstance)` | `null` | the instance | `coverage-has-one.test.ts` |
-| 9 | Include with a wrong alias; model included twice without alias | `SequelizeEagerLoadingError` | plain `Error` | `coverage-association-accessors.test.ts` |
-| 10 | Unknown validator name | `SequelizeValidationError` | plain `Error("Invalid validator function")` | `coverage-validation.test.ts` |
-| 11 | `getX({ joinTableAttributes: [] })` on belongsToMany | junction row omitted | junction row returned | `coverage-association-accessors.test.ts` |
+| 7 | `hasOne` `setX(pk)` | returns a stub from the key, no lookup | loads the row; `null` for unknown key | **Matched v6** (S7b): stub from the key, no lookup; `coverage-has-one.test.ts` (the stub also carries the `RETURNING` columns) |
+| 8 | `hasOne` `setX(sameInstance)` | `null` | the instance | **Matched v6** (S7b): `null` when already linked |
+| 9 | Include with a wrong alias; model included twice without alias | `SequelizeEagerLoadingError` | plain `Error` | **Matched v6** (S7b): `EagerLoadingError` with the v6 message |
+| 10 | Unknown validator name | `SequelizeValidationError` | plain `Error("Invalid validator function")` | **Matched v6** (S7b): `ValidationError` item `Invalid validator function: <name>` |
+| 11 | `getX({ joinTableAttributes: [] })` on belongsToMany | junction row omitted | junction row returned | **Matched v6** (S7b): `[]` omits the junction row; a list restricts it |
 | 12 | `Model.aggregate(..., { plain: false })` | strings (`'6'`) | numbers. **Matched v6 (S7b-2)**: raw rows; new `dataType` option | `tests/compat/model-api-parity.test.ts` |
-| 13 | Raw `QueryTypes.DELETE` / `UPDATE` / `UPSERT` results | `[]` / `[undefined, null]` | row count / `[rows, rowCount]` | asserted as postgrelize behaviour |
-| 14 | `getX({ raw: true })` on belongsToMany | works | TypeError | not pinned |
-| 15 | Nested `through: { attributes }` | keeps junction PK | omits it | not pinned |
-| 16 | `belongsTo.setX(x, { save: false })`; `hasHooks` of a missing hook; `instance._model` | `undefined`; `undefined`; absent | instance; `false`; present. `hasHooks` **matched v6 (S7b-2)**, `_model` kept; `setX({ save: false })` is S7b-3 | `tests/compat/coverage-model-api.test.ts` |
-| 17 | Nested `create` with a built instance as child | child dropped | child saved and linked | asserted as postgrelize behaviour |
+| 13 | Raw `QueryTypes.DELETE` / `UPDATE` / `UPSERT` results | `[]` / `[undefined, null]` | row count / `[rows, rowCount]` | **Matched v6** (S7b): DELETE returns the statement rows, UPSERT `[undefined, null]`; UPDATE already matched; `tests/compat/coverage-raw-query.test.ts` |
+| 14 | `getX({ raw: true })` on belongsToMany | works | TypeError | **Fixed** (S7b): flat rows with `Junction.column` keys like v6 |
+| 15 | Nested `through: { attributes }` | keeps junction PK | omits it | **Not a difference**: v6 shows the junction PK only when the same `through` object is reused (v6 mutates it); distinct objects match; `coverage-through-attributes.test.ts` |
+| 16 | `belongsTo.setX(x, { save: false })`; `hasHooks` of a missing hook; `instance._model` | `undefined`; `undefined`; absent | instance; `false`; present. `hasHooks` **matched v6 (S7b-2)**, `_model` kept; `setX({ save: false })` **matched v6 (S7b-3)** | `tests/compat/coverage-model-api.test.ts` |
+| 17 | Nested `create` with a built instance as child | child dropped | child saved and linked | **Documented divergence** (S7b): `docs/sequelize-issues.md` + `sequelize-issues.test.ts` |
 
 ## Left uncovered on purpose
 Decorator-plugin artefacts (`access.has/get` closures of `@bulkHooks` on private methods), defensive branches that the public API cannot reach (`include-sub-query.ts` `TRUE` fallback, `condition-compiler.ts` unsupported-operator default, `model-accessors.ts` duplicate alias), rollback `.catch` after a dead connection, PostgreSQL 17+ merge paths (covered in CI on 17/18), unused pg protocol message handlers.

@@ -47,21 +47,24 @@ export class BelongsTo extends Association {
    * @param instance - Source instance.
    * @param associated - Instance, key value or `null`.
    * @param options - Query options; `save: false` skips saving.
-   * @returns The source instance.
+   * @returns The saved source instance, or `undefined` with `save: false` (like v6).
    */
   async set(
     instance: Instance,
     associated: unknown,
     options: AccessorOptions & Readonly<{ save?: boolean }> = {},
-  ): Promise<Instance> {
+  ): Promise<Instance | undefined> {
     instance.set(
       this.foreignKey,
       associated === null ? null : this.keyOf(associated, this.targetKey),
     );
-    if (options.save !== false) {
-      await instance.save({ ...this.passThrough(options), fields: [this.foreignKey] } as never);
+    if (options.save === false) {
+      return undefined;
     }
-    return instance;
+    return (await instance.save({
+      ...this.passThrough(options),
+      fields: [this.foreignKey],
+    } as never)) as Instance;
   }
 
   /**

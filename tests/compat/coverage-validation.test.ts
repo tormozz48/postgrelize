@@ -138,8 +138,7 @@ describe('compat: built-in attribute validators', () => {
       ),
     ));
 
-  // TODO(parity): v6 reports an unknown validator as a SequelizeValidationError; postgrelize throws a plain Error.
-  it.fails('rejects an unknown validator name like v6', () =>
+  it('rejects an unknown validator name like v6', () =>
     expectSameError('', async (lib, sequelize) => {
       const Thing = sequelize.define('Thing', {
         name: { type: lib.DataTypes.STRING, validate: { noSuchValidator: true } as never },

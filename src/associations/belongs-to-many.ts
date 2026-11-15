@@ -9,6 +9,7 @@ const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
+type JoinOptions = Readonly<{ joinTableAttributes?: readonly string[] }>;
 type LinkOptions = AccessorOptions & Readonly<{ through?: Values }>;
 
 const junctionKeys = new JunctionKeys(new AssociationKeys());
@@ -54,10 +55,34 @@ export class BelongsToMany extends Association {
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: [...byKey.keys()] }),
     } as never)) as Instance[];
+    const attributes = (options as JoinOptions).joinTableAttributes;
     rows.forEach((row) => {
-      (row.dataValues as Values)[this.#junctionName] = byKey.get(row.get(this.targetKey));
+      const link = byKey.get(this.#rowKey(row, options));
+      this.#attach(row, link as Instance, attributes, options.raw === true);
     });
     return rows;
+  }
+
+  #rowKey(row: Instance, options: AccessorOptions): unknown {
+    return options.raw === true
+      ? (row as unknown as Values)[this.targetKey]
+      : row.get(this.targetKey);
+  }
+
+  #attach(
+    row: Instance,
+    link: Instance,
+    attributes: readonly string[] | undefined,
+    raw: boolean,
+  ): void {
+    const names = attributes ?? Object.keys(link.dataValues as Values);
+    if (raw) {
+      names.forEach((name) => {
+        (row as unknown as Values)[`${this.#junctionName}.${name}`] = link.get(name);
+      });
+    } else if (attributes === undefined || names.length > 0) {
+      (row.dataValues as Values)[this.#junctionName] = link;
+    }
   }
 
   /**
