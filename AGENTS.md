@@ -46,6 +46,8 @@ node bench/compare.ts /tmp/b1.json /tmp/b2.json /tmp/b3.json
 
 Gated cases must stay within +10% of `bench/baseline.json`. Update the baseline only on purpose, in its own commit, with the reason in the message.
 
+Every bench case also runs on Sequelize v6 (interleaved, CPU time) and `compare.ts` prints the v6 / postgrelize ratio; on a loaded machine trust the ratio, not absolute µs. Database mode: omit `PGZ_BENCH_STUB`. Profile one case: `npm run build && node --cpu-prof --cpu-prof-dir=/tmp/prof bench/profile.ts "findAll 100 rows"`, then `node bench/profile-summary.ts <file>.cpuprofile` (see `.10x/specs/2026-11-15-s10-performance-design.md`).
+
 ## Repository map
 
 | Path                                                 | Contents                                                                                  |
