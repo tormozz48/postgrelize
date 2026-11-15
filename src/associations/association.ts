@@ -2,7 +2,9 @@ import { AssociationError } from '../errors/errors.ts';
 import { Op } from '../expressions/op.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
-import type { AssociationKeyFields } from './association-keys.ts';
+import { AssociationAccessors } from './association-accessors.ts';
+import type { AssociationKeyFields } from './association-key-types.ts';
+import { AssociationShape } from './association-shape.ts';
 import type {
   Association as AssociationFields,
   AssociationName,
@@ -12,60 +14,15 @@ import type {
 } from './types.ts';
 
 const registry = new ModelRegistry();
+const shape = new AssociationShape();
+const accessors = new AssociationAccessors();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
-type AccessorImplementation = (instance: Instance, ...args: never[]) => unknown;
 
 /** Query options accepted by the accessor methods (`getPosts(options)`, ...). */
 export type AccessorOptions = Values &
   Readonly<{ where?: unknown; transaction?: unknown; logging?: unknown }>;
-
-/** Accessor key (see {@link Association.accessors}) → association method implementing it. */
-const ACCESSOR_METHODS: Readonly<Record<string, string>> = {
-  get: 'get',
-  set: 'set',
-  create: 'create',
-  add: 'add',
-  addMultiple: 'add',
-  remove: 'remove',
-  removeMultiple: 'remove',
-  hasSingle: 'has',
-  hasAll: 'has',
-  count: 'count',
-};
-
-const upperFirst = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
-
-const accessorsFor = (
-  type: AssociationType,
-  name: AssociationName,
-): Readonly<Record<string, string>> => {
-  const singular = upperFirst(name.singular);
-  const plural = upperFirst(name.plural);
-  return type === 'BelongsTo' || type === 'HasOne'
-    ? { get: `get${singular}`, set: `set${singular}`, create: `create${singular}` }
-    : {
-        get: `get${plural}`,
-        set: `set${plural}`,
-        addMultiple: `add${plural}`,
-        add: `add${singular}`,
-        create: `create${singular}`,
-        remove: `remove${singular}`,
-        removeMultiple: `remove${plural}`,
-        hasSingle: `has${singular}`,
-        hasAll: `has${plural}`,
-        count: `count${plural}`,
-      };
-};
-
-const instanceMethod = (
-  association: Association,
-  implementation: AccessorImplementation,
-): ((this: Instance, ...args: never[]) => unknown) =>
-  function accessor(this: Instance, ...args: never[]): unknown {
-    return implementation.call(association, this, ...args);
-  };
 
 /**
  * Association between two models (Sequelize v6 `Association`). Subclasses resolve the keys,
@@ -74,37 +31,37 @@ const instanceMethod = (
  */
 export abstract class Association implements AssociationFields {
   /** Kind of association. */
-  readonly associationType: AssociationType;
+  declare readonly associationType: AssociationType;
   /** Model the association is defined on. */
-  readonly source: Model;
+  declare readonly source: Model;
   /** Associated model. */
-  readonly target: Model;
+  declare readonly target: Model;
   /** Alias used in `include` and as the instance property. */
-  readonly as: string;
+  declare readonly as: string;
   /** Singular and plural alias forms. */
-  readonly name: AssociationName;
+  declare readonly name: AssociationName;
   /** Whether `as` was given explicitly. */
-  readonly isAliased: boolean;
+  declare readonly isAliased: boolean;
   /** Association scope. */
-  readonly scope: Readonly<Record<string, unknown>> | undefined;
+  declare readonly scope: Readonly<Record<string, unknown>> | undefined;
   /** True for belongsTo / hasOne. */
-  readonly isSingleAssociation: boolean;
+  declare readonly isSingleAssociation: boolean;
   /** True for hasMany / belongsToMany. */
-  readonly isMultiAssociation: boolean;
+  declare readonly isMultiAssociation: boolean;
   /** Names of the instance methods added to the source model. */
-  readonly accessors: Readonly<Record<string, string>>;
+  declare readonly accessors: Readonly<Record<string, string>>;
   /** Foreign key attribute (on the source for belongsTo, on the target for hasOne/hasMany, on the junction for belongsToMany). */
-  readonly foreignKey: string;
+  declare readonly foreignKey: string;
   /** Column of the foreign key. */
-  readonly identifierField: string;
+  declare readonly identifierField: string;
   /** Source attribute referenced by the foreign key. */
-  readonly sourceKey: string;
+  declare readonly sourceKey: string;
   /** Target attribute referenced by the foreign key (belongsTo) or by `otherKey` (belongsToMany). */
-  readonly targetKey: string;
+  declare readonly targetKey: string;
   /** Junction foreign key pointing at the target (belongsToMany). */
-  readonly otherKey: string | undefined;
+  declare readonly otherKey: string | undefined;
   /** Junction model (belongsToMany). */
-  readonly through: AssociationThrough | undefined;
+  declare readonly through: AssociationThrough | undefined;
 
   /**
    * @param type - Kind of association.
@@ -122,23 +79,7 @@ export abstract class Association implements AssociationFields {
     name: AssociationName,
     keys: AssociationKeyFields,
   ) {
-    const multi = type === 'HasMany' || type === 'BelongsToMany';
-    this.associationType = type;
-    this.source = source;
-    this.target = target;
-    this.as = multi ? name.plural : name.singular;
-    this.name = name;
-    this.isAliased = options.as !== undefined;
-    this.scope = options.scope;
-    this.isSingleAssociation = !multi;
-    this.isMultiAssociation = multi;
-    this.accessors = accessorsFor(type, name);
-    this.foreignKey = keys.foreignKey;
-    this.identifierField = keys.identifierField;
-    this.sourceKey = keys.sourceKey;
-    this.targetKey = keys.targetKey;
-    this.otherKey = keys.otherKey;
-    this.through = keys.through;
+    Object.assign(this, shape.fields({ type, source, target, options, name, keys }));
   }
 
   /**
@@ -156,7 +97,7 @@ export abstract class Association implements AssociationFields {
       }
       return { ...state, associations: new Map([...state.associations, [this.as, this]]) };
     });
-    this.#mixin();
+    accessors.install(this, this.source.prototype as object, this.accessors);
     registry.defineAssociationAccessor((this.source as { prototype: object }).prototype, this.as);
     if (this.through !== undefined) {
       registry.defineAssociationAccessor(
@@ -211,23 +152,5 @@ export abstract class Association implements AssociationFields {
         ['transaction', 'logging', 'benchmark'].includes(key),
       ),
     );
-  }
-
-  #mixin(): void {
-    const prototype = this.source.prototype as object;
-    const methods = this as unknown as Readonly<Record<string, unknown>>;
-    Object.entries(this.accessors).forEach(([key, methodName]) => {
-      const implementation = methods[ACCESSOR_METHODS[key] ?? ''];
-      if (
-        typeof implementation === 'function' &&
-        !Object.prototype.hasOwnProperty.call(prototype, methodName)
-      ) {
-        Object.defineProperty(prototype, methodName, {
-          configurable: true,
-          writable: true,
-          value: instanceMethod(this, implementation as AccessorImplementation),
-        });
-      }
-    });
   }
 }

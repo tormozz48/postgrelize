@@ -1,12 +1,14 @@
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
+import { OwnerKeys } from './owner-keys.ts';
 import type { AssociationOptions } from './types.ts';
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
 const keys = new AssociationKeys();
+const ownerKeys = new OwnerKeys(keys);
 
 /** `source.hasOne(target)` (Sequelize v6 `HasOne`): the foreign key lives on the target. */
 export class HasOne extends Association {
@@ -18,7 +20,7 @@ export class HasOne extends Association {
    * @param options - Association options.
    */
   constructor(source: Model, target: Model, options: AssociationOptions = {}) {
-    const resolved = keys.targetKeys(false, source, target, options);
+    const resolved = ownerKeys.hasOneOrMany(false, source, target, options);
     super('HasOne', source, target, options, resolved.name, resolved.keys);
     this.install();
   }
@@ -52,28 +54,12 @@ export class HasOne extends Association {
     associated: unknown,
     options: AccessorOptions = {},
   ): Promise<Instance | null> {
-    const { target, foreignKey } = this;
     const value = instance.get(this.sourceKey);
-    const current = (await target.findOne({
-      ...this.passThrough(options),
-      where: { [foreignKey]: value },
-    } as never)) as Instance | null;
-    const next =
-      associated === null || associated === undefined
-        ? null
-        : typeof associated === 'object' && 'get' in (associated as object)
-          ? (associated as Instance)
-          : ((await target.findByPk(
-              associated,
-              this.passThrough(options) as never,
-            )) as Instance | null);
-    const targetPk = keys.primaryKey(target);
-    if (current !== null && (next === null || current.get(targetPk) !== next.get(targetPk))) {
-      current.set(foreignKey, null);
-      await current.save({ ...this.passThrough(options), fields: [foreignKey] } as never);
-    }
+    const current = await this.#current(value, options);
+    const next = await this.#resolve(associated, options);
+    await this.#unlink(current, next, options);
     if (next !== null) {
-      next.set({ [foreignKey]: value, ...this.scope });
+      next.set({ [this.foreignKey]: value, ...this.scope });
       await next.save(this.passThrough(options) as never);
     }
     return next;
@@ -96,5 +82,36 @@ export class HasOne extends Association {
       { ...values, ...this.scope, [this.foreignKey]: instance.get(this.sourceKey) } as never,
       this.passThrough(options) as never,
     );
+  }
+
+  async #current(value: unknown, options: AccessorOptions): Promise<Instance | null> {
+    return (await this.target.findOne({
+      ...this.passThrough(options),
+      where: { [this.foreignKey]: value },
+    } as never)) as Instance | null;
+  }
+
+  async #resolve(associated: unknown, options: AccessorOptions): Promise<Instance | null> {
+    if (associated === null || associated === undefined) {
+      return null;
+    }
+    return typeof associated === 'object' && 'get' in (associated as object)
+      ? (associated as Instance)
+      : ((await this.target.findByPk(
+          associated,
+          this.passThrough(options) as never,
+        )) as Instance | null);
+  }
+
+  async #unlink(
+    current: Instance | null,
+    next: Instance | null,
+    options: AccessorOptions,
+  ): Promise<void> {
+    const targetPk = keys.primaryKey(this.target);
+    if (current !== null && (next === null || current.get(targetPk) !== next.get(targetPk))) {
+      current.set(this.foreignKey, null);
+      await current.save({ ...this.passThrough(options), fields: [this.foreignKey] } as never);
+    }
   }
 }

@@ -1,10 +1,9 @@
-import inflection from 'inflection';
-import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
-import type { BelongsToManyOptions, ThroughOptions } from './types.ts';
+import { JunctionKeys } from './junction-keys.ts';
+import type { AssociationThrough, BelongsToManyOptions } from './types.ts';
 
 const registry = new ModelRegistry();
 
@@ -12,30 +11,7 @@ type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 type LinkOptions = AccessorOptions & Readonly<{ through?: Values }>;
 
-const keys = new AssociationKeys();
-
-const isThroughOptions = (value: BelongsToManyOptions['through']): value is ThroughOptions =>
-  typeof value === 'object' && value !== null && 'model' in value;
-
-const throughModel = (
-  source: Model,
-  through: string | Model,
-  attributes: ModelAttributes,
-): Model => {
-  const { runtime } = registry.state(source);
-  if (typeof through !== 'string') {
-    registry.addAssociationAttributes(through, attributes);
-    return through;
-  }
-  const existing = runtime.models()[through] as Model | undefined;
-  if (existing !== undefined) {
-    registry.addAssociationAttributes(existing, attributes);
-    return existing;
-  }
-  const created = runtime.defineModel(through, {}, { tableName: through }) as Model;
-  registry.addAssociationAttributes(created, attributes);
-  return created;
-};
+const junctionKeys = new JunctionKeys(new AssociationKeys());
 
 /**
  * `source.belongsToMany(target, { through })` (Sequelize v6 `BelongsToMany`): both foreign keys
@@ -54,75 +30,12 @@ export class BelongsToMany extends Association {
    * @param options - Association options with `through`.
    */
   constructor(source: Model, target: Model, options: BelongsToManyOptions) {
-    const name = keys.aliasNames(options.as, keys.modelName(target), true);
-    const sourceKey = options.sourceKey ?? keys.primaryKey(source);
-    const targetKey = options.targetKey ?? keys.primaryKey(target);
-    const selfAssociation = source === target;
-    const foreignKey =
-      keys.foreignKeyName(options.foreignKey) ??
-      keys.camelize(`${keys.modelName(source).singular}_${sourceKey}`);
-    const otherKey =
-      keys.foreignKeyName(options.otherKey) ??
-      keys.camelize(
-        `${selfAssociation ? inflection.singularize(name.plural) : keys.modelName(target).singular}_${targetKey}`,
-      );
-    const throughOption = isThroughOptions(options.through)
-      ? options.through
-      : { model: options.through };
-    const model = throughModel(source, throughOption.model, {
-      [foreignKey]: keys.keyAttribute(
-        keys.attributeOf(source, sourceKey),
-        keys.foreignKeyExtras(options.foreignKey),
-        {
-          primaryKey: true,
-          allowNull: false,
-          ...keys.reference(
-            {
-              model: source,
-              key: sourceKey,
-              onDelete: options.onDelete,
-              onUpdate: options.onUpdate,
-              constraints: options.constraints,
-            },
-            false,
-            { onDelete: 'CASCADE', onUpdate: 'CASCADE' },
-          ),
-        },
-      ),
-      [otherKey]: keys.keyAttribute(
-        keys.attributeOf(target, targetKey),
-        keys.foreignKeyExtras(options.otherKey),
-        {
-          primaryKey: true,
-          allowNull: false,
-          ...keys.reference(
-            {
-              model: target,
-              key: targetKey,
-              onDelete: options.onDelete,
-              onUpdate: options.onUpdate,
-              constraints: options.constraints,
-            },
-            false,
-            { onDelete: 'CASCADE', onUpdate: 'CASCADE' },
-          ),
-        },
-      ),
-    } as ModelAttributes);
-    super('BelongsToMany', source, target, options, name, {
-      foreignKey,
-      identifierField: keys.fieldOf(model, foreignKey),
-      sourceKey,
-      targetKey,
-      otherKey,
-      through: {
-        model,
-        ...(throughOption.scope === undefined ? {} : { scope: throughOption.scope }),
-      },
-    });
+    const resolved = junctionKeys.resolve(source, target, options);
+    const model = (resolved.keys.through as AssociationThrough).model;
+    super('BelongsToMany', source, target, options, resolved.name, resolved.keys);
     this.#junction = model;
     this.#junctionName = registry.state(model).definition.name;
-    this.#otherKey = otherKey;
+    this.#otherKey = resolved.keys.otherKey as string;
     this.install();
   }
 
