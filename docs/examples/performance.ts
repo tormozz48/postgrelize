@@ -9,6 +9,16 @@ export const createPool = (url: string): Sequelize =>
   });
 // #endregion pool
 
+// #region statement-cache
+export const createCachedPool = (url: string): Sequelize =>
+  new Sequelize(url, {
+    logging: false,
+    // Repeated SELECT / INSERT / UPDATE / DELETE texts are parsed once per connection.
+    statementCache: { max: 50 },
+    pool: { max: 10 },
+  });
+// #endregion statement-cache
+
 export const run = async (sequelize: Sequelize): Promise<void> => {
   const Reading = sequelize.define('Reading', {
     sensor: { type: DataTypes.TEXT, allowNull: false },
@@ -40,6 +50,20 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // Aggregates and counts are computed by PostgreSQL; do not load rows to count them.
   const total = await Reading.count({ where: { sensor: 's1' } });
   // #endregion count
+
+  const { host, port, database, username, password } = sequelize.config;
+  const cached = createCachedPool(`postgres://${username}:${password}@${host}:${port}/${database}`);
+  try {
+    const again = await cached.query('SELECT 1 AS one WHERE $1::int = 1', {
+      bind: [1],
+      plain: true,
+    });
+    if ((again as { one?: number } | null)?.one !== 1) {
+      throw new Error('statement cache query failed');
+    }
+  } finally {
+    await cached.close();
+  }
 
   if (lean.length !== 100 || total !== 100 || Object.keys(lean[0] ?? {}).length !== 2) {
     throw new Error('unexpected result');
