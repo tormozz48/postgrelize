@@ -102,6 +102,7 @@ rows.forEach((row) => console.log(row.key, row.wasInserted ? 'inserted' : 'updat
 ## Links
 
 - [API reference](https://tormozz48.github.io/postgrelize/)
+- [PostgreSQL coverage](https://tormozz48.github.io/postgrelize/postgresql-coverage) — which PostgreSQL 16–18 features are supported, test-backed, planned or out of scope
 - [Coverage report](https://tormozz48.github.io/postgrelize/coverage/)
 - [Package versions](https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize) · [Tags](https://github.com/tormozz48/postgrelize/tags)
 

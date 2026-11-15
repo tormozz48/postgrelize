@@ -118,6 +118,7 @@ Proposed (detailed spec at stage start, owner approval):
 - **Drift check:** a `docs` test asserts that every `supported` row references an existing test (file exists and contains the test name).
 - **Site page:** "PostgreSQL coverage" is rendered from the data file at docs build time.
 - **Done when:** the matrix covers all areas above, every supported row is test-backed, and the page is published. The `planned` rows are grouped into proposed S11+ stages for owner approval.
+- **Result (2026-11-15):** 133 rows: 69 supported, 13 literal, 39 planned, 12 out-of-scope. Review with the proposed S11–S17 gap stages: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
 ## S10 — Performance (added 2026-11-15)
 

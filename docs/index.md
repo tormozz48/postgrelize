@@ -13,6 +13,9 @@ hero:
       text: PostgreSQL features
       link: /guide/upserts
     - theme: alt
+      text: PostgreSQL coverage
+      link: /postgresql-coverage
+    - theme: alt
       text: API reference
       link: /api/
 

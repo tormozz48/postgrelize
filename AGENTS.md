@@ -117,27 +117,28 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
 
 Docs live in four places. Each one is either checked by a tool or covered by a rule below.
 
-| Source of truth                                            | Published as                                                                 | Kept in sync by                                                   |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| TSDoc on exports of `src/index.ts`                         | `docs/api` (TypeDoc)                                                         | `npm run docs` fails on undocumented exports (CI `check` job)     |
-| `docs/examples/*.ts`                                       | code blocks in `docs/guide/*.md` via `<<< @/examples/<file>.ts#<region>{ts}` | the `docs` test project runs every example and checks its results |
-| `docs/guide/*.md`, `docs/sequelize-issues.md`, `README.md` | the site and the repo front page                                             | this table + the PR checklist (manual)                            |
-| `.10x/` (ADRs, specs, decisions, status)                   | repo only                                                                    | this file's [Decision records](#decision-records) rules           |
+| Source of truth                                            | Published as                                                                 | Kept in sync by                                                                      |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| TSDoc on exports of `src/index.ts`                         | `docs/api` (TypeDoc)                                                         | `npm run docs` fails on undocumented exports (CI `check` job)                        |
+| `docs/examples/*.ts`                                       | code blocks in `docs/guide/*.md` via `<<< @/examples/<file>.ts#<region>{ts}` | the `docs` test project runs every example and checks its results                    |
+| `docs/coverage/postgresql-features.ts`                     | the "PostgreSQL coverage" page                                               | `tests/docs/postgresql-matrix.test.ts` checks every `supported` row's test reference |
+| `docs/guide/*.md`, `docs/sequelize-issues.md`, `README.md` | the site and the repo front page                                             | this table + the PR checklist (manual)                                               |
+| `.10x/` (ADRs, specs, decisions, status)                   | repo only                                                                    | this file's [Decision records](#decision-records) rules                              |
 
 **When you change X, update Y in the same PR:**
 
-| Change                                               | Must update                                                                                                                                                              |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| New or changed public export / option                | TSDoc (`@param`, `@returns`, `@throws`, `@example` for non-trivial API); the guide page for that area; an example region in `docs/examples` if users need code to use it |
-| New PostgreSQL feature                               | Everything above, plus the "What you get on top of Sequelize v6" list in `README.md` and the PostgreSQL features section of the guide                                    |
-| New guide page                                       | `docs/.vitepress/config.ts` sidebar (`guide` array)                                                                                                                      |
-| Fixed v6 bug (divergence)                            | A row in `docs/sequelize-issues.md` → "Bugs fixed in postgrelize" + a regression test in `tests/integration/sequelize-issues.test.ts`                                    |
-| New input that reaches SQL (option, method argument) | A row in the table on `docs/security.md` + payload test (and property test if bound / identifier) in `tests/integration/security/`                                       |
-| v6 parity fix                                        | Differential test in `tests/compat`; `docs/sequelize-issues.md` if it was a listed issue                                                                                 |
-| Behaviour change visible to users                    | The affected guide pages and examples; `docs/guide/migrating.md` if it affects people moving from v6                                                                     |
-| Breaking change                                      | All of the above + a `!` commit (`feat!:` / `refactor!:`) + a minor version bump while < 1.0                                                                             |
-| Architecture or dependency decision                  | New ADR; `AGENTS.md` if a rule changes                                                                                                                                   |
-| Dev workflow, scripts, CI                            | `AGENTS.md` (Setup and commands) and the README "Development" section                                                                                                    |
+| Change                                               | Must update                                                                                                                                                                                                                         |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New or changed public export / option                | TSDoc (`@param`, `@returns`, `@throws`, `@example` for non-trivial API); the guide page for that area; an example region in `docs/examples` if users need code to use it                                                            |
+| New PostgreSQL feature                               | Everything above, plus the "What you get on top of Sequelize v6" list in `README.md`, the PostgreSQL features section of the guide, and its row in `docs/coverage/postgresql-features.ts` (flip or add it, with a `test` reference) |
+| New guide page                                       | `docs/.vitepress/config.ts` sidebar (`guide` array)                                                                                                                                                                                 |
+| Fixed v6 bug (divergence)                            | A row in `docs/sequelize-issues.md` → "Bugs fixed in postgrelize" + a regression test in `tests/integration/sequelize-issues.test.ts`                                                                                               |
+| New input that reaches SQL (option, method argument) | A row in the table on `docs/security.md` + payload test (and property test if bound / identifier) in `tests/integration/security/`                                                                                                  |
+| v6 parity fix                                        | Differential test in `tests/compat`; `docs/sequelize-issues.md` if it was a listed issue                                                                                                                                            |
+| Behaviour change visible to users                    | The affected guide pages and examples; `docs/guide/migrating.md` if it affects people moving from v6                                                                                                                                |
+| Breaking change                                      | All of the above + a `!` commit (`feat!:` / `refactor!:`) + a minor version bump while < 1.0                                                                                                                                        |
+| Architecture or dependency decision                  | New ADR; `AGENTS.md` if a rule changes                                                                                                                                                                                              |
+| Dev workflow, scripts, CI                            | `AGENTS.md` (Setup and commands) and the README "Development" section                                                                                                                                                               |
 
 **Rules for writing docs:**
 
