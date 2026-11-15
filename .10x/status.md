@@ -122,3 +122,6 @@
 
 ## Release 0.6.0 (2026-11-14)
 - Tag `v0.6.0` → release.yml green, `@tormozz48/postgrelize@0.6.0` published. Contents: README + coverage, Sequelize issue review fixes (S2a parity, S2b inherited bugs), fixed-issues page.
+
+## Release 0.7.0 (2026-11-15)
+- Tag `v0.7.0` → release.yml green, `@tormozz48/postgrelize@0.7.0` published. Contents: Effect-based connection/transaction layer, `postgrelize/effect`, transaction-start leak fix, separate-include `limit` per parent, `findEach` separate includes, VitePress docs site.
