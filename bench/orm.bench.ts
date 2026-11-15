@@ -1,5 +1,5 @@
-// Hot-path benchmark for the S4 performance budget. Usage:
-//   node --experimental-strip-types bench/orm.bench.ts [--stub] [--json out.json]
+// Hot-path benchmark for the performance budget. Runs through Vitest (decorators need compiling):
+//   PGZ_BENCH_STUB=1 PGZ_BENCH_JSON=out.json npm run bench
 // Default mode needs the test database (PGZ_TEST_URL or the docker compose default); its numbers
 // are dominated by I/O. `--stub` replaces the `pg` pool with an in-memory responder, so it measures
 // the ORM's own overhead (query building, execution pipeline, row mapping) — the budget gate.
@@ -8,7 +8,7 @@ import { performance } from 'node:perf_hooks';
 import { Pool } from 'pg';
 import { DataTypes, Op, Sequelize } from '../src/index.ts';
 
-const stub = process.argv.includes('--stub');
+const stub = process.env['PGZ_BENCH_STUB'] === '1';
 
 type Row = Record<string, unknown>;
 const row = (index: number): Row => ({
@@ -130,7 +130,7 @@ if (!stub) {
   await admin.query(`DROP SCHEMA "${schema}" CASCADE`);
 }
 await admin.close();
-const out = process.argv.indexOf('--json');
-if (out !== -1 && process.argv[out + 1] !== undefined) {
-  writeFileSync(process.argv[out + 1] as string, `${JSON.stringify(results, null, 2)}\n`);
+const out = process.env['PGZ_BENCH_JSON'];
+if (out !== undefined && out !== '') {
+  writeFileSync(out, `${JSON.stringify(results, null, 2)}\n`);
 }

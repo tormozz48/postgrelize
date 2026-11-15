@@ -44,7 +44,8 @@
     "prepublishOnly": "npm run build",
     "docs": "typedoc && vitepress build docs",
     "docs:dev": "typedoc && vitepress dev docs",
-    "docs:examples": "vitest run --project docs"
+    "docs:examples": "vitest run --project docs",
+    "bench": "vitest run --project bench"
   },
   "dependencies": {
     "inflection": "~1.13.4",
