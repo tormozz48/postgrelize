@@ -18,6 +18,7 @@ export const ModelSchemaBinding = <TBase extends ModelConstructor>(Base: TBase) 
      * the time of the call and keeps the scope selection of this class. Changes made to the
      * original afterwards are not seen by the copy.
      *
+     * @param this - The model class being bound.
      * @param schema - Schema name.
      * @param options - Separator between schema and table reported by `getTableName` (a string,
      * or `{ schemaDelimiter }`); PostgreSQL always qualifies with `.` in SQL. Defaults to `.`.

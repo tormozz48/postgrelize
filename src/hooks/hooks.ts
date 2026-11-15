@@ -219,6 +219,11 @@ export class HookRegistry {
    * @param type - Hook type.
    * @returns Whether hooks exist, `undefined` when none was ever added.
    * @throws Error for an unknown hook type.
+   * @example
+   * ```ts
+   * let registry!: HookRegistry;
+   * const known = registry.hasOrUndefined('beforeCreate'); // undefined until a hook was added
+   * ```
    */
   hasOrUndefined(type: string): boolean | undefined {
     const hooks = this.#hooks.get(HookRegistry.#assertHookType(type));
