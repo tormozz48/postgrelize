@@ -1,4 +1,6 @@
+import type { Effect } from 'effect';
 import type { QueryResult } from '../connection/executor.ts';
+import type { BaseError } from '../errors/errors.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';
@@ -24,6 +26,12 @@ export type ModelRuntime = Readonly<{
     options: QueryOptionsBase,
     kind?: 'read' | 'write',
   ) => Promise<QueryResult>;
+  /** `execute` as an Effect program (transaction / replica routing resolved when it runs). */
+  executeEffect: (
+    query: CompiledQuery,
+    options: QueryOptionsBase,
+    kind?: 'read' | 'write',
+  ) => Effect.Effect<QueryResult, BaseError>;
   transaction: <T>(
     run: (transaction: Transaction) => Promise<T>,
     parent?: Transaction | null,

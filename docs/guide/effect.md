@@ -17,7 +17,9 @@ Every function takes the model (or the `Sequelize` instance) as its first argume
 | `query`                                 | `sequelize.query`           |
 | `transaction(sequelize, use, options?)` | `sequelize.transaction(fn)` |
 
-The error channel holds the Sequelize v6 error classes (`DatabaseError`, `UniqueConstraintError`, `ValidationError`, `ForeignKeyConstraintError`, ...), so failures can be handled with the usual Effect combinators. Errors that are not database errors (for example an invalid option) are defects.
+The error channel holds the Sequelize v6 error classes (`DatabaseError`, `UniqueConstraintError`, `ValidationError`, `EmptyResultError` for `findOne({ rejectOnEmpty: true })`, ...), so failures can be handled with the usual Effect combinators. Other errors — an invalid option, or an exception thrown by your own hook — are defects.
+
+`findAll`, `findOne`, `findByPk` and `count` run natively as Effect programs (hooks, query, row mapping, `separate` includes) without a Promise round trip; model hooks (`beforeFind`, `afterFind`, `beforeCount`, ...) run exactly as with the Promise API. The write operations still delegate to the Promise implementation.
 
 <<< @/examples/effect.ts#operations{ts}
 

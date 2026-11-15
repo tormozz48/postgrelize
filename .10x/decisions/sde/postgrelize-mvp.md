@@ -182,3 +182,11 @@ Tests: compat +1 (per-parent limit vs v6), integration +1 (findEach separate inc
 - Benchmark: `bench/orm.bench.ts` (`--stub` measures ORM overhead with an in-memory pg pool; I/O mode ±50% noise), `bench/compare.ts` gate. Final (best of 3 vs baseline): findAll +1.4%, create +8.1%, bulkCreate −2.1%, insert −0.7% (gate ≤ +10%); findByPk +0.7 µs, count +1.0 µs, managed transaction +4.0 µs absolute.
 - Docs: guide `effect.md` with executed example; API reference now has `index` and `effect` modules (links under `/api/index/...`).
 - Open: intermittent 15 s test timeouts under the full parallel suite (seen on main too, 1 of 3 runs) — needs investigation.
+
+## Backlog 2 / S4 step 4 — hooks and read pipeline on Effect — done 2026-11-15
+- `runHooksEffect` / `runModelHooksEffect` (no hooks → `Effect.void`, no extra nodes); `runHooks` / `runModelHooks` are `runPromise` wrappers, so every hook call goes through Effect.
+- `runtime.executeEffect` (transaction / replica routing resolved when the program runs, CLS still via AsyncLocalStorage).
+- `findAllProgram` / `countProgram`: hooks → pure query building → execute → pure row mapping → separate includes → `afterFind`; `Model.findAll` / `count` are `runPromise` wrappers (one runtime entry per call). `findOne` / `findByPk` Promise versions unchanged (still call `this.findAll`, so subclass overrides keep working).
+- `postgrelize/effect` read operations use the programs natively; `findOne` keeps `rejectOnEmpty` (→ `EmptyResultError` in the error channel); hook exceptions are defects.
+- Benchmark gate: findAll −0.4%, create +5.6%, bulkCreate −2.7%, insert −0.9%; small ops unchanged vs step 1–3.
+- Remaining: write paths (create / save / update / destroy / bulkCreate) as programs.
