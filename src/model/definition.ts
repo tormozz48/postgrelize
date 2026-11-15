@@ -1,13 +1,9 @@
 import inflection from 'inflection';
-import {
-  DataTypes,
-  toDataType,
-  type DataType,
-  type DataTypeInput,
-} from '../data-types/data-types.ts';
+import { AbstractDataType } from '../data-types/abstract-data-type.ts';
+import { DataTypes, type DataType, type DataTypeInput } from '../data-types/data-types.ts';
 import type { ModelDefaults } from '../connection/options.ts';
 import type { AttributeValidateOptions } from '../validation/types.ts';
-import type { DeferrableValue, IndexOptions } from '../ddl/ddl.ts';
+import type { DeferrableValue, IndexOptions } from '../ddl/ddl-generator.ts';
 
 /** Definition of a generated column. */
 export type GeneratedColumn = Readonly<{
@@ -163,7 +159,7 @@ export const normalizeAttribute = (
     ...rest,
     fieldName: name,
     field: field ?? underscoredIf(name, underscored),
-    type: toDataType(type),
+    type: AbstractDataType.from(type),
     allowNull: options.allowNull ?? options.primaryKey !== true,
     ...(options.identity === undefined ? {} : { autoIncrement: true }),
   });

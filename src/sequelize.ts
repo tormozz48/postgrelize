@@ -19,18 +19,14 @@ import { Op } from './expressions/op.ts';
 import { Model, definitionOf, parseModelRow } from './model/model.ts';
 import { QueryInterface } from './query-interface/query-interface.ts';
 import {
-  addDeferredReferences,
-  deferredReferences,
-  dependencyOrder,
-  dropModel,
-  syncModel,
+  SchemaSynchronizer,
   type DropOptions,
   type SyncOptions,
-} from './query-interface/sync.ts';
+} from './query-interface/schema-synchronizer.ts';
 import type { AnyModel, InitOptions, ModelStatic } from './model/options.ts';
 import type { ModelAttributes } from './model/definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
-import { prepareRawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
+import { RawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
 import type { CompiledQuery } from './sql/compile.ts';
 import {
   Transaction,
@@ -39,6 +35,8 @@ import {
   type AdvisoryLockKey,
   type TransactionOptions,
 } from './transaction/transaction.ts';
+
+const rawQuery = new RawQuery();
 
 /** Query types of `sequelize.query` (Sequelize v6 `QueryTypes`). */
 export const QueryTypes = {
@@ -381,7 +379,7 @@ export class Sequelize {
    */
   async query(sql: string | Literal, options: QueryOptions = {}): Promise<unknown> {
     const text = typeof sql === 'string' ? sql : sql.val;
-    const prepared = prepareRawQuery(text, {
+    const prepared = rawQuery.prepare(text, {
       ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
       ...(options.bind === undefined ? {} : { bind: options.bind }),
     });
@@ -457,46 +455,9 @@ export class Sequelize {
         `Database "${this.config.database ?? ''}" does not match sync match parameter "${String(options.match)}"`,
       );
     }
-    const definitions = dependencyOrder(
+    await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).syncAll(
       Object.values(this.models).map((model) => definitionOf(model)),
-    );
-    if (options.force === true) {
-      await definitions
-        .toReversed()
-        .reduce<Promise<unknown>>(
-          (previous, definition) =>
-            previous.then(() =>
-              dropModel(definition, this.getQueryInterface(), { ...options, cascade: true }),
-            ),
-          Promise.resolve(),
-        );
-    }
-    const deferred = deferredReferences(definitions);
-    await definitions.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          syncModel(
-            definition,
-            this.#runtime,
-            this.getQueryInterface(),
-            { ...options, force: false },
-            deferred.get(definition),
-          ),
-        ),
-      Promise.resolve(),
-    );
-    await definitions.reduce<Promise<unknown>>(
-      (previous, definition) =>
-        previous.then(() =>
-          addDeferredReferences(
-            definition,
-            deferred.get(definition) ?? [],
-            this.#runtime,
-            this.getQueryInterface(),
-            options,
-          ),
-        ),
-      Promise.resolve(),
+      options,
     );
     return this;
   }
@@ -508,16 +469,10 @@ export class Sequelize {
    * @returns Resolves when done.
    */
   async drop(options: DropOptions = {}): Promise<void> {
-    const definitions = dependencyOrder(
+    await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).dropAll(
       Object.values(this.models).map((model) => definitionOf(model)),
+      options,
     );
-    await definitions
-      .toReversed()
-      .reduce<Promise<unknown>>(
-        (previous, definition) =>
-          previous.then(() => dropModel(definition, this.getQueryInterface(), options)),
-        Promise.resolve(),
-      );
   }
 
   /**

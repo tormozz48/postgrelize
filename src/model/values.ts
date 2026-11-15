@@ -1,4 +1,4 @@
-import { isDefaultValueGenerator } from '../data-types/data-types.ts';
+import { DefaultValueGenerator } from '../data-types/default-value-generator.ts';
 import { SqlExpression } from '../expressions/methods.ts';
 import type { AttributeDefinition, ModelDefinition } from './definition.ts';
 import type { AttributeAmounts, Values } from './options.ts';
@@ -15,7 +15,7 @@ export const clone = <T>(value: T): T =>
   value instanceof SqlExpression ? value : structuredClone(value);
 
 export const defaultValueOf = (attribute: AttributeDefinition): unknown =>
-  isDefaultValueGenerator(attribute.defaultValue)
+  attribute.defaultValue instanceof DefaultValueGenerator
     ? attribute.defaultValue.generate()
     : clone(attribute.defaultValue);
 

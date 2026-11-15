@@ -30,14 +30,14 @@ export interface SqlExpressionVisitor<R> {
   visitTuple(expression: Tuple): R;
 }
 
-/**
- * Any expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. Instances are
- * immutable.
- */
 // Shared through the global symbol registry so that expressions built by another copy of the
 // package (e.g. the CommonJS build next to the ES module build) are still recognised.
 const KIND: unique symbol = Symbol.for('postgrelize.expression') as never;
 
+/**
+ * Any expression builder accepted where Sequelize v6 accepts a `SequelizeMethod`. Instances are
+ * immutable.
+ */
 export abstract class SqlExpression {
   /** @internal Expression kind; set by every concrete class. */
   static readonly kind: string = 'SqlExpression';

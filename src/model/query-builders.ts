@@ -1,5 +1,5 @@
 import { OrderDirection } from '../sql/order.ts';
-import { isDefaultValueGenerator } from '../data-types/data-types.ts';
+import { DefaultValueGenerator } from '../data-types/default-value-generator.ts';
 import { SqlExpression } from '../expressions/methods.ts';
 import {
   SqlAst,
@@ -374,7 +374,7 @@ export const valueExpr = (
   value: unknown,
   ctx: WhereCompiler,
 ): ExprNode =>
-  isDefaultValueGenerator(value)
+  value instanceof DefaultValueGenerator
     ? ast.param(value.generate())
     : ctx.toExpr(value, attribute === undefined ? undefined : attributeRef(attribute));
 

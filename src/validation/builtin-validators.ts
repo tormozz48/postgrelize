@@ -1,6 +1,7 @@
 import validatorJs from 'validator';
 
-type ValidatorFunction = (value: string, ...args: readonly unknown[]) => boolean;
+/** Built-in validator: value as a string, then the validator arguments. */
+export type ValidatorFunction = (value: string, ...args: readonly unknown[]) => boolean;
 
 const regex = (value: string, pattern: unknown, modifiers?: unknown): boolean =>
   (pattern instanceof RegExp
@@ -45,6 +46,19 @@ const extensions: Readonly<Record<string, ValidatorFunction>> = {
   isDate: (value) => !Number.isNaN(Date.parse(value)),
 };
 
-/** Finds a built-in validator by its Sequelize v6 name. */
-export const builtinValidator = (name: string): ValidatorFunction | undefined =>
-  extensions[name] ?? (typeof builtin[name] === 'function' ? builtin[name] : undefined);
+/**
+ * Sequelize v6 built-in attribute validators: validator.js functions plus the v6 additions.
+ *
+ * @internal
+ */
+export class BuiltinValidators {
+  /**
+   * Finds a built-in validator by its Sequelize v6 name.
+   *
+   * @param name - Validator name, e.g. `'isEmail'` or `'len'`.
+   * @returns The validator (called with the value as a string and the arguments), or `undefined`.
+   */
+  find(name: string): ValidatorFunction | undefined {
+    return extensions[name] ?? (typeof builtin[name] === 'function' ? builtin[name] : undefined);
+  }
+}

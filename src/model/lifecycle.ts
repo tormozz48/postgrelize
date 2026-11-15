@@ -1,9 +1,11 @@
 import { ValidationError } from '../errors/errors.ts';
 import { HookRegistry, type HookType } from '../hooks/hooks.ts';
 import { Op } from '../expressions/op.ts';
-import { validateInstance } from '../validation/validate.ts';
+import { InstanceValidator } from '../validation/instance-validator.ts';
 import type { ModelDefinition } from './definition.ts';
 import { stateOf } from './state.ts';
+
+const instanceValidator = new InstanceValidator();
 
 /** Runs model hooks, then Sequelize-level hooks, with the model class as `this`. */
 export const runModelHooks = (
@@ -50,7 +52,7 @@ export const validateWithHooks = async (
   if (hooks) {
     await runModelHooks(model, 'beforeValidate', instance, options);
   }
-  const items = await validateInstance(
+  const items = await instanceValidator.validate(
     {
       instance,
       definition: state.definition,

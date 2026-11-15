@@ -226,9 +226,18 @@ export type {
   CreateTableOptions,
   DropTableOptions,
 } from './query-interface/query-interface.ts';
-export type { AlterOptions, DropOptions, SyncOptions } from './query-interface/sync.ts';
-export { Deferrable } from './ddl/ddl.ts';
-export type { ConstraintOptions, DeferrableValue, IndexField, IndexOptions } from './ddl/ddl.ts';
-export type { QualifiedTable, TableName } from './ddl/literals.ts';
+export type {
+  AlterOptions,
+  DropOptions,
+  SyncOptions,
+} from './query-interface/schema-synchronizer.ts';
+export { Deferrable } from './ddl/ddl-generator.ts';
+export type {
+  ConstraintOptions,
+  DeferrableValue,
+  IndexField,
+  IndexOptions,
+} from './ddl/ddl-generator.ts';
+export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type { CteDefinition, CteFindOptions, WithOption } from './model/cte.ts';

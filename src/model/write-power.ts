@@ -1,4 +1,4 @@
-import { enumTypeName } from '../ddl/ddl.ts';
+import { DdlGenerator } from '../ddl/ddl-generator.ts';
 import { literal, Subquery } from '../expressions/methods.ts';
 import {
   SqlAst,
@@ -16,6 +16,8 @@ import { stateOf } from './state.ts';
 import type { WhereOptions } from './types.ts';
 
 const ast = new SqlAst();
+
+const ddl = new DdlGenerator();
 
 /** Extra relations for `UPDATE ... FROM` / `DELETE ... USING`, keyed by alias. PostgreSQL extension. */
 export type JoinSources = Readonly<Record<string, ModelStatic<AnyModel> | Subquery | string>>;
@@ -75,7 +77,7 @@ const asArray = <T>(value: T | readonly T[] | undefined): readonly T[] =>
 
 const castType = (definition: ModelDefinition, attribute: AttributeDefinition): string =>
   attribute.type.key === 'ENUM'
-    ? [definition.schema, enumTypeName(definition.tableName, attribute.field)]
+    ? [definition.schema, ddl.enumTypeName(definition.tableName, attribute.field)]
         .filter((part): part is string => part !== undefined)
         .map(SqlCompiler.quoteIdent)
         .join('.')

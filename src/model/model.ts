@@ -1,9 +1,8 @@
 import {
-  dropModel,
-  syncModel,
+  SchemaSynchronizer,
   type DropOptions,
   type SyncOptions,
-} from '../query-interface/sync.ts';
+} from '../query-interface/schema-synchronizer.ts';
 import {
   assembleInstances,
   countJoins,
@@ -71,7 +70,7 @@ import {
   type SelectOptions,
 } from './query-builders.ts';
 import { parseRow } from './rows.ts';
-import { escapeLiteral, inlineValues } from '../ddl/literals.ts';
+import { SqlLiteral } from '../ddl/sql-literal.ts';
 import { cteSelectOptions, sourceDefinition } from './cte.ts';
 import { CopyEncoder } from '../connection/copy.ts';
 import { SqlCompiler } from '../sql/compile.ts';
@@ -149,6 +148,7 @@ const insertedFlags = new WeakMap<object, boolean>();
 const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null>();
 const copyEncoder = new CopyEncoder();
 const sqlCompiler = new SqlCompiler();
+const sqlLiteral = new SqlLiteral();
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -466,7 +466,7 @@ export class Model<
     options: SyncOptions = {},
   ): Promise<MS> {
     const { definition, runtime } = stateOf(this);
-    await syncModel(definition, runtime, runtime.queryInterface(), options);
+    await new SchemaSynchronizer(runtime, runtime.queryInterface()).sync(definition, options);
     return this;
   }
 
@@ -478,7 +478,7 @@ export class Model<
    */
   static async drop(options: DropOptions = {}): Promise<void> {
     const { definition, runtime } = stateOf(this);
-    await dropModel(definition, runtime.queryInterface(), options);
+    await new SchemaSynchronizer(runtime, runtime.queryInterface()).drop(definition, options);
   }
 
   /**
@@ -797,7 +797,7 @@ export class Model<
     );
     const select = includes.length === 0 ? base : withIncludes(definition, base, includes, query);
     return runtime.copyTo(
-      `COPY (${inlineValues(sqlCompiler.compile(select))}) TO STDOUT${copyFormatSql(options)}`,
+      `COPY (${sqlLiteral.inlineValues(sqlCompiler.compile(select))}) TO STDOUT${copyFormatSql(options)}`,
       options,
       'read',
     );
@@ -2596,7 +2596,7 @@ const singleCharacter = (value: string, name: string): string => {
   if ([...value].length !== 1) {
     throw new Error(`copyTo: ${name} must be a single character`);
   }
-  return escapeLiteral(value);
+  return sqlLiteral.escape(value);
 };
 
 const copyFormatSql = (options: CopyToFormatOptions): string => {
@@ -2610,7 +2610,7 @@ const copyFormatSql = (options: CopyToFormatOptions): string => {
       ? []
       : [`DELIMITER ${singleCharacter(options.delimiter, 'delimiter')}`]),
     ...(options.quote === undefined ? [] : [`QUOTE ${singleCharacter(options.quote, 'quote')}`]),
-    ...(options.nullString === undefined ? [] : [`NULL ${escapeLiteral(options.nullString)}`]),
+    ...(options.nullString === undefined ? [] : [`NULL ${sqlLiteral.escape(options.nullString)}`]),
   ];
   return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
 };
