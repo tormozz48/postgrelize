@@ -3,7 +3,7 @@ import {
   type ExprNode,
   type InsertNode,
   type OnConflictNode,
-  type SelectNode,
+  type QueryNode,
 } from '../sql/ast.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { AttributeDefinition, ModelDefinition } from './model-definition.ts';
@@ -79,7 +79,7 @@ export class InsertQueryBuilder {
   fromSelect(
     definition: ModelDefinition,
     columns: readonly string[],
-    select: SelectNode,
+    select: QueryNode,
     onConflict: OnConflictNode | undefined,
     returning: readonly ExprNode[],
   ): InsertNode {

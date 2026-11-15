@@ -62,6 +62,8 @@ export class SqlCompiler {
     switch (node.kind) {
       case 'select':
         return this.#query.select(node);
+      case 'setop':
+        return this.#query.query(node);
       case 'insert':
         return this.#dml.insert(node);
       case 'update':

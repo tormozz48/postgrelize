@@ -7,7 +7,7 @@ import { Over, Tuple } from './row-expressions.ts';
 export { Cast, Col, Fn } from './call-expressions.ts';
 export { Excluded, Json, Where } from './condition-expressions.ts';
 export { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
-export { Exists, Subquery } from './query-expressions.ts';
+export { Exists, Subquery, type SetOperationOptions } from './query-expressions.ts';
 export { Over, Tuple } from './row-expressions.ts';
 
 // Kept in the module of the factories: a second copy of this module (another package build) then

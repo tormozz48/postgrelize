@@ -43,7 +43,7 @@ export class MergeCompiler extends ChunkBuilder {
 
   #source(source: MergeNode['source']): Chunks {
     return source.kind === 'query'
-      ? [...this.wrap(this.#query.select(source.query)), ` AS ${this.quote(source.alias)}`]
+      ? [...this.wrap(this.#query.query(source.query)), ` AS ${this.quote(source.alias)}`]
       : [
           ...this.wrap(['VALUES ', ...this.#expr.rows(source.rows)]),
           ` AS ${this.quote(source.alias)} `,

@@ -35,6 +35,7 @@ const BASE = 'tests/integration/postgrelize.test.ts';
 const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
 const SCHEMA = 'tests/integration/schema.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
+const SETOPS = 'tests/integration/set-ops-from.test.ts';
 const ISSUES = 'tests/integration/sequelize-issues.test.ts';
 const CRUD = 'tests/compat/crud.test.ts';
 const QI = 'tests/compat/query-interface.test.ts';
@@ -66,8 +67,8 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: SELECT, feature: 'Row locks: FOR UPDATE / NO KEY UPDATE / SHARE / KEY SHARE, OF, NOWAIT, SKIP LOCKED', minPg: '16', status: 'supported', test: t(PG, 'renders every row-lock strength with OF, NOWAIT and SKIP LOCKED'), note: '`lock`, `skipLocked`, `noWait` find options.' },
   { area: SELECT, feature: 'ORDER BY … NULLS FIRST / LAST', minPg: '16', status: 'supported', test: t(PG, 'orders with NULLS FIRST / NULLS LAST'), note: 'Order direction string, e.g. `["rank", "ASC NULLS LAST"]`.' },
   { area: SELECT, feature: 'TABLESAMPLE', minPg: '16', status: 'planned', note: 'No FROM-clause option. Workaround: raw query.' },
-  { area: SELECT, feature: 'FETCH FIRST … WITH TIES', minPg: '16', status: 'planned', note: 'Only `LIMIT`/`OFFSET`. Workaround: raw query or a `rank()` window function.' },
-  { area: SELECT, feature: 'UNION / INTERSECT / EXCEPT [ALL]', minPg: '16', status: 'planned', note: 'Only inside recursive CTEs (`UNION [ALL]`). Workaround: raw query.' },
+  { area: SELECT, feature: 'FETCH FIRST … WITH TIES', minPg: '16', status: 'supported', test: t(SETOPS, 'returns rows that tie with the last one'), note: '`withTies: true` with `limit` and `order`.' },
+  { area: SELECT, feature: 'UNION / INTERSECT / EXCEPT [ALL]', minPg: '16', status: 'supported', test: t(SETOPS, 'combines subqueries with UNION, INTERSECT and EXCEPT in IN filters'), note: '`Subquery#union()`, `intersect()`, `except()` (`{ all: true }`); `source: subquery` reads model rows from the result.' },
   { area: SELECT, feature: 'Subqueries (IN, scalar, EXISTS / NOT EXISTS, correlated)', minPg: '16', status: 'supported', test: t(POWER, 'supports EXISTS / NOT EXISTS with correlated subqueries'), note: '`Model.subquery()`, `exists()`, `notExists()`; `IN (subquery)` in `where`.' },
   { area: SELECT, feature: 'Row-value comparison (keyset pagination)', minPg: '16', status: 'supported', test: t(POWER, 'paginates with row comparison (keyset)'), note: '`tuple()` expression.' },
   { area: SELECT, feature: 'Standalone VALUES lists and set-returning functions in FROM (unnest, generate_series, WITH ORDINALITY)', minPg: '16', status: 'planned', note: 'VALUES works only as a MERGE / INSERT … SELECT source. Workaround: raw query.' },

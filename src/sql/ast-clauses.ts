@@ -1,15 +1,15 @@
 import type { ExprNode } from './ast-expressions.ts';
-import type { SelectNode } from './ast-statements.ts';
+import type { QueryNode } from './ast-statements.ts';
 
 export type TableRef = Readonly<{ name: string; schema?: string; alias?: string }>;
 
 export type JoinNode = Readonly<{
   type: 'INNER' | 'LEFT OUTER' | 'RIGHT OUTER';
-  table: TableRef | Readonly<{ subquery: SelectNode; alias: string }>;
+  table: FromItem;
   on: ExprNode;
 }>;
 
-export type FromItem = TableRef | Readonly<{ subquery: SelectNode; alias: string }>;
+export type FromItem = TableRef | Readonly<{ subquery: QueryNode; alias: string }>;
 
 export type LockNode = Readonly<{
   strength: 'UPDATE' | 'NO KEY UPDATE' | 'SHARE' | 'KEY SHARE';
@@ -17,16 +17,20 @@ export type LockNode = Readonly<{
   wait?: 'NOWAIT' | 'SKIP LOCKED';
 }>;
 
-export type UnionNode = Readonly<{
-  kind: 'union';
-  left: SelectNode;
-  right: SelectNode;
+export type SetOperator = 'UNION' | 'INTERSECT' | 'EXCEPT';
+
+/** `left UNION | INTERSECT | EXCEPT [ALL] right`. */
+export type SetOperationNode = Readonly<{
+  kind: 'setop';
+  op: SetOperator;
   all: boolean;
+  left: QueryNode;
+  right: QueryNode;
 }>;
 
 export type CteNode = Readonly<{
   name: string;
-  query: SelectNode | UnionNode;
+  query: QueryNode;
   materialized?: boolean;
 }>;
 

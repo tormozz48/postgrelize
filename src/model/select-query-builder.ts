@@ -1,8 +1,8 @@
-import type { ExprNode, LockNode, OrderNode, SelectNode } from '../sql/ast.ts';
-import { LOCK } from '../transaction/transaction.ts';
+import type { ExprNode, FromItem, OrderNode, SelectNode, TableRef } from '../sql/ast.ts';
 import type { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { ModelDefinition } from './model-definition.ts';
+import { SelectLock } from './select-lock.ts';
 import { SelectAggregates } from './select-aggregates.ts';
 import type { FindAttributeOptions, SelectOptions } from './select-options.ts';
 import { SelectTargets } from './select-targets.ts';
@@ -20,35 +20,6 @@ export type {
 const definedNumber = (value: number | null | undefined): number | undefined =>
   value === null || value === undefined ? undefined : value;
 
-const LOCK_STRENGTHS: ReadonlySet<string> = new Set(Object.values(LOCK));
-
-// Sequelize v6 emits FOR UPDATE for any lock level it does not know.
-const lockStrength = (level: unknown): LockNode['strength'] =>
-  typeof level === 'string' && LOCK_STRENGTHS.has(level)
-    ? (level as LockNode['strength'])
-    : LOCK.UPDATE;
-
-const lockOf = (options: SelectOptions): LockNode | undefined => {
-  if (options.lock === undefined || options.lock === false) {
-    return undefined;
-  }
-  if (options.skipLocked === true && options.noWait === true) {
-    throw new Error('skipLocked and noWait cannot be used together');
-  }
-  const wait =
-    options.skipLocked === true ? 'SKIP LOCKED' : options.noWait === true ? 'NOWAIT' : undefined;
-  const base: LockNode =
-    options.lock === true
-      ? { strength: 'UPDATE' }
-      : typeof options.lock === 'string'
-        ? { strength: lockStrength(options.lock) }
-        : {
-            strength: lockStrength(options.lock.level),
-            ...(options.lock.of === undefined ? {} : { of: [options.lock.of.name] }),
-          };
-  return wait === undefined ? base : { ...base, wait };
-};
-
 /**
  * Builds SELECT statements of finders: columns from `attributes`, `where` / `having`, `order`,
  * `group`, `distinctOn`, `limit` / `offset`, row locks, and the `count()` / `aggregate()` forms.
@@ -57,6 +28,7 @@ export class SelectQueryBuilder {
   readonly #columns: AttributeColumns;
   readonly #targets: SelectTargets;
   readonly #aggregates: SelectAggregates;
+  readonly #locks = new SelectLock();
 
   /**
    * @param columns - Attribute to column mapping.
@@ -91,7 +63,7 @@ export class SelectQueryBuilder {
       kind: 'select',
       ...SelectQueryBuilder.#sources(options),
       columns: columnsOverride ?? this.columns(definition, alias, ctx, options.attributes),
-      from: this.#columns.table(definition, alias),
+      from: SelectQueryBuilder.#from(this.#columns.table(definition, alias), alias, options),
       ...clauses,
       orderBy: this.#targets.orderBy(definition, alias, ctx, options.order),
       ...SelectQueryBuilder.#window(options),
@@ -182,7 +154,7 @@ export class SelectQueryBuilder {
   ): Partial<SelectNode> {
     const where = this.#columns.where(options.where, ctx);
     const having = this.#columns.where(options.having, ctx);
-    const lock = lockOf(options);
+    const lock = this.#locks.of(options);
     const group = this.#targets.list(definition, alias, ctx, options.group);
     const distinctOn = this.#targets.distinctOn(definition, alias, ctx, options.distinctOn);
     return {
@@ -192,6 +164,10 @@ export class SelectQueryBuilder {
       ...(having === undefined ? {} : { having }),
       ...(lock === undefined ? {} : { lock }),
     };
+  }
+
+  static #from(table: TableRef, alias: string, options: SelectOptions): FromItem {
+    return options.fromQuery === undefined ? table : { subquery: options.fromQuery, alias };
   }
 
   static #sources(options: SelectOptions): Partial<SelectNode> {
@@ -206,8 +182,12 @@ export class SelectQueryBuilder {
   static #window(options: SelectOptions): Partial<SelectNode> {
     const limit = definedNumber(options.limit);
     const offset = definedNumber(options.offset);
+    if (options.withTies === true && limit === undefined) {
+      throw new Error('withTies requires a limit');
+    }
     return {
       ...(limit === undefined ? {} : { limit }),
+      ...(options.withTies === true ? { withTies: true } : {}),
       ...(offset === undefined ? {} : { offset }),
     };
   }

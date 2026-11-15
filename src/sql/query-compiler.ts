@@ -3,8 +3,9 @@ import type {
   FromItem,
   JoinNode,
   LockNode,
+  QueryNode,
   SelectNode,
-  UnionNode,
+  SetOperationNode,
   WithClause,
 } from './ast.ts';
 import { ExpressionCompiler } from './expression-compiler.ts';
@@ -34,6 +35,16 @@ export class QueryCompiler extends ChunkBuilder {
   }
 
   /**
+   * Compiles a query expression: a SELECT or a set operation.
+   *
+   * @param node - Query node.
+   * @returns Chunks.
+   */
+  query(node: QueryNode): Chunks {
+    return node.kind === 'setop' ? this.#setOperation(node) : this.select(node);
+  }
+
+  /**
    * One FROM source: a table or an aliased subquery.
    *
    * @param from - FROM source.
@@ -41,7 +52,7 @@ export class QueryCompiler extends ChunkBuilder {
    */
   from(from: FromItem): Chunks {
     return 'subquery' in from
-      ? [...this.wrap(this.select(from.subquery)), ` AS ${this.quote(from.alias)}`]
+      ? [...this.wrap(this.query(from.subquery)), ` AS ${this.quote(from.alias)}`]
       : this.tableRef(from);
   }
 
@@ -81,8 +92,13 @@ export class QueryCompiler extends ChunkBuilder {
       ...(node.orderBy === undefined || node.orderBy.length === 0
         ? []
         : [' ORDER BY ', ...this.expr.orderList(node.orderBy)]),
-      ...(node.limit === undefined ? [] : [' LIMIT ', { param: node.limit }]),
+      ...(node.limit === undefined || node.withTies === true
+        ? []
+        : [' LIMIT ', { param: node.limit }]),
       ...(node.offset === undefined ? [] : [' OFFSET ', { param: node.offset }]),
+      ...(node.limit === undefined || node.withTies !== true
+        ? []
+        : [' FETCH FIRST ', { param: node.limit }, ' ROWS WITH TIES']),
       ...(node.lock === undefined ? [] : [this.#lock(node.lock)]),
     ];
   }
@@ -106,14 +122,24 @@ export class QueryCompiler extends ChunkBuilder {
     ].join('');
   }
 
-  #queryExpr(node: SelectNode | UnionNode): Chunks {
-    return node.kind === 'union'
-      ? [
-          ...this.select(node.left),
-          node.all ? ' UNION ALL ' : ' UNION ',
-          ...this.select(node.right),
-        ]
-      : this.select(node);
+  #setOperation(node: SetOperationNode): Chunks {
+    return [
+      ...this.#operand(node.left),
+      ` ${node.op}${node.all ? ' ALL' : ''} `,
+      ...this.#operand(node.right),
+    ];
+  }
+
+  // Parentheses only where the grammar needs them, so plain operands keep their text.
+  #operand(node: QueryNode): Chunks {
+    const needsParens =
+      node.kind === 'setop' ||
+      (node.orderBy?.length ?? 0) > 0 ||
+      node.limit !== undefined ||
+      node.offset !== undefined ||
+      node.lock !== undefined ||
+      node.with !== undefined;
+    return needsParens ? this.wrap(this.query(node)) : this.select(node);
   }
 
   #with(clause: WithClause): Chunks {
@@ -132,7 +158,7 @@ export class QueryCompiler extends ChunkBuilder {
         : cte.materialized
           ? 'MATERIALIZED '
           : 'NOT MATERIALIZED ',
-      ...this.wrap(this.#queryExpr(cte.query)),
+      ...this.wrap(this.query(cte.query)),
     ];
   }
 }

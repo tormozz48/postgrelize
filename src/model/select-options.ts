@@ -1,4 +1,4 @@
-import type { FromItem, LockNode, WithClause } from '../sql/ast.ts';
+import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
 
 /**
  * Selected attributes: a list of names or `[expression, alias]` pairs, or an `{ include, exclude }` spec.
@@ -82,6 +82,13 @@ export type SelectOptions = Readonly<{
   noWait?: boolean;
   /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
   distinctOn?: readonly unknown[];
+  /**
+   * `FETCH FIRST limit ROWS WITH TIES` instead of `LIMIT`: also returns the rows that tie with the
+   * last one on the `order` columns. Needs `limit` and `order`. PostgreSQL extension.
+   */
+  withTies?: boolean;
+  /** @internal Resolved `source` subquery: rows come from it instead of the model table. */
+  fromQuery?: QueryNode;
   /** @internal Resolved `WITH` clause. */
   withClause?: WithClause;
   /** @internal Resolved extra FROM relations. */
