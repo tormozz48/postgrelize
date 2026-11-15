@@ -36,6 +36,16 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // UPDATE "Stocks" AS "Stock" SET ... FROM "Deliveries" AS "d" WHERE "Stock"."sku" = "d"."sku"
   // #endregion update-from
 
+  // #region unnest
+  // One array parameter per column: no 65535-parameter cap on the batch size.
+  const many = Array.from({ length: 70_000 }, (_, index) => ({ sku: `u${index}`, qty: index }));
+  const inserted = await Archive.bulkCreate(many, { unnest: true });
+  // #endregion unnest
+  if (inserted.length !== 70_000) {
+    throw new Error('unnest example: unexpected insert count');
+  }
+  await Archive.destroy({ where: {}, truncate: true });
+
   // #region insert-from
   const archived = await Archive.insertFrom(
     Stock.subquery({ attributes: ['sku', 'qty'], where: { qty: { [Op.gt]: 20 } } }),

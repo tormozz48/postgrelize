@@ -28,6 +28,7 @@ export type { IsolationLevel, LockStrength } from './transaction-constants.ts';
  * const options: TransactionOptions = {
  *   isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
  *   readOnly: true,
+ *   deferrable: true,
  *   settings: { 'app.user_id': '42', statement_timeout: '5s' },
  * };
  * const t = await sequelize.transaction(options);
@@ -41,6 +42,12 @@ export type TransactionOptions = Readonly<{
   type?: (typeof TRANSACTION_TYPES)[keyof typeof TRANSACTION_TYPES];
   /** Start `READ ONLY`. PostgreSQL extension. */
   readOnly?: boolean;
+  /**
+   * Start `DEFERRABLE` (`true`) or `NOT DEFERRABLE` (`false`). PostgreSQL honours it only for
+   * `SERIALIZABLE READ ONLY` transactions: a deferrable one waits for a safe snapshot and then runs
+   * without serialization failures. Ignored for savepoints. PostgreSQL extension.
+   */
+  deferrable?: boolean;
   /** Parent transaction: the new transaction becomes a savepoint inside it. */
   transaction?: Transaction | null;
   /**

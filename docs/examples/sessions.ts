@@ -35,6 +35,17 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // user: { id: '42' }; the settings end with the transaction (SET LOCAL semantics)
   // #endregion settings
 
+  // #region statement-timeout
+  // Cancel just this query after 200 ms; the pooled connection keeps its normal timeout.
+  const timedOut = await sequelize
+    .query('SELECT pg_sleep(5)', { statementTimeout: 200 })
+    .then(() => false)
+    .catch(() => true);
+  // #endregion statement-timeout
+  if (!timedOut) {
+    throw new Error('statementTimeout did not cancel the query');
+  }
+
   // #region advisory-locks
   const holder = await sequelize.transaction();
   await holder.advisoryLock('jobs:42');

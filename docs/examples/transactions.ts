@@ -82,12 +82,21 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // readOnly: DatabaseError (cannot execute INSERT in a read-only transaction)
   // #endregion read-only
 
+  // #region deferrable
+  // Waits for a snapshot that cannot hit serialization failures, then runs without predicate locks.
+  const report = await sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE, readOnly: true, deferrable: true },
+    () => Account.sum('balance'),
+  );
+  // #endregion deferrable
+
   const balances = (await Account.findAll({ order: [['owner', 'ASC']] })).map(
     (row) => `${String(row.get('owner'))}:${String(row.get('balance'))}`,
   );
   if (
     failed !== 'abort' ||
     committed.length !== 1 ||
+    typeof report !== 'number' ||
     balances.join(',') !== 'ann:70,bob:30,cid:5,dan:1' ||
     free.length !== 3 ||
     !(noWait instanceof DatabaseError) ||

@@ -27,6 +27,12 @@ import type { SaveOptions } from './write-options.ts';
  */
 export type BulkCreateOptions<T = Values> = SaveOptions<T> &
   Readonly<{
+    /**
+     * Insert with one array parameter per column (`INSERT … SELECT * FROM unnest($1::type[], …)`) instead of
+     * one parameter per cell, so batches are not capped by PostgreSQL's 65535 parameters. Every row must
+     * provide every column; `ARRAY` columns and conflict options are not supported. PostgreSQL extension.
+     * @defaultValue false */
+    unnest?: boolean;
     /** Add `ON CONFLICT DO NOTHING`, skipping rows that violate a unique constraint.
      * @defaultValue false */
     ignoreDuplicates?: boolean;

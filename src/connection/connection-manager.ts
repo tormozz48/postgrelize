@@ -6,6 +6,7 @@ import type { PgErrorMapper } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { QueryLogger } from './query-logger.ts';
 import { ReplicaRouter } from './replica-router.ts';
+import { StatementTimeout } from './statement-timeout.ts';
 import { StatementCache, type StatementClient } from './statement-cache.ts';
 import type { StatementCacheOptions } from './options.ts';
 
@@ -33,6 +34,7 @@ export class ConnectionManager {
   readonly #errors: PgErrorMapper;
   readonly #copies: CopyRunner;
   readonly #statements: StatementCache | undefined;
+  readonly #timeouts = new StatementTimeout();
 
   /**
    * @param config - Writer pool configuration.
@@ -74,7 +76,7 @@ export class ConnectionManager {
     const logged = this.#logger.enabled(options);
     const started = logged ? performance.now() : 0;
     try {
-      const result = await this.#send(client, query, options.client === undefined);
+      const result = await this.#send(client, query, options);
       if (logged) {
         this.#logger.log(query, options, performance.now() - started);
       }
@@ -157,11 +159,15 @@ export class ConnectionManager {
   #send(
     client: Client,
     query: CompiledQuery,
-    retryable: boolean,
+    options: ExecuteOptions,
   ): ReturnType<StatementClient['query']> {
-    return this.#statements === undefined
-      ? client.query({ text: query.text, values: query.values as unknown[] })
-      : this.#statements.run(client, query, retryable);
+    const run = (): ReturnType<StatementClient['query']> =>
+      this.#statements === undefined
+        ? client.query({ text: query.text, values: query.values as unknown[] })
+        : this.#statements.run(client, query, options.client === undefined);
+    return options.statementTimeout === undefined
+      ? run()
+      : this.#timeouts.run(client, options.client !== undefined, options.statementTimeout, run);
   }
 
   async #acquire(pool: Pool): Promise<PoolClient> {
