@@ -53,6 +53,8 @@ export class CopyRunner {
     const client = options.client ?? (await this.#acquire());
     try {
       yield* this.#copyOut(client, text, options);
+    } catch (error) {
+      throw this.#errors.mapQueryError(error, { sql: text, parameters: [] });
     } finally {
       if (options.client === undefined) {
         client.release();
@@ -95,8 +97,6 @@ export class CopyRunner {
       await copy.done();
       completed = true;
       this.#logger.log({ text, values: [] }, options, performance.now() - started);
-    } catch (error) {
-      throw this.#errors.mapQueryError(error, { sql: text, parameters: [] });
     } finally {
       if (!completed) {
         await CopyRunner.#discard(copy);

@@ -38,28 +38,33 @@ export class ArrayLiteralParser {
   }
 
   #list(text: string, start: number): State {
-    const step = (state: State): State => {
-      const char = text[state.index];
-      if (char === undefined || char === '}') {
-        return { items: state.items, index: state.index + 1 };
-      }
-      if (char === ',' || char === ' ') {
-        return step({ ...state, index: state.index + 1 });
-      }
-      if (char === '{') {
-        const nested = this.#list(text, state.index + 1);
-        return step({ items: [...state.items, nested.items], index: nested.index });
-      }
-      if (char === '"') {
-        const item = this.#quoted(text, state.index);
-        return step({ items: [...state.items, item.value], index: item.index });
-      }
-      const item = this.#unquoted(text, state.index);
-      return step({
-        items: [...state.items, item.value.toUpperCase() === 'NULL' ? null : item.value],
-        index: item.index,
-      });
+    return this.#step(text, { items: [], index: start });
+  }
+
+  #step(text: string, state: State): State {
+    const char = text[state.index];
+    if (char === undefined || char === '}') {
+      return { items: state.items, index: state.index + 1 };
+    }
+    if (char === ',' || char === ' ') {
+      return this.#step(text, { ...state, index: state.index + 1 });
+    }
+    return this.#step(text, this.#element(text, state, char));
+  }
+
+  #element(text: string, state: State, char: string): State {
+    if (char === '{') {
+      const nested = this.#list(text, state.index + 1);
+      return { items: [...state.items, nested.items], index: nested.index };
+    }
+    if (char === '"') {
+      const item = this.#quoted(text, state.index);
+      return { items: [...state.items, item.value], index: item.index };
+    }
+    const item = this.#unquoted(text, state.index);
+    return {
+      items: [...state.items, item.value.toUpperCase() === 'NULL' ? null : item.value],
+      index: item.index,
     };
-    return step({ items: [], index: start });
   }
 }
