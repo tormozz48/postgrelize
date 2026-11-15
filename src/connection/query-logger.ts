@@ -23,6 +23,17 @@ export class QueryLogger {
   }
 
   /**
+   * Whether a statement run with these settings is logged, so callers can skip timing it.
+   *
+   * @param options - Per-query settings overriding the defaults.
+   * @returns True when a logger is configured.
+   */
+  enabled(options: QueryLogSettings): boolean {
+    const logging = options.logging ?? this.#defaults.logging;
+    return logging !== false && logging !== undefined;
+  }
+
+  /**
    * Logs one executed statement.
    *
    * @param query - Executed query.

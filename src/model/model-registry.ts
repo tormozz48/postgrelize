@@ -200,9 +200,10 @@ export class ModelRegistry {
   scoped<T extends ScopeOptions>(model: object, options: T): T {
     const { scopes } = this.state(model);
     const selected = selections.get(model);
-    return scopes.inject(selected === undefined ? scopes.defaultScope : scopes.resolve(selected), {
-      ...options,
-    });
+    return scopes.inject(
+      selected === undefined ? scopes.defaultScope : scopes.resolve(selected),
+      options,
+    );
   }
 
   /**
