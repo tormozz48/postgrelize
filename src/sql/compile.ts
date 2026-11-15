@@ -1,17 +1,16 @@
 import type { ExprNode, StatementNode } from './ast.ts';
 import { DmlCompiler } from './dml-compiler.ts';
+import { IdentifierQuoter } from './identifier-quoter.ts';
 import { MergeCompiler } from './merge-compiler.ts';
 import { QueryCompiler } from './query-compiler.ts';
-import type { Chunk, Chunks, ParamChunk } from './sql-chunks.ts';
+import type { Chunks, ParamChunk } from './sql-chunks.ts';
 
 export type { Chunk, Chunks, ParamChunk } from './sql-chunks.ts';
 
 /** Parameterized SQL text with its bound values. */
 export type CompiledQuery = Readonly<{ text: string; values: readonly unknown[] }>;
 
-const quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
-
-const isParam = (chunk: Chunk): chunk is ParamChunk => typeof chunk !== 'string';
+const quoter = new IdentifierQuoter();
 
 const assertNever = (value: never): never => {
   throw new Error(`Unexpected AST node: ${JSON.stringify(value)}`);
@@ -25,7 +24,7 @@ export class SqlCompiler {
 
   /** Quotes an identifier: `"name"`, doubling embedded quotes. */
   static quoteIdent(name: string): string {
-    return quote(name);
+    return quoter.quote(name);
   }
 
   /** Compiles a statement. */
@@ -40,14 +39,23 @@ export class SqlCompiler {
 
   /** Joins chunks into text, numbering distinct parameter chunks `$1`, `$2`, ... */
   finalize(chunks: Chunks): CompiledQuery {
-    const params = [...new Set(chunks.filter(isParam))];
-    const positions = new Map(params.map((chunk, index) => [chunk, index + 1]));
-    return {
-      text: chunks
-        .map((chunk) => (typeof chunk === 'string' ? chunk : `$${positions.get(chunk)}`))
-        .join(''),
-      values: params.map((chunk) => chunk.param),
-    };
+    const positions = new Map<ParamChunk, number>();
+    const values: unknown[] = [];
+    let text = '';
+    for (const chunk of chunks) {
+      if (typeof chunk === 'string') {
+        text += chunk;
+        continue;
+      }
+      let position = positions.get(chunk);
+      if (position === undefined) {
+        values.push(chunk.param);
+        position = values.length;
+        positions.set(chunk, position);
+      }
+      text += `$${position}`;
+    }
+    return { text, values };
   }
 
   #statement(node: StatementNode): Chunks {

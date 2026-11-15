@@ -1,4 +1,7 @@
 import type { TableRef } from './ast.ts';
+import { IdentifierQuoter } from './identifier-quoter.ts';
+
+const quoter = new IdentifierQuoter();
 
 /** Bound value inside a chunk list; the same chunk object maps to the same `$n`. */
 export type ParamChunk = Readonly<{ param: unknown }>;
@@ -10,7 +13,7 @@ export type Chunks = readonly Chunk[];
 /** Shared chunk helpers of the SQL compilers: quoting, wrapping, joining and table references. */
 export class ChunkBuilder {
   /** Quotes an identifier: `"name"`, doubling embedded quotes. */
-  protected readonly quote = (name: string): string => `"${name.replaceAll('"', '""')}"`;
+  protected readonly quote = (name: string): string => quoter.quote(name);
 
   /**
    * Joins chunk lists with a separator.
@@ -20,7 +23,16 @@ export class ChunkBuilder {
    * @returns Joined chunks.
    */
   protected joinAll(parts: readonly Chunks[], separator: string): Chunks {
-    return parts.flatMap((part, index) => (index === 0 ? part : [separator, ...part]));
+    const joined: Chunk[] = [];
+    for (const [index, part] of parts.entries()) {
+      if (index > 0) {
+        joined.push(separator);
+      }
+      for (const chunk of part) {
+        joined.push(chunk);
+      }
+    }
+    return joined;
   }
 
   /**

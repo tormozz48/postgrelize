@@ -78,6 +78,9 @@ const PROXIES: Partial<Readonly<Record<HookType, readonly HookType[]>>> = {
 
 const HOOK_SET: ReadonlySet<string> = new Set(HOOK_TYPES);
 
+/** Result when no hook is registered: nothing to wait for, no promise chain to build. */
+const NO_HOOKS_RAN: Promise<void> = Promise.resolve();
+
 /**
  * Immutable registry of hooks by type: `add` and `remove` return a new registry, so a model or `Sequelize`
  * instance replaces its registry on change.
@@ -122,20 +125,31 @@ export class HookRegistry {
    * @param args - Hook arguments.
    * @returns Resolves when all hooks finished.
    */
-  static async runAll(
+  static runAll(
     registries: readonly HookRegistry[],
     type: HookType,
     context: unknown,
     ...args: readonly unknown[]
   ): Promise<void> {
-    const hooks = registries.flatMap((registry) => registry.#hooks.get(type) ?? []);
-    await hooks.reduce<Promise<void>>(
-      (previous, hook) =>
-        previous.then(async () => {
-          await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, [...args]);
-        }),
-      Promise.resolve(),
-    );
+    const hooks: Hook[] = [];
+    for (const registry of registries) {
+      const own = registry.#hooks.get(type);
+      if (own !== undefined) {
+        hooks.push(...own);
+      }
+    }
+    return hooks.length === 0 ? NO_HOOKS_RAN : HookRegistry.#runInOrder(hooks, context, args);
+  }
+
+  static async #runInOrder(
+    hooks: readonly Hook[],
+    context: unknown,
+    args: readonly unknown[],
+  ): Promise<void> {
+    for (const hook of hooks) {
+      // oxlint-disable-next-line no-await-in-loop -- hooks of one type run one after another.
+      await (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, args as unknown[]);
+    }
   }
 
   /**

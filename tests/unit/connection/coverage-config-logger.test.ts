@@ -164,3 +164,18 @@ describe('QueryLogger', () => {
     expect(override).toHaveBeenCalledTimes(1);
   });
 });
+
+const noop = (): void => undefined;
+
+describe('QueryLogger.enabled', () => {
+  it('is on only when a logger is configured', () => {
+    expect(new QueryLogger({ logging: noop }).enabled({})).toBe(true);
+    expect(new QueryLogger({}).enabled({})).toBe(false);
+    expect(new QueryLogger({ logging: false }).enabled({})).toBe(false);
+  });
+
+  it('lets per-query settings override the defaults', () => {
+    expect(new QueryLogger({ logging: noop }).enabled({ logging: false })).toBe(false);
+    expect(new QueryLogger({ logging: false }).enabled({ logging: noop })).toBe(true);
+  });
+});

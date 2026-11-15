@@ -1,5 +1,8 @@
 import { SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
+import { ValuesWriter } from './values-writer.ts';
+
+const writer = new ValuesWriter();
 
 /**
  * Find options stored in a scope (`where`, `attributes`, `order`, `limit`, ...).
@@ -125,12 +128,13 @@ export class ScopeRegistry {
    */
   merge(left: ScopeOptions, right: ScopeOptions): ScopeOptions {
     const strategy = this.whereMergeStrategy;
-    return Object.fromEntries(
-      [...new Set([...Object.keys(left), ...Object.keys(right)])].map((key) => [
-        key,
-        mergeValue(key, left[key], right[key], strategy),
-      ]),
-    );
+    const merged: Record<string, unknown> = {};
+    for (const key of [...Object.keys(left), ...Object.keys(right)]) {
+      if (!Object.hasOwn(merged, key)) {
+        writer.set(merged, key, mergeValue(key, left[key], right[key], strategy));
+      }
+    }
+    return merged;
   }
 
   /**

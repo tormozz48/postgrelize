@@ -70,3 +70,25 @@ describe('scope selection errors', () => {
     expect(registry.resolve([{ method: ['byName', 'ann'] }])).toEqual({ where: { name: 'ann' } });
   });
 });
+
+describe('option merging order and safety', () => {
+  it('lists keys of the base first, then new keys of the applied options, without mutating either', () => {
+    const left = { limit: 1, order: ['a'] };
+    const right = { offset: 2, limit: 5 };
+    const merged = registry.merge(left, right);
+    expect(Object.keys(merged)).toEqual(['limit', 'order', 'offset']);
+    expect(merged).toEqual({ limit: 5, order: ['a'], offset: 2 });
+    expect(left).toEqual({ limit: 1, order: ['a'] });
+    expect(right).toEqual({ offset: 2, limit: 5 });
+  });
+
+  it('copies options onto an empty scope and keeps a __proto__ key an own property', () => {
+    const options = JSON.parse('{"__proto__": {"polluted": true}, "limit": 3}') as Record<
+      string,
+      unknown
+    >;
+    const merged = registry.merge({}, options);
+    expect(Object.keys(merged)).toEqual(['__proto__', 'limit']);
+    expect((merged as { polluted?: boolean }).polluted).toBeUndefined();
+  });
+});

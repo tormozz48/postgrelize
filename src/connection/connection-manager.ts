@@ -62,10 +62,13 @@ export class ConnectionManager {
    */
   async execute(query: CompiledQuery, options: ExecuteOptions = {}): Promise<QueryResult> {
     const client = options.client ?? (await this.#acquire(this.#router.pool(options.route)));
-    const started = performance.now();
+    const logged = this.#logger.enabled(options);
+    const started = logged ? performance.now() : 0;
     try {
-      const result = await client.query({ text: query.text, values: [...query.values] });
-      this.#logger.log(query, options, performance.now() - started);
+      const result = await client.query({ text: query.text, values: query.values as unknown[] });
+      if (logged) {
+        this.#logger.log(query, options, performance.now() - started);
+      }
       return { rows: result.rows, rowCount: result.rowCount ?? 0, command: result.command };
     } catch (error) {
       throw this.#errors.mapQueryError(error, { sql: query.text, parameters: query.values });
