@@ -61,6 +61,122 @@
       "rules": {
         "typescript/explicit-module-boundary-types": "off"
       }
+    },
+    {
+      "files": ["src/**"],
+      "rules": {
+        "max-lines": [
+          "error",
+          {
+            "max": 150,
+            "skipBlankLines": true,
+            "skipComments": true
+          }
+        ],
+        "max-lines-per-function": [
+          "error",
+          {
+            "max": 20,
+            "skipBlankLines": true,
+            "skipComments": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/associations/association-keys.ts",
+        "src/associations/association.ts",
+        "src/associations/belongs-to-many.ts",
+        "src/associations/include-loader.ts",
+        "src/associations/include-query-builder.ts",
+        "src/connection/connection-manager.ts",
+        "src/connection/copy.ts",
+        "src/ddl/ddl-generator.ts",
+        "src/errors/errors.ts",
+        "src/expressions/methods.ts",
+        "src/index.ts",
+        "src/model/instance-lifecycle.ts",
+        "src/model/merge-query-builder.ts",
+        "src/model/model-definition.ts",
+        "src/model/model-registry.ts",
+        "src/model/model.ts",
+        "src/model/on-conflict-builder.ts",
+        "src/model/operations/destroy-operation.ts",
+        "src/model/operations/find-operation.ts",
+        "src/model/options.ts",
+        "src/model/select-query-builder.ts",
+        "src/model/types.ts",
+        "src/query-interface/query-interface.ts",
+        "src/query-interface/schema-synchronizer.ts",
+        "src/sequelize.ts",
+        "src/sql/ast.ts",
+        "src/sql/compile.ts",
+        "src/transaction/transaction.ts",
+        "src/validation/instance-validator.ts",
+        "src/where/where.ts"
+      ],
+      "rules": {
+        "max-lines": "off"
+      }
+    },
+    {
+      "files": [
+        "src/associations/association-keys.ts",
+        "src/associations/association.ts",
+        "src/associations/belongs-to-many.ts",
+        "src/associations/belongs-to.ts",
+        "src/associations/has-one.ts",
+        "src/associations/include-loader.ts",
+        "src/associations/include-query-builder.ts",
+        "src/associations/include-resolver.ts",
+        "src/associations/nested-creator.ts",
+        "src/connection/connection-config.ts",
+        "src/connection/connection-manager.ts",
+        "src/connection/copy.ts",
+        "src/data-types/array-literal-parser.ts",
+        "src/ddl/ddl-generator.ts",
+        "src/ddl/sql-literal.ts",
+        "src/errors/errors.ts",
+        "src/errors/map-pg-error.ts",
+        "src/model/cte-builder.ts",
+        "src/model/delete-query-builder.ts",
+        "src/model/insert-query-builder.ts",
+        "src/model/instance-lifecycle.ts",
+        "src/model/instance-values.ts",
+        "src/model/merge-query-builder.ts",
+        "src/model/model-definition.ts",
+        "src/model/model-registry.ts",
+        "src/model/model-values.ts",
+        "src/model/on-conflict-builder.ts",
+        "src/model/operations/bulk-create-operation.ts",
+        "src/model/operations/copy-operation.ts",
+        "src/model/operations/count-operation.ts",
+        "src/model/operations/create-operation.ts",
+        "src/model/operations/destroy-operation.ts",
+        "src/model/operations/find-operation.ts",
+        "src/model/operations/increment-operation.ts",
+        "src/model/operations/insert-operation.ts",
+        "src/model/operations/merge-operation.ts",
+        "src/model/operations/update-operation.ts",
+        "src/model/operations/upsert-operation.ts",
+        "src/model/row-mapper.ts",
+        "src/model/scope-registry.ts",
+        "src/model/select-query-builder.ts",
+        "src/model/update-query-builder.ts",
+        "src/model/written-rows.ts",
+        "src/query-interface/query-interface.ts",
+        "src/query-interface/schema-synchronizer.ts",
+        "src/query/raw-query.ts",
+        "src/sequelize.ts",
+        "src/sql/compile.ts",
+        "src/transaction/transaction.ts",
+        "src/validation/instance-validator.ts",
+        "src/where/where.ts"
+      ],
+      "rules": {
+        "max-lines-per-function": "off"
+      }
     }
   ],
   "env": {

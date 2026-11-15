@@ -1,6 +1,7 @@
 import { builtinModules } from 'node:module';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import { decoratorsPlugin } from './build/decorators-plugin.ts';
 import pkg from './package.json' with { type: 'json' };
 
 const external = [
@@ -24,5 +25,5 @@ export default defineConfig({
       external,
     },
   },
-  plugins: [dts({ tsconfigPath: './tsconfig.build.json' })],
+  plugins: [decoratorsPlugin(), dts({ tsconfigPath: './tsconfig.build.json' })],
 });

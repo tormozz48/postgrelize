@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 approved (spec `.10x/specs/2026-11-15-backlog-3-roadmap-design.md`); S5 SQL-injection assurance done (PR pending); next S6 refactor
+**Current phase:** Backlog 3 — S5 done (PR 34); S6 refactor in progress (spec `.10x/specs/2026-11-15-s6-refactor-design.md`, ADR-021)
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`

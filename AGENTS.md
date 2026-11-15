@@ -40,8 +40,8 @@ npm run test:coverage  # coverage + badge
 Performance gate (run for changes on query building, execution or row mapping):
 
 ```bash
-node --experimental-strip-types bench/orm.bench.ts --stub --json /tmp/b1.json   # repeat 3×
-node --experimental-strip-types bench/compare.ts /tmp/b1.json /tmp/b2.json /tmp/b3.json
+PGZ_BENCH_STUB=1 PGZ_BENCH_JSON=/tmp/b1.json npm run bench   # repeat 3× (b1, b2, b3)
+node bench/compare.ts /tmp/b1.json /tmp/b2.json /tmp/b3.json
 ```
 
 Gated cases must stay within +10% of `bench/baseline.json`. Update the baseline only on purpose, in its own commit, with the reason in the message.
@@ -69,12 +69,14 @@ Gated cases must stay within +10% of `bench/baseline.json`. Update the baseline 
 
 ## Architecture rules
 
-Current architecture: [ADR-018](.10x/adrs/018-oop-architecture.md). It supersedes the functional style of [ADR-005](.10x/adrs/005-functional-core-class-shell.md) and the Effect core of [ADR-017](.10x/adrs/017-effect-core.md). Do not reintroduce either.
+Current architecture: [ADR-018](.10x/adrs/018-oop-architecture.md), refined by [ADR-021](.10x/adrs/021-decorators-mixins-size-limits.md) (decorators, mixins, size limits). It supersedes the functional style of [ADR-005](.10x/adrs/005-functional-core-class-shell.md) and the Effect core of [ADR-017](.10x/adrs/017-effect-core.md). Do not reintroduce either.
 
 - Behaviour lives in **classes with one responsibility** and constructor-injected collaborators. `Model` and `Sequelize` are facades that delegate.
 - **Plain data stays plain**: SQL AST node shapes, option bags, `Op`, constant tables (`HOOK_TYPES`, `ISOLATION_LEVELS`, …) are types and frozen objects, not classes.
 - **No exported free functions in `src/`**, except the v6 helpers Sequelize itself exposes as functions (`literal`, `fn`, `col`, `cast`, `json`, `where`, …). These are thin factories that return class instances.
-- No static-only classes (oxlint `no-extraneous-class`). No TypeScript parameter properties (`node --experimental-strip-types` rejects them). No default exports. No import cycles.
+- No static-only classes (oxlint `no-extraneous-class`). No TypeScript parameter properties. No default exports. No import cycles.
+- **Decorators** are TC39 standard decorators (no `experimentalDecorators`), written on their own line. `build/decorators-plugin.ts` lowers them for the build and every Vitest project; Node cannot run them directly, so run TypeScript through Vitest (`npm run bench`, tests), not `node --experimental-strip-types`. Use internal decorators only for cross-cutting concerns that would otherwise repeat (hooks around operations, transaction scope, logging, memoization), never on hot paths that fail the bench gate. Public decorators accept both TC39 and legacy call signatures.
+- **Mixins** (`<TBase extends Constructor>(Base: TBase) => class extends Base { … }`) compose classes with several independent capabilities (e.g. `Model`). Each mixin is a named factory with TSDoc on its members.
 - Expression classes are recognised across package copies through the `Symbol.for('postgrelize.expression')` kind tag. A new expression class sets `static override readonly kind`.
 - Async code uses async/await. Resources (pooled clients, transactions) are released in `try/finally` inside the class that owns them (`ConnectionManager`, `TransactionRunner`).
 - AST nodes are discriminated unions; switches over them are exhaustive with a `never` check.
@@ -88,7 +90,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
 - TypeScript `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `verbatimModuleSyntax`. No `any` (use `unknown`); `any` only where v6's own types require it.
 - Exported functions and methods have explicit parameter and return types.
 - Files are `kebab-case.ts`; classes and types `PascalCase`; functions and members `camelCase`. Imports are relative inside `src`, with no barrels except `src/index.ts`.
-- Keep units small: a class does one thing; split files that grow past ~300 lines by responsibility.
+- **Size limits** (oxlint, `src/**`, code lines without comments and blank lines): functions ≤ 20 lines, files ≤ 150 lines. Files still above the limits are listed in the `.oxlintrc.json` overrides; the list only shrinks (`tests/unit/build/size-ratchet.test.ts`). When you split a listed file, remove it from the list and lower the numbers in that test. Never add a file to the list.
 - Comments explain _why_, never _what_. TSDoc is for the public API (see [API documentation](#api-documentation)).
 - Match the surrounding style. Do not reformat or refactor unrelated code in a feature PR.
 
@@ -199,6 +201,7 @@ Everything lives in `.10x/`:
 | [018](.10x/adrs/018-oop-architecture.md)                | OOP architecture, no Effect                                  | Accepted                                              |
 | [019](.10x/adrs/019-documentation-sync.md)              | `AGENTS.md` and documentation sync rules                     | Accepted                                              |
 | [020](.10x/adrs/020-injection-assurance.md)             | SQL-injection assurance policy                               | Accepted                                              |
+| [021](.10x/adrs/021-decorators-mixins-size-limits.md)   | TC39 decorators, mixins, size limits                         | Accepted                                              |
 
 ## Git, PRs and releases
 

@@ -2,7 +2,7 @@
 // the owner: the gated cases (row-heavy operations) at most 10% slower each. Single-statement cases
 // are reported with their absolute overhead: Effect adds a fixed ~1 µs per run, which is a large
 // share of a stubbed 3–10 µs call but negligible next to a real round trip.
-//   node --experimental-strip-types bench/compare.ts <result.json> [<result.json> ...]
+//   node bench/compare.ts <result.json> [<result.json> ...]
 import { readFileSync } from 'node:fs';
 
 type Results = Readonly<Record<string, number>>;
