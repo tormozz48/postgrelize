@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
 import type {
   Client,
@@ -6,47 +5,18 @@ import type {
   ExecuteOptions,
 } from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
-import { SqlCompiler } from '../sql/compile.ts';
+import { AdvisoryLocks, type AdvisoryLockKey } from './advisory-locks.ts';
+import { TransactionStatements } from './transaction-statements.ts';
+import {
+  ISOLATION_LEVELS,
+  LOCK,
+  TRANSACTION_TYPES,
+  type IsolationLevel,
+} from './transaction-constants.ts';
 
-/** Transaction isolation levels (Sequelize v6 `Transaction.ISOLATION_LEVELS`). */
-export const ISOLATION_LEVELS = {
-  /** `READ UNCOMMITTED` (behaves as `READ COMMITTED` in PostgreSQL). */
-  READ_UNCOMMITTED: 'READ UNCOMMITTED',
-  /** `READ COMMITTED` (PostgreSQL default). */
-  READ_COMMITTED: 'READ COMMITTED',
-  /** `REPEATABLE READ`. */
-  REPEATABLE_READ: 'REPEATABLE READ',
-  /** `SERIALIZABLE`. */
-  SERIALIZABLE: 'SERIALIZABLE',
-} as const;
-
-/** One of {@link ISOLATION_LEVELS}. */
-export type IsolationLevel = (typeof ISOLATION_LEVELS)[keyof typeof ISOLATION_LEVELS];
-
-/** Row lock strengths for `findAll({ lock })` (Sequelize v6 `Transaction.LOCK`). */
-export const LOCK = {
-  /** `FOR UPDATE`. */
-  UPDATE: 'UPDATE',
-  /** `FOR SHARE`. */
-  SHARE: 'SHARE',
-  /** `FOR KEY SHARE`. */
-  KEY_SHARE: 'KEY SHARE',
-  /** `FOR NO KEY UPDATE`. */
-  NO_KEY_UPDATE: 'NO KEY UPDATE',
-} as const;
-
-/** One of {@link LOCK}. */
-export type LockStrength = (typeof LOCK)[keyof typeof LOCK];
-
-/** Transaction types; accepted for Sequelize v6 compatibility and ignored by PostgreSQL. */
-export const TRANSACTION_TYPES = {
-  /** SQLite-only, ignored. */
-  DEFERRED: 'DEFERRED',
-  /** SQLite-only, ignored. */
-  IMMEDIATE: 'IMMEDIATE',
-  /** SQLite-only, ignored. */
-  EXCLUSIVE: 'EXCLUSIVE',
-} as const;
+export { ISOLATION_LEVELS, LOCK, TRANSACTION_TYPES } from './transaction-constants.ts';
+export type { AdvisoryLockKey } from './advisory-locks.ts';
+export type { IsolationLevel, LockStrength } from './transaction-constants.ts';
 
 /** Options of `sequelize.transaction()`. */
 export type TransactionOptions = Readonly<{
@@ -66,9 +36,6 @@ export type TransactionOptions = Readonly<{
   /** SQL logger for transaction statements. */
   logging?: LoggingFunction | false;
 }>;
-
-/** Advisory lock key: a 64-bit integer, or a string hashed by PostgreSQL. */
-export type AdvisoryLockKey = number | bigint | string;
 
 /**
  * Database transaction (Sequelize v6 `Transaction`). Obtain one from `sequelize.transaction()`;
@@ -92,6 +59,8 @@ export class Transaction {
   finished: 'commit' | 'rollback' | undefined;
 
   readonly #connections: ConnectionManager;
+  readonly #advisoryLocks: AdvisoryLocks;
+  readonly #statements: TransactionStatements;
   #client: Client | undefined;
   #afterCommit: readonly ((transaction: Transaction) => unknown)[] = [];
 
@@ -101,8 +70,10 @@ export class Transaction {
    */
   constructor(connections: ConnectionManager, options: TransactionOptions = {}) {
     this.#connections = connections;
+    this.#advisoryLocks = new AdvisoryLocks(connections, () => this.executeOptions());
     this.options = options;
     this.parent = options.transaction ?? undefined;
+    this.#statements = new TransactionStatements(this.id, this.parent !== undefined);
   }
 
   /** Row lock strengths (instance alias of {@link Transaction.LOCK}). */
@@ -134,27 +105,10 @@ export class Transaction {
       this.#client = await this.#connections.acquire();
     }
     try {
-      await this.#run(
-        this.parent === undefined
-          ? Transaction.#beginSql(this.options)
-          : `SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
-      );
-      await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
-        (previous, [name, value]) =>
-          previous.then(() =>
-            this.#connections.execute(
-              { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
-              this.executeOptions(),
-            ),
-          ),
-        Promise.resolve(),
-      );
+      await this.#run(this.#statements.begin(this.options));
+      await this.#applySettings();
     } catch (error) {
-      if (this.parent === undefined) {
-        // Never return a connection inside an open (possibly aborted) transaction to the pool.
-        await this.#run('ROLLBACK').catch(() => undefined);
-        this.#release();
-      }
+      await this.#abortBegin();
       throw error;
     }
     return this;
@@ -169,11 +123,7 @@ export class Transaction {
   async commit(): Promise<void> {
     this.#assertActive('commit');
     try {
-      await this.#run(
-        this.parent === undefined
-          ? 'COMMIT'
-          : `RELEASE SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
-      );
+      await this.#run(this.#statements.commit());
       this.finished = 'commit';
     } finally {
       this.#release();
@@ -193,11 +143,7 @@ export class Transaction {
   async rollback(): Promise<void> {
     this.#assertActive('rollback');
     try {
-      await this.#run(
-        this.parent === undefined
-          ? 'ROLLBACK'
-          : `ROLLBACK TO SAVEPOINT ${SqlCompiler.quoteIdent(this.id)}`,
-      );
+      await this.#run(this.#statements.rollback());
       this.finished = 'rollback';
     } finally {
       this.#release();
@@ -216,13 +162,7 @@ export class Transaction {
     key: AdvisoryLockKey,
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<void> {
-    await this.#connections.execute(
-      Transaction.#advisoryLockQuery(
-        options.shared === true ? 'pg_advisory_xact_lock_shared' : 'pg_advisory_xact_lock',
-        key,
-      ),
-      this.executeOptions(),
-    );
+    await this.#advisoryLocks.lock(key, options.shared === true);
   }
 
   /**
@@ -236,15 +176,7 @@ export class Transaction {
     key: AdvisoryLockKey,
     options: Readonly<{ shared?: boolean }> = {},
   ): Promise<boolean> {
-    const result = await this.#connections.execute(
-      Transaction.#advisoryLockQuery(
-        options.shared === true ? 'pg_try_advisory_xact_lock_shared' : 'pg_try_advisory_xact_lock',
-        key,
-        'locked',
-      ),
-      this.executeOptions(),
-    );
-    return result.rows[0]?.['locked'] === true;
+    return this.#advisoryLocks.tryLock(key, options.shared === true);
   }
 
   /**
@@ -254,6 +186,27 @@ export class Transaction {
    */
   afterCommit(hook: (transaction: Transaction) => unknown): void {
     this.#afterCommit = [...this.#afterCommit, hook];
+  }
+
+  async #applySettings(): Promise<void> {
+    await Object.entries(this.options.settings ?? {}).reduce<Promise<unknown>>(
+      (previous, [name, value]) =>
+        previous.then(() =>
+          this.#connections.execute(
+            { text: 'SELECT set_config($1, $2, true)', values: [name, String(value)] },
+            this.executeOptions(),
+          ),
+        ),
+      Promise.resolve(),
+    );
+  }
+
+  async #abortBegin(): Promise<void> {
+    if (this.parent === undefined) {
+      // Never return a connection inside an open (possibly aborted) transaction to the pool.
+      await this.#run(this.#statements.rollback()).catch(() => undefined);
+      this.#release();
+    }
   }
 
   #assertActive(action: string): void {
@@ -272,91 +225,6 @@ export class Transaction {
     if (this.parent === undefined && this.#client !== undefined) {
       this.#client.release();
       this.#client = undefined;
-    }
-  }
-
-  static #beginSql(options: TransactionOptions): string {
-    if (
-      options.isolationLevel !== undefined &&
-      !(Object.values(ISOLATION_LEVELS) as string[]).includes(options.isolationLevel)
-    ) {
-      throw new Error(`Invalid isolation level: ${String(options.isolationLevel)}`);
-    }
-    return [
-      'START TRANSACTION',
-      options.isolationLevel === undefined ? '' : ` ISOLATION LEVEL ${options.isolationLevel}`,
-      options.readOnly === true ? ' READ ONLY' : '',
-    ].join('');
-  }
-
-  static #advisoryLockQuery(fn: string, key: AdvisoryLockKey, alias = 'lock') {
-    return {
-      text:
-        typeof key === 'string'
-          ? `SELECT ${fn}(hashtextextended($1, 0)) AS "${alias}"`
-          : `SELECT ${fn}($1::bigint) AS "${alias}"`,
-      values: [typeof key === 'string' ? key : String(key)],
-    };
-  }
-}
-
-/** Continuation-local storage of the current transaction (`AsyncLocalStorage`, used by `Sequelize.useCLS`). */
-export class TransactionContext {
-  readonly #storage = new AsyncLocalStorage<Transaction>();
-
-  /**
-   * Transaction of the current async context.
-   *
-   * @returns The transaction, or `undefined` outside `run`.
-   */
-  current(): Transaction | undefined {
-    return this.#storage.getStore();
-  }
-
-  /**
-   * Runs `run` with `transaction` as the current transaction.
-   *
-   * @param transaction - Transaction to make current.
-   * @param run - Callback.
-   * @returns Result of `run`.
-   */
-  run<T>(transaction: Transaction, run: () => Promise<T>): Promise<T> {
-    return this.#storage.run(transaction, run);
-  }
-}
-
-/** Runs managed transactions: begins, runs the callback, commits on success and rolls back on error. */
-export class TransactionRunner {
-  readonly #context: TransactionContext;
-
-  /**
-   * @param context - Context the transaction is made current in while the callback runs.
-   */
-  constructor(context: TransactionContext) {
-    this.#context = context;
-  }
-
-  /**
-   * Runs `run` inside `transaction`.
-   *
-   * @param transaction - Transaction, not started yet.
-   * @param run - Callback receiving the transaction.
-   * @returns Result of `run`.
-   */
-  async run<T>(
-    transaction: Transaction,
-    run: (transaction: Transaction) => Promise<T>,
-  ): Promise<T> {
-    await transaction.begin();
-    try {
-      const result = await this.#context.run(transaction, () => run(transaction));
-      await transaction.commit();
-      return result;
-    } catch (error) {
-      if (transaction.finished === undefined) {
-        await transaction.rollback().catch(() => undefined);
-      }
-      throw error;
     }
   }
 }

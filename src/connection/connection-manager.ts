@@ -1,38 +1,13 @@
-import {
-  Client as PgClient,
-  Pool,
-  types,
-  type PoolClient,
-  type PoolConfig,
-  type QueryResultRow,
-} from 'pg';
-import { CopyFromStdin, CopyToStdout } from './copy.ts';
+import { Client as PgClient, Pool, types, type PoolClient, type PoolConfig } from 'pg';
+import { CopyRunner } from './copy-runner.ts';
+import type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
 import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
 import type { PgErrorMapper } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
-import type { LoggingFunction } from './options.ts';
 import type { QueryLogger } from './query-logger.ts';
 import { ReplicaRouter } from './replica-router.ts';
 
-/** Result of one executed statement. */
-export type QueryResult = Readonly<{
-  rows: readonly QueryResultRow[];
-  rowCount: number;
-  command: string;
-}>;
-
-/** Database client a query runs on: a pool connection held by a transaction. */
-export type Client = Pick<PoolClient, 'query' | 'release'>;
-
-/** Per-call execution settings. */
-export type ExecuteOptions = Readonly<{
-  client?: Client;
-  /** Run on a read replica when one is configured (ignored when `client` is set). */
-  route?: 'read' | 'write';
-  logging?: LoggingFunction | false;
-  benchmark?: boolean;
-  transactionId?: string;
-}>;
+export type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
 
 const DATE_OID = 1082;
 const INTERVAL_OID = 1186;
@@ -54,6 +29,7 @@ export class ConnectionManager {
   readonly #router: ReplicaRouter<Pool>;
   readonly #logger: QueryLogger;
   readonly #errors: PgErrorMapper;
+  readonly #copies: CopyRunner;
 
   /**
    * @param config - Writer pool configuration.
@@ -70,6 +46,7 @@ export class ConnectionManager {
     this.#config = config;
     this.#logger = logger;
     this.#errors = errors;
+    this.#copies = new CopyRunner(() => this.acquire(), logger, errors);
     this.#router = new ReplicaRouter(
       ConnectionManager.#pool(config),
       readConfigs.map((readConfig) => ConnectionManager.#pool(readConfig)),
@@ -121,25 +98,7 @@ export class ConnectionManager {
     lines: AsyncIterable<string>,
     options: ExecuteOptions = {},
   ): Promise<number> {
-    const client = options.client ?? (await this.#acquire(this.#router.writer));
-    const started = performance.now();
-    const copy = new CopyFromStdin(text, lines);
-    const done = copy.done();
-    try {
-      void (
-        client as unknown as Readonly<{ query: (submittable: CopyFromStdin) => unknown }>
-      ).query(copy);
-      const rowCount = await done;
-      this.#logger.log({ text, values: [] }, options, performance.now() - started);
-      return rowCount;
-    } catch (error) {
-      throw this.#errors.mapQueryError(error, { sql: text, parameters: [] });
-    } finally {
-      await copy.settled();
-      if (options.client === undefined) {
-        client.release();
-      }
-    }
+    return this.#copies.from(text, lines, options);
   }
 
   /**
@@ -153,29 +112,7 @@ export class ConnectionManager {
     text: string,
     options: ExecuteOptions = {},
   ): AsyncGenerator<Buffer, void, undefined> {
-    const client = options.client ?? (await this.#acquire(this.#router.writer));
-    const started = performance.now();
-    const copy = new CopyToStdout(text);
-    void (client as unknown as Readonly<{ query: (submittable: CopyToStdout) => unknown }>).query(
-      copy,
-    );
-    let completed = false;
-    try {
-      yield* copy.chunks();
-      await copy.done();
-      completed = true;
-      this.#logger.log({ text, values: [] }, options, performance.now() - started);
-    } catch (error) {
-      throw this.#errors.mapQueryError(error, { sql: text, parameters: [] });
-    } finally {
-      if (!completed) {
-        copy.discard();
-        await copy.done().catch(() => undefined);
-      }
-      if (options.client === undefined) {
-        client.release();
-      }
-    }
+    yield* this.#copies.to(text, options);
   }
 
   /**

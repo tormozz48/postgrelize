@@ -50,15 +50,23 @@ export class RawQuery {
       bindParams: this.#bindChunks(options.bind),
     };
     const matches = [...sql.matchAll(TOKEN)];
-    const chunks = matches.flatMap((match, index): Chunks => {
+    return compiler.finalize([
+      ...this.#chunks(sql, matches, ctx),
+      RawQuery.#tail(sql, matches.at(-1)),
+    ]);
+  }
+
+  #chunks(sql: string, matches: readonly RegExpExecArray[], ctx: TokenContext): Chunks {
+    return matches.flatMap((match, index): Chunks => {
       const previous = matches[index - 1];
       const previousEnd = previous === undefined ? 0 : previous.index + previous[0].length;
       const questionIndex = matches.slice(0, index).filter((item) => item[0] === '?').length;
       return [sql.slice(previousEnd, match.index), ...this.#tokenChunks(match, questionIndex, ctx)];
     });
-    const last = matches.at(-1);
-    const tail = last === undefined ? sql : sql.slice(last.index + last[0].length);
-    return compiler.finalize([...chunks, tail]);
+  }
+
+  static #tail(sql: string, last: RegExpExecArray | undefined): string {
+    return last === undefined ? sql : sql.slice(last.index + last[0].length);
   }
 
   #valueChunks(value: unknown): Chunks {

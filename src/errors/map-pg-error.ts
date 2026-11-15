@@ -98,29 +98,10 @@ export class PgErrorMapper {
 
   #uniqueViolation(error: DriverError, context: QueryErrorContext): UniqueConstraintError {
     const fields = this.parseKeyDetail(error.detail);
-    const base = {
-      parent: error,
-      ...context,
-      ...(error.table === undefined ? {} : { table: error.table }),
-      ...(error.constraint === undefined ? {} : { constraint: error.constraint }),
-    };
+    const base = { parent: error, ...context, ...PgErrorMapper.#tableAndConstraint(error) };
     return fields === undefined
       ? new UniqueConstraintError({ ...base, message: error.message })
-      : new UniqueConstraintError({
-          ...base,
-          fields,
-          errors: Object.entries(fields).map(
-            ([field, value]) =>
-              new ValidationErrorItem(
-                `${field} must be unique`,
-                'unique violation',
-                field,
-                value,
-                null,
-                'not_unique',
-              ),
-          ),
-        });
+      : new UniqueConstraintError({ ...base, fields, errors: PgErrorMapper.#uniqueItems(fields) });
   }
 
   #constraintOptions(error: DriverError, context: QueryErrorContext) {
@@ -128,9 +109,29 @@ export class PgErrorMapper {
       parent: error,
       ...context,
       fields: Object.keys(this.parseKeyDetail(error.detail) ?? {}),
+      ...PgErrorMapper.#tableAndConstraint(error),
+    };
+  }
+
+  static #tableAndConstraint(error: DriverError): { table?: string; constraint?: string } {
+    return {
       ...(error.table === undefined ? {} : { table: error.table }),
       ...(error.constraint === undefined ? {} : { constraint: error.constraint }),
     };
+  }
+
+  static #uniqueItems(fields: Readonly<Record<string, string>>): ValidationErrorItem[] {
+    return Object.entries(fields).map(
+      ([field, value]) =>
+        new ValidationErrorItem(
+          `${field} must be unique`,
+          'unique violation',
+          field,
+          value,
+          null,
+          'not_unique',
+        ),
+    );
   }
 
   static #splitList(value: string): readonly string[] {
