@@ -46,21 +46,13 @@ export type MergeOperationServices = Readonly<{
 
 /** `Model.merge`: `MERGE INTO ... USING ...` with server version checks (PostgreSQL 15 / 17 / 18). */
 export class MergeOperation {
-  readonly #registry: ModelRegistry;
-  readonly #merges: MergeQueryBuilder;
-  readonly #returningOld: ReturningOld;
-  readonly #written: WrittenRows;
-  readonly #compiler: SqlCompiler;
+  readonly #services: MergeOperationServices;
 
   /**
    * @param services - Collaborators.
    */
   constructor(services: MergeOperationServices) {
-    this.#registry = services.registry;
-    this.#merges = services.merges;
-    this.#returningOld = services.returningOld;
-    this.#written = services.written;
-    this.#compiler = services.compiler;
+    this.#services = services;
   }
 
   /**
@@ -75,8 +67,23 @@ export class MergeOperation {
     model: ModelStatic<M>,
     options: MergeCallOptions,
   ): Promise<MergeResult<M>> {
-    const { definition, runtime } = this.#registry.state(model);
-    const version = await runtime.serverVersion();
+    const { definition, runtime } = this.#services.registry.state(model);
+    const { compiler, merges, returningOld, written } = this.#services;
+    MergeOperation.#check(await runtime.serverVersion(), options);
+    const old = await returningOld.enabled(runtime, options);
+    const node = merges.build(definition, options, options.returning === true);
+    const statement = old ? returningOld.node(definition, node) : node;
+    const result = await runtime.execute(compiler.compile(statement), options);
+    return {
+      rowCount: result.rowCount,
+      rows: result.rows.map((row) => ({
+        action: String(row[MergeQueryBuilder.ACTION]) as MergeActionName,
+        instance: written.instance(model, row, old),
+      })),
+    };
+  }
+
+  static #check(version: number, options: MergeCallOptions): void {
     if (version < 150000) {
       throw new Error('merge requires PostgreSQL 15 or newer');
     }
@@ -91,18 +98,5 @@ export class MergeOperation {
     if (options.returningOld === true && options.returning !== true) {
       throw new Error('merge: returningOld requires returning: true');
     }
-    const old = await this.#returningOld.enabled(runtime, options);
-    const node = this.#merges.build(definition, options, options.returning === true);
-    const result = await runtime.execute(
-      this.#compiler.compile(old ? this.#returningOld.node(definition, node) : node),
-      options,
-    );
-    return {
-      rowCount: result.rowCount,
-      rows: result.rows.map((row) => ({
-        action: String(row[MergeQueryBuilder.ACTION]) as MergeActionName,
-        instance: this.#written.instance(model, row, old),
-      })),
-    };
   }
 }
