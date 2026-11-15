@@ -128,8 +128,8 @@
 - Tag `v0.7.0` → release.yml green, `@tormozz48/postgrelize@0.7.0` published. Contents: Effect-based connection/transaction layer, `postgrelize/effect`, transaction-start leak fix, separate-include `limit` per parent, `findEach` separate includes, VitePress docs site.
 
 ## OOP rewrite (2026-11-15) — owner decision: stop S4, remove Effect, everything as classes, one PR, release 0.8.0
-- [ ] remove Effect and `postgrelize/effect`
-- [ ] connection, errors, transactions, hooks
-- [ ] SQL compiler, where, expressions
-- [ ] data types, validation, DDL, QueryInterface, sync
-- [ ] model internals, associations, includes
+- [x] remove Effect and `postgrelize/effect`
+- [x] connection, errors, transactions, hooks
+- [x] SQL compiler, where, expressions
+- [x] data types, validation, DDL, QueryInterface, sync
+- [x] model internals, associations, includes
