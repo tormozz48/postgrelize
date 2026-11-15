@@ -12,7 +12,7 @@ export class CustomValidators {
    */
   async failure(
     instance: object,
-    fn: (...args: never[]) => unknown,
+    fn: unknown,
     args: readonly unknown[],
   ): Promise<string | undefined> {
     try {
@@ -23,16 +23,13 @@ export class CustomValidators {
     }
   }
 
-  async #call(
-    instance: object,
-    fn: (...args: never[]) => unknown,
-    args: readonly unknown[],
-  ): Promise<void> {
+  async #call(instance: object, validator: unknown, args: readonly unknown[]): Promise<void> {
+    const fn = validator as (...callArgs: unknown[]) => unknown;
     if (fn.length === args.length + 1) {
-      await promisify((fn as (...callArgs: unknown[]) => unknown).bind(instance, ...args))();
+      await promisify(fn.bind(instance, ...args))();
       return;
     }
-    await (fn as (...callArgs: unknown[]) => unknown).apply(instance, [...args]);
+    await fn.apply(instance, [...args]);
   }
 
   static #messageOf(error: unknown): string {

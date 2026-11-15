@@ -4,7 +4,7 @@ import { BuiltinAttributeValidator } from './builtin-attribute-validator.ts';
 import { CustomValidators } from './custom-validators.ts';
 import { SchemaItems } from './schema-items.ts';
 import type { StandardSchemaV1 } from './standard-schema.ts';
-import type { AttributeValidateOptions, AttributeValidatorFunction } from './types.ts';
+import type { AttributeValidateOptions } from './types.ts';
 import type { ValidationTarget } from './validation-target.ts';
 
 /** Runs the `validate` options of one attribute: built-in, custom and Standard Schema validators. */
@@ -49,13 +49,7 @@ export class AttributeValidators {
       return this.#schemaItems(target, attribute.fieldName, test, value);
     }
     if (typeof test === 'function') {
-      return this.#customItems(
-        target,
-        attribute.fieldName,
-        name,
-        test as AttributeValidatorFunction,
-        value,
-      );
+      return this.#customItems(target, attribute, name, test, value);
     }
     return this.#builtinItems(target, attribute, name, test, value);
   }
@@ -73,16 +67,25 @@ export class AttributeValidators {
 
   async #customItems(
     target: ValidationTarget,
-    path: string,
+    attribute: AttributeDefinition,
     name: string,
-    fn: AttributeValidatorFunction,
+    fn: unknown,
     value: unknown,
   ): Promise<readonly ValidationErrorItem[]> {
     const message = await this.#custom.failure(target.instance, fn, [value]);
     const { instance } = target;
     return message === undefined
       ? []
-      : [new ValidationErrorItem(message, 'Validation error', path, value, instance, name)];
+      : [
+          new ValidationErrorItem(
+            message,
+            'Validation error',
+            attribute.fieldName,
+            value,
+            instance,
+            name,
+          ),
+        ];
   }
 
   #builtinItems(
