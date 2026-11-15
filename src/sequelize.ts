@@ -16,7 +16,8 @@ import { PgErrorMapper } from './errors/map-pg-error.ts';
 import { HookRegistry, type HookFunction } from './hooks/hooks.ts';
 import { cast, col, fn, json, literal, where, type Literal } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
-import { Model, definitionOf, parseModelRow } from './model/model.ts';
+import { Model } from './model/model.ts';
+import { ModelRegistry } from './model/model-registry.ts';
 import { QueryInterface } from './query-interface/query-interface.ts';
 import {
   SchemaSynchronizer,
@@ -24,9 +25,11 @@ import {
   type SyncOptions,
 } from './query-interface/schema-synchronizer.ts';
 import type { AnyModel, InitOptions, ModelStatic } from './model/options.ts';
-import type { ModelAttributes } from './model/definition.ts';
+import type { ModelAttributes } from './model/model-definition.ts';
 import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from './model/runtime.ts';
-import { RawQuery, type BindParameters, type Replacements } from './query/raw-query.ts';
+import { RawQuery } from './query/raw-query.ts';
+import { QueryResultShaper, QueryTypes, type QueryOptions } from './query/query-result-shaper.ts';
+import { RowMapper } from './model/row-mapper.ts';
 import type { CompiledQuery } from './sql/compile.ts';
 import {
   Transaction,
@@ -36,59 +39,12 @@ import {
   type TransactionOptions,
 } from './transaction/transaction.ts';
 
+export { QueryTypes } from './query/query-result-shaper.ts';
+export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';
+
 const rawQuery = new RawQuery();
-
-/** Query types of `sequelize.query` (Sequelize v6 `QueryTypes`). */
-export const QueryTypes = {
-  /** Returns rows. */
-  SELECT: 'SELECT',
-  /** Returns `[rows, rowCount]`. */
-  INSERT: 'INSERT',
-  /** Returns `[rows, rowCount]`. */
-  UPDATE: 'UPDATE',
-  /** Returns `[rows, rowCount]`. */
-  UPSERT: 'UPSERT',
-  /** Returns nothing. */
-  DELETE: 'DELETE',
-  /** Returns nothing. */
-  BULKUPDATE: 'BULKUPDATE',
-  /** Returns nothing. */
-  BULKDELETE: 'BULKDELETE',
-  /** Returns `[rows, result]` (default). */
-  RAW: 'RAW',
-  /** Returns `[rows, result]`. */
-  SHOWTABLES: 'SHOWTABLES',
-  /** Returns `[rows, result]`. */
-  DESCRIBE: 'DESCRIBE',
-  /** Returns `[rows, result]`. */
-  VERSION: 'VERSION',
-  /** Returns `[rows, result]`. */
-  FOREIGNKEYS: 'FOREIGNKEYS',
-  /** Returns `[rows, result]`. */
-  SHOWINDEXES: 'SHOWINDEXES',
-} as const;
-
-/** One of {@link QueryTypes}. */
-export type QueryType = (typeof QueryTypes)[keyof typeof QueryTypes];
-
-/** Options of `sequelize.query`. */
-export type QueryOptions = QueryOptionsBase &
-  Readonly<{
-    /** Shapes the result; default `RAW`. */
-    type?: QueryType;
-    /** Values for `?` / `:name` placeholders; bound as parameters. */
-    replacements?: Replacements;
-    /** Values for `$1` / `$name` placeholders. */
-    bind?: BindParameters;
-    /** Return only the first row (or `null`). */
-    plain?: boolean;
-    /** Build instances of this model from SELECT rows. */
-    model?: ModelStatic<AnyModel>;
-    /** Map column names to attribute names of `model`. */
-    mapToModel?: boolean;
-    /** Return plain rows even with `model`. */
-    raw?: boolean;
-  }>;
+const registry = new ModelRegistry();
+const resultShaper = new QueryResultShaper(new RowMapper(registry));
 
 /** Options of `sequelize.define`. */
 export type DefineOptions = Omit<InitOptions, 'sequelize'>;
@@ -261,7 +217,7 @@ export class Sequelize {
   addHook(type: string, nameOrFn: string | HookFunction, hook?: HookFunction): this {
     this.#hooks =
       typeof nameOrFn === 'string'
-        ? this.#hooks.add(type, hook ?? missingHook(), nameOrFn)
+        ? this.#hooks.add(type, hook ?? Sequelize.#missingHook(), nameOrFn)
         : this.#hooks.add(type, nameOrFn);
     return this;
   }
@@ -386,9 +342,9 @@ export class Sequelize {
     const result = await this.#execute(
       prepared,
       options,
-      effectiveType(options) === QueryTypes.SELECT ? 'read' : 'write',
+      resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write',
     );
-    return shapeResult(result, options);
+    return resultShaper.shape(result, options);
   }
 
   /**
@@ -456,7 +412,7 @@ export class Sequelize {
       );
     }
     await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).syncAll(
-      Object.values(this.models).map((model) => definitionOf(model)),
+      Object.values(this.models).map((model) => registry.definition(model)),
       options,
     );
     return this;
@@ -470,7 +426,7 @@ export class Sequelize {
    */
   async drop(options: DropOptions = {}): Promise<void> {
     await new SchemaSynchronizer(this.#runtime, this.getQueryInterface()).dropAll(
-      Object.values(this.models).map((model) => definitionOf(model)),
+      Object.values(this.models).map((model) => registry.definition(model)),
       options,
     );
   }
@@ -553,6 +509,10 @@ export class Sequelize {
     await this.#connections.close();
   }
 
+  static #missingHook(): never {
+    throw new Error('addHook: hook function is required');
+  }
+
   #executeOptions(options: QueryOptionsBase, kind: 'read' | 'write' = 'write'): ExecuteOptions {
     const transaction =
       options.transaction === undefined
@@ -578,42 +538,3 @@ export class Sequelize {
     return this.#connections.execute(query, this.#executeOptions(options, kind));
   }
 }
-
-const shapeRows = (result: QueryResult, options: QueryOptions): readonly unknown[] => {
-  const model = options.model;
-  if (model === undefined || options.raw === true) {
-    return result.rows;
-  }
-  return result.rows.map((row) =>
-    model.build(options.mapToModel === true ? parseModelRow(model, row) : row, {
-      isNewRecord: false,
-      raw: true,
-    }),
-  );
-};
-
-const effectiveType = (options: QueryOptions): QueryType | undefined =>
-  options.type ??
-  (options.model !== undefined || options.plain === true ? QueryTypes.SELECT : undefined);
-
-const shapeResult = (result: QueryResult, options: QueryOptions): unknown => {
-  const rows = shapeRows(result, options);
-  switch (effectiveType(options)) {
-    case QueryTypes.SELECT:
-      return options.plain === true ? (rows[0] ?? null) : rows;
-    case QueryTypes.INSERT:
-    case QueryTypes.UPDATE:
-    case QueryTypes.UPSERT:
-      return [rows, result.rowCount];
-    case QueryTypes.DELETE:
-    case QueryTypes.BULKDELETE:
-    case QueryTypes.BULKUPDATE:
-      return result.rowCount;
-    default:
-      return options.plain === true ? (rows[0] ?? null) : [rows, result];
-  }
-};
-
-const missingHook = (): never => {
-  throw new Error('addHook: hook function is required');
-};

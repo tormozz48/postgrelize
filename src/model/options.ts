@@ -1,19 +1,22 @@
-import type { CteFindOptions } from './cte.ts';
-import type { JoinSources } from './write-power.ts';
+import type { CteFindOptions } from './cte-builder.ts';
+import type { JoinSources } from './join-source-builder.ts';
 import type { IncludeOption } from '../associations/include.ts';
 import type { HooksOption } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
-import type { DefinitionOptions } from './definition.ts';
-import type { ScopeDefinition, ScopeOptions, WhereMergeStrategy } from './scopes.ts';
+import type { DefinitionOptions } from './model-definition.ts';
+import type { ScopeDefinition, ScopeOptions, WhereMergeStrategy } from './scope-registry.ts';
 import type { Model } from './model.ts';
-import type { OnConflictOptions } from './on-conflict.ts';
-import type { SelectOptions } from './query-builders.ts';
+import type { OnConflictOptions } from './on-conflict-builder.ts';
+import type { SelectOptions } from './select-query-builder.ts';
 import type { QueryOptionsBase, RuntimeOwner } from './runtime.ts';
 import type { MakeNullishOptional, WhereOptions } from './types.ts';
 
 /** Plain attribute values of a model. */
 export type Values = Record<string, unknown>;
+
+/** @internal Options object of an operation, passed to hooks (which may change it). */
+export type MutableOptions = Record<string, unknown>;
 
 /** Any model instance type. */
 // oxlint-disable-next-line typescript/no-explicit-any -- Sequelize v6 compat: attribute types are unknown here

@@ -1,10 +1,13 @@
 import { Op } from '../expressions/op.ts';
-import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
+import type { AttributeDefinition, ModelDefinition } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
-import { storedAttributes } from '../model/query-builders.ts';
-import { stateOf } from '../model/state.ts';
+import { AttributeColumns } from '../model/attribute-columns.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import type { IncludeNode } from './include.ts';
 import type { IncludeResolver } from './include-resolver.ts';
+
+const registry = new ModelRegistry();
+const columns = new AttributeColumns();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
@@ -83,7 +86,7 @@ export class IncludeLoader {
     parseMain: (row: IncludeRow) => Readonly<Record<string, unknown>>,
     build: InstanceBuilder,
   ): readonly Instance[] {
-    const definition = stateOf(model).definition;
+    const definition = registry.state(model).definition;
     const mainKeys = (row: IncludeRow): Readonly<Record<string, unknown>> =>
       Object.fromEntries(Object.entries(parseMain(row)).filter(([key]) => !key.includes('.')));
     const groups = rows.reduce<Map<string, IncludeRow[]>>((acc, row, index) => {
@@ -171,7 +174,7 @@ export class IncludeLoader {
           },
           attributes:
             node.attributes ??
-            storedAttributes(node.definition).map((attribute) => attribute.fieldName),
+            columns.stored(node.definition).map((attribute) => attribute.fieldName),
           ...(node.order === undefined ? {} : { order: node.order }),
           ...(node.children.length === 0
             ? {}

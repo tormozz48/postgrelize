@@ -1,15 +1,17 @@
 import { EagerLoadingError } from '../errors/errors.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
-import { injectScope } from '../model/scopes.ts';
-import { activeScope, stateOf } from '../model/state.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import type { IncludeNode, IncludeOption, IncludeOptions } from './include.ts';
 import type { Association } from './types.ts';
+
+const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 
 const isModel = (value: unknown): value is Model => typeof value === 'function';
 
-const sameModel = (left: Model, right: Model): boolean => stateOf(left) === stateOf(right);
+const sameModel = (left: Model, right: Model): boolean =>
+  registry.state(left) === registry.state(right);
 
 const toOptions = (item: Model | string | IncludeOptions): IncludeOptions =>
   isModel(item) ? { model: item } : typeof item === 'string' ? { association: item } : item;
@@ -53,16 +55,16 @@ export class IncludeResolver {
           ? undefined
           : {
               model: association.through.model,
-              definition: stateOf(association.through.model).definition,
-              alias: `${alias}->${stateOf(association.through.model).definition.name}`,
-              path: `${path}.${stateOf(association.through.model).definition.name}`,
+              definition: registry.state(association.through.model).definition,
+              alias: `${alias}->${registry.state(association.through.model).definition.name}`,
+              path: `${path}.${registry.state(association.through.model).definition.name}`,
               attributes: item.through?.attributes,
               where: item.through?.where,
             };
       return {
         association,
         model,
-        definition: stateOf(model).definition,
+        definition: registry.state(model).definition,
         as: association.as,
         alias,
         path,
@@ -101,12 +103,12 @@ export class IncludeResolver {
   }
 
   #associationsOf(model: Model): ReadonlyMap<string, Association> {
-    return stateOf(model).associations as ReadonlyMap<string, Association>;
+    return registry.state(model).associations as ReadonlyMap<string, Association>;
   }
 
   #resolveAssociation(source: Model, item: IncludeOptions): Association {
     const associations = this.#associationsOf(source);
-    const sourceName = stateOf(source).definition.name;
+    const sourceName = registry.state(source).definition.name;
     if (item.association !== undefined) {
       const association =
         typeof item.association === 'string'
@@ -125,7 +127,8 @@ export class IncludeResolver {
         association === undefined ||
         (item.model !== undefined && !sameModel(association.target, item.model))
       ) {
-        const targetName = item.model === undefined ? item.as : stateOf(item.model).definition.name;
+        const targetName =
+          item.model === undefined ? item.as : registry.state(item.model).definition.name;
         throw new Error(
           `${targetName} is associated to ${sourceName} using an alias. You've included an alias (${item.as}), but it does not match the alias(es) defined in your association.`,
         );
@@ -135,7 +138,7 @@ export class IncludeResolver {
     const candidates = [...associations.values()].filter(
       (association) => item.model !== undefined && sameModel(association.target, item.model),
     );
-    const targetName = item.model === undefined ? '?' : stateOf(item.model).definition.name;
+    const targetName = item.model === undefined ? '?' : registry.state(item.model).definition.name;
     if (candidates.length === 0) {
       throw new EagerLoadingError(`${targetName} is not associated to ${sourceName}!`);
     }
@@ -164,10 +167,11 @@ export class IncludeResolver {
    */
   #withTargetScope(item: IncludeOptions, target: Model): IncludeOptions {
     const scoped = item.model ?? target;
-    return injectScope(
-      activeScope(scoped),
-      item as Readonly<Record<string, unknown>>,
-      stateOf(scoped).scopes.whereMergeStrategy,
-    ) as IncludeOptions;
+    return registry
+      .state(scoped)
+      .scopes.inject(
+        registry.activeScope(scoped),
+        item as Readonly<Record<string, unknown>>,
+      ) as IncludeOptions;
   }
 }

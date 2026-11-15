@@ -1,13 +1,15 @@
 import inflection from 'inflection';
-import type { AttributeDefinition, ModelAttributes } from '../model/definition.ts';
+import type { AttributeDefinition, ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { addAssociationAttributes, stateOf } from '../model/state.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import type {
   AssociationName,
   AssociationOptions,
   AssociationThrough,
   ForeignKeyOptions,
 } from './types.ts';
+
+const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 
@@ -73,7 +75,7 @@ export class AssociationKeys {
    * @returns Name forms.
    */
   modelName(model: Model): AssociationName {
-    const name = stateOf(model).definition.name;
+    const name = registry.state(model).definition.name;
     return { singular: inflection.singularize(name), plural: inflection.pluralize(name) };
   }
 
@@ -84,7 +86,7 @@ export class AssociationKeys {
    * @returns Attribute name (`id` when the model has none).
    */
   primaryKey(model: Model): string {
-    return stateOf(model).definition.primaryKeys[0] ?? 'id';
+    return registry.state(model).definition.primaryKeys[0] ?? 'id';
   }
 
   /**
@@ -95,7 +97,7 @@ export class AssociationKeys {
    * @returns Definition, if the attribute exists.
    */
   attributeOf(model: Model, name: string): AttributeDefinition | undefined {
-    return stateOf(model).definition.attributes.get(name);
+    return registry.state(model).definition.attributes.get(name);
   }
 
   /**
@@ -163,7 +165,7 @@ export class AssociationKeys {
     if (spec.constraints === false) {
       return {};
     }
-    const definition = stateOf(spec.model).definition;
+    const definition = registry.state(spec.model).definition;
     return {
       references: {
         model: {
@@ -227,7 +229,7 @@ export class AssociationKeys {
     const foreignKey =
       this.foreignKeyName(options.foreignKey) ??
       this.camelize(`${sourcePrefix}_${this.primaryKey(source)}`);
-    addAssociationAttributes(target, {
+    registry.addAssociationAttributes(target, {
       [foreignKey]: this.keyAttribute(
         this.attributeOf(source, sourceKey),
         this.foreignKeyExtras(options.foreignKey),

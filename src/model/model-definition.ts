@@ -117,15 +117,23 @@ export type DefinitionOptions = ModelDefaults &
     comment?: string;
   }>;
 
-/** Immutable normalized model definition. */
-export type ModelDefinition = Readonly<{
+/** Normalized fields of a {@link ModelDefinition}. */
+export type ModelDefinitionFields = Readonly<{
+  /** Model name. */
   name: string;
+  /** Table name. */
   tableName: string;
+  /** Table schema. */
   schema: string | undefined;
+  /** Normalized attributes by attribute name. */
   attributes: ReadonlyMap<string, AttributeDefinition>;
+  /** Attribute name by column name. */
   fieldToAttribute: ReadonlyMap<string, string>;
+  /** Primary key attribute names. */
   primaryKeys: readonly string[];
+  /** Created-at attribute. */
   createdAt: string | undefined;
+  /** Updated-at attribute. */
   updatedAt: string | undefined;
   /** Deleted-at attribute when the model is paranoid. */
   deletedAt: string | undefined;
@@ -133,6 +141,7 @@ export type ModelDefinition = Readonly<{
   version: string | undefined;
   /** Unique keys from attribute `unique` options: key name → attribute names (in definition order). */
   uniqueKeys: ReadonlyMap<string, readonly string[]>;
+  /** Model options after defaults were applied. */
   options: DefinitionOptions;
 }>;
 
@@ -147,23 +156,6 @@ const timestampName = (
 
 const underscoredIf = (name: string, underscored: boolean): string =>
   underscored ? inflection.underscore(name) : name;
-
-export const normalizeAttribute = (
-  name: string,
-  input: DataTypeInput | AttributeOptions,
-  underscored: boolean,
-): AttributeDefinition => {
-  const options: AttributeOptions = isAttributeOptions(input) ? input : { type: input };
-  const { type, field, ...rest } = options;
-  return Object.freeze({
-    ...rest,
-    fieldName: name,
-    field: field ?? underscoredIf(name, underscored),
-    type: AbstractDataType.from(type),
-    allowNull: options.allowNull ?? options.primaryKey !== true,
-    ...(options.identity === undefined ? {} : { autoIncrement: true }),
-  });
-};
 
 const autoPrimaryKey = (attributes: ModelAttributes, tableName: string): ModelAttributes => {
   const entries = Object.values(attributes);
@@ -221,83 +213,167 @@ const timestampAttributes = (
       : [[version, { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 }] as const]),
   ]);
 
-/** Normalizes `Model.init` arguments into an immutable definition, applying Sequelize v6 defaults. */
-export const normalizeDefinition = (
-  className: string,
-  attributes: ModelAttributes,
-  options: DefinitionOptions,
-  defaults: ModelDefaults = {},
-  associationAttributes: ModelAttributes = {},
-): ModelDefinition => {
-  const merged: DefinitionOptions = { timestamps: true, ...defaults, ...options };
-  const name = merged.modelName ?? className;
-  const underscored = merged.underscored === true;
-  const tableName =
-    merged.tableName ??
-    (merged.freezeTableName === true
-      ? name
-      : underscoredIf(inflection.pluralize(name), underscored));
-  const createdAt =
-    merged.timestamps === true ? timestampName(merged.createdAt, 'createdAt') : undefined;
-  const updatedAt =
-    merged.timestamps === true ? timestampName(merged.updatedAt, 'updatedAt') : undefined;
-  const deletedAt =
-    merged.timestamps === true && merged.paranoid === true
-      ? timestampName(merged.deletedAt, 'deletedAt')
-      : undefined;
-  const version =
-    merged.version === undefined || merged.version === false
-      ? undefined
-      : typeof merged.version === 'string'
-        ? merged.version
-        : 'version';
-  const declared: ModelAttributes = { ...associationAttributes, ...attributes };
-  const generated = new Set([
-    ...Object.keys(autoPrimaryKey(declared, tableName)),
-    createdAt,
-    updatedAt,
-    deletedAt,
-    version,
-  ]);
-  const all: ModelAttributes = {
-    ...autoPrimaryKey(declared, tableName),
-    ...attributes,
-    ...Object.fromEntries(
-      Object.entries(timestampAttributes(createdAt, updatedAt, deletedAt, version)).filter(
-        ([key]) => !(key in attributes),
+/**
+ * Immutable normalized model definition: table, attributes, keys, timestamps and options of a
+ * model, built from `Model.init` arguments with Sequelize v6 defaults by {@link ModelDefinition.normalize}.
+ */
+export class ModelDefinition {
+  /** Model name. */
+  readonly name: string;
+  /** Table name. */
+  readonly tableName: string;
+  /** Table schema. */
+  readonly schema: string | undefined;
+  /** Normalized attributes by attribute name. */
+  readonly attributes: ReadonlyMap<string, AttributeDefinition>;
+  /** Attribute name by column name. */
+  readonly fieldToAttribute: ReadonlyMap<string, string>;
+  /** Primary key attribute names. */
+  readonly primaryKeys: readonly string[];
+  /** Created-at attribute. */
+  readonly createdAt: string | undefined;
+  /** Updated-at attribute. */
+  readonly updatedAt: string | undefined;
+  /** Deleted-at attribute when the model is paranoid. */
+  readonly deletedAt: string | undefined;
+  /** Version attribute when optimistic locking is enabled. */
+  readonly version: string | undefined;
+  /** Unique keys from attribute `unique` options: key name → attribute names (in definition order). */
+  readonly uniqueKeys: ReadonlyMap<string, readonly string[]>;
+  /** Model options after defaults were applied. */
+  readonly options: DefinitionOptions;
+
+  /**
+   * @param fields - Normalized fields; the instance is frozen.
+   */
+  constructor(fields: ModelDefinitionFields) {
+    this.name = fields.name;
+    this.tableName = fields.tableName;
+    this.schema = fields.schema;
+    this.attributes = fields.attributes;
+    this.fieldToAttribute = fields.fieldToAttribute;
+    this.primaryKeys = fields.primaryKeys;
+    this.createdAt = fields.createdAt;
+    this.updatedAt = fields.updatedAt;
+    this.deletedAt = fields.deletedAt;
+    this.version = fields.version;
+    this.uniqueKeys = fields.uniqueKeys;
+    this.options = fields.options;
+    Object.freeze(this);
+  }
+
+  /**
+   * Normalizes one attribute: column name, data type instance, `allowNull` default.
+   *
+   * @param name - Attribute name.
+   * @param input - Data type or column options.
+   * @param underscored - Derive the column name in snake case.
+   * @returns Frozen attribute definition.
+   */
+  static attribute(
+    name: string,
+    input: DataTypeInput | AttributeOptions,
+    underscored: boolean,
+  ): AttributeDefinition {
+    const options: AttributeOptions = isAttributeOptions(input) ? input : { type: input };
+    const { type, field, ...rest } = options;
+    return Object.freeze({
+      ...rest,
+      fieldName: name,
+      field: field ?? underscoredIf(name, underscored),
+      type: AbstractDataType.from(type),
+      allowNull: options.allowNull ?? options.primaryKey !== true,
+      ...(options.identity === undefined ? {} : { autoIncrement: true }),
+    });
+  }
+
+  /**
+   * Normalizes `Model.init` arguments into an immutable definition, applying Sequelize v6 defaults.
+   *
+   * @param className - Class name (default model name).
+   * @param attributes - Declared attributes.
+   * @param options - Model options.
+   * @param defaults - `define` defaults of the Sequelize instance.
+   * @param associationAttributes - Attributes added by associations (foreign keys).
+   * @returns The definition.
+   */
+  static normalize(
+    className: string,
+    attributes: ModelAttributes,
+    options: DefinitionOptions,
+    defaults: ModelDefaults = {},
+    associationAttributes: ModelAttributes = {},
+  ): ModelDefinition {
+    const merged: DefinitionOptions = { timestamps: true, ...defaults, ...options };
+    const name = merged.modelName ?? className;
+    const underscored = merged.underscored === true;
+    const tableName =
+      merged.tableName ??
+      (merged.freezeTableName === true
+        ? name
+        : underscoredIf(inflection.pluralize(name), underscored));
+    const createdAt =
+      merged.timestamps === true ? timestampName(merged.createdAt, 'createdAt') : undefined;
+    const updatedAt =
+      merged.timestamps === true ? timestampName(merged.updatedAt, 'updatedAt') : undefined;
+    const deletedAt =
+      merged.timestamps === true && merged.paranoid === true
+        ? timestampName(merged.deletedAt, 'deletedAt')
+        : undefined;
+    const version =
+      merged.version === undefined || merged.version === false
+        ? undefined
+        : typeof merged.version === 'string'
+          ? merged.version
+          : 'version';
+    const declared: ModelAttributes = { ...associationAttributes, ...attributes };
+    const generated = new Set([
+      ...Object.keys(autoPrimaryKey(declared, tableName)),
+      createdAt,
+      updatedAt,
+      deletedAt,
+      version,
+    ]);
+    const all: ModelAttributes = {
+      ...autoPrimaryKey(declared, tableName),
+      ...attributes,
+      ...Object.fromEntries(
+        Object.entries(timestampAttributes(createdAt, updatedAt, deletedAt, version)).filter(
+          ([key]) => !(key in attributes),
+        ),
       ),
-    ),
-    ...Object.fromEntries(
-      Object.entries(associationAttributes).filter(([key]) => !(key in attributes)),
-    ),
-  };
-  const normalized = new Map(
-    Object.entries(all).map(([attribute, input]) => {
-      const definition = normalizeAttribute(attribute, input, underscored);
-      return [
-        attribute,
-        generated.has(attribute) && !(attribute in attributes)
-          ? Object.freeze({ ...definition, _autoGenerated: true })
-          : definition,
-      ] as const;
-    }),
-  );
-  return Object.freeze({
-    name,
-    tableName,
-    schema: merged.schema,
-    attributes: normalized,
-    fieldToAttribute: new Map(
-      [...normalized.values()].map((attribute) => [attribute.field, attribute.fieldName]),
-    ),
-    primaryKeys: [...normalized.values()]
-      .filter((attribute) => attribute.primaryKey === true)
-      .map((attribute) => attribute.fieldName),
-    createdAt,
-    updatedAt,
-    deletedAt,
-    version,
-    uniqueKeys: uniqueKeysOf(tableName, [...normalized.values()]),
-    options: merged,
-  });
-};
+      ...Object.fromEntries(
+        Object.entries(associationAttributes).filter(([key]) => !(key in attributes)),
+      ),
+    };
+    const normalized = new Map(
+      Object.entries(all).map(([attribute, input]) => {
+        const definition = ModelDefinition.attribute(attribute, input, underscored);
+        return [
+          attribute,
+          generated.has(attribute) && !(attribute in attributes)
+            ? Object.freeze({ ...definition, _autoGenerated: true })
+            : definition,
+        ] as const;
+      }),
+    );
+    return new ModelDefinition({
+      name,
+      tableName,
+      schema: merged.schema,
+      attributes: normalized,
+      fieldToAttribute: new Map(
+        [...normalized.values()].map((attribute) => [attribute.field, attribute.fieldName]),
+      ),
+      primaryKeys: [...normalized.values()]
+        .filter((attribute) => attribute.primaryKey === true)
+        .map((attribute) => attribute.fieldName),
+      createdAt,
+      updatedAt,
+      deletedAt,
+      version,
+      uniqueKeys: uniqueKeysOf(tableName, [...normalized.values()]),
+      options: merged,
+    });
+  }
+}

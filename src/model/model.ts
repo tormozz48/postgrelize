@@ -3,7 +3,6 @@ import {
   type DropOptions,
   type SyncOptions,
 } from '../query-interface/schema-synchronizer.ts';
-import type { IncludeNode, IncludeOption } from '../associations/include.ts';
 import { IncludeLoader } from '../associations/include-loader.ts';
 import { IncludeQueryBuilder } from '../associations/include-query-builder.ts';
 import { IncludeResolver } from '../associations/include-resolver.ts';
@@ -17,67 +16,52 @@ import type {
   AssociationOptions,
   BelongsToManyOptions,
 } from '../associations/types.ts';
-import {
-  AggregateError,
-  BulkRecordError,
-  EmptyResultError,
-  InstanceError,
-  OptimisticLockError,
-} from '../errors/errors.ts';
-import { HookRegistry, type HookFunction, type HookType } from '../hooks/hooks.ts';
-import {
-  runModelHooks,
-  validateWithHooks,
-  withParanoid,
-  type ValidateOptions,
-} from './lifecycle.ts';
-import {
-  injectScope,
-  resolveScopes,
-  type ScopeDefinition,
-  type ScopeOptions,
-  type ScopeSelector,
-} from './scopes.ts';
-import { SqlExpression, Subquery } from '../expressions/methods.ts';
-import {
-  normalizeDefinition,
-  type AttributeDefinition,
-  type DefinitionOptions,
-  type ModelAttributes,
-  type ModelDefinition,
-} from './definition.ts';
-import {
-  buildAggregate,
-  buildCount,
-  buildDelete,
-  buildInsert,
-  buildSelect,
-  buildUpdate,
-  incrementItems,
-  primaryKeyWhere,
-  setItems,
-  tableOf,
-  whereCompiler,
-  type SelectOptions,
-} from './query-builders.ts';
-import { parseRow } from './rows.ts';
-import { SqlLiteral } from '../ddl/sql-literal.ts';
-import { cteSelectOptions, sourceDefinition } from './cte.ts';
 import { CopyEncoder } from '../connection/copy.ts';
+import { SqlLiteral } from '../ddl/sql-literal.ts';
+import type { Subquery } from '../expressions/methods.ts';
+import type { HookFunction, HookType } from '../hooks/hooks.ts';
 import { SqlCompiler } from '../sql/compile.ts';
-import { randomUUID } from 'node:crypto';
-import type { Transaction } from '../transaction/transaction.ts';
-import { buildMerge, joinSources, MERGE_ACTION, type MergeOptions } from './write-power.ts';
+import { InstanceValidator } from '../validation/instance-validator.ts';
+import { AttributeColumns } from './attribute-columns.ts';
+import { CteBuilder } from './cte-builder.ts';
+import { DeleteQueryBuilder } from './delete-query-builder.ts';
+import { FindQueryBuilder } from './find-query-builder.ts';
+import { InsertQueryBuilder } from './insert-query-builder.ts';
+import { InstanceLifecycle, type ValidateOptions } from './instance-lifecycle.ts';
+import { InstanceState } from './instance-state.ts';
+import { InstanceValues } from './instance-values.ts';
+import { JoinSourceBuilder } from './join-source-builder.ts';
+import { MergeQueryBuilder, type MergeOptions } from './merge-query-builder.ts';
+import type {
+  AttributeDefinition,
+  DefinitionOptions,
+  ModelAttributes,
+} from './model-definition.ts';
+import { ModelRegistry } from './model-registry.ts';
+import { ModelValues } from './model-values.ts';
+import { OnConflictBuilder } from './on-conflict-builder.ts';
+import { BulkCreateOperation } from './operations/bulk-create-operation.ts';
+import { CopyOperation } from './operations/copy-operation.ts';
+import { CountOperation } from './operations/count-operation.ts';
+import { CreateOperation } from './operations/create-operation.ts';
+import { DestroyOperation } from './operations/destroy-operation.ts';
+import { FindOperation } from './operations/find-operation.ts';
+import { IncrementOperation } from './operations/increment-operation.ts';
+import { InsertOperation } from './operations/insert-operation.ts';
 import {
-  buildOnConflict,
-  INSERTED_FLAG,
-  insertedFlagColumn,
-  type OnConflictOptions,
-} from './on-conflict.ts';
-import { OLD_PREFIX, returningAll, withReturningOld } from './query-builders.ts';
-import type { OnConflictNode } from '../sql/ast.ts';
-import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from './runtime.ts';
-import type { WhereOptions } from './types.ts';
+  MergeOperation,
+  type MergeCallOptions,
+  type MergeResult,
+} from './operations/merge-operation.ts';
+import { UpdateOperation } from './operations/update-operation.ts';
+import { UpsertOperation } from './operations/upsert-operation.ts';
+import { ReturningOld } from './returning-old.ts';
+import { RowMapper } from './row-mapper.ts';
+import type { QueryOptionsBase, RuntimeOwner } from './runtime.ts';
+import type { ScopeDefinition, ScopeSelector } from './scope-registry.ts';
+import { SelectQueryBuilder } from './select-query-builder.ts';
+import { UpdateQueryBuilder } from './update-query-builder.ts';
+import { WrittenRows } from './written-rows.ts';
 import type {
   AggregateOptions,
   AnyModel,
@@ -86,7 +70,6 @@ import type {
   BuildOptions,
   BulkCreateOptions,
   CopyFromOptions,
-  CopyToFormatOptions,
   CopyToOptions,
   CountOptions,
   CreateOptions,
@@ -108,45 +91,149 @@ import type {
   UpsertOptions,
   Values,
 } from './options.ts';
-import {
-  activeScope,
-  defineAttributeAccessors,
-  initialState,
-  selectScopes,
-  states,
-  stateOf,
-  updateState,
-} from './state.ts';
-import {
-  initialValues,
-  isEqualValue,
-  nestRow,
-  parseAggregate,
-  pickFields,
-  pickQueryOptions,
-  plainWhereValues,
-  toAmounts,
-  withTimestamps,
-} from './values.ts';
-import {
-  V6_CONFLICT_OPTIONS,
-  v6BulkConflict,
-  v6UpsertConflict,
-  withoutGeneratedKey,
-} from './conflict.ts';
 
-const insertedFlags = new WeakMap<object, boolean>();
-const oldValuesOf = new WeakMap<object, Readonly<Record<string, unknown>> | null>();
-const copyEncoder = new CopyEncoder();
+const registry = new ModelRegistry();
+const attributeColumns = new AttributeColumns();
+const modelValues = new ModelValues();
+const rowMapper = new RowMapper(registry);
 const sqlCompiler = new SqlCompiler();
-const sqlLiteral = new SqlLiteral();
+const selectQueries = new SelectQueryBuilder(attributeColumns);
+const insertQueries = new InsertQueryBuilder(attributeColumns);
+const updateQueries = new UpdateQueryBuilder(attributeColumns);
+const deleteQueries = new DeleteQueryBuilder(attributeColumns);
+const joinSources = new JoinSourceBuilder(registry, attributeColumns);
+const cteBuilder = new CteBuilder(joinSources);
+const onConflictBuilder = new OnConflictBuilder(attributeColumns);
+const returningOld = new ReturningOld(attributeColumns, rowMapper);
+const writtenRows = new WrittenRows(registry, rowMapper, returningOld);
 const includeResolver = new IncludeResolver();
-const includeQueryBuilder = new IncludeQueryBuilder();
+const includeQueries = new IncludeQueryBuilder();
 const includeLoader = new IncludeLoader(includeResolver);
-const nestedCreator = new NestedCreator(
-  includeResolver,
-  (value): value is AnyModel => value instanceof Model,
-);
+const isInstance = (value: unknown): value is AnyModel => value instanceof Model;
+const nestedCreator = new NestedCreator(includeResolver, isInstance);
+const findQueries = new FindQueryBuilder(selectQueries, cteBuilder, includeQueries);
+const instanceValues = new InstanceValues(registry, modelValues, isInstance);
+const lifecycle = new InstanceLifecycle({
+  registry,
+  values: modelValues,
+  rows: rowMapper,
+  columns: attributeColumns,
+  selects: selectQueries,
+  inserts: insertQueries,
+  updates: updateQueries,
+  deletes: deleteQueries,
+  includes: includeResolver,
+  nested: nestedCreator,
+  validator: new InstanceValidator(),
+  compiler: sqlCompiler,
+});
+const finder = new FindOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  columns: attributeColumns,
+  selects: selectQueries,
+  finds: findQueries,
+  rows: rowMapper,
+  includes: includeResolver,
+  loader: includeLoader,
+  compiler: sqlCompiler,
+});
+const counter = new CountOperation({
+  registry,
+  lifecycle,
+  columns: attributeColumns,
+  selects: selectQueries,
+  cte: cteBuilder,
+  rows: rowMapper,
+  includes: includeResolver,
+  includeQueries,
+  compiler: sqlCompiler,
+});
+const inserter = new InsertOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  columns: attributeColumns,
+  inserts: insertQueries,
+  conflicts: onConflictBuilder,
+  returningOld,
+  written: writtenRows,
+  compiler: sqlCompiler,
+});
+const creator = new CreateOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  conflicts: onConflictBuilder,
+  inserter,
+});
+const bulkCreator = new BulkCreateOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  inserts: insertQueries,
+  conflicts: onConflictBuilder,
+  inserter,
+  written: writtenRows,
+  compiler: sqlCompiler,
+});
+const upserter = new UpsertOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  columns: attributeColumns,
+  inserts: insertQueries,
+  conflicts: onConflictBuilder,
+  written: writtenRows,
+  compiler: sqlCompiler,
+});
+const updater = new UpdateOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  columns: attributeColumns,
+  updates: updateQueries,
+  joins: joinSources,
+  returningOld,
+  written: writtenRows,
+  compiler: sqlCompiler,
+});
+const destroyer = new DestroyOperation({
+  registry,
+  lifecycle,
+  values: modelValues,
+  columns: attributeColumns,
+  updates: updateQueries,
+  deletes: deleteQueries,
+  joins: joinSources,
+  rows: rowMapper,
+  compiler: sqlCompiler,
+});
+const incrementer = new IncrementOperation({
+  registry,
+  values: modelValues,
+  columns: attributeColumns,
+  updates: updateQueries,
+  rows: rowMapper,
+  compiler: sqlCompiler,
+});
+const merger = new MergeOperation({
+  registry,
+  merges: new MergeQueryBuilder(attributeColumns),
+  returningOld,
+  written: writtenRows,
+  compiler: sqlCompiler,
+});
+const copier = new CopyOperation({
+  registry,
+  columns: attributeColumns,
+  finds: findQueries,
+  includes: includeResolver,
+  encoder: new CopyEncoder(),
+  literals: new SqlLiteral(),
+  compiler: sqlCompiler,
+});
 
 /**
  * Base class of models, API-compatible with Sequelize v6 `Model`.
@@ -229,13 +316,12 @@ export class Model<
   declare _creationAttributes: TCreationAttributes;
 
   /** Current attribute values. */
-  dataValues: TAttributes;
+  dataValues!: TAttributes;
   /** Values as of the last load/save. */
-  _previousDataValues: Partial<TAttributes>;
+  _previousDataValues!: Partial<TAttributes>;
   /** True until the instance is saved or when built from a query result. */
-  isNewRecord: boolean;
-  #changed: ReadonlySet<string> = new Set();
-  #includes: readonly IncludeNode[] = [];
+  isNewRecord!: boolean;
+  readonly #state = new InstanceState();
 
   /**
    * Builds an instance without saving it. Prefer `Model.build`.
@@ -244,30 +330,16 @@ export class Model<
    * @param options - Build options.
    */
   constructor(values: Partial<TCreationAttributes> | Values = {}, options: BuildOptions = {}) {
-    const { definition } = stateOf(this.constructor);
-    this.isNewRecord = options.isNewRecord ?? true;
-    this.dataValues = (this.isNewRecord ? initialValues(definition) : {}) as TAttributes;
-    this._previousDataValues = {};
-    const includes =
-      options.include === undefined
-        ? []
-        : includeResolver.normalize(this.constructor as ModelStatic<AnyModel>, options.include);
-    const nested = new Set(includes.map((node) => node.as));
-    const own = Object.fromEntries(
-      Object.entries(values as Values).filter(([key]) => !nested.has(key)),
-    );
-    this.set(own, options.raw === true ? { raw: true } : {});
-    includes.forEach((node) => {
-      const value = (values as Values)[node.as];
-      if (value !== undefined) {
-        (this.dataValues as Values)[node.as] = nestedCreator.build(node, value);
-      }
-    });
-    this.#includes = includes;
-    if (!this.isNewRecord || options.raw === true) {
-      this._previousDataValues = { ...this.dataValues };
-      this.#changed = new Set();
-    }
+    lifecycle.initialize(this, values as Values, options);
+  }
+
+  /**
+   * @internal Internal state of the instance (a method, so attribute type inference skips it).
+   *
+   * @returns The state.
+   */
+  [InstanceState.key](): InstanceState {
+    return this.#state;
   }
 
   /** Model class of the instance. */
@@ -281,7 +353,7 @@ export class Model<
    * written). `undefined` otherwise. PostgreSQL extension.
    */
   get wasInserted(): boolean | undefined {
-    return insertedFlags.get(this);
+    return this.#state.wasInserted;
   }
 
   /**
@@ -289,7 +361,7 @@ export class Model<
    * statement, or `null` when the row did not exist (inserted). `undefined` otherwise. PostgreSQL 18+.
    */
   get oldValues(): Readonly<Record<string, unknown>> | null | undefined {
-    return oldValuesOf.get(this);
+    return this.#state.oldValues;
   }
 
   /** `Sequelize` instance the model belongs to. */
@@ -299,38 +371,38 @@ export class Model<
 
   /** Model name. */
   static get modelName(): string {
-    return stateOf(this).definition.name;
+    return registry.state(this).definition.name;
   }
 
   /** Table name. */
   static get tableName(): string {
-    return stateOf(this).definition.tableName;
+    return registry.state(this).definition.tableName;
   }
 
   /** Normalized attributes keyed by attribute name. */
   static get rawAttributes(): Readonly<Record<string, AttributeDefinition>> {
-    return Object.fromEntries(stateOf(this).definition.attributes);
+    return Object.fromEntries(registry.state(this).definition.attributes);
   }
 
   /** First primary key attribute name. */
   static get primaryKeyAttribute(): string | undefined {
-    return stateOf(this).definition.primaryKeys[0];
+    return registry.state(this).definition.primaryKeys[0];
   }
 
   /** All primary key attribute names. */
   static get primaryKeyAttributes(): readonly string[] {
-    return stateOf(this).definition.primaryKeys;
+    return registry.state(this).definition.primaryKeys;
   }
 
   /** Model options after defaults were applied. */
   static get options(): DefinitionOptions {
-    return stateOf(this).definition.options;
+    return registry.state(this).definition.options;
   }
 
   /** `Sequelize` instance the model belongs to. */
   static get sequelize(): RuntimeOwner {
     return (
-      sequelizes.get(this) ??
+      registry.sequelizeOf(this) ??
       (() => {
         throw new Error('Model is not initialized.');
       })()
@@ -349,48 +421,15 @@ export class Model<
     attributes: ModelAttributes,
     options: InitOptions,
   ): MS {
-    const {
-      sequelize,
-      hooks,
-      defaultScope,
-      scopes,
-      whereMergeStrategy,
-      validate,
-      validationSchema,
-      ...definitionOptions
-    } = options;
-    const runtime = sequelize[runtimeKey];
-    const definition = normalizeDefinition(
-      this.name,
-      attributes,
-      definitionOptions,
-      runtime.defaults,
-    );
-    states.set(
-      this,
-      initialState(
-        definition,
-        runtime,
-        { className: this.name, attributes, options: definitionOptions, extra: {} },
-        {
-          hooks: HookRegistry.fromOption(hooks, HookRegistry.fromOption(runtime.defaults.hooks)),
-          defaultScope,
-          scopes,
-          whereMergeStrategy,
-          validate,
-          schema: validationSchema,
-        },
-      ),
-    );
-    sequelizes.set(this, sequelize);
-    defineAttributeAccessors(this.prototype, definition);
-    runtime.register(definition.name, this);
+    registry.init(this, attributes, options);
     return this;
   }
 
   /** Associations of the model by alias (Sequelize v6 `Model.associations`). */
   static get associations(): Readonly<Record<string, Association>> {
-    return Object.fromEntries(stateOf(this).associations as ReadonlyMap<string, Association>);
+    return Object.fromEntries(
+      registry.state(this).associations as ReadonlyMap<string, Association>,
+    );
   }
 
   /**
@@ -463,7 +502,7 @@ export class Model<
     this: MS,
     options: SyncOptions = {},
   ): Promise<MS> {
-    const { definition, runtime } = stateOf(this);
+    const { definition, runtime } = registry.state(this);
     await new SchemaSynchronizer(runtime, runtime.queryInterface()).sync(definition, options);
     return this;
   }
@@ -475,7 +514,7 @@ export class Model<
    * @returns Resolves when done.
    */
   static async drop(options: DropOptions = {}): Promise<void> {
-    const { definition, runtime } = stateOf(this);
+    const { definition, runtime } = registry.state(this);
     await new SchemaSynchronizer(runtime, runtime.queryInterface()).drop(definition, options);
   }
 
@@ -495,30 +534,7 @@ export class Model<
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> & Readonly<{ as?: string }> = {},
   ): Subquery {
-    return new Subquery(() => {
-      const { definition, runtime, scopes } = stateOf(this);
-      const { as, ...findOptions } = options;
-      const scoped = injectScope(
-        activeScope(this),
-        { ...findOptions },
-        scopes.whereMergeStrategy,
-      ) as FindOptions;
-      const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-      const includes = includeResolver.normalize(this, query.include);
-      const base = buildSelect(
-        sourceDefinition(definition, query.source),
-        {
-          ...(includes.length === 0 ? query : { ...query, order: undefined }),
-          ...cteSelectOptions(query),
-        } as SelectOptions,
-        runtime.inAsAnyThreshold,
-        undefined,
-        as,
-      );
-      return includes.length === 0
-        ? base
-        : includeQueryBuilder.build(definition, base, includes, query);
-    });
+    return finder.subquery(this, options as FindOptions & Readonly<{ as?: string }>);
   }
 
   /**
@@ -533,35 +549,12 @@ export class Model<
    * await Archive.insertFrom(Post.subquery({ attributes: ['id', 'title'], where: { published: false } }), { columns: ['postId', 'title'] });
    * ```
    */
-  static async insertFrom<M extends AnyModel>(
+  static insertFrom<M extends AnyModel>(
     this: ModelStatic<M>,
     source: Subquery,
     options: InsertFromOptions<Attributes<M>>,
   ): Promise<M[]> {
-    const { definition, runtime } = stateOf(this);
-    const onConflict =
-      options.onConflict === undefined
-        ? undefined
-        : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
-    const node = {
-      kind: 'insert' as const,
-      table: tableOf(definition, onConflict === undefined ? undefined : definition.name),
-      columns: options.columns.map((name) => definition.attributes.get(name)?.field ?? name),
-      rows: [],
-      select: source.build(),
-      ...(onConflict === undefined ? {} : { onConflict }),
-      returning: [...returningAll(definition), insertedFlagColumn()],
-    };
-    const old = await returningOld(runtime, options);
-    const result = await runtime.execute(
-      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
-      options,
-    );
-    return result.rows.map((row) => {
-      const instance = fromWrittenRow(this, row, old);
-      insertedFlags.set(instance, row[INSERTED_FLAG] === true);
-      return instance;
-    });
+    return inserter.insertFrom(this, source, options as InsertFromOptions);
   }
 
   /**
@@ -580,7 +573,7 @@ export class Model<
    * });
    * ```
    */
-  static async merge<M extends AnyModel>(
+  static merge<M extends AnyModel>(
     this: ModelStatic<M>,
     options: MergeOptions<Attributes<M>> &
       QueryOptionsBase &
@@ -591,39 +584,7 @@ export class Model<
         returningOld?: boolean;
       }>,
   ): Promise<MergeResult<M>> {
-    const { definition, runtime } = stateOf(this);
-    const version = await runtime.serverVersion();
-    if (version < 150000) {
-      throw new Error('merge requires PostgreSQL 15 or newer');
-    }
-    if (
-      (options.returning === true || options.whenNotMatchedBySource !== undefined) &&
-      version < 170000
-    ) {
-      throw new Error(
-        'merge with returning or whenNotMatchedBySource requires PostgreSQL 17 or newer',
-      );
-    }
-    if (options.returningOld === true && options.returning !== true) {
-      throw new Error('merge: returningOld requires returning: true');
-    }
-    const old = await returningOld(runtime, options);
-    const node = buildMerge(
-      definition,
-      options as MergeOptions<unknown>,
-      options.returning === true,
-    );
-    const result = await runtime.execute(
-      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
-      options,
-    );
-    return {
-      rowCount: result.rowCount,
-      rows: result.rows.map((row) => ({
-        action: String(row[MERGE_ACTION]) as MergeActionName,
-        instance: fromWrittenRow(this, row, old),
-      })),
-    };
+    return merger.merge(this, options as MergeCallOptions);
   }
 
   /**
@@ -641,63 +602,12 @@ export class Model<
    * }
    * ```
    */
-  static async *findEach<M extends AnyModel>(
+  static findEach<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
     cursor: Readonly<{ batchSize?: number }> = {},
   ): AsyncGenerator<M, void, undefined> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const scoped = injectScope(
-      activeScope(this),
-      { ...options },
-      scopes.whereMergeStrategy,
-    ) as FindOptions;
-    const includes = includeResolver.normalize(this, scoped.include);
-    if (includes.some((node) => !node.separate)) {
-      throw new Error('findEach does not support joined includes');
-    }
-    const batchSize = cursor.batchSize ?? 100;
-    if (!Number.isInteger(batchSize) || batchSize < 1) {
-      throw new Error('findEach: batchSize must be a positive integer');
-    }
-    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-    const compiled = sqlCompiler.compile(
-      buildSelect(definition, query as SelectOptions, runtime.inAsAnyThreshold),
-    );
-    const own =
-      options.transaction === undefined || options.transaction === null
-        ? await runtime.beginTransaction()
-        : undefined;
-    const transaction = own ?? (options.transaction as Transaction);
-    const name = SqlCompiler.quoteIdent(`pgz_cursor_${randomUUID().replaceAll('-', '')}`);
-    const run = (text: string, values: readonly unknown[] = []) =>
-      runtime.execute({ text, values }, { ...pickQueryOptions(options), transaction });
-    let failed = false;
-    try {
-      await run(`DECLARE ${name} NO SCROLL CURSOR FOR ${compiled.text}`, compiled.values);
-      for (;;) {
-        const batch = await run(`FETCH ${batchSize} FROM ${name}`);
-        if (batch.rows.length === 0) {
-          break;
-        }
-        const instances = batch.rows.map((row) => fromRow(this, row));
-        if (includes.length > 0) {
-          await includeLoader.loadSeparate(instances, includes, { transaction });
-        }
-        yield* instances;
-      }
-    } catch (error) {
-      failed = true;
-      throw error;
-    } finally {
-      if (own === undefined) {
-        await run(`CLOSE ${name}`).catch(() => undefined);
-      } else if (failed) {
-        await own.rollback().catch(() => undefined);
-      } else {
-        await own.commit();
-      }
-    }
+    return finder.findEach(this, options as FindOptions, cursor);
   }
 
   /**
@@ -713,51 +623,16 @@ export class Model<
    * await Event.copyFrom(readEvents(), { columns: ['type', 'payload'] });
    * ```
    */
-  static async copyFrom<M extends AnyModel>(
+  static copyFrom<M extends AnyModel>(
     this: ModelStatic<M>,
     rows: Iterable<CreationAttributes<M>> | AsyncIterable<CreationAttributes<M>>,
     options: CopyFromOptions<Attributes<M>> = {},
   ): Promise<number> {
-    const { definition, runtime } = stateOf(this);
-    const listed =
-      options.columns ??
-      (Array.isArray(rows) && rows.length > 0
-        ? Object.keys(rows[0] as Values).filter((name) => definition.attributes.has(name))
-        : undefined);
-    if (listed === undefined || listed.length === 0) {
-      throw new Error('copyFrom: columns are required for non-array sources');
-    }
-    const stamps = [definition.createdAt, definition.updatedAt].filter(
-      (name): name is string => name !== undefined && !listed.includes(name as never),
+    return copier.copyFrom(
+      this,
+      rows as Iterable<Values> | AsyncIterable<Values>,
+      options as CopyFromOptions,
     );
-    const columns = [...(listed as readonly string[]), ...stamps];
-    columns.forEach((name) => {
-      if (!definition.attributes.has(name)) {
-        throw new Error(`copyFrom: unknown attribute "${name}" of model ${definition.name}`);
-      }
-    });
-    const attributes = columns.map(
-      (name) => definition.attributes.get(name) as AttributeDefinition,
-    );
-    const table = [definition.schema, definition.tableName]
-      .filter((part): part is string => part !== undefined)
-      .map(SqlCompiler.quoteIdent)
-      .join('.');
-    const text = `COPY ${table} (${attributes.map((attribute) => SqlCompiler.quoteIdent(attribute.field)).join(', ')}) FROM STDIN`;
-    const now = new Date();
-    async function* lines(): AsyncGenerator<string> {
-      for await (const row of rows as AsyncIterable<Values>) {
-        yield copyEncoder.encodeRow(
-          attributes.map((attribute) => {
-            const value = stamps.includes(attribute.fieldName) ? now : row[attribute.fieldName];
-            return value === undefined || value === null || attribute.type.serialize === undefined
-              ? value
-              : attribute.type.serialize(value);
-          }),
-        );
-      }
-    }
-    return runtime.copyFrom(text, lines(), options);
   }
 
   /**
@@ -779,29 +654,7 @@ export class Model<
     this: ModelStatic<M>,
     options: CopyToOptions<Attributes<M>> = {},
   ): AsyncGenerator<Buffer, void, undefined> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const scoped = injectScope(
-      activeScope(this),
-      { ...options },
-      scopes.whereMergeStrategy,
-    ) as FindOptions;
-    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-    const includes = includeResolver.normalize(this, query.include);
-    const base = buildSelect(
-      sourceDefinition(definition, query.source),
-      {
-        ...(includes.length === 0 ? query : { ...query, order: undefined }),
-        ...cteSelectOptions(query),
-      } as SelectOptions,
-      runtime.inAsAnyThreshold,
-    );
-    const select =
-      includes.length === 0 ? base : includeQueryBuilder.build(definition, base, includes, query);
-    return runtime.copyTo(
-      `COPY (${sqlLiteral.inlineValues(sqlCompiler.compile(select))}) TO STDOUT${copyFormatSql(options)}`,
-      options,
-      'read',
-    );
+    return copier.copyTo(this, options as CopyToOptions);
   }
 
   /**
@@ -818,13 +671,7 @@ export class Model<
     nameOrFn: string | HookFunction,
     fn?: HookFunction,
   ): MS {
-    updateState(this, (state) => ({
-      ...state,
-      hooks:
-        typeof nameOrFn === 'string'
-          ? state.hooks.add(type, fn ?? missingHook(), nameOrFn)
-          : state.hooks.add(type, nameOrFn),
-    }));
+    registry.addHook(this, type, nameOrFn, fn);
     return this;
   }
 
@@ -840,7 +687,7 @@ export class Model<
     type: HookType,
     nameOrFn?: string | HookFunction,
   ): MS {
-    updateState(this, (state) => ({ ...state, hooks: state.hooks.remove(type, nameOrFn) }));
+    registry.removeHook(this, type, nameOrFn);
     return this;
   }
 
@@ -851,7 +698,7 @@ export class Model<
    * @returns True when at least one hook exists.
    */
   static hasHook(type: HookType): boolean {
-    return stateOf(this).hooks.has(type);
+    return registry.state(this).hooks.has(type);
   }
 
   /**
@@ -872,7 +719,7 @@ export class Model<
    * @returns Resolves when all hooks finished.
    */
   static runHooks(type: HookType, ...args: readonly unknown[]): Promise<void> {
-    return runModelHooks(this, type, ...args);
+    return lifecycle.runHooks(this, type, ...args);
   }
 
   /**
@@ -891,8 +738,7 @@ export class Model<
     const flat = selectors.flatMap((selector) =>
       Array.isArray(selector) ? selector : [selector],
     ) as readonly ScopeSelector[];
-    resolveScopes(stateOf(this).scopes, flat);
-    selectScopes(Scoped, flat);
+    registry.selectScopes(this, Scoped, flat);
     return Scoped;
   }
 
@@ -918,23 +764,7 @@ export class Model<
     scope: ScopeDefinition,
     options: Readonly<{ override?: boolean }> = {},
   ): void {
-    const { scopes } = stateOf(this);
-    const exists =
-      name === 'defaultScope'
-        ? Object.keys(scopes.defaultScope).length > 0
-        : scopes.scopes.has(name);
-    if (exists && options.override !== true) {
-      throw new Error(
-        `The scope ${name} already exists. Pass { override: true } as options to silence this error`,
-      );
-    }
-    updateState(this, (state) => ({
-      ...state,
-      scopes:
-        name === 'defaultScope'
-          ? { ...state.scopes, defaultScope: scope as ScopeOptions }
-          : { ...state.scopes, scopes: new Map([...state.scopes.scopes, [name, scope]]) },
-    }));
+    registry.addScope(this, name, scope, options.override === true);
   }
 
   /**
@@ -952,7 +782,7 @@ export class Model<
    * @returns Table name or qualified table.
    */
   static getTableName(): string | QualifiedTableName {
-    const { definition } = stateOf(this);
+    const { definition } = registry.state(this);
     return definition.schema === undefined
       ? definition.tableName
       : { tableName: definition.tableName, schema: definition.schema, delimiter: '.' };
@@ -996,47 +826,12 @@ export class Model<
    * @returns Saved instance.
    * @throws UniqueConstraintError, ForeignKeyConstraintError, DatabaseError.
    */
-  static async create<M extends AnyModel>(
+  static create<M extends AnyModel>(
     this: ModelStatic<M>,
     values?: CreationAttributes<M>,
     options: CreateOptions<Attributes<M>> = {},
   ): Promise<M> {
-    const instance = new this(
-      values as Values,
-      options.include === undefined ? {} : { include: options.include },
-    );
-    if (options.onConflict === undefined) {
-      return instance.save(options as SaveOptions);
-    }
-    const { definition } = stateOf(this);
-    const opts: MutableOptions = { hooks: true, validate: true, ...options };
-    if (opts['validate'] === true) {
-      await instance.validate({ hooks: opts['hooks'] === true });
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeCreate', instance, opts);
-    }
-    const row = withTimestamps(
-      definition,
-      instance.dataValues as Values,
-      new Date(),
-      true,
-      opts['silent'] === true,
-    );
-    const [inserted] = await insertWithConflict(
-      this,
-      [pickFields(row, options.fields)],
-      buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>),
-      options,
-    );
-    if (inserted === undefined) {
-      insertedFlags.set(instance, false);
-      return instance;
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterCreate', inserted, opts);
-    }
-    return inserted;
+    return creator.create(this, values as Values | undefined, options as CreateOptions);
   }
 
   /**
@@ -1055,40 +850,12 @@ export class Model<
    * rows.filter((row) => row.wasInserted);
    * ```
    */
-  static async insert<M extends AnyModel>(
+  static insert<M extends AnyModel>(
     this: ModelStatic<M>,
     values: CreationAttributes<M> | readonly CreationAttributes<M>[],
     options: InsertOptions<Attributes<M>> = {},
   ): Promise<M[]> {
-    const { definition } = stateOf(this);
-    const now = new Date();
-    const records: readonly Values[] = Array.isArray(values) ? values : [values as Values];
-    if (records.length === 0) {
-      return [];
-    }
-    const opts: MutableOptions = { hooks: true, validate: false, ...options };
-    const instances = records.map((record) => new this(record));
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeBulkCreate', instances, opts);
-    }
-    if (opts['validate'] === true) {
-      await validateAll(instances, false);
-    }
-    const rows = instances.map((instance) =>
-      pickFields(
-        withTimestamps(definition, instance.dataValues as Values, now, true, false),
-        options.fields,
-      ),
-    );
-    const onConflict =
-      options.onConflict === undefined
-        ? undefined
-        : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
-    const inserted = await insertWithConflict(this, rows, onConflict, options);
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterBulkCreate', inserted, opts);
-    }
-    return inserted;
+    return inserter.insert(this, values as Values | readonly Values[], options as InsertOptions);
   }
 
   /**
@@ -1098,60 +865,12 @@ export class Model<
    * @param options - Upsert options.
    * @returns `[instance, null]` like Sequelize v6, or `[instance, created]` with `onConflict`.
    */
-  static async upsert<M extends AnyModel>(
+  static upsert<M extends AnyModel>(
     this: ModelStatic<M>,
     values: CreationAttributes<M>,
     options: UpsertOptions<Attributes<M>> = {},
   ): Promise<[M, boolean | null]> {
-    const { definition, runtime } = stateOf(this);
-    const opts: MutableOptions = { hooks: true, validate: true, returning: true, ...options };
-    const instance = new this(values as Values);
-    const now = new Date();
-    const provided = Object.keys(values as Values).filter((name) =>
-      definition.attributes.has(name),
-    );
-    const updatable =
-      options.fields === undefined
-        ? provided
-        : provided.filter((name) => options.fields?.includes(name as never));
-    if (opts['validate'] === true) {
-      await instance.validate({ hooks: opts['hooks'] === true, fields: updatable });
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeUpsert', values, opts);
-    }
-    const insertValues = withoutGeneratedKey(definition, values as Values, {
-      ...withTimestamps(definition, instance.dataValues as Values, now, true, false),
-      ...(definition.updatedAt !== undefined &&
-      (values as Values)[definition.updatedAt] !== undefined &&
-      (values as Values)[definition.updatedAt] !== null
-        ? { [definition.updatedAt]: instance.dataValues[definition.updatedAt] }
-        : {}),
-    });
-    const onConflict =
-      options.onConflict === undefined
-        ? v6UpsertConflict(definition, insertValues, updatable, options.conflictFields)
-        : buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>);
-    const insert = buildInsert(definition, [insertValues], {
-      onConflict,
-      ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-      returning: [...returningAll(definition), insertedFlagColumn()],
-    });
-    const result = await runtime.execute(sqlCompiler.compile(insert), options);
-    const row = result.rows[0];
-    const flag = row?.[INSERTED_FLAG];
-    instance.#refresh(definition, row === undefined ? undefined : withoutFlag(row));
-    if (options.onConflict !== undefined) {
-      insertedFlags.set(instance, flag === true);
-    }
-    const upserted: [M, boolean | null] = [
-      instance,
-      options.onConflict === undefined ? null : flag === true,
-    ];
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterUpsert', upserted, opts);
-    }
-    return upserted;
+    return upserter.upsert(this, values as Values, options as UpsertOptions);
   }
 
   /**
@@ -1161,94 +880,12 @@ export class Model<
    * @param options - Options.
    * @returns Instances with values returned by the database.
    */
-  static async bulkCreate<M extends AnyModel>(
+  static bulkCreate<M extends AnyModel>(
     this: ModelStatic<M>,
     records: readonly CreationAttributes<M>[],
     options: BulkCreateOptions<Attributes<M>> = {},
   ): Promise<M[]> {
-    const { definition, runtime } = stateOf(this);
-    if (
-      options.onConflict !== undefined &&
-      V6_CONFLICT_OPTIONS.some((name) => options[name] !== undefined)
-    ) {
-      throw new Error(`onConflict cannot be combined with ${V6_CONFLICT_OPTIONS.join(', ')}`);
-    }
-    const opts: MutableOptions = {
-      hooks: true,
-      validate: false,
-      individualHooks: options.include !== undefined,
-      ...options,
-    };
-    const instances = records.map(
-      (values) =>
-        new this(
-          values as Values,
-          options.include === undefined ? {} : { include: options.include },
-        ),
-    );
-    if (instances.length === 0) {
-      return [];
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeBulkCreate', instances, opts);
-    }
-    if (opts['validate'] === true) {
-      await validateAll(instances, opts['individualHooks'] === true);
-    }
-    const created = await (async (): Promise<M[]> => {
-      if (opts['individualHooks'] === true) {
-        const {
-          fields: _fields,
-          individualHooks: _individual,
-          ignoreDuplicates: _ignore,
-          include: _include,
-          ...saveOptions
-        } = opts;
-        await instances.reduce<Promise<unknown>>(
-          (previous, instance) =>
-            previous.then(() => instance.save({ ...saveOptions, validate: false, hooks: true })),
-          Promise.resolve(),
-        );
-        return instances;
-      }
-      const now = new Date();
-      const rows = instances.map((instance) =>
-        pickFields(
-          withTimestamps(
-            definition,
-            instance.dataValues as Values,
-            now,
-            true,
-            opts['silent'] === true,
-          ),
-          options.fields,
-        ),
-      );
-      if (options.onConflict !== undefined) {
-        return insertWithConflict(
-          this,
-          rows,
-          buildOnConflict(definition, options.onConflict as OnConflictOptions<unknown>),
-          options,
-        );
-      }
-      const insert = buildInsert(definition, rows, {
-        returning: options.returning !== false,
-        ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-        ...v6BulkConflict(definition, options as BulkCreateOptions),
-      });
-      const result = await runtime.execute(sqlCompiler.compile(insert), options);
-      const returned =
-        options.ignoreDuplicates === true
-          ? insertedRowsOf(definition, rows, result.rows)
-          : result.rows;
-      instances.forEach((instance, index) => instance.#refresh(definition, returned[index]));
-      return instances;
-    })();
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterBulkCreate', created, opts);
-    }
-    return created;
+    return bulkCreator.bulkCreate(this, records as readonly Values[], options as BulkCreateOptions);
   }
 
   /**
@@ -1257,64 +894,11 @@ export class Model<
    * @param options - Query options.
    * @returns Instances, or plain objects with `raw: true`.
    */
-  static async findAll<M extends AnyModel>(
+  static findAll<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
   ): Promise<M[]> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const opts: MutableOptions = {
-      hooks: true,
-      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
-    };
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeFind', opts);
-      await runModelHooks(this, 'beforeFindAfterExpandIncludeAll', opts);
-      await runModelHooks(this, 'beforeFindAfterOptions', opts);
-    }
-    const query = {
-      ...(opts as FindOptions),
-      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
-    };
-    const includes = includeResolver.normalize(this, opts['include'] as IncludeOption | undefined);
-    const base = buildSelect(
-      sourceDefinition(definition, (query as FindOptions).source),
-      {
-        ...(includes.length === 0 ? query : { ...query, order: undefined }),
-        ...cteSelectOptions(query as FindOptions),
-      } as SelectOptions,
-      runtime.inAsAnyThreshold,
-    );
-    const select =
-      includes.length === 0
-        ? base
-        : includeQueryBuilder.build(definition, base, includes, query as FindOptions);
-    const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
-    const parseMain = (row: Readonly<Record<string, unknown>>) => parseRow(definition, row);
-    const found =
-      opts['raw'] === true
-        ? (result.rows
-            .map((row) =>
-              includes.length === 0
-                ? parseMain(row)
-                : includeLoader.parseRawRow(includes, row, parseMain),
-            )
-            .map((row) => (opts['nest'] === true ? nestRow(row as Values) : row)) as unknown as M[])
-        : includes.length === 0
-          ? result.rows.map((row) => fromRow(this, row))
-          : (includeLoader.assemble(
-              this,
-              includes,
-              result.rows,
-              parseMain,
-              (model, values) => new model(values, { isNewRecord: false, raw: true }),
-            ) as M[]);
-    if (opts['raw'] !== true && includes.length > 0) {
-      await includeLoader.loadSeparate(found, includes, query);
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterFind', found, opts);
-    }
-    return found;
+    return finder.findAll(this, options as FindOptions);
   }
 
   /**
@@ -1324,7 +908,7 @@ export class Model<
    * @returns Instance.
    * @throws EmptyResultError (or the given error) when nothing is found.
    */
-  static async findOne<M extends AnyModel>(
+  static findOne<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> & Readonly<{ rejectOnEmpty: true | Error }>,
   ): Promise<M>;
@@ -1334,23 +918,15 @@ export class Model<
    * @param options - Query options.
    * @returns Instance or `null`.
    */
-  static async findOne<M extends AnyModel>(
+  static findOne<M extends AnyModel>(
     this: ModelStatic<M>,
     options?: FindOptions<Attributes<M>>,
   ): Promise<M | null>;
-  static async findOne<M extends AnyModel>(
+  static findOne<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
   ): Promise<M | null> {
-    const [first] = await this.findAll({ ...options, limit: options.limit ?? 1 });
-    if (
-      first === undefined &&
-      options.rejectOnEmpty !== undefined &&
-      options.rejectOnEmpty !== false
-    ) {
-      throw options.rejectOnEmpty instanceof Error ? options.rejectOnEmpty : new EmptyResultError();
-    }
-    return first ?? null;
+    return finder.findOne(this, options as FindOptions);
   }
 
   /**
@@ -1360,16 +936,12 @@ export class Model<
    * @param options - Query options.
    * @returns Instance or `null`.
    */
-  static async findByPk<M extends AnyModel>(
+  static findByPk<M extends AnyModel>(
     this: ModelStatic<M>,
     key: unknown,
     options: Omit<FindOptions<Attributes<M>>, 'where'> = {},
   ): Promise<M | null> {
-    if (key === null || key === undefined) {
-      return null;
-    }
-    const name = stateOf(this).definition.primaryKeys[0] ?? 'id';
-    return this.findOne({ ...options, where: { [name]: key } as WhereOptions<Attributes<M>> });
+    return finder.findByPk(this, key, options as Omit<FindOptions, 'where'>);
   }
 
   /**
@@ -1378,48 +950,11 @@ export class Model<
    * @param options - Count options.
    * @returns Count, or `{ count, ...groups }[]` with `group`.
    */
-  static async count<M extends AnyModel>(
+  static count<M extends AnyModel>(
     this: ModelStatic<M>,
     options: CountOptions<Attributes<M>> = {},
   ): Promise<number> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const opts: MutableOptions = {
-      hooks: true,
-      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
-    };
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeCount', opts);
-    }
-    const query = {
-      ...(opts as CountOptions),
-      where: withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
-    };
-    const includes = includeResolver.normalize(this, opts['include'] as IncludeOption | undefined);
-    const countQuery = (
-      includes.length === 0 || query.col !== undefined
-        ? query
-        : {
-            ...query,
-            col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
-          }
-    ) as SelectOptions & CountOptions;
-    const counted = buildCount(
-      sourceDefinition(definition, query.source),
-      { ...countQuery, ...cteSelectOptions(query) },
-      runtime.inAsAnyThreshold,
-    );
-    const select =
-      includes.length === 0
-        ? counted
-        : { ...counted, joins: includeQueryBuilder.countJoins(definition, includes) };
-    const result = await runtime.execute(sqlCompiler.compile(select), query, 'read');
-    if (query.group !== undefined) {
-      return result.rows.map((row) => ({
-        ...parseRow(definition, row),
-        count: Number(row['count']),
-      })) as unknown as number;
-    }
-    return Number(result.rows[0]?.['count'] ?? 0);
+    return counter.count(this, options as CountOptions);
   }
 
   /**
@@ -1428,20 +963,11 @@ export class Model<
    * @param options - Query options.
    * @returns Total count and the current page of rows.
    */
-  static async findAndCountAll<M extends AnyModel>(
+  static findAndCountAll<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOptions<Attributes<M>> = {},
   ): Promise<FindAndCountResult<M>> {
-    const [count, rows] = await Promise.all([
-      this.count({
-        ...(options.where === undefined ? {} : { where: options.where }),
-        ...(options.include === undefined ? {} : { include: options.include }),
-        ...(options.paranoid === undefined ? {} : { paranoid: options.paranoid }),
-        ...pickQueryOptions(options),
-      }),
-      this.findAll(options),
-    ]);
-    return { count, rows };
+    return finder.findAndCountAll(this, options as FindOptions);
   }
 
   /**
@@ -1452,37 +978,18 @@ export class Model<
    * @param options - Options.
    * @returns Aggregated value.
    */
-  static async aggregate<M extends AnyModel, T = unknown>(
+  static aggregate<M extends AnyModel, T = unknown>(
     this: ModelStatic<M>,
     field: keyof Attributes<M> | '*',
     aggregateFunction: string,
     options: AggregateOptions<Attributes<M>> = {},
   ): Promise<T> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const name = String(field);
-    const scoped = injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy);
-    const query = { ...scoped, where: withParanoid(definition, scoped.where, scoped.paranoid) };
-    const result = await runtime.execute(
-      sqlCompiler.compile(
-        buildAggregate(
-          definition,
-          name,
-          aggregateFunction,
-          query as SelectOptions,
-          runtime.inAsAnyThreshold,
-        ),
-      ),
-      query,
-      'read',
-    );
-    const attribute = definition.attributes.get(name);
-    if (options.plain === false) {
-      return result.rows.map((row) => ({
-        ...row,
-        [aggregateFunction]: parseAggregate(attribute, aggregateFunction, row[aggregateFunction]),
-      })) as T;
-    }
-    return parseAggregate(attribute, aggregateFunction, result.rows[0]?.[aggregateFunction]) as T;
+    return counter.aggregate(
+      this,
+      String(field),
+      aggregateFunction,
+      options as AggregateOptions,
+    ) as Promise<T>;
   }
 
   /**
@@ -1552,92 +1059,12 @@ export class Model<
    * @param options - Update options.
    * @returns `[affectedCount]`, or `[affectedCount, rows]` with `returning: true`.
    */
-  static async update<M extends AnyModel>(
+  static update<M extends AnyModel>(
     this: ModelStatic<M>,
     values: Partial<Attributes<M>>,
     options: UpdateOptions<Attributes<M>>,
   ): Promise<[affectedCount: number, affectedRows?: M[]]> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const opts: MutableOptions = {
-      validate: true,
-      hooks: true,
-      individualHooks: false,
-      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
-      attributes: { ...(values as Values) },
-    };
-    if (opts['validate'] === true) {
-      const probe = new this(values as Values, { isNewRecord: false });
-      await probe.validate({
-        hooks: opts['hooks'] === true,
-        skip: [...definition.attributes.keys()].filter((name) => !(name in (values as Values))),
-      });
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeBulkUpdate', opts);
-    }
-    const where = withParanoid(definition, opts['where'], opts['paranoid'] as boolean | undefined);
-    const individual = opts['individualHooks'] === true;
-    const targets = individual
-      ? await this.findAll({ where: where as never, ...pickQueryOptions(options), paranoid: false })
-      : [];
-    const attributes = opts['attributes'] as Values;
-    if (individual) {
-      await targets.reduce<Promise<unknown>>(
-        (previous, instance) =>
-          previous.then(() => {
-            instance.set(attributes);
-            return runModelHooks(this, 'beforeUpdate', instance, opts);
-          }),
-        Promise.resolve(),
-      );
-    }
-    const changes = withTimestamps(
-      definition,
-      pickFields(attributes, options.fields),
-      new Date(),
-      false,
-      opts['silent'] === true,
-    );
-    if (individual && options.from !== undefined) {
-      throw new Error('update: individualHooks cannot be combined with from');
-    }
-    if (options.returningOld === true && options.returning !== true) {
-      throw new Error('update: returningOld requires returning: true');
-    }
-    const old = await returningOld(runtime, options);
-    const from = joinSources(options.from);
-    const node = buildUpdate(
-      definition,
-      setItems(
-        definition,
-        changes,
-        whereCompiler(definition, from.length === 0 ? undefined : definition.name),
-      ),
-      where,
-      {
-        ...(from.length === 0 ? {} : { from }),
-        ...(options.returning === true || individual ? { returning: true } : {}),
-        ...(runtime.inAsAnyThreshold === undefined
-          ? {}
-          : { inAsAnyThreshold: runtime.inAsAnyThreshold }),
-      },
-    );
-    const result = await runtime.execute(
-      sqlCompiler.compile(old ? withReturningOld(definition, node) : node),
-      options,
-    );
-    const updated = result.rows.map((row) => fromWrittenRow(this, row, old));
-    if (individual) {
-      await updated.reduce<Promise<unknown>>(
-        (previous, instance) =>
-          previous.then(() => runModelHooks(this, 'afterUpdate', instance, opts)),
-        Promise.resolve(),
-      );
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterBulkUpdate', opts);
-    }
-    return options.returning === true ? [result.rowCount, updated] : [result.rowCount];
+    return updater.update(this, values as Values, options as UpdateOptions);
   }
 
   /**
@@ -1646,7 +1073,7 @@ export class Model<
    * @param options - Destroy options.
    * @returns Number of deleted rows, or deleted instances with `returning: true`.
    */
-  static async destroy<M extends AnyModel>(
+  static destroy<M extends AnyModel>(
     this: ModelStatic<M>,
     options: DestroyOptions<Attributes<M>> & Readonly<{ returning: true }>,
   ): Promise<M[]>;
@@ -1656,75 +1083,15 @@ export class Model<
    * @param options - Destroy options.
    * @returns Number of deleted rows.
    */
-  static async destroy<M extends AnyModel>(
+  static destroy<M extends AnyModel>(
     this: ModelStatic<M>,
     options?: DestroyOptions<Attributes<M>>,
   ): Promise<number>;
-  static async destroy<M extends AnyModel>(
+  static destroy<M extends AnyModel>(
     this: ModelStatic<M>,
     options: DestroyOptions<Attributes<M>> = {},
   ): Promise<number | M[]> {
-    const { definition, runtime, scopes } = stateOf(this);
-    const opts: MutableOptions = {
-      hooks: true,
-      individualHooks: false,
-      force: false,
-      ...injectScope(activeScope(this), { ...options }, scopes.whereMergeStrategy),
-    };
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeBulkDestroy', opts);
-    }
-    const soft = definition.deletedAt !== undefined && opts['force'] !== true;
-    const where = soft ? withParanoid(definition, opts['where'], true) : opts['where'];
-    const individual = opts['individualHooks'] === true;
-    const targets = individual
-      ? await this.findAll({ where: where as never, ...pickQueryOptions(options), paranoid: false })
-      : [];
-    await targets.reduce<Promise<unknown>>(
-      (previous, instance) =>
-        previous.then(() => runModelHooks(this, 'beforeDestroy', instance, opts)),
-      Promise.resolve(),
-    );
-    const deleted = await (async (): Promise<number | M[]> => {
-      if (options.truncate === true) {
-        await (this as unknown as typeof Model).truncate(options);
-        return 0;
-      }
-      const inAsAny =
-        runtime.inAsAnyThreshold === undefined
-          ? {}
-          : { inAsAnyThreshold: runtime.inAsAnyThreshold };
-      const node =
-        soft && definition.deletedAt !== undefined
-          ? buildUpdate(
-              definition,
-              setItems(definition, { [definition.deletedAt]: new Date() }),
-              where,
-              {
-                ...(options.returning === true ? { returning: true } : {}),
-                ...inAsAny,
-              },
-            )
-          : buildDelete(definition, where, {
-              ...(options.using === undefined ? {} : { using: joinSources(options.using) }),
-              ...(options.returning === true ? { returning: true } : {}),
-              ...(options.limit === undefined ? {} : { limit: options.limit }),
-              ...inAsAny,
-            });
-      const result = await runtime.execute(sqlCompiler.compile(node), options);
-      return options.returning === true
-        ? result.rows.map((row) => fromRow(this, row))
-        : result.rowCount;
-    })();
-    await targets.reduce<Promise<unknown>>(
-      (previous, instance) =>
-        previous.then(() => runModelHooks(this, 'afterDestroy', instance, opts)),
-      Promise.resolve(),
-    );
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterBulkDestroy', opts);
-    }
-    return deleted;
+    return destroyer.destroy(this, options as DestroyOptions);
   }
 
   /**
@@ -1734,46 +1101,11 @@ export class Model<
    * @returns Resolves when done.
    * @throws Error when the model is not paranoid.
    */
-  static async restore<M extends AnyModel>(
+  static restore<M extends AnyModel>(
     this: ModelStatic<M>,
     options: RestoreOptions<Attributes<M>> = {},
   ): Promise<void> {
-    const { definition, runtime } = stateOf(this);
-    if (definition.deletedAt === undefined) {
-      throw new Error('Model is not paranoid');
-    }
-    const opts: MutableOptions = { hooks: true, individualHooks: false, ...options };
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'beforeBulkRestore', opts);
-    }
-    const individual = opts['individualHooks'] === true;
-    const targets = individual
-      ? await this.findAll({
-          where: opts['where'] as never,
-          ...pickQueryOptions(options),
-          paranoid: false,
-        })
-      : [];
-    await targets.reduce<Promise<unknown>>(
-      (previous, instance) =>
-        previous.then(() => runModelHooks(this, 'beforeRestore', instance, opts)),
-      Promise.resolve(),
-    );
-    const node = buildUpdate(
-      definition,
-      setItems(definition, { [definition.deletedAt]: null }),
-      opts['where'],
-      runtime.inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold: runtime.inAsAnyThreshold },
-    );
-    await runtime.execute(sqlCompiler.compile(node), options);
-    await targets.reduce<Promise<unknown>>(
-      (previous, instance) =>
-        previous.then(() => runModelHooks(this, 'afterRestore', instance, opts)),
-      Promise.resolve(),
-    );
-    if (opts['hooks'] === true) {
-      await runModelHooks(this, 'afterBulkRestore', opts);
-    }
+    return destroyer.restore(this, options as RestoreOptions);
   }
 
   /**
@@ -1782,22 +1114,10 @@ export class Model<
    * @param options - `cascade`, `restartIdentity` and query options.
    * @returns Resolves when done.
    */
-  static async truncate(
+  static truncate(
     options: QueryOptionsBase & Readonly<{ cascade?: boolean; restartIdentity?: boolean }> = {},
   ): Promise<void> {
-    const { definition, runtime } = stateOf(this);
-    await runtime.execute(
-      sqlCompiler.compile({
-        kind: 'truncate',
-        table: {
-          name: definition.tableName,
-          ...(definition.schema === undefined ? {} : { schema: definition.schema }),
-        },
-        ...(options.cascade === true ? { cascade: true } : {}),
-        ...(options.restartIdentity === true ? { restartIdentity: true } : {}),
-      }),
-      options,
-    );
+    return destroyer.truncate(this, options);
   }
 
   /**
@@ -1807,17 +1127,17 @@ export class Model<
    * @param options - Increment options.
    * @returns Updated instances.
    */
-  static async increment<M extends AnyModel>(
+  static increment<M extends AnyModel>(
     this: ModelStatic<M>,
     fields: AttributeAmounts<Attributes<M>>,
     options: IncrementOptions<Attributes<M>> = {},
   ): Promise<[affectedRows: M[], affectedCount: number]> {
-    return changeBy(
+    return incrementer.change(
       this,
       fields as AttributeAmounts<Values>,
       options as IncrementOptions,
       1,
-    ) as Promise<[M[], number]>;
+    );
   }
 
   /**
@@ -1827,17 +1147,17 @@ export class Model<
    * @param options - Decrement options.
    * @returns Updated instances.
    */
-  static async decrement<M extends AnyModel>(
+  static decrement<M extends AnyModel>(
     this: ModelStatic<M>,
     fields: AttributeAmounts<Attributes<M>>,
     options: IncrementOptions<Attributes<M>> = {},
   ): Promise<[affectedRows: M[], affectedCount: number]> {
-    return changeBy(
+    return incrementer.change(
       this,
       fields as AttributeAmounts<Values>,
       options as IncrementOptions,
       -1,
-    ) as Promise<[M[], number]>;
+    );
   }
 
   /**
@@ -1846,33 +1166,11 @@ export class Model<
    * @param options - `where` to search, `defaults` to add on creation.
    * @returns `[instance, created]`.
    */
-  static async findOrCreate<M extends AnyModel>(
+  static findOrCreate<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOrCreateOptions<Attributes<M>>,
   ): Promise<[M, boolean]> {
-    const { runtime } = stateOf(this);
-    const found = await this.findOne(options);
-    if (found !== null) {
-      return [found, false];
-    }
-    return runtime.transaction(async (transaction) => {
-      const values = {
-        ...plainWhereValues(options.where),
-        ...options.defaults,
-      } as CreationAttributes<M>;
-      try {
-        return [await this.create(values, { transaction, ...pickQueryOptions(options) }), true];
-      } catch (error) {
-        const existing = await this.findOne({
-          ...options,
-          transaction: options.transaction ?? null,
-        });
-        if (existing === null) {
-          throw error;
-        }
-        return [existing, false];
-      }
-    }, options.transaction);
+    return finder.findOrCreate(this, options as FindOrCreateOptions);
   }
 
   /**
@@ -1881,14 +1179,11 @@ export class Model<
    * @param options - `where` to search, `defaults` to add when building.
    * @returns `[instance, built]`.
    */
-  static async findOrBuild<M extends AnyModel>(
+  static findOrBuild<M extends AnyModel>(
     this: ModelStatic<M>,
     options: FindOrCreateOptions<Attributes<M>>,
   ): Promise<[M, boolean]> {
-    const found = await this.findOne(options);
-    return found === null
-      ? [this.build({ ...plainWhereValues(options.where), ...options.defaults } as Values), true]
-      : [found, false];
+    return finder.findOrBuild(this, options as FindOrCreateOptions);
   }
 
   /**
@@ -1910,28 +1205,7 @@ export class Model<
     keyOrOptions?: string | number | symbol | Readonly<{ plain?: boolean; raw?: boolean }>,
     options: Readonly<{ raw?: boolean }> = {},
   ): unknown {
-    if (typeof keyOrOptions === 'string') {
-      const getter = stateOf(this.constructor).definition.attributes.get(keyOrOptions)?.get;
-      return getter !== undefined && options.raw !== true
-        ? (getter as (this: unknown) => unknown).call(this)
-        : (this.dataValues as Values)[keyOrOptions];
-    }
-    const raw = typeof keyOrOptions === 'object' && keyOrOptions.raw === true;
-    const plain = typeof keyOrOptions === 'object' && keyOrOptions.plain === true;
-    const toPlain = (value: unknown): unknown =>
-      !plain
-        ? value
-        : value instanceof Model
-          ? value.get({ plain: true })
-          : Array.isArray(value) && value.some((item) => item instanceof Model)
-            ? value.map(toPlain)
-            : value;
-    return Object.fromEntries(
-      Object.keys(this.dataValues).map((key) => [
-        key,
-        toPlain(raw ? (this.dataValues as Values)[key] : this.get(key as keyof TAttributes)),
-      ]),
-    );
+    return instanceValues.get(this, keyOrOptions, options);
   }
 
   /**
@@ -1960,31 +1234,8 @@ export class Model<
     valueOrOptions?: unknown,
     maybeOptions?: Readonly<{ raw?: boolean }>,
   ): this {
-    if (typeof keyOrValues === 'object') {
-      const options = (valueOrOptions ?? {}) as Readonly<{ raw?: boolean }>;
-      Object.entries(keyOrValues).forEach(([key, value]) =>
-        this.set(key as keyof TAttributes, value as never, options),
-      );
-      return this;
-    }
-    const key = String(keyOrValues);
-    const options = maybeOptions ?? {};
-    const attribute = stateOf(this.constructor).definition.attributes.get(key);
-    if (options.raw === true) {
-      (this.dataValues as Values)[key] = valueOrOptions;
-      return this;
-    }
-    if (attribute === undefined) {
-      return this;
-    }
-    if (attribute.set !== undefined) {
-      (attribute.set as (this: unknown, value: unknown) => void).call(this, valueOrOptions);
-      return this;
-    }
-    return this.setDataValue(
-      key as keyof TAttributes,
-      valueOrOptions as TAttributes[keyof TAttributes],
-    );
+    instanceValues.set(this, keyOrValues, valueOrOptions, maybeOptions);
+    return this;
   }
 
   /**
@@ -2005,13 +1256,7 @@ export class Model<
    * @returns This instance.
    */
   setDataValue<K extends keyof TAttributes>(key: K, value: TAttributes[K]): this {
-    const name = String(key);
-    if (!isEqualValue(this._previousDataValues[key], value) || value instanceof SqlExpression) {
-      this.#changed = new Set([...this.#changed, name]);
-    } else if (this.#changed.has(name)) {
-      this.#changed = new Set([...this.#changed].filter((item) => item !== name));
-    }
-    this.dataValues[key] = value;
+    instanceValues.setDataValue(this, key, value);
     return this;
   }
 
@@ -2036,18 +1281,7 @@ export class Model<
    */
   changed(key: keyof TAttributes & string, value: boolean): void;
   changed(key?: string, value?: boolean): unknown {
-    if (key === undefined) {
-      return this.#changed.size === 0
-        ? false
-        : ([...this.#changed] as (keyof TAttributes & string)[]);
-    }
-    if (value === undefined) {
-      return this.#changed.has(key);
-    }
-    this.#changed = value
-      ? new Set([...this.#changed, key])
-      : new Set([...this.#changed].filter((item) => item !== key));
-    return undefined;
+    return instanceValues.changed(this, key, value);
   }
 
   /**
@@ -2059,12 +1293,7 @@ export class Model<
   previous<K extends keyof TAttributes>(
     key?: K,
   ): TAttributes[K] | Partial<TAttributes> | undefined {
-    if (key !== undefined) {
-      return this._previousDataValues[key];
-    }
-    return Object.fromEntries(
-      [...this.#changed].map((name) => [name, (this._previousDataValues as Values)[name]]),
-    ) as Partial<TAttributes>;
+    return instanceValues.previous(this, key) as TAttributes[K] | Partial<TAttributes> | undefined;
   }
 
   /**
@@ -2073,95 +1302,8 @@ export class Model<
    * @param options - Save options.
    * @returns This instance with values returned by the database.
    */
-  async save(options: SaveOptions<TAttributes> = {}): Promise<this> {
-    const model = this.constructor as typeof Model;
-    const { definition, runtime } = stateOf(model);
-    const opts: MutableOptions = { hooks: true, validate: true, ...options };
-    const isNew = this.isNewRecord;
-    const attributes = [...definition.attributes.keys()];
-    const changedAttributes = (): readonly string[] =>
-      [...this.#changed].filter((name) => definition.attributes.has(name));
-    const explicitFields = options.fields as readonly string[] | undefined;
-    const fields = explicitFields ?? (isNew ? attributes : changedAttributes());
-    if (!isNew && fields.length === 0) {
-      return this;
-    }
-    if (opts['validate'] === true) {
-      await this.validate({ hooks: opts['hooks'] === true, fields });
-    }
-    const hookFields = await (async (): Promise<readonly string[]> => {
-      if (opts['hooks'] !== true) {
-        return fields;
-      }
-      const before = changedAttributes();
-      await runModelHooks(model, isNew ? 'beforeCreate' : 'beforeUpdate', this, opts);
-      const added =
-        explicitFields === undefined && !isNew
-          ? changedAttributes().filter((name) => !before.includes(name))
-          : [];
-      if (explicitFields === undefined && !isNew && opts['validate'] === true) {
-        await this.validate({
-          hooks: opts['hooks'] === true,
-          skip: attributes.filter((name) => !added.includes(name)),
-        });
-      }
-      return [...fields, ...added];
-    })();
-    const now = new Date();
-    if (isNew) {
-      await nestedCreator.saveBelongsTo(this, this.#includes, options);
-      const values = pickFields(
-        withTimestamps(definition, this.dataValues as Values, now, true, opts['silent'] === true),
-        explicitFields,
-      );
-      const result = await runtime.execute(
-        sqlCompiler.compile(
-          buildInsert(definition, [values], {
-            returning: true,
-            ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-          }),
-        ),
-        options,
-      );
-      this.#refresh(definition, result.rows[0]);
-      await nestedCreator.saveChildren(this, this.#includes, options);
-    } else {
-      const version = definition.version;
-      const current = this.dataValues as Values;
-      const changes = withTimestamps(
-        definition,
-        Object.fromEntries(
-          hookFields.filter((name) => name !== version).map((name) => [name, current[name]]),
-        ),
-        now,
-        false,
-        opts['silent'] === true,
-      );
-      const previousVersion =
-        version === undefined ? undefined : (this._previousDataValues as Values)[version];
-      const where = {
-        ...primaryKeyWhere(definition, this._previousDataValues as Values),
-        ...(version === undefined ? {} : { [version]: previousVersion }),
-      };
-      const set =
-        version === undefined
-          ? changes
-          : { ...changes, [version]: Number(previousVersion ?? 0) + 1 };
-      const result = await runtime.execute(
-        sqlCompiler.compile(
-          buildUpdate(definition, setItems(definition, set), where, { returning: true }),
-        ),
-        options,
-      );
-      if (version !== undefined && result.rowCount === 0) {
-        throw new OptimisticLockError({ modelName: definition.name, values: set, where });
-      }
-      this.#refresh(definition, result.rows[0]);
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(model, isNew ? 'afterCreate' : 'afterUpdate', this, opts);
-    }
-    return this;
+  save(options: SaveOptions<TAttributes> = {}): Promise<this> {
+    return lifecycle.save(this, options as SaveOptions);
   }
 
   /**
@@ -2171,8 +1313,8 @@ export class Model<
    * @returns Resolves when valid.
    * @throws ValidationError with all failures.
    */
-  async validate(options: ValidateOptions = {}): Promise<void> {
-    await validateWithHooks(this, options);
+  validate(options: ValidateOptions = {}): Promise<void> {
+    return lifecycle.validate(this, options);
   }
 
   /**
@@ -2197,23 +1339,8 @@ export class Model<
    * @returns This instance.
    * @throws InstanceError when the row no longer exists.
    */
-  async reload(options: QueryOptionsBase = {}): Promise<this> {
-    const { definition, runtime } = stateOf(this.constructor);
-    const result = await runtime.execute(
-      sqlCompiler.compile(
-        buildSelect(definition, {
-          where: primaryKeyWhere(definition, this.dataValues as Values),
-          limit: 1,
-        }),
-      ),
-      options,
-    );
-    if (result.rows[0] === undefined) {
-      throw new InstanceError(
-        'Instance could not be reloaded because it does not exist anymore (find call returned null)',
-      );
-    }
-    return this.#refresh(definition, result.rows[0]);
+  reload(options: QueryOptionsBase = {}): Promise<this> {
+    return lifecycle.reload(this, options);
   }
 
   /**
@@ -2222,30 +1349,8 @@ export class Model<
    * @param options - Query options.
    * @returns Resolves when deleted.
    */
-  async destroy(options: InstanceDestroyOptions = {}): Promise<void> {
-    const model = this.constructor as typeof Model;
-    const { definition, runtime } = stateOf(model);
-    const opts: MutableOptions = { hooks: true, force: false, ...options };
-    if (opts['hooks'] === true) {
-      await runModelHooks(model, 'beforeDestroy', this, opts);
-    }
-    if (definition.deletedAt !== undefined && opts['force'] !== true) {
-      this.setDataValue(
-        definition.deletedAt as keyof TAttributes,
-        new Date() as TAttributes[keyof TAttributes],
-      );
-      await this.save({ ...pickQueryOptions(options), hooks: false });
-    } else {
-      await runtime.execute(
-        sqlCompiler.compile(
-          buildDelete(definition, primaryKeyWhere(definition, this.dataValues as Values)),
-        ),
-        options,
-      );
-    }
-    if (opts['hooks'] === true) {
-      await runModelHooks(model, 'afterDestroy', this, opts);
-    }
+  destroy(options: InstanceDestroyOptions = {}): Promise<void> {
+    return lifecycle.destroy(this, options);
   }
 
   /**
@@ -2255,24 +1360,8 @@ export class Model<
    * @returns Resolves when restored.
    * @throws Error when the model is not paranoid.
    */
-  async restore(options: QueryOptionsBase & Readonly<{ hooks?: boolean }> = {}): Promise<void> {
-    const model = this.constructor as typeof Model;
-    const { definition } = stateOf(model);
-    if (definition.deletedAt === undefined) {
-      throw new Error('Model is not paranoid');
-    }
-    const hooks = options.hooks !== false;
-    if (hooks) {
-      await runModelHooks(model, 'beforeRestore', this, options);
-    }
-    this.setDataValue(
-      definition.deletedAt as keyof TAttributes,
-      null as TAttributes[keyof TAttributes],
-    );
-    await this.save({ ...pickQueryOptions(options), hooks: false });
-    if (hooks) {
-      await runModelHooks(model, 'afterRestore', this, options);
-    }
+  restore(options: QueryOptionsBase & Readonly<{ hooks?: boolean }> = {}): Promise<void> {
+    return lifecycle.restore(this, options);
   }
 
   /**
@@ -2282,12 +1371,7 @@ export class Model<
    * @throws Error when the model is not paranoid.
    */
   isSoftDeleted(): boolean {
-    const { definition } = stateOf(this.constructor);
-    if (definition.deletedAt === undefined) {
-      throw new Error('Model is not paranoid');
-    }
-    const value = (this.dataValues as Values)[definition.deletedAt];
-    return value !== null && value !== undefined;
+    return lifecycle.isSoftDeleted(this);
   }
 
   /**
@@ -2301,11 +1385,12 @@ export class Model<
     fields: AttributeAmounts<TAttributes>,
     options: Omit<IncrementOptions<TAttributes>, 'where'> = {},
   ): Promise<this> {
-    const { definition } = stateOf(this.constructor);
-    await (this.constructor as typeof Model).increment(fields as AttributeAmounts<Values>, {
-      ...(options as IncrementOptions),
-      where: primaryKeyWhere(definition, this.dataValues as Values) as WhereOptions,
-    });
+    await lifecycle.changeBy(
+      this,
+      'increment',
+      fields as AttributeAmounts<Values>,
+      options as Omit<IncrementOptions, 'where'>,
+    );
     return this;
   }
 
@@ -2320,11 +1405,12 @@ export class Model<
     fields: AttributeAmounts<TAttributes>,
     options: Omit<IncrementOptions<TAttributes>, 'where'> = {},
   ): Promise<this> {
-    const { definition } = stateOf(this.constructor);
-    await (this.constructor as typeof Model).decrement(fields as AttributeAmounts<Values>, {
-      ...(options as IncrementOptions),
-      where: primaryKeyWhere(definition, this.dataValues as Values) as WhereOptions,
-    });
+    await lifecycle.changeBy(
+      this,
+      'decrement',
+      fields as AttributeAmounts<Values>,
+      options as Omit<IncrementOptions, 'where'>,
+    );
     return this;
   }
 
@@ -2335,13 +1421,7 @@ export class Model<
    * @returns True when all primary key values are equal.
    */
   equals(other: Model): boolean {
-    const { definition } = stateOf(this.constructor);
-    return (
-      other instanceof (this.constructor as typeof Model) &&
-      definition.primaryKeys.every((name) =>
-        isEqualValue((this.dataValues as Values)[name], (other.dataValues as Values)[name]),
-      )
-    );
+    return instanceValues.equals(this, other);
   }
 
   /**
@@ -2352,173 +1432,7 @@ export class Model<
   toJSON(): TAttributes {
     return structuredClone(this.get({ plain: true }));
   }
-
-  #refresh(definition: ModelDefinition, row: Readonly<Record<string, unknown>> | undefined): this {
-    if (row !== undefined) {
-      this.set(parseRow(definition, row), { raw: true });
-    }
-    this.isNewRecord = false;
-    this._previousDataValues = { ...this.dataValues };
-    this.#changed = new Set();
-    return this;
-  }
 }
-
-const fromRow = <M extends AnyModel>(
-  model: ModelStatic<M>,
-  row: Readonly<Record<string, unknown>>,
-): M => new model(parseRow(stateOf(model).definition, row), { isNewRecord: false, raw: true });
-
-const changeBy = async <M extends AnyModel>(
-  model: ModelStatic<M>,
-  fields: AttributeAmounts<Values>,
-  options: IncrementOptions,
-  sign: 1 | -1,
-): Promise<[M[], number]> => {
-  const { definition, runtime } = stateOf(model);
-  const amounts = toAmounts(fields, options.by ?? 1);
-  const timestamp = withTimestamps(definition, {}, new Date(), false, options.silent === true);
-  const node = buildUpdate(
-    definition,
-    [...incrementItems(definition, amounts, sign), ...setItems(definition, timestamp)],
-    options.where ?? {},
-    { returning: true },
-  );
-  const result = await runtime.execute(sqlCompiler.compile(node), options);
-  return [result.rows.map((row) => fromRow(model, row)), result.rowCount];
-};
-
-/** @internal Parses a driver row into attribute values of `model`. */
-export const parseModelRow = (
-  model: object,
-  row: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> => parseRow(stateOf(model).definition, row);
-
-const withoutFlag = (row: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> =>
-  Object.fromEntries(
-    Object.entries(row).filter(
-      ([key]) => key !== INSERTED_FLAG && key !== MERGE_ACTION && !key.startsWith(OLD_PREFIX),
-    ),
-  );
-
-const sameValue = (left: unknown, right: unknown): boolean =>
-  left === right ||
-  (left instanceof Date && right instanceof Date
-    ? left.getTime() === right.getTime()
-    : JSON.stringify(left) === JSON.stringify(right) || String(left) === String(right));
-
-/**
- * With `ON CONFLICT DO NOTHING` RETURNING has rows only for inserted records (in VALUES order).
- * Aligns them with the input rows; skipped records get `undefined`.
- */
-const insertedRowsOf = (
-  definition: ModelDefinition,
-  inputs: readonly Values[],
-  returned: readonly Readonly<Record<string, unknown>>[],
-): readonly (Readonly<Record<string, unknown>> | undefined)[] =>
-  inputs.reduce<
-    Readonly<{ aligned: readonly (Readonly<Record<string, unknown>> | undefined)[]; next: number }>
-  >(
-    (state, input) => {
-      const row = returned[state.next];
-      const parsed = row === undefined ? undefined : parseRow(definition, row);
-      const matches =
-        parsed !== undefined &&
-        Object.entries(input).every(
-          ([name, value]) =>
-            value === undefined ||
-            (value === null && definition.attributes.get(name)?.autoIncrement === true) ||
-            value instanceof SqlExpression ||
-            !(name in parsed) ||
-            sameValue(parsed[name], value),
-        );
-      return matches
-        ? { aligned: [...state.aligned, row], next: state.next + 1 }
-        : { aligned: [...state.aligned, undefined], next: state.next };
-    },
-    { aligned: [], next: 0 },
-  ).aligned;
-
-const returningOld = async (
-  runtime: Readonly<{ serverVersion: () => Promise<number> }>,
-  options: Readonly<{ returningOld?: boolean }>,
-): Promise<boolean> => {
-  if (options.returningOld !== true) {
-    return false;
-  }
-  if ((await runtime.serverVersion()) < 180000) {
-    throw new Error('returningOld requires PostgreSQL 18 or newer');
-  }
-  return true;
-};
-
-const previousValues = (
-  definition: ModelDefinition,
-  row: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> | null => {
-  const old = Object.fromEntries(
-    Object.entries(row)
-      .filter(([key]) => key.startsWith(OLD_PREFIX))
-      .map(([key, value]) => [key.slice(OLD_PREFIX.length), value]),
-  );
-  return definition.primaryKeys.every((name) => old[name] === null || old[name] === undefined)
-    ? null
-    : parseRow(definition, old);
-};
-
-const fromWrittenRow = <M extends AnyModel>(
-  model: ModelStatic<M>,
-  row: Readonly<Record<string, unknown>>,
-  old: boolean,
-): M => {
-  const instance = fromRow(model, withoutFlag(row));
-  if (old) {
-    oldValuesOf.set(instance, previousValues(stateOf(model).definition, row));
-  }
-  return instance;
-};
-
-const insertWithConflict = async <M extends AnyModel>(
-  model: ModelStatic<M>,
-  rows: readonly Values[],
-  onConflict: OnConflictNode | undefined,
-  options: QueryOptionsBase & Readonly<{ overriding?: 'system' | 'user'; returningOld?: boolean }>,
-): Promise<M[]> => {
-  const { definition, runtime } = stateOf(model);
-  const old = await returningOld(runtime, options);
-  const insert = buildInsert(definition, rows, {
-    ...(onConflict === undefined ? {} : { onConflict }),
-    ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-    returning: [...returningAll(definition), insertedFlagColumn()],
-  });
-  const result = await runtime.execute(
-    sqlCompiler.compile(old ? withReturningOld(definition, insert) : insert),
-    options,
-  );
-  return result.rows.map((row) => {
-    const instance = fromWrittenRow(model, row, old);
-    insertedFlags.set(instance, row[INSERTED_FLAG] === true);
-    return instance;
-  });
-};
-
-const sequelizes = new WeakMap<object, RuntimeOwner>();
-
-type MutableOptions = Record<string, unknown>;
-
-/** Action reported by `merge_action()`. */
-export type MergeActionName = 'INSERT' | 'UPDATE' | 'DELETE';
-
-/** Result of `Model.merge`. */
-export type MergeResult<M> = Readonly<{
-  /** Number of affected rows. */
-  rowCount: number;
-  /** Written rows (with `returning: true`). */
-  rows: readonly Readonly<{
-    /** Action taken. */ action: MergeActionName;
-    /** Row after the action. */ instance: M;
-  }>[];
-}>;
 
 /** Named hook method of a model class, e.g. `Model.beforeCreate`. */
 export type NamedHookAdder = {
@@ -2573,51 +1487,3 @@ NAMED_HOOKS.forEach((type) => {
     },
   });
 });
-
-const missingHook = (): never => {
-  throw new Error('addHook: hook function is required');
-};
-
-const validateAll = async (instances: readonly Model[], hooks: boolean): Promise<void> => {
-  const failures = await Promise.all(
-    instances.map((instance) =>
-      instance.validate({ hooks }).then(
-        () => undefined,
-        (error: unknown) =>
-          new BulkRecordError(error instanceof Error ? error : new Error(String(error)), instance),
-      ),
-    ),
-  );
-  const errors = failures.filter((failure): failure is BulkRecordError => failure !== undefined);
-  if (errors.length > 0) {
-    throw new AggregateError(errors);
-  }
-};
-
-/** @internal Normalized definition of a model class. */
-export const definitionOf = (model: object): ModelDefinition => stateOf(model).definition;
-
-const COPY_FORMATS: ReadonlySet<string> = new Set(['text', 'csv', 'binary']);
-
-const singleCharacter = (value: string, name: string): string => {
-  if ([...value].length !== 1) {
-    throw new Error(`copyTo: ${name} must be a single character`);
-  }
-  return sqlLiteral.escape(value);
-};
-
-const copyFormatSql = (options: CopyToFormatOptions): string => {
-  if (options.format !== undefined && !COPY_FORMATS.has(options.format)) {
-    throw new Error(`copyTo: unsupported format ${String(options.format)}`);
-  }
-  const parts = [
-    ...(options.format === undefined ? [] : [`FORMAT ${options.format}`]),
-    ...(options.header === undefined ? [] : [`HEADER ${options.header ? 'true' : 'false'}`]),
-    ...(options.delimiter === undefined
-      ? []
-      : [`DELIMITER ${singleCharacter(options.delimiter, 'delimiter')}`]),
-    ...(options.quote === undefined ? [] : [`QUOTE ${singleCharacter(options.quote, 'quote')}`]),
-    ...(options.nullString === undefined ? [] : [`NULL ${sqlLiteral.escape(options.nullString)}`]),
-  ];
-  return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
-};

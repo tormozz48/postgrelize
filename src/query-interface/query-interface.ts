@@ -8,10 +8,10 @@ import {
 } from '../ddl/ddl-generator.ts';
 import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
 import {
-  normalizeAttribute,
+  ModelDefinition,
   type AttributeOptions,
   type ModelAttributes,
-} from '../model/definition.ts';
+} from '../model/model-definition.ts';
 import { runtimeKey, type QueryOptionsBase, type RuntimeOwner } from '../model/runtime.ts';
 import { SqlAst, type ExprNode } from '../sql/ast.ts';
 import { SqlCompiler } from '../sql/compile.ts';
@@ -128,7 +128,7 @@ export class QueryInterface {
   }
 
   #normalizeColumn(name: string, attribute: DataTypeInput | AttributeOptions): ColumnDefinition {
-    return ddl.columnOf(normalizeAttribute(name, attribute, false));
+    return ddl.columnOf(ModelDefinition.attribute(name, attribute, false));
   }
 
   /**

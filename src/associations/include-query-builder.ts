@@ -1,13 +1,7 @@
 import { SqlExpression } from '../expressions/methods.ts';
-import type { ModelDefinition } from '../model/definition.ts';
-import {
-  orderItem,
-  selectColumns,
-  tableOf,
-  whereClause,
-  whereCompiler,
-  type FindAttributeOptions,
-} from '../model/query-builders.ts';
+import type { ModelDefinition } from '../model/model-definition.ts';
+import { AttributeColumns } from '../model/attribute-columns.ts';
+import { SelectQueryBuilder, type FindAttributeOptions } from '../model/select-query-builder.ts';
 import {
   SqlAst,
   type ExprNode,
@@ -19,6 +13,8 @@ import { OrderDirection } from '../sql/order.ts';
 import type { IncludeNode, IncludeOptions } from './include.ts';
 
 const ast = new SqlAst();
+const attributeColumns = new AttributeColumns();
+const selects = new SelectQueryBuilder(attributeColumns);
 
 /** Options of the main query that affect the include joins. */
 export type IncludeQueryOptions = Readonly<{
@@ -180,8 +176,9 @@ export class IncludeQueryBuilder {
     path: string,
     attributes: FindAttributeOptions | undefined,
   ): readonly ExprNode[] {
-    return selectColumns(definition, alias, whereCompiler(definition, alias), attributes).map(
-      (column) => {
+    return selects
+      .columns(definition, alias, attributeColumns.whereCompiler(definition, alias), attributes)
+      .map((column) => {
         const name =
           column.kind === 'alias'
             ? column.alias
@@ -192,8 +189,7 @@ export class IncludeQueryBuilder {
               : '';
         const expr = column.kind === 'alias' ? column.expr : column;
         return { kind: 'alias', expr, alias: `${path}.${name}` } as const;
-      },
-    );
+      });
   }
 
   #condition(
@@ -202,7 +198,10 @@ export class IncludeQueryBuilder {
     where: unknown,
     paranoid: boolean,
   ): ExprNode | undefined {
-    const condition = whereClause(where, whereCompiler(definition, alias));
+    const condition = attributeColumns.where(
+      where,
+      attributeColumns.whereCompiler(definition, alias),
+    );
     const notDeleted =
       paranoid && definition.deletedAt !== undefined
         ? ({
@@ -220,7 +219,9 @@ export class IncludeQueryBuilder {
     alias: string,
     scope: Readonly<Record<string, unknown>> | undefined,
   ): ExprNode | undefined {
-    return scope === undefined ? undefined : whereClause(scope, whereCompiler(definition, alias));
+    return scope === undefined
+      ? undefined
+      : attributeColumns.where(scope, attributeColumns.whereCompiler(definition, alias));
   }
 
   #onClause(parent: ModelDefinition, parentAlias: string, node: IncludeNode): ExprNode {
@@ -248,7 +249,7 @@ export class IncludeQueryBuilder {
       return [
         {
           type: joinType(node, node.required),
-          table: tableOf(node.definition, node.alias),
+          table: attributeColumns.table(node.definition, node.alias),
           on: ast.and([
             this.#onClause(parent, parentAlias, node),
             ...extra.filter((part): part is ExprNode => part !== undefined),
@@ -265,18 +266,21 @@ export class IncludeQueryBuilder {
         ast.ident(parentAlias, field(parent, node.association.sourceKey)),
         ast.ident(through.alias, field(through.definition, node.association.foreignKey)),
       ),
-      whereClause(through.where, whereCompiler(through.definition, through.alias)),
+      attributeColumns.where(
+        through.where,
+        attributeColumns.whereCompiler(through.definition, through.alias),
+      ),
       this.#scopeCondition(through.definition, through.alias, node.association.through?.scope),
     ].filter((part): part is ExprNode => part !== undefined);
     return [
       {
         type: joinType(node, node.required),
-        table: tableOf(through.definition, through.alias),
+        table: attributeColumns.table(through.definition, through.alias),
         on: ast.and(throughCondition),
       },
       {
         type: joinType(node, node.required),
-        table: tableOf(node.definition, node.alias),
+        table: attributeColumns.table(node.definition, node.alias),
         on: ast.and([
           ast.binary(
             '=',
@@ -353,7 +357,7 @@ export class IncludeQueryBuilder {
     if (order === undefined || order === null) {
       return { all: [], main: [] };
     }
-    const ctx = whereCompiler(definition, mainAlias);
+    const ctx = attributeColumns.whereCompiler(definition, mainAlias);
     const items: readonly unknown[] = Array.isArray(order) ? order : [order];
     const resolved = items.map((item) => {
       const viaInclude =
@@ -369,8 +373,8 @@ export class IncludeQueryBuilder {
         ? {
             node:
               item instanceof SqlExpression
-                ? { expr: whereClause(item, ctx) ?? ast.raw('1') }
-                : orderItem(definition, mainAlias, ctx, item),
+                ? { expr: attributeColumns.where(item, ctx) ?? ast.raw('1') }
+                : selects.orderItem(definition, mainAlias, ctx, item),
             main: true,
           }
         : { node: viaInclude, main: false };

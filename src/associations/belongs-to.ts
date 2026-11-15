@@ -1,9 +1,11 @@
-import type { ModelAttributes } from '../model/definition.ts';
+import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { addAssociationAttributes } from '../model/state.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
 import type { AssociationOptions } from './types.ts';
+
+const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
@@ -25,7 +27,7 @@ export class BelongsTo extends Association {
     const foreignKey =
       keys.foreignKeyName(options.foreignKey) ??
       keys.camelize(`${name.singular}_${keys.primaryKey(target)}`);
-    addAssociationAttributes(source, {
+    registry.addAssociationAttributes(source, {
       [foreignKey]: keys.keyAttribute(
         keys.attributeOf(target, targetKey),
         keys.foreignKeyExtras(options.foreignKey),

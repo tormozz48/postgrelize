@@ -1,6 +1,6 @@
 import { DdlGenerator, type ColumnDefinition } from '../ddl/ddl-generator.ts';
 import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
-import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
+import type { AttributeDefinition, ModelDefinition } from '../model/model-definition.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import type { QueryInterface } from './query-interface.ts';

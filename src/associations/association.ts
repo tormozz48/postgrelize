@@ -1,7 +1,7 @@
 import { AssociationError } from '../errors/errors.ts';
 import { Op } from '../expressions/op.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { defineAssociationAccessor, stateOf, updateState } from '../model/state.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import type { AssociationKeyFields } from './association-keys.ts';
 import type {
   Association as AssociationFields,
@@ -10,6 +10,8 @@ import type {
   AssociationThrough,
   AssociationType,
 } from './types.ts';
+
+const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
@@ -146,7 +148,7 @@ export abstract class Association implements AssociationFields {
    * @throws AssociationError when the alias is already used on the source.
    */
   protected install(): void {
-    updateState(this.source, (state) => {
+    registry.update(this.source, (state) => {
       if (state.associations.has(this.as)) {
         throw new AssociationError(
           `You have used the alias ${this.as} in two separate associations. Aliased associations must have unique aliases.`,
@@ -155,11 +157,11 @@ export abstract class Association implements AssociationFields {
       return { ...state, associations: new Map([...state.associations, [this.as, this]]) };
     });
     this.#mixin();
-    defineAssociationAccessor((this.source as { prototype: object }).prototype, this.as);
+    registry.defineAssociationAccessor((this.source as { prototype: object }).prototype, this.as);
     if (this.through !== undefined) {
-      defineAssociationAccessor(
+      registry.defineAssociationAccessor(
         (this.target as { prototype: object }).prototype,
-        stateOf(this.through.model).definition.name,
+        registry.state(this.through.model).definition.name,
       );
     }
   }

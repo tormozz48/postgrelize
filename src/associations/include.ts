@@ -1,6 +1,6 @@
-import type { ModelDefinition } from '../model/definition.ts';
+import type { ModelDefinition } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
-import type { FindAttributeOptions } from '../model/query-builders.ts';
+import type { FindAttributeOptions } from '../model/select-query-builder.ts';
 import type { Association } from './types.ts';
 
 type Model = ModelStatic<AnyModel>;

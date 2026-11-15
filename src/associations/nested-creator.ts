@@ -1,10 +1,12 @@
 import type { AnyModel, SaveOptions, Values } from '../model/options.ts';
-import { pickQueryOptions } from '../model/values.ts';
+import { ModelValues } from '../model/model-values.ts';
 import type { IncludeNode } from './include.ts';
 import type { IncludeResolver } from './include-resolver.ts';
 
 /** Tells model instances apart from plain values (injected to avoid importing `Model`). */
 export type InstanceCheck = (value: unknown) => value is AnyModel;
+
+const modelValues = new ModelValues();
 
 const toArray = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : [value]);
 
@@ -87,7 +89,7 @@ export class NestedCreator {
           previous.then(async () => {
             const [parent] = this.#nestedInstances(instance, node);
             if (parent !== undefined) {
-              await parent.save(pickQueryOptions(options));
+              await parent.save(modelValues.queryOptions(options));
               instance.set(node.association.foreignKey, parent.get(node.association.targetKey));
             }
           }),
@@ -143,7 +145,7 @@ export class NestedCreator {
     options: SaveOptions,
   ): Promise<void> {
     const { association } = node;
-    const childOptions = pickQueryOptions(options);
+    const childOptions = modelValues.queryOptions(options);
     if (association.associationType === 'BelongsToMany' && association.through !== undefined) {
       await child.save(childOptions);
       await association.through.model.create(

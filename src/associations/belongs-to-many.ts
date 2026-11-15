@@ -1,10 +1,12 @@
 import inflection from 'inflection';
-import type { ModelAttributes } from '../model/definition.ts';
+import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
-import { addAssociationAttributes, stateOf } from '../model/state.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
 import type { BelongsToManyOptions, ThroughOptions } from './types.ts';
+
+const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
@@ -20,18 +22,18 @@ const throughModel = (
   through: string | Model,
   attributes: ModelAttributes,
 ): Model => {
-  const { runtime } = stateOf(source);
+  const { runtime } = registry.state(source);
   if (typeof through !== 'string') {
-    addAssociationAttributes(through, attributes);
+    registry.addAssociationAttributes(through, attributes);
     return through;
   }
   const existing = runtime.models()[through] as Model | undefined;
   if (existing !== undefined) {
-    addAssociationAttributes(existing, attributes);
+    registry.addAssociationAttributes(existing, attributes);
     return existing;
   }
   const created = runtime.defineModel(through, {}, { tableName: through }) as Model;
-  addAssociationAttributes(created, attributes);
+  registry.addAssociationAttributes(created, attributes);
   return created;
 };
 
@@ -119,7 +121,7 @@ export class BelongsToMany extends Association {
       },
     });
     this.#junction = model;
-    this.#junctionName = stateOf(model).definition.name;
+    this.#junctionName = registry.state(model).definition.name;
     this.#otherKey = otherKey;
     this.install();
   }

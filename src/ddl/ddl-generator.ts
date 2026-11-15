@@ -2,7 +2,7 @@ import inflection from 'inflection';
 import type { DataType } from '../data-types/data-types.ts';
 import { DefaultValueGenerator } from '../data-types/default-value-generator.ts';
 import { SqlExpression } from '../expressions/methods.ts';
-import type { AttributeDefinition } from '../model/definition.ts';
+import type { AttributeDefinition } from '../model/model-definition.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import { WhereCompiler } from '../where/where.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';

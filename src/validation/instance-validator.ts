@@ -1,7 +1,7 @@
 import { promisify } from 'node:util';
 import { ValidationErrorItem } from '../errors/errors.ts';
 import { SqlExpression } from '../expressions/methods.ts';
-import type { AttributeDefinition, ModelDefinition } from '../model/definition.ts';
+import type { AttributeDefinition, ModelDefinition } from '../model/model-definition.ts';
 import { BuiltinValidators } from './builtin-validators.ts';
 import type { StandardSchemaV1 } from './standard-schema.ts';
 import { StandardSchemaValidator } from './standard-schema-validator.ts';
