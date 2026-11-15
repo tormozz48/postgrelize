@@ -5,9 +5,16 @@ import {
   type DropOptions,
   type SyncOptions,
 } from '../query-interface/schema-synchronizer.ts';
+import type { SequelizeBase } from './sequelize-base.ts';
 import type { SequelizeConstructor } from './sequelize-constructor.ts';
 
 const registry = new ModelRegistry();
+
+const synchronizer = (sequelize: SequelizeBase): SchemaSynchronizer =>
+  new SchemaSynchronizer(sequelize.internals.runtime, sequelize.getQueryInterface());
+
+const definitions = (sequelize: SequelizeBase): ReturnType<ModelRegistry['definition']>[] =>
+  Object.values(sequelize.models).map((model) => registry.definition(model));
 
 /**
  * Schema methods of `Sequelize`: schema management, `sync` and `drop`.
@@ -68,7 +75,7 @@ export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase)
           `Database "${this.config.database ?? ''}" does not match sync match parameter "${String(options.match)}"`,
         );
       }
-      await this.#synchronizer().syncAll(this.#definitions(), options);
+      await synchronizer(this).syncAll(definitions(this), options);
       return this;
     }
 
@@ -79,14 +86,6 @@ export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase)
      * @returns Resolves when done.
      */
     async drop(options: DropOptions = {}): Promise<void> {
-      await this.#synchronizer().dropAll(this.#definitions(), options);
-    }
-
-    #synchronizer(): SchemaSynchronizer {
-      return new SchemaSynchronizer(this.internals.runtime, this.getQueryInterface());
-    }
-
-    #definitions(): ReturnType<ModelRegistry['definition']>[] {
-      return Object.values(this.models).map((model) => registry.definition(model));
+      await synchronizer(this).dropAll(definitions(this), options);
     }
   };

@@ -82,37 +82,6 @@
           }
         ]
       }
-    },
-    {
-      "files": [
-        "src/connection/connection-manager.ts",
-        "src/connection/copy.ts",
-        "src/errors/errors.ts",
-        "src/index.ts",
-        "src/sequelize.ts",
-        "src/transaction/transaction.ts",
-        "src/validation/instance-validator.ts"
-      ],
-      "rules": {
-        "max-lines": "off"
-      }
-    },
-    {
-      "files": [
-        "src/connection/connection-config.ts",
-        "src/connection/connection-manager.ts",
-        "src/connection/copy.ts",
-        "src/data-types/array-literal-parser.ts",
-        "src/errors/errors.ts",
-        "src/errors/map-pg-error.ts",
-        "src/query/raw-query.ts",
-        "src/sequelize.ts",
-        "src/transaction/transaction.ts",
-        "src/validation/instance-validator.ts"
-      ],
-      "rules": {
-        "max-lines-per-function": "off"
-      }
     }
   ],
   "env": {

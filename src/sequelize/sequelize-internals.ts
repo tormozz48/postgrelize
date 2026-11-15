@@ -38,6 +38,8 @@ export class SequelizeInternals {
   hooks: HookRegistry;
   /** Pools of the instance. */
   readonly connections: ConnectionManager;
+  /** Schema API, created on first use. */
+  queryInterface: QueryInterface | undefined;
   /** Services provided to models. */
   readonly runtime: ModelRuntime;
   readonly #owner: InternalsOwner;

@@ -9,7 +9,12 @@ import { Model } from '../model/model.ts';
 import type { ModelAttributes } from '../model/model-definition.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
 import type { AnyModel, InitOptions, ModelStatic } from '../model/options.ts';
-import { runtimeKey, type ModelRuntime, type QueryOptionsBase } from '../model/runtime.ts';
+import {
+  runtimeKey,
+  type ModelRuntime,
+  type QueryOptionsBase,
+  type RuntimeOwner,
+} from '../model/runtime.ts';
 import { QueryResultShaper, QueryTypes, type QueryOptions } from '../query/query-result-shaper.ts';
 import { RawQuery } from '../query/raw-query.ts';
 import { QueryInterface } from '../query-interface/query-interface.ts';
@@ -50,7 +55,6 @@ export class SequelizeBase {
   readonly json = json;
   /** @internal */
   readonly internals: SequelizeInternals;
-  #queryInterface: QueryInterface | undefined;
 
   /**
    * @param args - Connection URI, or database / username / password, followed by options.
@@ -62,11 +66,6 @@ export class SequelizeBase {
     this.options = connectionConfig.options;
     this.config = connectionConfig.settings();
     this.internals = new SequelizeInternals(this, connectionConfig);
-  }
-
-  /** @internal */
-  get [runtimeKey](): ModelRuntime {
-    return this.internals.runtime;
   }
 
   /**
@@ -97,7 +96,7 @@ export class SequelizeBase {
     return DefinedModel.init(attributes, {
       ...options,
       modelName,
-      sequelize: this,
+      sequelize: this as unknown as RuntimeOwner,
     }) as ModelStatic<M>;
   }
 
@@ -169,8 +168,8 @@ export class SequelizeBase {
    * @returns The QueryInterface of this instance.
    */
   getQueryInterface(): QueryInterface {
-    this.#queryInterface ??= new QueryInterface(this);
-    return this.#queryInterface;
+    this.internals.queryInterface ??= new QueryInterface(this as unknown as RuntimeOwner);
+    return this.internals.queryInterface;
   }
 
   /**
@@ -205,3 +204,10 @@ export class SequelizeBase {
     await this.internals.close();
   }
 }
+
+// The services models use are reached through `RuntimeOwner` (declared on `Sequelize`).
+Object.defineProperty(SequelizeBase.prototype, runtimeKey, {
+  get(this: SequelizeBase): ModelRuntime {
+    return this.internals.runtime;
+  },
+});

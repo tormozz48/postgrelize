@@ -2,6 +2,7 @@ import { DataTypes } from './data-types/data-types.ts';
 import { cast, col, fn, json, literal, where } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
 import { Model } from './model/model.ts';
+import type { RuntimeOwner } from './model/runtime.ts';
 import { QueryTypes } from './query/query-result-shaper.ts';
 import { SequelizeBase } from './sequelize/sequelize-base.ts';
 import { SequelizeHooks } from './sequelize/sequelize-hooks.ts';
@@ -20,6 +21,10 @@ const SequelizeMembers = SequelizeNotifications(
   SequelizeTransactions(SequelizeSchema(SequelizeHooks(SequelizeBase))),
 );
 
+// Declaration files cannot name the symbol key of a class member, so `RuntimeOwner` is merged in as an interface.
+// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- intentional merge.
+export interface Sequelize extends RuntimeOwner {}
+
 /**
  * Entry point, API-compatible with Sequelize v6 `Sequelize` for PostgreSQL.
  *
@@ -28,6 +33,7 @@ const SequelizeMembers = SequelizeNotifications(
  * const sequelize = new Sequelize('postgres://user:pass@localhost:5432/app', { logging: false });
  * ```
  */
+// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- see the interface above.
 export class Sequelize extends SequelizeMembers {
   /** Column types. */
   static readonly DataTypes = DataTypes;
@@ -92,6 +98,7 @@ export class Sequelize extends SequelizeMembers {
    * @param options - Options including connection settings.
    */
   constructor(options?: SequelizeOptions);
+  // oxlint-disable-next-line no-useless-constructor -- re-declares the typed overloads that mixin construction would erase.
   constructor(...args: readonly unknown[]) {
     super(...args);
   }
