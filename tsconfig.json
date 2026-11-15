@@ -21,5 +21,6 @@
       "postgrelize": ["./src/index.ts"]
     }
   },
-  "include": ["src", "tests", "docs/examples", "bench", "build", "*.config.ts"]
+  "include": ["src", "tests", "docs/examples", "bench", "build", "*.config.ts"],
+  "exclude": ["tests/build/fixtures"]
 }

@@ -100,7 +100,6 @@
         "src/model/merge-query-builder.ts",
         "src/model/model-definition.ts",
         "src/model/model-registry.ts",
-        "src/model/model.ts",
         "src/model/on-conflict-builder.ts",
         "src/model/operations/destroy-operation.ts",
         "src/model/operations/find-operation.ts",

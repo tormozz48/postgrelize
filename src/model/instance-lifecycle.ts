@@ -134,7 +134,7 @@ export class InstanceLifecycle {
   initialize(instance: AnyModel, values: Values, options: BuildOptions): void {
     const model = instance.constructor as ModelStatic<AnyModel>;
     const { definition } = this.#registry.state(model);
-    const state = instance[InstanceState.key]();
+    const state = InstanceState.of(instance);
     instance.isNewRecord = options.isNewRecord ?? true;
     instance.dataValues = instance.isNewRecord ? this.#values.initial(definition) : {};
     instance._previousDataValues = {};
@@ -239,7 +239,7 @@ export class InstanceLifecycle {
   async save<I extends AnyModel>(instance: I, options: SaveOptions): Promise<I> {
     const model = instance.constructor;
     const { definition, runtime } = this.#registry.state(model);
-    const state = instance[InstanceState.key]();
+    const state = InstanceState.of(instance);
     const opts: MutableOptions = { hooks: true, validate: true, ...options };
     const isNew = instance.isNewRecord;
     const attributes = [...definition.attributes.keys()];
@@ -484,7 +484,7 @@ export class InstanceLifecycle {
     }
     instance.isNewRecord = false;
     instance._previousDataValues = { ...instance.dataValues };
-    instance[InstanceState.key]().reset();
+    InstanceState.of(instance).reset();
     return instance;
   }
 }

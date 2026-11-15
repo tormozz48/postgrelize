@@ -120,7 +120,7 @@ export class InstanceValues {
    */
   setDataValue(instance: AnyModel, key: string | number | symbol, value: unknown): void {
     const name = String(key);
-    const state = instance[InstanceState.key]();
+    const state = InstanceState.of(instance);
     if (
       !this.#values.isEqual((instance._previousDataValues as Values)[name], value) ||
       value instanceof SqlExpression
@@ -141,7 +141,7 @@ export class InstanceValues {
    * @returns Names (or `false`), a flag, or `undefined` when marking.
    */
   changed(instance: AnyModel, key: string | undefined, value: boolean | undefined): unknown {
-    const state = instance[InstanceState.key]();
+    const state = InstanceState.of(instance);
     if (key === undefined) {
       return state.changed.size === 0 ? false : [...state.changed];
     }
@@ -164,7 +164,7 @@ export class InstanceValues {
       return (instance._previousDataValues as Record<string | number | symbol, unknown>)[key];
     }
     return Object.fromEntries(
-      [...instance[InstanceState.key]().changed].map((name) => [
+      [...InstanceState.of(instance).changed].map((name) => [
         name,
         (instance._previousDataValues as Values)[name],
       ]),
