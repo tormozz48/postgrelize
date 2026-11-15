@@ -1,2 +1,9 @@
-export const testDatabaseUrl = (): string =>
-  process.env['PGZ_TEST_URL'] ?? 'postgres://postgres:postgres@localhost:54329/postgrelize';
+import { inject } from 'vitest';
+
+let fileDatabaseUrl: string | undefined;
+
+export const useTestDatabaseUrl = (url: string | undefined): void => {
+  fileDatabaseUrl = url;
+};
+
+export const testDatabaseUrl = (): string => fileDatabaseUrl ?? inject('databaseUrl');

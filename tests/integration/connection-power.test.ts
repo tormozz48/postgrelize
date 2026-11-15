@@ -154,13 +154,18 @@ describe('transaction settings and advisory locks', () => {
       expect(await competitor.tryAdvisoryLock('jobs:42')).toBe(true);
       await competitor.rollback();
       const order: string[] = [];
+      let aHoldsLock: (() => void) | undefined;
+      const held = new Promise<void>((resolve) => {
+        aHoldsLock = resolve;
+      });
       await Promise.all([
         sequelize.withAdvisoryLock(1, async () => {
           order.push('a-start');
+          aHoldsLock?.();
           await new Promise((resolve) => setTimeout(resolve, 100));
           order.push('a-end');
         }),
-        new Promise((resolve) => setTimeout(resolve, 20)).then(() =>
+        held.then(() =>
           sequelize.withAdvisoryLock(1, async () => {
             order.push('b');
           }),

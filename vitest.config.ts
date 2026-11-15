@@ -6,7 +6,8 @@ const dbProject = (name: string) => ({
     name,
     include: [`tests/${name}/**/*.test.ts`],
     globalSetup: ['tests/support/global-setup-db.ts'],
-    testTimeout: 15_000,
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
   },
 });
 
@@ -16,7 +17,12 @@ export default defineConfig({
       { test: { name: 'unit', include: ['tests/unit/**/*.test.ts'] } },
       { test: { name: 'build', include: ['tests/build/**/*.test.ts'] } },
       dbProject('integration'),
-      dbProject('compat'),
+      {
+        test: {
+          ...dbProject('compat').test,
+          setupFiles: ['tests/support/file-database.ts'],
+        },
+      },
       {
         ...dbProject('docs'),
         resolve: {

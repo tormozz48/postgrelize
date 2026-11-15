@@ -33,3 +33,17 @@ CI must pass: lint, format:check, typecheck (incl. type tests), unit, build + sm
 
 ## MVP final
 See `.10x/reviews/2026-11-14-mvp-qa-report.md` — 171 tests, 53 differential scenarios, all equal.
+
+## 2026-11-15 — test isolation (intermittent timeouts)
+
+- Root causes:
+  1. Database-wide names were shared by parallel projects and concurrent runs: LISTEN channels, advisory lock keys (`jobs:42` in both integration and docs), type names.
+  2. Sequelize v6 `showIndex` filters by `relname` only. It read other schemas' indexes and failed with "could not open relation with OID" when a parallel file dropped its schema.
+  3. Advisory-lock ordering tests assumed the first holder wins within 20 ms.
+  4. CPU oversubscription when several suites run at once (e.g. parallel agents): compat tests take 2–4 s alone and crossed 15 s.
+- Fixes:
+  - `tests/support/global-setup-db.ts` creates a database per project per run, provides it via `inject('databaseUrl')`, and drops it `WITH (FORCE)` at teardown.
+  - The compat project also gets a database per file (`tests/support/file-database.ts`).
+  - Lock-ordering tests signal when the first holder has the lock.
+  - DB test and hook timeouts raised to 60 s.
+- Verification: 10 sequential and 9 concurrent (3 at a time) full runs, all green; no leftover `pgz_*` databases.

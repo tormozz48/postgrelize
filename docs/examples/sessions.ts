@@ -48,13 +48,18 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
 
   // #region with-advisory-lock
   const order: string[] = [];
+  let firstHoldsLock: (() => void) | undefined;
+  const held = new Promise<void>((resolve) => {
+    firstHoldsLock = resolve;
+  });
   await Promise.all([
     sequelize.withAdvisoryLock('nightly-report', async () => {
       order.push('first start');
+      firstHoldsLock?.();
       await pause(100);
       order.push('first end');
     }),
-    pause(20).then(() =>
+    held.then(() =>
       sequelize.withAdvisoryLock('nightly-report', async () => {
         order.push('second');
       }),
