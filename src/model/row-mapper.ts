@@ -2,6 +2,7 @@ import type { QueryResultRow } from 'pg';
 import type { AttributeDefinition, ModelDefinition } from './model-definition.ts';
 import type { ModelRegistry } from './model-registry.ts';
 import { RowPlans } from './row-plan.ts';
+import { ValuesWriter } from './values-writer.ts';
 import type { AnyModel, ModelStatic, Values } from './options.ts';
 
 const toNumber = (value: unknown): unknown =>
@@ -26,6 +27,7 @@ const NUMERIC_KEYS: ReadonlySet<string | undefined> = new Set([
 export class RowMapper {
   readonly #registry: ModelRegistry;
   readonly #plans = new RowPlans();
+  readonly #writer = new ValuesWriter();
 
   /**
    * @param registry - Model definitions.
@@ -49,7 +51,7 @@ export class RowMapper {
       const { name, parse } = columns.get(key) ?? this.#plans.plan(definition, columns, key);
       const value: unknown = row[key];
       const parsed = parse === undefined || value === null ? value : parse(value);
-      RowMapper.#store(values, name, parsed);
+      this.#writer.set(values, name, parsed);
     }
     return values;
   }
@@ -89,20 +91,6 @@ export class RowMapper {
     const done = Object.fromEntries(keys.slice(0, from).map((key) => [key, row[key]]));
     const rest = Object.fromEntries(keys.slice(from).map((key) => [key, row[key]]));
     return Object.assign(done, this.parse(definition, rest));
-  }
-
-  static #store(values: Record<string, unknown>, name: string, value: unknown): void {
-    if (name === '__proto__') {
-      // Keeps a column called `__proto__` an own property, like `Object.fromEntries`.
-      Object.defineProperty(values, name, {
-        value,
-        enumerable: true,
-        writable: true,
-        configurable: true,
-      });
-    } else {
-      values[name] = value;
-    }
   }
 
   /**

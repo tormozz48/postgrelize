@@ -2,6 +2,7 @@ import { ModelRegistry } from '../model/model-registry.ts';
 import type { ModelDefinition } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { IncludeNode } from './include.ts';
+import { ValuesWriter } from '../model/values-writer.ts';
 import { IncludeRows, type IncludeRow, type InstanceBuilder } from './include-rows.ts';
 
 const registry = new ModelRegistry();
@@ -14,6 +15,7 @@ type Group = Readonly<{ values: Values; rows: IncludeRow[] }>;
 /** Groups joined result rows into instance trees (Sequelize v6 de-duplication by primary key). */
 export class IncludeAssembler {
   readonly #rows = new IncludeRows();
+  readonly #writer = new ValuesWriter();
 
   /**
    * Groups joined rows into instance trees.
@@ -32,30 +34,46 @@ export class IncludeAssembler {
     parseMain: (row: IncludeRow) => Readonly<Record<string, unknown>>,
     build: InstanceBuilder,
   ): readonly Instance[] {
-    const mainKeys = (row: IncludeRow): Values =>
-      Object.fromEntries(Object.entries(parseMain(row)).filter(([key]) => !key.includes('.')));
+    const mainKeys = (row: IncludeRow): Values => this.#mainValues(parseMain(row));
     const groups = this.#groupMain(registry.state(model).definition, rows, mainKeys);
     return [...groups.values()].map((group) => {
-      const instance = build(model, mainKeys(group[0] ?? {}));
-      this.#attachChildren(instance, includes, group, build);
+      const instance = build(model, group.values);
+      this.#attachChildren(instance, includes, group.rows, build);
       return instance;
     });
+  }
+
+  #mainValues(parsed: Readonly<Record<string, unknown>>): Values {
+    const values: Values = {};
+    for (const key of Object.keys(parsed)) {
+      if (!key.includes('.')) {
+        this.#writer.set(values, key, parsed[key]);
+      }
+    }
+    return values;
   }
 
   #groupMain(
     definition: ModelDefinition,
     rows: readonly IncludeRow[],
     mainKeys: (row: IncludeRow) => Values,
-  ): Map<string, IncludeRow[]> {
-    return rows.reduce<Map<string, IncludeRow[]>>((acc, row, index) => {
-      const key = this.#rows.identity(definition, mainKeys(row)) ?? `row:${index}`;
-      acc.set(key, [...(acc.get(key) ?? []), row]);
-      return acc;
-    }, new Map());
+  ): Map<string | number, Group> {
+    const groups = new Map<string | number, Group>();
+    for (const [index, row] of rows.entries()) {
+      const values = mainKeys(row);
+      const key = this.#rows.identity(definition, values) ?? `row:${index}`;
+      const group = groups.get(key);
+      if (group === undefined) {
+        groups.set(key, { values, rows: [row] });
+      } else {
+        group.rows.push(row);
+      }
+    }
+    return groups;
   }
 
-  #groupNode(node: IncludeNode, rows: readonly IncludeRow[]): Map<string, Group> {
-    return rows.reduce<Map<string, Group>>((acc, row) => {
+  #groupNode(node: IncludeNode, rows: readonly IncludeRow[]): Map<string | number, Group> {
+    return rows.reduce<Map<string | number, Group>>((acc, row) => {
       const values = this.#rows.valuesAt(node.definition, row, node.path);
       const key = this.#rows.identity(node.definition, values);
       const group = key === undefined ? undefined : acc.get(key);
