@@ -101,22 +101,22 @@ export class ModelValues {
     creating: boolean,
     silent: boolean,
   ): Values {
+    const { createdAt, updatedAt } = definition;
+    const setCreatedAt =
+      creating &&
+      createdAt !== undefined &&
+      (values[createdAt] === undefined || values[createdAt] === null);
     return {
       ...values,
-      ...(creating &&
-      definition.createdAt !== undefined &&
-      (values[definition.createdAt] === undefined || values[definition.createdAt] === null)
-        ? { [definition.createdAt]: now }
-        : {}),
-      ...(definition.updatedAt !== undefined && (!silent || creating)
-        ? {
-            [definition.updatedAt]:
-              creating && values[definition.updatedAt] instanceof Date && silent
-                ? values[definition.updatedAt]
-                : now,
-          }
+      ...(setCreatedAt ? { [createdAt]: now } : {}),
+      ...(updatedAt !== undefined && (!silent || creating)
+        ? { [updatedAt]: this.#updatedAt(values[updatedAt], now, creating, silent) }
         : {}),
     };
+  }
+
+  #updatedAt(current: unknown, now: Date, creating: boolean, silent: boolean): unknown {
+    return creating && current instanceof Date && silent ? current : now;
   }
 
   /**

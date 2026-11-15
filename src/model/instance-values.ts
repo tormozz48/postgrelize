@@ -48,29 +48,9 @@ export class InstanceValues {
     options: SetOptions,
   ): unknown {
     if (typeof keyOrOptions === 'string') {
-      const getter = this.#registry
-        .definition(instance.constructor)
-        .attributes.get(keyOrOptions)?.get;
-      return getter !== undefined && options.raw !== true
-        ? (getter as (this: unknown) => unknown).call(instance)
-        : (instance.dataValues as Values)[keyOrOptions];
+      return this.#getOne(instance, keyOrOptions, options);
     }
-    const raw = typeof keyOrOptions === 'object' && keyOrOptions.raw === true;
-    const plain = typeof keyOrOptions === 'object' && keyOrOptions.plain === true;
-    const toPlain = (value: unknown): unknown =>
-      !plain
-        ? value
-        : this.#isInstance(value)
-          ? value.get({ plain: true })
-          : Array.isArray(value) && value.some((item) => this.#isInstance(item))
-            ? value.map(toPlain)
-            : value;
-    return Object.fromEntries(
-      Object.keys(instance.dataValues).map((key) => [
-        key,
-        toPlain(raw ? (instance.dataValues as Values)[key] : instance.get(key)),
-      ]),
-    );
+    return this.#getAll(instance, keyOrOptions);
   }
 
   /**
@@ -94,21 +74,49 @@ export class InstanceValues {
       );
       return;
     }
-    const key = String(keyOrValues);
-    const options = maybeOptions ?? {};
+    this.#setOne(instance, String(keyOrValues), valueOrOptions, maybeOptions ?? {});
+  }
+
+  #getOne(instance: AnyModel, key: string, options: SetOptions): unknown {
+    const getter = this.#registry.definition(instance.constructor).attributes.get(key)?.get;
+    return getter !== undefined && options.raw !== true
+      ? (getter as (this: unknown) => unknown).call(instance)
+      : (instance.dataValues as Values)[key];
+  }
+
+  #getAll(instance: AnyModel, options: GetOptions | number | symbol | undefined): Values {
+    const raw = typeof options === 'object' && options.raw === true;
+    const plain = typeof options === 'object' && options.plain === true;
+    const toPlain = (value: unknown): unknown =>
+      !plain
+        ? value
+        : this.#isInstance(value)
+          ? value.get({ plain: true })
+          : Array.isArray(value) && value.some((item) => this.#isInstance(item))
+            ? value.map(toPlain)
+            : value;
+    return Object.fromEntries(
+      Object.keys(instance.dataValues).map((key) => [
+        key,
+        toPlain(raw ? (instance.dataValues as Values)[key] : instance.get(key)),
+      ]),
+    );
+  }
+
+  #setOne(instance: AnyModel, key: string, value: unknown, options: SetOptions): void {
     const attribute = this.#registry.definition(instance.constructor).attributes.get(key);
     if (options.raw === true) {
-      (instance.dataValues as Values)[key] = valueOrOptions;
+      (instance.dataValues as Values)[key] = value;
       return;
     }
     if (attribute === undefined) {
       return;
     }
     if (attribute.set !== undefined) {
-      (attribute.set as (this: unknown, value: unknown) => void).call(instance, valueOrOptions);
+      (attribute.set as (this: unknown, value: unknown) => void).call(instance, value);
       return;
     }
-    instance.setDataValue(key, valueOrOptions as never);
+    instance.setDataValue(key, value as never);
   }
 
   /**

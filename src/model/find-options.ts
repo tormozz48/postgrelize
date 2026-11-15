@@ -1,0 +1,73 @@
+import type { IncludeOption } from '../associations/include.ts';
+import type { CteFindOptions } from './cte-builder.ts';
+import type { Values } from './options.ts';
+import type { QueryOptionsBase } from './runtime.ts';
+import type { SelectOptions } from './select-query-builder.ts';
+import type { WhereOptions } from './types.ts';
+
+/** Result of `findAndCountAll`. */
+export type FindAndCountResult<M> = {
+  /** Total number of matching rows, ignoring `limit` / `offset`. */
+  count: number;
+  /** Rows of the current page. */
+  rows: M[];
+};
+
+/** Options of finders (Sequelize v6 `FindOptions`, without `include`). */
+export type FindOptions<T = Values> = QueryOptionsBase &
+  Omit<SelectOptions, 'where'> &
+  Readonly<{
+    /** Filter. */
+    where?: WhereOptions<T>;
+    /** Return plain objects instead of instances. */
+    raw?: boolean;
+    /** With `raw`, build nested objects from dotted keys. */
+    nest?: boolean;
+    /** Return a single row (used by `findOne`). */
+    plain?: boolean;
+    /** Throw `EmptyResultError` (or the given error) when no row is found. */
+    rejectOnEmpty?: boolean | Error;
+    /** For paranoid models: `false` includes soft-deleted rows. */
+    paranoid?: boolean;
+    /** Run `beforeFind` / `afterFind` hooks. Default true. */
+    hooks?: boolean;
+    /** Eager-load associations. */
+    include?: IncludeOption;
+    /** `false` disables the sub-query used for `limit` with multi includes. */
+    subQuery?: boolean;
+  }> &
+  CteFindOptions;
+
+/** Options of `count`. */
+export type CountOptions<T = Values> = QueryOptionsBase &
+  Readonly<{
+    /** Filter. */
+    where?: WhereOptions<T>;
+    /** Column to count. */
+    col?: string;
+    /** `count(DISTINCT ...)`. */
+    distinct?: boolean;
+    /** Group by attributes; the result becomes an array of `{ count, ...groups }`. */
+    group?: string | readonly string[];
+    /** For paranoid models: `false` includes soft-deleted rows. */
+    paranoid?: boolean;
+    /** Run `beforeCount` hooks. Default true. */
+    hooks?: boolean;
+    /** Join associations (rows are counted per joined row unless `distinct`). */
+    include?: IncludeOption;
+  }> &
+  CteFindOptions;
+
+/** Options of `aggregate`, `max`, `min`, `sum`. */
+export type AggregateOptions<T = Values> = CountOptions<T> &
+  Readonly<{
+    /** Return all rows instead of one value. */
+    plain?: boolean;
+  }>;
+
+/** Options of `findOrCreate` / `findOrBuild`. */
+export type FindOrCreateOptions<T = Values> = FindOptions<T> &
+  Readonly<{
+    /** Values used in addition to `where` when creating. */
+    defaults?: Partial<T>;
+  }>;
