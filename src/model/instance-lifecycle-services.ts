@@ -11,9 +11,22 @@ import type { RowMapper } from './row-mapper.ts';
 import type { SelectQueryBuilder } from './select-query-builder.ts';
 import type { UpdateQueryBuilder } from './update-query-builder.ts';
 
-/** Options of `instance.validate()`. */
+/**
+ * Options of `instance.validate()`.
+ *
+ * Validation throws `ValidationError` when an attribute is invalid.
+ *
+ * @see {@link Model.validate}
+ *
+ * @example
+ * ```ts
+ * const opts: ValidateOptions = { skip: ['password'], hooks: false };
+ * await user.validate(opts);
+ * ```
+ */
 export type ValidateOptions = Readonly<{
-  /** Run `beforeValidate` / `afterValidate` / `validationFailed` hooks. Default true. */
+  /** Run `beforeValidate` / `afterValidate` / `validationFailed` hooks.
+   * @defaultValue true */
   hooks?: boolean;
   /** Attributes to skip. */
   skip?: readonly string[];

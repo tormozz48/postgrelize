@@ -18,6 +18,17 @@ export type ValidatorSetting = Readonly<{
  * Attribute `validate` option: Sequelize v6 built-in validators (validator.js names plus `is`, `not`,
  * `len`, `notEmpty`, `min`, `max`, ...), custom functions, and `schema` — any Standard Schema
  * (zod, valibot, arktype; PostgreSQL-independent extension).
+ *
+ * @example
+ * ```ts
+ * const validate: AttributeValidateOptions = {
+ *   isEmail: true,
+ *   len: { args: [3, 120], msg: 'Email must be 3-120 characters' },
+ *   noGmail(value: unknown) {
+ *     if (String(value).endsWith('@gmail.com')) throw new Error('Gmail is not allowed');
+ *   },
+ * };
+ * ```
  */
 export type AttributeValidateOptions = Readonly<
   Record<string, BuiltinValidatorOption | AttributeValidatorFunction> & {

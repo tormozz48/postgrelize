@@ -98,12 +98,21 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
     declare static beforeCount: NamedHookAdder;
 
     /**
-     * Adds a lifecycle hook.
+     * Registers a hook function for a lifecycle event of this model, same as the named adders such as
+     * `Model.beforeCreate(fn)`. Hooks of one type run in registration order.
      *
+     * @param this - The model class.
      * @param type - Hook type, e.g. `'beforeCreate'`.
      * @param nameOrFn - Hook name (to remove it later) or the hook function.
      * @param fn - Hook function when a name is given.
      * @returns The model class.
+     * @example
+     * ```ts
+     * User.addHook('beforeCreate', 'normalizeEmail', async (instance: User) => {
+     *   instance.set('email', String(instance.get('email')).toLowerCase());
+     * });
+     * ```
+     * @see [Hooks guide](/guide/hooks-validation)
      */
     static addHook<MS extends ModelStatic<AnyModel>>(
       this: MS,
@@ -116,11 +125,16 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Removes hooks by name or function.
+     * Removes hooks of a type from this model: one by name or function, or all of them.
      *
+     * @param this - The model class.
      * @param type - Hook type.
      * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
      * @returns The model class.
+     * @example
+     * ```ts
+     * User.removeHook('beforeCreate', 'normalizeEmail');
+     * ```
      */
     static removeHook<MS extends ModelStatic<AnyModel>>(
       this: MS,
@@ -137,6 +151,10 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
      * @param type - Hook type.
      * @returns True when at least one hook exists, `false` after all were removed and
      * `undefined` (typed `boolean`, like Sequelize v6) for a type that never had a hook.
+     * @example
+     * ```ts
+     * const registered = User.hasHook('beforeCreate');
+     * ```
      */
     static hasHook(type: HookType): boolean {
       return registry.state(this).hooks.hasOrUndefined(type) as boolean;
@@ -147,6 +165,10 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
      *
      * @param type - Hook type.
      * @returns Same as {@link Model.hasHook}.
+     * @example
+     * ```ts
+     * const registered = User.hasHooks('afterFind');
+     * ```
      */
     static hasHooks(type: HookType): boolean {
       return this.hasHook(type);
@@ -158,6 +180,10 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
      * @param type - Hook type.
      * @param args - Hook arguments.
      * @returns Resolves when all hooks finished.
+     * @example
+     * ```ts
+     * await User.runHooks('beforeCreate', user, {});
+     * ```
      */
     static runHooks(type: HookType, ...args: readonly unknown[]): Promise<void> {
       return lifecycle.runHooks(this, type, ...args);

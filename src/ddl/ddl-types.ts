@@ -13,7 +13,10 @@ export type DeferrableValue = Readonly<{
  *
  * @example
  * ```ts
- * references: { model: 'Users', key: 'id', deferrable: Deferrable.INITIALLY_DEFERRED }
+ * await queryInterface.addColumn('posts', 'userId', {
+ *   type: DataTypes.INTEGER,
+ *   references: { model: 'Users', key: 'id', deferrable: Deferrable.INITIALLY_DEFERRED },
+ * });
  * ```
  */
 export const Deferrable = {
@@ -57,7 +60,20 @@ export type IndexField =
       operator?: string;
     }>;
 
-/** Options of `addIndex` and model `indexes` (Sequelize v6 `IndexesOptions`). */
+/**
+ * Options of `addIndex` and model `indexes` (Sequelize v6 `IndexesOptions`).
+ *
+ * @example
+ * ```ts
+ * const options: IndexOptions = {
+ *   fields: ['email'],
+ *   unique: true,
+ *   where: { active: true },
+ *   using: 'btree',
+ * };
+ * await queryInterface.addIndex('users', options);
+ * ```
+ */
 export type IndexOptions = Readonly<{
   /** Indexed columns. */
   fields?: readonly IndexField[];
@@ -81,7 +97,21 @@ export type IndexOptions = Readonly<{
   ifNotExists?: boolean;
 }>;
 
-/** Options of `addConstraint` (Sequelize v6). */
+/**
+ * Options of `addConstraint` (Sequelize v6).
+ *
+ * @example
+ * ```ts
+ * const options: ConstraintOptions = {
+ *   type: 'foreign key',
+ *   fields: ['userId'],
+ *   name: 'posts_user_fk',
+ *   references: { table: 'users', field: 'id' },
+ *   onDelete: 'CASCADE',
+ * };
+ * await queryInterface.addConstraint('posts', options);
+ * ```
+ */
 export type ConstraintOptions = Readonly<{
   /** Constraint kind. */
   type:

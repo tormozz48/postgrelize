@@ -21,7 +21,23 @@ export type {
 
 const attributeNormalizer = new AttributeNormalizer();
 
-/** Table-level model options shared by `Model.init` and `sequelize.define`. */
+/**
+ * Table-level model options shared by `Model.init` and `sequelize.define`.
+ *
+ * Extends the model defaults (`paranoid`, `timestamps`, `schema`, ...).
+ *
+ * @example
+ * ```ts
+ * const opts: DefinitionOptions = {
+ *   modelName: 'Invoice',
+ *   tableName: 'invoices',
+ *   timestamps: true,
+ *   paranoid: true,
+ *   version: true,
+ *   indexes: [{ fields: ['number'], unique: true }],
+ * };
+ * ```
+ */
 export type DefinitionOptions = ModelDefaults &
   Readonly<{
     /** Model name. Defaults to the class name. */
@@ -30,11 +46,14 @@ export type DefinitionOptions = ModelDefaults &
     tableName?: string;
     /** Separator between schema and table that `getTableName` reports (PostgreSQL always uses `.` in SQL). */
     schemaDelimiter?: string;
-    /** Name of the created-at attribute, or `false` to disable it. */
+    /** Name of the created-at attribute, or `false` to disable it.
+     * @defaultValue 'createdAt' */
     createdAt?: string | boolean;
-    /** Name of the updated-at attribute, or `false` to disable it. */
+    /** Name of the updated-at attribute, or `false` to disable it.
+     * @defaultValue 'updatedAt' */
     updatedAt?: string | boolean;
-    /** Name of the deleted-at attribute of paranoid models. */
+    /** Name of the deleted-at attribute of paranoid models.
+     * @defaultValue 'deletedAt' */
     deletedAt?: string | boolean;
     /** Optimistic locking: `true` adds a `version` attribute, a string names it. */
     version?: boolean | string;

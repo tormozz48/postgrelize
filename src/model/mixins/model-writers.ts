@@ -33,11 +33,18 @@ import type { ModelConstructor } from './model-constructor.ts';
 export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
   return class WritersCapability extends Base {
     /**
-     * Builds an unsaved instance.
+     * Builds a new instance in memory without touching the database; call `save()` to insert it.
+     * Defaults and custom setters are applied.
      *
+     * @param this - The model class.
      * @param values - Attribute values.
      * @param options - Build options.
      * @returns New instance.
+     * @example
+     * ```ts
+     * const user = User.build({ email: 'ada@example.com' });
+     * await user.save();
+     * ```
      */
     static build<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -48,11 +55,16 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Builds several unsaved instances.
+     * Builds several new instances in memory, same as calling {@link Model.build} for each record.
      *
+     * @param this - The model class.
      * @param records - Attribute values per instance.
      * @param options - Build options.
      * @returns New instances.
+     * @example
+     * ```ts
+     * const tags = Tag.bulkBuild([{ name: 'news' }, { name: 'sports' }]);
+     * ```
      */
     static bulkBuild<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -63,12 +75,22 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Builds and saves an instance.
+     * Builds an instance and inserts it with `INSERT ... RETURNING`, running validation and the
+     * create/save hooks. With `onConflict` (PostgreSQL extension) the insert may be skipped or turned
+     * into an update, and `instance.wasInserted` tells which happened.
      *
+     * @param this - The model class.
      * @param values - Attribute values.
-     * @param options - Save options.
+     * @param options - Create options (`fields`, `hooks`, `validate`, `include`, `onConflict`, query options).
      * @returns Saved instance.
-     * @throws UniqueConstraintError, ForeignKeyConstraintError, DatabaseError.
+     * @throws ValidationError when validation fails.
+     * @throws UniqueConstraintError when a unique constraint is violated.
+     * @throws ForeignKeyConstraintError when a foreign key constraint is violated.
+     * @throws DatabaseError for other database errors.
+     * @example
+     * ```ts
+     * const user = await User.create({ email: 'ada@example.com' }, { transaction });
+     * ```
      */
     static create<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -79,11 +101,22 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Inserts many rows with one statement.
+     * Inserts many rows with one multi-row `INSERT ... RETURNING`. Runs `beforeBulkCreate` and
+     * `afterBulkCreate` hooks; rows are not validated unless `validate: true`. `ignoreDuplicates`,
+     * `updateOnDuplicate` and `onConflict` map to `ON CONFLICT`; `individualHooks` or `include`
+     * insert row by row like Sequelize v6.
      *
+     * @param this - The model class.
      * @param records - Attribute values per row.
-     * @param options - Options.
+     * @param options - Bulk create options.
      * @returns Instances with values returned by the database.
+     * @throws ValidationError with `validate: true` when a row is invalid.
+     * @throws UniqueConstraintError when a unique constraint is violated and no conflict handling is set.
+     * @example
+     * ```ts
+     * const tags = await Tag.bulkCreate([{ name: 'news' }, { name: 'sports' }], { ignoreDuplicates: true });
+     * ```
+     * @see {@link Model.insert} for the PostgreSQL variant that returns only the rows actually written.
      */
     static bulkCreate<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -98,11 +131,19 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Inserts a row or updates it when it conflicts with a unique key (Sequelize v6 `upsert`).
+     * Inserts a row, or updates it when it conflicts with a unique key (`INSERT ... ON CONFLICT DO UPDATE`,
+     * Sequelize v6 `upsert`). Runs the `beforeUpsert` and `afterUpsert` hooks.
      *
+     * @param this - The model class.
      * @param values - Attribute values.
-     * @param options - Upsert options.
+     * @param options - Upsert options (`conflictFields`, `fields`, `onConflict`, query options).
      * @returns `[instance, null]` like Sequelize v6, or `[instance, created]` with `onConflict`.
+     * @throws ValidationError when validation fails.
+     * @throws UniqueConstraintError when a unique constraint other than the conflict target is violated.
+     * @example
+     * ```ts
+     * const [user] = await User.upsert({ email: 'ada@example.com', name: 'Ada' }, { conflictFields: ['email'] });
+     * ```
      */
     static upsert<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -113,11 +154,18 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Updates rows matching `where`.
+     * Updates all rows matching `where` with one `UPDATE` and refreshes `updatedAt` unless `silent`.
+     * Values are validated unless `validate: false`; bulk hooks run unless `hooks: false`.
      *
+     * @param this - The model class.
      * @param values - New attribute values.
-     * @param options - Update options.
+     * @param options - Update options; `where` is required.
      * @returns `[affectedCount]`, or `[affectedCount, rows]` with `returning: true`.
+     * @throws ValidationError when the new values are invalid.
+     * @example
+     * ```ts
+     * const [count] = await Post.update({ published: true }, { where: { userId: 1 } });
+     * ```
      */
     static update<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -128,10 +176,16 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Deletes rows matching `where`.
+     * Deletes rows matching `where` and returns the deleted instances (`DELETE ... RETURNING`, a
+     * PostgreSQL extension). For paranoid models the rows are soft-deleted unless `force: true`.
      *
-     * @param options - Destroy options.
-     * @returns Number of deleted rows, or deleted instances with `returning: true`.
+     * @param this - The model class.
+     * @param options - Destroy options with `returning: true`.
+     * @returns Deleted instances.
+     * @example
+     * ```ts
+     * const removed = await Post.destroy({ where: { published: false }, returning: true });
+     * ```
      */
     static destroy<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -139,8 +193,11 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     ): Promise<M[]>;
 
     /**
-     * Deletes rows matching `where`.
+     * Deletes rows matching `where` (`truncate: true` empties the table instead). For paranoid models
+     * the rows are soft-deleted (`deletedAt` is set) unless `force: true`. Runs bulk destroy hooks
+     * unless `hooks: false`.
      *
+     * @param this - The model class.
      * @param options - Destroy options.
      * @returns Number of deleted rows.
      */
@@ -156,11 +213,16 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Restores soft-deleted rows of a paranoid model (`deletedAt = NULL`).
+     * Restores soft-deleted rows of a paranoid model by setting `deletedAt` back to `NULL`.
      *
+     * @param this - The model class.
      * @param options - Rows to restore and hook options.
      * @returns Resolves when done.
      * @throws Error when the model is not paranoid.
+     * @example
+     * ```ts
+     * await Post.restore({ where: { userId: 1 } });
+     * ```
      */
     static restore<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -170,11 +232,16 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Increments attributes of rows matching `where` (`SET x = x + by`).
+     * Atomically increments numeric attributes of the rows matching `where` (`SET x = x + by`).
      *
+     * @param this - The model class.
      * @param fields - Attribute name(s), or a map of attribute to amount.
-     * @param options - Increment options.
-     * @returns Updated instances.
+     * @param options - Increment options (`where`, `by` default 1, `silent`, query options).
+     * @returns `[affectedRows, affectedCount]`: the updated instances and their number.
+     * @example
+     * ```ts
+     * await Post.increment('views', { by: 1, where: { id: 5 } });
+     * ```
      */
     static increment<M extends AnyModel>(
       this: ModelStatic<M>,
@@ -190,11 +257,16 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Decrements attributes of rows matching `where` (`SET x = x - by`).
+     * Atomically decrements numeric attributes of the rows matching `where` (`SET x = x - by`).
      *
+     * @param this - The model class.
      * @param fields - Attribute name(s), or a map of attribute to amount.
-     * @param options - Decrement options.
-     * @returns Updated instances.
+     * @param options - Decrement options (`where`, `by` default 1, `silent`, query options).
+     * @returns `[affectedRows, affectedCount]`: the updated instances and their number.
+     * @example
+     * ```ts
+     * await Product.decrement({ stock: 3 }, { where: { id: 7 } });
+     * ```
      */
     static decrement<M extends AnyModel>(
       this: ModelStatic<M>,

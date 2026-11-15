@@ -6,13 +6,29 @@ import { ModelTables } from './model-tables.ts';
 import type { QueryInterface } from './query-interface.ts';
 import { SyncPlanner } from './sync-planner.ts';
 
-/** `alter` options of `sync()`. */
+/**
+ * `alter` options of `sync()`.
+ *
+ * @example
+ * ```ts
+ * const alter: AlterOptions = { drop: false };
+ * await sequelize.sync({ alter });
+ * ```
+ */
 export type AlterOptions = Readonly<{
   /** Drop columns that are not in the model. Default true. */
   drop?: boolean;
 }>;
 
-/** Options of `sync()`. */
+/**
+ * Options of `sync()`: `force`, `alter`, `match`, `schema` plus the common query options.
+ *
+ * @example
+ * ```ts
+ * const options: SyncOptions = { alter: true, match: /_test$/, schema: 'tenant_1' };
+ * await sequelize.sync(options);
+ * ```
+ */
 export type SyncOptions = QueryOptionsBase &
   Readonly<{
     /** Drop and re-create tables. */
@@ -30,7 +46,15 @@ export type SyncOptions = QueryOptionsBase &
 /** Wraps the sync of one model (used to run its sync hooks). */
 export type SyncWrapper = (definition: ModelDefinition, run: () => Promise<void>) => Promise<void>;
 
-/** Options of `drop()`. */
+/**
+ * Options of `drop()`: `cascade`, `schema` plus the common query options.
+ *
+ * @example
+ * ```ts
+ * const options: DropOptions = { cascade: true, schema: 'tenant_1' };
+ * await sequelize.drop(options);
+ * ```
+ */
 export type DropOptions = QueryOptionsBase &
   Readonly<{
     /** `DROP TABLE ... CASCADE`. */

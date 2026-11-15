@@ -14,25 +14,52 @@ import type { SequelizeConstructor } from './sequelize-constructor.ts';
 export const SequelizeTransactions = <TBase extends SequelizeConstructor>(Base: TBase) =>
   class TransactionsCapability extends Base {
     /**
-     * Starts an unmanaged transaction; commit or roll it back yourself.
+     * Begins an unmanaged transaction that you must commit or roll back yourself. With `options.transaction` it becomes a savepoint inside that transaction.
      *
      * @param options - Transaction options.
      * @returns Started transaction.
+     *
+     * @example
+     * ```ts
+     * const t = await sequelize.transaction({ isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE });
+     * try {
+     *   await User.create({ name: 'Ada' }, { transaction: t });
+     *   await t.commit();
+     * } catch (error) {
+     *   await t.rollback();
+     *   throw error;
+     * }
+     * ```
      */
     transaction(options?: TransactionOptions): Promise<Transaction>;
     /**
-     * Runs `run` in a managed transaction: committed when it resolves, rolled back when it throws.
+     * Runs a callback in a managed transaction: committed when it resolves, rolled back when it throws. Queries must pass `{ transaction }` unless CLS is enabled with {@link Sequelize.useCLS}.
      *
      * @param run - Callback receiving the transaction.
      * @returns Result of `run`.
+     *
+     * @example
+     * ```ts
+     * const created = await sequelize.transaction(async (t) => {
+     *   const owner = await User.create({ name: 'Ada' }, { transaction: t });
+     *   return Post.create({ title: 'Hello', userId: owner.id }, { transaction: t });
+     * });
+     * ```
      */
     transaction<T>(run: (transaction: Transaction) => Promise<T>): Promise<T>;
     /**
-     * Runs `run` in a managed transaction with options.
+     * Runs a callback in a managed transaction started with the given options (isolation level, read only, settings, savepoint parent).
      *
      * @param options - Transaction options.
      * @param run - Callback receiving the transaction.
      * @returns Result of `run`.
+     *
+     * @example
+     * ```ts
+     * const count = await sequelize.transaction({ readOnly: true }, async (t) => {
+     *   return User.count({ transaction: t });
+     * });
+     * ```
      */
     transaction<T>(
       options: TransactionOptions,
@@ -50,12 +77,19 @@ export const SequelizeTransactions = <TBase extends SequelizeConstructor>(Base: 
     }
 
     /**
-     * Runs `run` in a transaction holding a transaction-level advisory lock. PostgreSQL extension.
+     * Runs a callback in a managed transaction that first takes a transaction-level advisory lock, so concurrent callers with the same key run one at a time. The lock is released when the transaction ends. PostgreSQL extension.
      *
      * @param key - Lock key (integer or string).
      * @param run - Callback receiving the transaction.
      * @param options - Transaction options.
      * @returns Result of `run`.
+     *
+     * @example
+     * ```ts
+     * await sequelize.withAdvisoryLock('nightly-report', async (t) => {
+     *   await Invoice.update({ status: 'sent' }, { where: { status: 'ready' }, transaction: t });
+     * });
+     * ```
      */
     withAdvisoryLock<T>(
       key: AdvisoryLockKey,

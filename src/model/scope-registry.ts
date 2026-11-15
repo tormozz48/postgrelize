@@ -1,7 +1,15 @@
 import { SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
 
-/** Find options stored in a scope (`where`, `attributes`, `order`, `limit`, ...). */
+/**
+ * Find options stored in a scope (`where`, `attributes`, `order`, `limit`, ...).
+ *
+ * @example
+ * ```ts
+ * const scope: ScopeOptions = { where: { active: true }, order: [['createdAt', 'DESC']], limit: 100 };
+ * User.init({ name: DataTypes.STRING }, { sequelize, defaultScope: scope });
+ * ```
+ */
 export type ScopeOptions = Readonly<Record<string, unknown>>;
 
 /** Scope definition: options, or a function of arguments returning options. */

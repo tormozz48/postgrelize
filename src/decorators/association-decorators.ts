@@ -31,7 +31,10 @@ const association = (
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @HasOne(() => Profile) profile!: Profile;
+ * class User extends Model {
+ *   @HasOne(() => Profile)
+ *   profile!: Profile;
+ * }
  * ```
  */
 export const HasOne = (target: ModelGetter, options?: AssociationOptions): ModelPropertyDecorator =>
@@ -45,7 +48,10 @@ export const HasOne = (target: ModelGetter, options?: AssociationOptions): Model
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @HasMany(() => Post) posts!: Post[];
+ * class User extends Model {
+ *   @HasMany(() => Post)
+ *   posts!: Post[];
+ * }
  * ```
  */
 export const HasMany = (
@@ -62,8 +68,14 @@ export const HasMany = (
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @ForeignKey(() => User) @Column(DataTypes.INTEGER) userId!: number;
- * @BelongsTo(() => User) user!: User;
+ * class Post extends Model {
+ *   @ForeignKey(() => User)
+ *   @Column(DataTypes.INTEGER)
+ *   userId!: number;
+ *
+ *   @BelongsTo(() => User)
+ *   user!: User;
+ * }
  * ```
  */
 export const BelongsTo = (
@@ -81,7 +93,10 @@ export const BelongsTo = (
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @BelongsToMany(() => Role, () => UserRole) roles!: Role[];
+ * class Post extends Model {
+ *   @BelongsToMany(() => Tag, 'post_tags')
+ *   tags!: Tag[];
+ * }
  * ```
  */
 export const BelongsToMany = (

@@ -6,7 +6,10 @@ import type { ModelPropertyDecorator } from './decorator-types.ts';
  *
  * @example
  * ```ts
- * @CreatedAt creationDate!: Date;
+ * class User extends Model {
+ *   @CreatedAt
+ *   creationDate!: Date;
+ * }
  * ```
  */
 export const CreatedAt: ModelPropertyDecorator = decorate.forProperty((meta, key) => {
@@ -18,7 +21,10 @@ export const CreatedAt: ModelPropertyDecorator = decorate.forProperty((meta, key
  *
  * @example
  * ```ts
- * @UpdatedAt updatedOn!: Date;
+ * class User extends Model {
+ *   @UpdatedAt
+ *   updatedOn!: Date;
+ * }
  * ```
  */
 export const UpdatedAt: ModelPropertyDecorator = decorate.forProperty((meta, key) => {
@@ -31,7 +37,10 @@ export const UpdatedAt: ModelPropertyDecorator = decorate.forProperty((meta, key
  *
  * @example
  * ```ts
- * @DeletedAt removedAt!: Date | null;
+ * class User extends Model {
+ *   @DeletedAt
+ *   removedAt!: Date | null;
+ * }
  * ```
  */
 export const DeletedAt: ModelPropertyDecorator = decorate.forProperty((meta, key) => {

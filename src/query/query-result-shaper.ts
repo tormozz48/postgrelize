@@ -37,7 +37,19 @@ export const QueryTypes = {
 /** One of {@link QueryTypes}. */
 export type QueryType = (typeof QueryTypes)[keyof typeof QueryTypes];
 
-/** Options of `sequelize.query`. */
+/**
+ * Options of `sequelize.query`, in addition to the common query options such as `transaction` and `logging`.
+ *
+ * @example
+ * ```ts
+ * const rows = await sequelize.query('SELECT * FROM users WHERE id = :id', {
+ *   type: QueryTypes.SELECT,
+ *   replacements: { id: 1 },
+ *   model: User,
+ *   mapToModel: true,
+ * });
+ * ```
+ */
 export type QueryOptions = QueryOptionsBase &
   Readonly<{
     /** Shapes the result; default `RAW`. */

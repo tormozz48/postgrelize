@@ -64,6 +64,10 @@ export const fn = (name: string, ...args: readonly unknown[]): Fn => new Fn(name
  *
  * @param name - Column name, optionally prefixed with a table alias.
  * @returns Column expression.
+ * @example
+ * ```ts
+ * await Post.findAll({ attributes: [[fn('count', col('Post.id')), 'total']], group: [col('Post.userId')] });
+ * ```
  */
 export const col = (name: string): Col => new Col(name);
 
@@ -73,6 +77,10 @@ export const col = (name: string): Col => new Col(name);
  * @param val - Value or expression to cast.
  * @param type - PostgreSQL type name, e.g. `'integer'`.
  * @returns Cast expression.
+ * @example
+ * ```ts
+ * await Product.findAll({ attributes: [[cast(col('price'), 'integer'), 'rounded']] });
+ * ```
  */
 export const cast = (val: unknown, type: string): Cast => new Cast(val, type);
 
@@ -83,6 +91,11 @@ export const cast = (val: unknown, type: string): Cast => new Cast(val, type);
  * @param conditionsOrPath - Dot-separated path, starting with the attribute name, or a conditions object.
  * @param value - Value to compare with when a path is given.
  * @returns JSON expression.
+ * @example
+ * ```ts
+ * await User.findAll({ where: json('meta.address.city', 'Berlin') });
+ * await User.findAll({ where: json({ meta: { active: true } }) });
+ * ```
  */
 export const json = (conditionsOrPath: string | object, value?: unknown): Json =>
   new Json(conditionsOrPath, value);
@@ -107,6 +120,11 @@ export type WhereFactory = {
  * `where(col('age'), Op.gt, 18)`.
  *
  * @returns Where expression.
+ * @example
+ * ```ts
+ * await User.findAll({ where: where(fn('lower', col('name')), 'bob') });
+ * await User.findAll({ where: where(col('age'), Op.gt, 18) });
+ * ```
  */
 export const where: WhereFactory = (
   attribute: unknown,
@@ -122,7 +140,8 @@ export const where: WhereFactory = (
  * @returns Excluded column expression.
  * @example
  * ```ts
- * await Counter.bulkCreate(rows, {
+ * const rows = [{ key: 'home', hits: 1 }];
+ * await Product.bulkCreate(rows, {
  *   onConflict: { target: ['key'], action: { update: { hits: excluded('hits') } } },
  * });
  * ```
@@ -146,10 +165,21 @@ export const exists = (subquery: Subquery): Exists => new Exists(subquery, false
  *
  * @param subquery - Subquery from `Model.subquery()`.
  * @returns Condition usable as `where`.
+ * @example
+ * ```ts
+ * await User.findAll({ where: notExists(Post.subquery({ where: { userId: col('User.id') } })) });
+ * ```
  */
 export const notExists = (subquery: Subquery): Exists => new Exists(subquery, true);
 
-/** Window definition of {@link over}. */
+/**
+ * Window definition of {@link over}.
+ *
+ * @example
+ * ```ts
+ * const window: WindowOptions = { partitionBy: ['userId'], orderBy: [['createdAt', 'DESC']] };
+ * ```
+ */
 export type WindowOptions = Readonly<{
   /** `PARTITION BY` attributes or expressions. */
   partitionBy?: readonly unknown[];
@@ -164,6 +194,12 @@ export type WindowOptions = Readonly<{
  * @param windowFunction - Function call, e.g. `fn('rank')`.
  * @param window - Partition and order.
  * @returns Expression usable in `attributes` and `order`.
+ * @example
+ * ```ts
+ * await Post.findAll({
+ *   attributes: ['id', [over(fn('row_number'), { partitionBy: ['userId'], orderBy: [['createdAt', 'DESC']] }), 'rank']],
+ * });
+ * ```
  */
 export const over = (windowFunction: Fn | Literal, window: WindowOptions = {}): Over =>
   new Over(windowFunction, window.partitionBy ?? [], window.orderBy ?? []);
@@ -174,5 +210,10 @@ export const over = (windowFunction: Fn | Literal, window: WindowOptions = {}): 
  *
  * @param items - Row items (values or expressions).
  * @returns Row expression.
+ * @example
+ * ```ts
+ * const cursor = new Date();
+ * await Post.findAll({ where: where(tuple(col('createdAt'), col('id')), Op.lt, tuple(cursor, 100)) });
+ * ```
  */
 export const tuple = (...items: readonly unknown[]): Tuple => new Tuple(items);

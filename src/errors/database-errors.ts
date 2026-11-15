@@ -8,7 +8,22 @@ export type QueryErrorContext = Readonly<{
   parameters?: readonly unknown[];
 }>;
 
-/** Error returned by PostgreSQL while executing a query (Sequelize v6 `DatabaseError`). */
+/**
+ * Error returned by PostgreSQL while executing a query (Sequelize v6 `DatabaseError`).
+ *
+ * Any driver error without a more specific mapping becomes a `DatabaseError`; `sql` and `parameters` describe the failed statement and `parent.code` holds the SQLSTATE.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await sequelize.query('SELECT * FROM missing_table');
+ * } catch (e) {
+ *   if (e instanceof DatabaseError) {
+ *     console.error(e.parent.code, e.sql, e.parameters);
+ *   }
+ * }
+ * ```
+ */
 export class DatabaseError extends BaseError {
   /** Original driver error. */
   readonly parent: DriverError;
@@ -20,8 +35,10 @@ export class DatabaseError extends BaseError {
   readonly parameters: readonly unknown[];
 
   /**
+   * Wraps a driver error together with the statement that failed.
+   *
    * @param parent - Original driver error.
-   * @param context - Executed SQL and parameters.
+   * @param context - Executed SQL and parameters; `sql` defaults to `''` and `parameters` to `[]`.
    */
   constructor(parent: DriverError, context: QueryErrorContext = {}) {
     super(parent.message, { cause: parent });
@@ -33,9 +50,24 @@ export class DatabaseError extends BaseError {
   }
 }
 
-/** Query cancelled because of a timeout (`57014`). */
+/**
+ * Query cancelled by PostgreSQL, e.g. because `statement_timeout` elapsed (SQLSTATE `57014`).
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await sequelize.query('SELECT pg_sleep(10)');
+ * } catch (e) {
+ *   if (e instanceof TimeoutError) {
+ *     console.error('query was cancelled:', e.sql);
+ *   }
+ * }
+ * ```
+ */
 export class TimeoutError extends DatabaseError {
   /**
+   * Wraps a driver error together with the statement that failed.
+   *
    * @param parent - Original driver error.
    * @param context - Executed SQL and parameters.
    */
@@ -45,7 +77,22 @@ export class TimeoutError extends DatabaseError {
   }
 }
 
-/** Fields and context of a constraint violation. */
+/**
+ * Input of the constraint error constructors: the driver error plus what PostgreSQL reported about the constraint.
+ *
+ * @example
+ * ```ts
+ * const options: ConstraintErrorOptions = {
+ *   parent: Object.assign(new Error('violates foreign key constraint'), { code: '23503' }),
+ *   fields: ['userId'],
+ *   table: 'posts',
+ *   constraint: 'posts_userId_fkey',
+ *   sql: 'INSERT INTO "posts" ("userId") VALUES ($1)',
+ *   parameters: [42],
+ * };
+ * const error = new ForeignKeyConstraintError(options);
+ * ```
+ */
 export type ConstraintErrorOptions = QueryErrorContext &
   Readonly<{
     /** Original driver error. */
@@ -60,7 +107,22 @@ export type ConstraintErrorOptions = QueryErrorContext &
     message?: string;
   }>;
 
-/** Foreign key constraint violation (`23503`). */
+/**
+ * Thrown when a write references a missing row or removes a row that is still referenced (SQLSTATE `23503`).
+ *
+ * `fields` lists the referencing columns (parsed from the PostgreSQL detail), `table` the table and `index` the constraint name.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await Post.create({ title: 'Hello', userId: 999999 });
+ * } catch (e) {
+ *   if (e instanceof ForeignKeyConstraintError) {
+ *     console.error(e.table, e.fields, e.index);
+ *   }
+ * }
+ * ```
+ */
 export class ForeignKeyConstraintError extends DatabaseError {
   /** Referencing columns. */
   readonly fields: readonly string[];
@@ -70,6 +132,8 @@ export class ForeignKeyConstraintError extends DatabaseError {
   readonly index: string | undefined;
 
   /**
+   * Builds the error from the constraint details; an object `fields` is reduced to its keys.
+   *
    * @param options - Driver error, fields and context.
    */
   constructor(options: ConstraintErrorOptions) {
@@ -83,7 +147,22 @@ export class ForeignKeyConstraintError extends DatabaseError {
   }
 }
 
-/** Exclusion constraint violation (`23P01`). */
+/**
+ * Thrown when a row conflicts with an exclusion constraint, e.g. overlapping ranges (SQLSTATE `23P01`). PostgreSQL-specific; v6 has no such class.
+ *
+ * `constraint` is the constraint name, `fields` the columns parsed from the PostgreSQL detail and `table` the table.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await Task.create({ room: 'A', during: [new Date('2026-01-01'), new Date('2026-01-02')] });
+ * } catch (e) {
+ *   if (e instanceof ExclusionConstraintError) {
+ *     console.error(e.constraint, e.fields);
+ *   }
+ * }
+ * ```
+ */
 export class ExclusionConstraintError extends DatabaseError {
   /** Constraint name. */
   readonly constraint: string | undefined;
@@ -93,6 +172,8 @@ export class ExclusionConstraintError extends DatabaseError {
   readonly table: string | undefined;
 
   /**
+   * Builds the error from the constraint details; an object `fields` is reduced to its keys.
+   *
    * @param options - Driver error, fields and context.
    */
   constructor(options: ConstraintErrorOptions) {

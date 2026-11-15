@@ -1,6 +1,19 @@
 import type { HookFunction, HookType } from '../../hooks/hooks.ts';
 
-/** Named hook method of a model class, e.g. `Model.beforeCreate`. */
+/**
+ * Named hook method of a model class, e.g. `Model.beforeCreate`: registers a hook function, optionally under a name that
+ * {@link Model.removeHook} can use later.
+ *
+ * @example
+ * ```ts
+ * User.beforeCreate(async (instance: User) => {
+ *   instance.set('email', String(instance.get('email')).trim());
+ * });
+ * User.afterCreate('audit', async (instance: User) => {
+ *   console.log('created', instance.get('id'));
+ * });
+ * ```
+ */
 export type NamedHookAdder = {
   /**
    * @param fn - Hook function.

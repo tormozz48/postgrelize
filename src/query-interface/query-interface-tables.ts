@@ -31,39 +31,59 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Creates a schema if it does not exist.
+   * Runs `CREATE SCHEMA IF NOT EXISTS` for a schema.
    *
    * @param schema - Schema name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.createSchema('tenant_1');
+   * ```
    */
   async createSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
     await this.#tables.createSchema(schema, options);
   }
 
   /**
-   * Drops a schema with everything in it.
+   * Runs `DROP SCHEMA IF EXISTS ... CASCADE`, removing the schema and everything in it.
    *
    * @param schema - Schema name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropSchema('tenant_1');
+   * ```
    */
   async dropSchema(schema: string, options?: QueryOptionsBase): Promise<void> {
     await this.#tables.dropSchema(schema, options);
   }
 
   /**
-   * Lists user schemas.
+   * Lists application schemas, leaving out `public`, `information_schema` and `pg_*` schemas.
    *
    * @param options - Query options.
    * @returns Schema names.
+   *
+   * @example
+   * ```ts
+   * const schemas = await queryInterface.showAllSchemas();
+   * ```
    */
   async showAllSchemas(options?: QueryOptionsBase): Promise<string[]> {
     return await this.#introspector.showAllSchemas(options);
   }
 
   /**
-   * Drops every user schema listed by {@link QueryInterface.showAllSchemas} with everything in it.
+   * Drops, with `CASCADE`, every schema listed by {@link QueryInterface.showAllSchemas} Destructive.
    *
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropAllSchemas();
+   * ```
    */
   async dropAllSchemas(options?: QueryOptionsBase): Promise<void> {
     const schemas = await this.showAllSchemas(options);
@@ -71,11 +91,23 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Creates a table (and its enum types) if it does not exist.
+   * Creates a table together with the enum types its columns need, if the table does not exist yet. Foreign keys, defaults and comments come from the attribute definitions.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param attributes - Column definitions keyed by column name.
    * @param options - Comment and query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.createTable(
+   *   { tableName: 'posts', schema: 'tenant_1' },
+   *   {
+   *     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+   *     title: { type: DataTypes.STRING, allowNull: false },
+   *   },
+   *   { comment: 'Blog posts' },
+   * );
+   * ```
    */
   async createTable(
     table: TableName,
@@ -86,19 +118,29 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Drops a table if it exists.
+   * Runs `DROP TABLE IF EXISTS` for a table; it does not drop the table's enum types.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - `cascade` and query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropTable('posts', { cascade: true });
+   * ```
    */
   async dropTable(table: TableName, options: DropTableOptions = {}): Promise<void> {
     await this.#tables.dropTable(table, options);
   }
 
   /**
-   * Drops all tables of the current schema.
+   * Drops every table of the current schema with `CASCADE`, except the skipped ones. Destructive.
    *
-   * @param options - `skip`: table names to keep.
+   * @param options - `skip`: table names to keep, plus query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.dropAllTables({ skip: ['SequelizeMeta'] });
+   * ```
    */
   async dropAllTables(
     options: QueryOptionsBase & Readonly<{ skip?: readonly string[] }> = {},
@@ -107,11 +149,16 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Renames a table.
+   * Renames a table with `ALTER TABLE ... RENAME TO`; the schema of `after` is ignored.
    *
    * @param before - Current table.
    * @param after - New table name.
    * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.renameTable('posts', 'articles');
+   * ```
    */
   async renameTable(
     before: TableName,
@@ -122,33 +169,51 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Checks whether a table exists.
+   * Tells whether a table exists in its schema (the current schema when none is given).
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - Query options.
    * @returns True when the table exists.
+   *
+   * @example
+   * ```ts
+   * if (!(await queryInterface.tableExists('posts'))) {
+   *   await queryInterface.createTable('posts', { title: DataTypes.STRING });
+   * }
+   * ```
    */
   async tableExists(table: TableName, options?: QueryOptionsBase): Promise<boolean> {
     return await this.#introspector.tableExists(table, options);
   }
 
   /**
-   * Lists tables of the current schema.
+   * Lists the table names of the current schema in alphabetical order.
    *
    * @param options - Query options.
    * @returns Table names.
+   *
+   * @example
+   * ```ts
+   * const tables = await queryInterface.showAllTables(); // e.g. ['posts', 'users']
+   * ```
    */
   async showAllTables(options?: QueryOptionsBase): Promise<string[]> {
     return await this.#introspector.showAllTables(options);
   }
 
   /**
-   * Describes the columns of a table.
+   * Reads the column metadata of a table from the catalog.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - `schema` and query options.
    * @returns Column descriptions keyed by column name.
    * @throws Error when the table does not exist.
+   *
+   * @example
+   * ```ts
+   * const columns = await queryInterface.describeTable('users');
+   * const emailNullable = columns['email']?.allowNull;
+   * ```
    */
   async describeTable(
     table: TableName,
@@ -158,11 +223,17 @@ export class QueryInterfaceTables {
   }
 
   /**
-   * Foreign keys of a table.
+   * Lists the foreign key columns of a table with the table and column each one references.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - Query options.
    * @returns Constraint name, column and referenced table/column per foreign key column.
+   *
+   * @example
+   * ```ts
+   * const references = await queryInterface.getForeignKeyReferencesForTable('posts');
+   * const targets = references.map((reference) => reference.referencedTableName);
+   * ```
    */
   async getForeignKeyReferencesForTable(
     table: TableName,

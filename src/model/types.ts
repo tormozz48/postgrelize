@@ -52,7 +52,14 @@ type IsBranded<T, Brand extends symbol> = [Extract<keyof NonNullable<T>, Brand>]
 // oxlint-disable-next-line typescript/no-explicit-any -- matches any function signature
 type AnyFunction = (...args: any[]) => unknown;
 
-/** Options of {@link InferAttributes}. */
+/**
+ * Options of {@link InferAttributes}.
+ *
+ * @example
+ * ```ts
+ * type UserAttributes = InferAttributes<User, { omit: 'posts' }>;
+ * ```
+ */
 export type InferAttributesOptions<OmittedKeys> = Readonly<{
   /** Attribute names to leave out. */
   omit?: OmittedKeys;

@@ -27,7 +27,7 @@ export class Subquery extends SqlExpression {
 export class Exists extends SqlExpression {
   /** @internal */
   static override readonly kind = 'Exists';
-  /** Subquery. */
+  /** The wrapped `SELECT` that `EXISTS` tests for rows. */
   readonly subquery: Subquery;
   /** `NOT EXISTS`. */
   readonly negated: boolean;

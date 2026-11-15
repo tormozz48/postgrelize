@@ -12,10 +12,14 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   declare dataValues: TAttributes;
 
   /**
-   * Returns attribute values.
+   * Returns all attribute values of the instance; no query is run.
    *
-   * @param options - `plain: true` returns a copy of all values with custom getters applied.
+   * @param options - `plain: true` returns a copy of all values with custom getters applied; `raw: true` skips custom getters.
    * @returns Values object.
+   * @example
+   * ```ts
+   * const values = user.get({ plain: true });
+   * ```
    */
   get(options?: Readonly<{ plain?: boolean; raw?: boolean; clone?: boolean }>): TAttributes;
 
@@ -25,6 +29,10 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * @param key - Attribute name.
    * @param options - `raw: true` skips the custom getter.
    * @returns Attribute value.
+   * @example
+   * ```ts
+   * const email = user.get('email');
+   * ```
    */
   get<K extends keyof TAttributes>(key: K, options?: Readonly<{ raw?: boolean }>): TAttributes[K];
   get(
@@ -35,12 +43,18 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Sets one attribute value, applying its custom setter unless `raw` is set.
+   * Sets one attribute value, applying its custom setter unless `raw` is set. Nothing is written to
+   * the database until {@link Model.save}; the attribute is marked as changed when the value differs.
    *
    * @param key - Attribute name.
    * @param value - New value.
    * @param options - `raw: true` skips the custom setter and change tracking.
    * @returns This instance.
+   * @example
+   * ```ts
+   * user.set('email', 'ada@example.com');
+   * await user.save();
+   * ```
    */
   set<K extends keyof TAttributes>(
     key: K,
@@ -49,11 +63,15 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   ): this;
 
   /**
-   * Sets several attribute values.
+   * Sets several attribute values at once, applying custom setters unless `raw` is set.
    *
    * @param values - Attribute values.
    * @param options - `raw: true` skips custom setters and change tracking.
    * @returns This instance.
+   * @example
+   * ```ts
+   * user.set({ email: 'ada@example.com', active: true });
+   * ```
    */
   set(values: Partial<TAttributes> | Values, options?: Readonly<{ raw?: boolean }>): this;
   set(
@@ -66,21 +84,29 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Reads a value without custom getters.
+   * Reads the stored value of an attribute, bypassing its custom getter.
    *
    * @param key - Attribute name.
    * @returns Raw value.
+   * @example
+   * ```ts
+   * const stored = user.getDataValue('email');
+   * ```
    */
   getDataValue<K extends keyof TAttributes>(key: K): TAttributes[K] {
     return this.dataValues[key];
   }
 
   /**
-   * Writes a value without custom setters, tracking the change.
+   * Writes the stored value of an attribute, bypassing its custom setter, and marks it as changed.
    *
    * @param key - Attribute name.
    * @param value - New value.
    * @returns This instance.
+   * @example
+   * ```ts
+   * user.setDataValue('email', 'ada@example.com');
+   * ```
    */
   setDataValue<K extends keyof TAttributes>(key: K, value: TAttributes[K]): this {
     instanceValues.setDataValue(this as unknown as AnyModel, key, value);
@@ -88,14 +114,19 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Lists changed attributes, or checks one.
+   * Lists the attributes changed since the instance was loaded or last saved.
    *
    * @returns Changed attribute names, or `false` when nothing changed.
+   * @example
+   * ```ts
+   * user.set('email', 'ada@example.com');
+   * const changedFields = user.changed();
+   * ```
    */
   changed(): (keyof TAttributes & string)[] | false;
 
   /**
-   * Checks whether an attribute changed.
+   * Checks whether one attribute changed since the instance was loaded or last saved.
    *
    * @param key - Attribute name.
    * @returns True when changed.
@@ -103,7 +134,7 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   changed(key: keyof TAttributes & string): boolean;
 
   /**
-   * Marks an attribute as changed or unchanged.
+   * Marks an attribute as changed or unchanged, which controls whether {@link Model.save} writes it.
    *
    * @param key - Attribute name.
    * @param value - Changed flag.
@@ -114,10 +145,16 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Previous value of an attribute, or all previous values of changed attributes.
+   * Returns the value an attribute had before it was changed, or all previous values of changed
+   * attributes when no key is given.
    *
-   * @param key - Attribute name.
+   * @param key - Attribute name; omit to get all.
    * @returns Previous value(s).
+   * @example
+   * ```ts
+   * user.set('email', 'ada@example.com');
+   * const before = user.previous('email');
+   * ```
    */
   previous<K extends keyof TAttributes>(
     key?: K,
@@ -129,19 +166,28 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Compares primary keys with another instance.
+   * Compares the primary keys of two instances.
    *
    * @param other - Instance to compare with.
    * @returns True when all primary key values are equal.
+   * @example
+   * ```ts
+   * const other = User.build({ id: user.get('id') });
+   * const same = user.equals(other);
+   * ```
    */
   equals(other: Model): boolean {
     return instanceValues.equals(this as unknown as AnyModel, other);
   }
 
   /**
-   * Plain copy of all values with custom getters applied.
+   * Returns a deep copy of the values with custom getters applied, used by `JSON.stringify`.
    *
    * @returns Plain object.
+   * @example
+   * ```ts
+   * const json = JSON.stringify(user);
+   * ```
    */
   toJSON(): TAttributes {
     return structuredClone(this.get({ plain: true }));

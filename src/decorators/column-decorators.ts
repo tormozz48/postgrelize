@@ -18,11 +18,13 @@ const isOptions = (input: ColumnInput): input is AttributeOptions =>
  *
  * @param input - A data type (`DataTypes.STRING(64)`) or column options (`{ type, allowNull, … }`).
  * @returns An attribute decorator.
+ * Accepts the TC39 and the legacy `experimentalDecorators` call signature.
+ *
  * @example
  * ```ts
  * class User extends Model {
  *   @Column({ type: DataTypes.STRING, allowNull: false })
- *   declare name: string;
+ *   name!: string;
  * }
  * ```
  */
@@ -34,7 +36,11 @@ export const Column = (input: ColumnInput): ModelPropertyDecorator =>
  *
  * @example
  * ```ts
- * @PrimaryKey @Column(DataTypes.INTEGER) id!: number;
+ * class User extends Model {
+ *   @PrimaryKey
+ *   @Column(DataTypes.INTEGER)
+ *   id!: number;
+ * }
  * ```
  */
 export const PrimaryKey: ModelPropertyDecorator = decorate.column({ primaryKey: true });
@@ -44,7 +50,12 @@ export const PrimaryKey: ModelPropertyDecorator = decorate.column({ primaryKey: 
  *
  * @example
  * ```ts
- * @PrimaryKey @AutoIncrement @Column(DataTypes.INTEGER) id!: number;
+ * class User extends Model {
+ *   @PrimaryKey
+ *   @AutoIncrement
+ *   @Column(DataTypes.INTEGER)
+ *   id!: number;
+ * }
  * ```
  */
 export const AutoIncrement: ModelPropertyDecorator = decorate.column({ autoIncrement: true });
@@ -52,10 +63,16 @@ export const AutoIncrement: ModelPropertyDecorator = decorate.column({ autoIncre
 /**
  * Sets `allowNull`. Usable bare (`@AllowNull`, meaning `true`) or called.
  *
- * @param allowNull - Whether `NULL` is allowed. Default true.
+ * @param allowNull - Whether `NULL` is allowed.
+ * @defaultValue true
+ * @returns An attribute decorator.
  * @example
  * ```ts
- * @AllowNull(false) @Column(DataTypes.TEXT) name!: string;
+ * class User extends Model {
+ *   @AllowNull(false)
+ *   @Column(DataTypes.TEXT)
+ *   name!: string;
+ * }
  * ```
  */
 export const AllowNull = decorate.optionalProperty<boolean, ModelPropertyDecorator>(
@@ -69,7 +86,11 @@ export const AllowNull = decorate.optionalProperty<boolean, ModelPropertyDecorat
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @Default(false) @Column(DataTypes.BOOLEAN) active!: boolean;
+ * class User extends Model {
+ *   @Default(false)
+ *   @Column(DataTypes.BOOLEAN)
+ *   active!: boolean;
+ * }
  * ```
  */
 export const Default = (value: unknown): ModelPropertyDecorator =>
@@ -79,9 +100,14 @@ export const Default = (value: unknown): ModelPropertyDecorator =>
  * Adds a unique constraint (`unique`). Usable bare or with a constraint name or options.
  *
  * @param unique - Constraint name or `{ name, msg, nullsNotDistinct }`. Attributes sharing a name form a composite key.
+ * @returns An attribute decorator.
  * @example
  * ```ts
- * @Unique @Column(DataTypes.STRING) email!: string;
+ * class User extends Model {
+ *   @Unique
+ *   @Column(DataTypes.STRING)
+ *   email!: string;
+ * }
  * ```
  */
 export const Unique = decorate.optionalProperty<string | UniqueOptions, ModelPropertyDecorator>(
@@ -95,7 +121,11 @@ export const Unique = decorate.optionalProperty<string | UniqueOptions, ModelPro
  * @returns An attribute decorator.
  * @example
  * ```ts
- * @Comment('Login name') @Column(DataTypes.STRING) login!: string;
+ * class User extends Model {
+ *   @Comment('Login name')
+ *   @Column(DataTypes.STRING)
+ *   login!: string;
+ * }
  * ```
  */
 export const Comment = (text: string): ModelPropertyDecorator => decorate.column({ comment: text });
@@ -108,10 +138,15 @@ export const Comment = (text: string): ModelPropertyDecorator => decorate.column
  * directory index (case-insensitive), so it is documented in the Decorators guide instead.
  *
  * @param index - Index name or index options (without `fields`).
+ * @returns An attribute decorator.
  * @hidden
  * @example
  * ```ts
- * @Index({ name: 'users_name_idx', using: 'btree' }) @Column(DataTypes.STRING) name!: string;
+ * class User extends Model {
+ *   @Index({ name: 'users_name_idx', using: 'btree' })
+ *   @Column(DataTypes.STRING)
+ *   name!: string;
+ * }
  * ```
  */
 export const Index = decorate.optionalProperty<

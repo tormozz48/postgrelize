@@ -20,10 +20,20 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   declare dataValues: TAttributes;
 
   /**
-   * Inserts the instance if new, otherwise updates its changed attributes.
+   * Inserts the instance when it is new, otherwise updates its changed attributes. Runs validation
+   * and the `beforeValidate`/`afterValidate`, `beforeSave`/`afterSave` and `beforeCreate`/`beforeUpdate`
+   * (and `after*`) hooks unless disabled in the options; updating an unchanged instance sends no query.
    *
    * @param options - Save options.
    * @returns This instance with values returned by the database.
+   * @throws ValidationError when validation fails.
+   * @throws UniqueConstraintError when a unique constraint is violated.
+   * @throws ForeignKeyConstraintError when a foreign key constraint is violated.
+   * @example
+   * ```ts
+   * const user = User.build({ email: 'ada@example.com' });
+   * await user.save({ transaction });
+   * ```
    */
   save(options: SaveOptions<TAttributes> = {}): Promise<this> {
     return lifecycle.save(
@@ -33,22 +43,31 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   }
 
   /**
-   * Validates the instance (Sequelize v6 `instance.validate()`).
+   * Runs the attribute validators and model validators without saving (Sequelize v6 `instance.validate()`).
    *
    * @param options - `hooks`, `skip`, `fields`.
    * @returns Resolves when valid.
    * @throws ValidationError with all failures.
+   * @example
+   * ```ts
+   * await user.validate();
+   * ```
    */
   validate(options: ValidateOptions = {}): Promise<void> {
     return lifecycle.validate(this as unknown as AnyModel, options);
   }
 
   /**
-   * Sets values and saves.
+   * Sets values and saves the instance, same as {@link Model.set} followed by {@link Model.save}.
    *
    * @param values - New values.
    * @param options - Save options.
    * @returns This instance.
+   * @throws ValidationError when validation fails.
+   * @example
+   * ```ts
+   * await user.update({ email: 'ada@example.com' });
+   * ```
    */
   async update(
     values: Partial<TAttributes>,
@@ -59,32 +78,45 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   }
 
   /**
-   * Reloads values from the database.
+   * Re-reads the row from the database and replaces the instance values, discarding unsaved changes.
    *
    * @param options - Query options.
    * @returns This instance.
    * @throws InstanceError when the row no longer exists.
+   * @example
+   * ```ts
+   * await user.reload({ transaction });
+   * ```
    */
   reload(options: QueryOptionsBase = {}): Promise<this> {
     return lifecycle.reload(this as unknown as AnyModel, options) as unknown as Promise<this>;
   }
 
   /**
-   * Deletes the row of this instance.
+   * Deletes the row of this instance. For paranoid models it sets `deletedAt` instead, unless
+   * `force: true`. Runs `beforeDestroy`/`afterDestroy` hooks unless `hooks: false`.
    *
-   * @param options - Query options.
+   * @param options - Destroy options (`force`, `hooks`, query options).
    * @returns Resolves when deleted.
+   * @example
+   * ```ts
+   * await user.destroy();
+   * ```
    */
   destroy(options: InstanceDestroyOptions = {}): Promise<void> {
     return lifecycle.destroy(this as unknown as AnyModel, options);
   }
 
   /**
-   * Restores this soft-deleted instance of a paranoid model.
+   * Clears `deletedAt` of this soft-deleted instance of a paranoid model.
    *
    * @param options - Query options; `hooks: false` skips restore hooks.
    * @returns Resolves when restored.
    * @throws Error when the model is not paranoid.
+   * @example
+   * ```ts
+   * await user.restore();
+   * ```
    */
   restore(options: QueryOptionsBase & Readonly<{ hooks?: boolean }> = {}): Promise<void> {
     return lifecycle.restore(this as unknown as AnyModel, options);
@@ -95,17 +127,29 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    *
    * @returns True when `deletedAt` is set.
    * @throws Error when the model is not paranoid.
+   * @example
+   * ```ts
+   * if (user.isSoftDeleted()) {
+   *   await user.restore();
+   * }
+   * ```
    */
   isSoftDeleted(): boolean {
     return lifecycle.isSoftDeleted(this as unknown as AnyModel);
   }
 
   /**
-   * Increments attributes of this row in the database. Does not reload the instance.
+   * Increments numeric attributes of this row in the database (`SET x = x + by`). The instance values are
+   * not reloaded; call {@link Model.reload} to read the new numbers.
    *
    * @param fields - Attribute name(s) or map of amounts.
-   * @param options - Options.
+   * @param options - `by` (default 1), `silent`, and query options.
    * @returns This instance.
+   * @example
+   * ```ts
+   * await user.increment('loginCount');
+   * await user.increment({ loginCount: 2, score: 10 });
+   * ```
    */
   async increment(
     fields: AttributeAmounts<TAttributes>,
@@ -121,11 +165,16 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   }
 
   /**
-   * Decrements attributes of this row in the database. Does not reload the instance.
+   * Decrements numeric attributes of this row in the database (`SET x = x - by`). The instance values are
+   * not reloaded; call {@link Model.reload} to read the new numbers.
    *
    * @param fields - Attribute name(s) or map of amounts.
-   * @param options - Options.
+   * @param options - `by` (default 1), `silent`, and query options.
    * @returns This instance.
+   * @example
+   * ```ts
+   * await user.decrement('credits', { by: 5 });
+   * ```
    */
   async decrement(
     fields: AttributeAmounts<TAttributes>,

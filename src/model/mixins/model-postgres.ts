@@ -30,15 +30,19 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `bulkCreate`, rows skipped by `DO NOTHING` or by the `DO UPDATE ... WHERE` condition are not
      * returned. Each instance has `wasInserted`. PostgreSQL extension.
      *
+     * @param this - The model class.
      * @param values - Attribute values of one row or several rows.
-     * @param options - Insert options.
+     * @param options - Insert options (`onConflict`, `fields`, `hooks`, `validate`, `overriding`, `returningOld`, query options).
      * @returns Instances of the rows written by the statement.
+     * @see {@link Model.bulkCreate} for the Sequelize v6 variant.
+     * @see [Bulk writes guide](/guide/bulk-writes)
      * @example
      * ```ts
-     * const rows = await Stock.insert(items, {
-     *   onConflict: { target: ['sku'], action: { update: { qty: literal('"Stock"."qty" + EXCLUDED."qty"') } } },
+     * const items = [{ sku: 'a-1', qty: 5 }];
+     * const rows = await Product.insert(items, {
+     *   onConflict: { target: ['sku'], action: { update: { qty: literal('"Product"."qty" + EXCLUDED."qty"') } } },
      * });
-     * rows.filter((row) => row.wasInserted);
+     * const inserted = rows.filter((row) => row.wasInserted);
      * ```
      */
     static insert<M extends AnyModel>(
@@ -53,12 +57,16 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `INSERT INTO ... SELECT`: inserts the rows produced by a subquery. Returns the inserted (or, with
      * `onConflict`, updated) rows with `wasInserted`. PostgreSQL extension.
      *
+     * @param this - The target model class.
      * @param source - Subquery from `Model.subquery()`; its columns must match `options.columns`.
      * @param options - Target columns, `onConflict` and query options.
      * @returns Written rows.
      * @example
      * ```ts
-     * await Archive.insertFrom(Post.subquery({ attributes: ['id', 'title'], where: { published: false } }), { columns: ['postId', 'title'] });
+     * await Task.insertFrom(
+     *   Post.subquery({ attributes: ['id', 'title'], where: { published: false } }),
+     *   { columns: ['postId', 'title'] },
+     * );
      * ```
      */
     static insertFrom<M extends AnyModel>(
@@ -73,14 +81,16 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `MERGE INTO ... USING ...` (PostgreSQL 15+). With `returning: true` (PostgreSQL 17+) returns the
      * written rows with the action taken. PostgreSQL extension.
      *
+     * @param this - The model class.
      * @param options - Source, join condition and WHEN clauses.
      * @returns Affected row count and, with `returning`, `{ action, instance }` per row.
+     * @throws DatabaseError when the server rejects the statement (for example on PostgreSQL older than 15).
      * @example
      * ```ts
-     * await Stock.merge({
+     * await Product.merge({
      *   source: [{ sku: 'a', qty: 5 }],
      *   on: { sku: col('source.sku') },
-     *   whenMatched: { update: { qty: literal('"Stock"."qty" + "source"."qty"') } },
+     *   whenMatched: { update: { qty: literal('"Product"."qty" + "source"."qty"') } },
      *   whenNotMatched: { insert: true },
      * });
      * ```
@@ -104,6 +114,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * in `attributes` (scalar subquery) and as a source of `insertFrom` / `merge`. Default scope and
      * paranoid filter apply; values stay bound parameters of the outer statement. PostgreSQL extension.
      *
+     * @param this - The model class the subquery selects from.
      * @param options - Find options (`attributes`, `where`, `order`, `limit`, `include`, ...) and `as` (table alias).
      * @returns Subquery expression.
      * @example
@@ -123,13 +134,14 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * are not loaded at once. Runs inside `options.transaction` or its own transaction; the cursor is
      * closed when iteration ends or is stopped early. Joined includes are not supported. PostgreSQL extension.
      *
+     * @param this - The model class.
      * @param options - Find options.
      * @param cursor - `batchSize` (rows per FETCH, default 100).
      * @returns Async iterator of instances.
      * @example
      * ```ts
      * for await (const user of User.findEach({ where: { active: true } }, { batchSize: 500 })) {
-     *   await sendEmail(user);
+     *   console.log(user.get('email'));
      * }
      * ```
      */
@@ -146,12 +158,16 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * volumes. No hooks or validation run; missing values are written as `NULL`. `createdAt` /
      * `updatedAt` are filled when the model has timestamps. PostgreSQL extension.
      *
+     * @param this - The model class.
      * @param rows - Rows (array, iterable or async iterable of attribute values).
      * @param options - `columns` (attribute names; default: keys of the first row of an array) and query options.
      * @returns Number of copied rows.
      * @example
      * ```ts
-     * await Event.copyFrom(readEvents(), { columns: ['type', 'payload'] });
+     * const copied = await Task.copyFrom(
+     *   [{ title: 'first' }, { title: 'second' }],
+     *   { columns: ['title'] },
+     * );
      * ```
      */
     static copyFrom<M extends AnyModel>(
@@ -172,12 +188,13 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * escaped literals because COPY cannot take parameters (ADR-013). Stopping early drains the rest
      * before the connection is released. PostgreSQL extension.
      *
-     * @param options - Find options and output format.
+     * @param this - The model class.
+     * @param options - Find options and output format (`format`, `header`, ...).
      * @returns Async iterator of raw output chunks.
      * @example
      * ```ts
      * for await (const chunk of User.copyTo({ attributes: ['id', 'email'], format: 'csv', header: true })) {
-     *   response.write(chunk);
+     *   process.stdout.write(chunk);
      * }
      * ```
      */
