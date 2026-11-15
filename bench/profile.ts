@@ -2,10 +2,12 @@
 //   npm run build && node --cpu-prof --cpu-prof-dir=/tmp/prof bench/profile.ts "findAll 100 rows" [seconds]
 //   node bench/profile-summary.ts /tmp/prof/<file>.cpuprofile
 // Runs on `dist` because decorators need compiling and Node cannot load `src` directly.
-import { DataTypes, Op, Sequelize } from '../dist/index.js';
-import { createScenario } from './scenarios.ts';
+import { createScenario, type Lib } from './scenarios.ts';
 import { installStub } from './stub.ts';
 
+// A variable specifier keeps `tsc` from requiring `dist` to exist.
+const distEntry = '../dist/index.js';
+const { Sequelize, DataTypes, Op } = (await import(distEntry)) as Lib;
 installStub();
 const [name = 'findAll 100 rows', seconds = '8'] = process.argv.slice(2);
 const scenario = createScenario(
