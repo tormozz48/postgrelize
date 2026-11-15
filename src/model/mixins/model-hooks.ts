@@ -135,17 +135,18 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
      * Checks whether hooks of the type are registered on the model.
      *
      * @param type - Hook type.
-     * @returns True when at least one hook exists.
+     * @returns True when at least one hook exists, `false` after all were removed and
+     * `undefined` (typed `boolean`, like Sequelize v6) for a type that never had a hook.
      */
     static hasHook(type: HookType): boolean {
-      return registry.state(this).hooks.has(type);
+      return registry.state(this).hooks.hasOrUndefined(type) as boolean;
     }
 
     /**
      * Alias of {@link Model.hasHook}.
      *
      * @param type - Hook type.
-     * @returns True when at least one hook exists.
+     * @returns Same as {@link Model.hasHook}.
      */
     static hasHooks(type: HookType): boolean {
       return this.hasHook(type);

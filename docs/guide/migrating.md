@@ -67,7 +67,6 @@ These Sequelize v6 features are not implemented:
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Other dialects (MySQL, SQLite, MSSQL…) | postgrelize is PostgreSQL only.                                                                       |
 | `minifyAliases`                        | Not available; keep association aliases short in deeply nested includes.                              |
-| `Model.schema('tenant')`               | Define the model with the `schema` option, or set `search_path` per connection.                       |
 | `searchPath` query / connection option | Set `search_path` with `dialectOptions: { options: '-c search_path=tenant' }`.                        |
 | Named or shared `ENUM` types           | Each `ENUM` attribute gets its own type, `enum_<table>_<column>`, as v6 does by default.              |
 | `create({ ignoreDuplicates })`         | `create(values, { onConflict: { action: 'nothing' } })` or `bulkCreate([...], { ignoreDuplicates })`. |

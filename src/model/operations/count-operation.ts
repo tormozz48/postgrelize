@@ -2,6 +2,7 @@ import type { IncludeOption } from '../../associations/include.ts';
 import type { IncludeQueryBuilder } from '../../associations/include-query-builder.ts';
 import type { IncludeResolver } from '../../associations/include-resolver.ts';
 import type { QueryResult } from '../../connection/connection-manager.ts';
+import { AbstractDataType } from '../../data-types/abstract-data-type.ts';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { CteBuilder } from '../cte-builder.ts';
@@ -122,7 +123,8 @@ export class CountOperation extends ModelOperation<CountOperationServices> {
    * @param field - Attribute name or `'*'`.
    * @param aggregateFunction - SQL aggregate function name, e.g. `'max'`.
    * @param options - Options.
-   * @returns Aggregated value (rows with `plain: false`).
+   * @returns Aggregated value (the raw driver rows with `plain: false`, like v6: numeric results
+   * such as `sum` arrive as strings).
    */
   async aggregate(
     model: ModelStatic<AnyModel>,
@@ -152,14 +154,14 @@ export class CountOperation extends ModelOperation<CountOperationServices> {
     options: AggregateOptions,
     rows: QueryResult['rows'],
   ): unknown {
-    const attribute = definition.attributes.get(field);
-    const mapper = this.services.rows;
     if (options.plain === false) {
-      return rows.map((row) => ({
-        ...row,
-        [aggregateFunction]: mapper.aggregate(attribute, aggregateFunction, row[aggregateFunction]),
-      }));
+      return rows;
     }
+    const attribute =
+      options.dataType === undefined
+        ? definition.attributes.get(field)
+        : { type: AbstractDataType.from(options.dataType) };
+    const mapper = this.services.rows;
     return mapper.aggregate(attribute, aggregateFunction, rows[0]?.[aggregateFunction]);
   }
 }

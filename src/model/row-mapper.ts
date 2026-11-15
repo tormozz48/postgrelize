@@ -106,14 +106,14 @@ export class RowMapper {
    * @returns Parsed value.
    */
   aggregate(
-    attribute: AttributeDefinition | undefined,
+    attribute: Pick<AttributeDefinition, 'type'> | undefined,
     aggregateFunction: string,
     value: unknown,
   ): unknown {
     if (value === null || value === undefined) {
       return value;
     }
-    if (aggregateFunction === 'count' || NUMERIC_KEYS.has(attribute?.type.key)) {
+    if (aggregateFunction === 'count' || NUMERIC_KEYS.has(attribute?.type.key ?? 'FLOAT')) {
       return toNumber(value);
     }
     return attribute?.type.parse === undefined ? value : attribute.type.parse(value);

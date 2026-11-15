@@ -75,6 +75,21 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // line.get('id') === '1' (BIGINT is returned as a string), line.get('total') === '10.00'
   // #endregion use
 
+  // #region schema
+  await sequelize.createSchema('tenant_a');
+  const TenantOrder = Order.schema('tenant_a');
+  await TenantOrder.sync();
+  await TenantOrder.create({ number: 'T-1' });
+  const tenantCount = await TenantOrder.count(); // counts "tenant_a"."Orders" only
+  // #endregion schema
+
+  // #region fields
+  const partial = await Product.create(
+    { sku: 'cd-2', name: 'Anchor', status: 'live' },
+    { fields: ['sku', 'name'] },
+  ); // `status` is not written: the column default applies; timestamps are added for you
+  // #endregion fields
+
   const order = await Order.create({ number: 'A-1' });
   await order.destroy();
   const visible = await Order.count();
@@ -87,6 +102,8 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     line.get('id') !== '1' ||
     line.get('total') !== '10.00' ||
     line.get('period') !== '1 year 2 mons' ||
+    tenantCount !== 1 ||
+    partial.status !== 'draft' ||
     visible !== 0 ||
     all !== 1
   ) {

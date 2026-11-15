@@ -150,7 +150,7 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
   #rows({ definition, instances, opts, options }: BulkCreateCall): Values[] {
     const { values } = this.services;
     const now = new Date();
-    const fields = options.fields as readonly string[] | undefined;
+    const fields = values.bulkFields(definition, options.fields as readonly string[] | undefined);
     const silent = opts['silent'] === true;
     return instances.map((instance) =>
       values.pick(

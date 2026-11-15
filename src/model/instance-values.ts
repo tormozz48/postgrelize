@@ -112,11 +112,23 @@ export class InstanceValues {
     if (attribute === undefined) {
       return;
     }
+    const values = instance.dataValues as Values;
+    const original = values[key];
     if (attribute.set !== undefined) {
       (attribute.set as (this: unknown, value: unknown) => void).call(instance, value);
+      this.#track(instance, key, original, values[key]);
       return;
     }
-    instance.setDataValue(key, value as never);
+    this.#track(instance, key, original, value);
+    values[key] = value;
+  }
+
+  /** v6 `set`: an attribute that differs from its value before the call stays changed for good. */
+  #track(instance: AnyModel, key: string, original: unknown, value: unknown): void {
+    if (value instanceof SqlExpression || !this.#values.isEqual(value, original)) {
+      (instance._previousDataValues as Values)[key] = original;
+      InstanceState.of(instance).mark(key, true);
+    }
   }
 
   /**
@@ -134,8 +146,6 @@ export class InstanceValues {
       value instanceof SqlExpression
     ) {
       state.mark(name, true);
-    } else if (state.changed.has(name)) {
-      state.mark(name, false);
     }
     (instance.dataValues as Values)[name] = value;
   }

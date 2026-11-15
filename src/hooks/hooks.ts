@@ -190,6 +190,19 @@ export class HookRegistry {
   }
 
   /**
+   * Like {@link HookRegistry.has}, but `undefined` for a type that never had a hook (what
+   * Sequelize v6 `hasHook` returns).
+   *
+   * @param type - Hook type.
+   * @returns Whether hooks exist, `undefined` when none was ever added.
+   * @throws Error for an unknown hook type.
+   */
+  hasOrUndefined(type: string): boolean | undefined {
+    const hooks = this.#hooks.get(HookRegistry.#assertHookType(type));
+    return hooks === undefined ? undefined : hooks.length > 0;
+  }
+
+  /**
    * Runs the hooks of `type` in registration order.
    *
    * @param type - Hook type.

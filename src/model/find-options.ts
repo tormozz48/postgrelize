@@ -1,4 +1,5 @@
 import type { IncludeOption } from '../associations/include.ts';
+import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { CteFindOptions } from './cte-builder.ts';
 import type { Values } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
@@ -61,8 +62,19 @@ export type CountOptions<T = Values> = QueryOptionsBase &
 /** Options of `aggregate`, `max`, `min`, `sum`. */
 export type AggregateOptions<T = Values> = CountOptions<T> &
   Readonly<{
-    /** Return all rows instead of one value. */
+    /**
+     * Return all rows exactly as the driver delivers them (numeric results such as `sum` are
+     * strings, like in Sequelize v6) instead of one converted value.
+     *
+     * @defaultValue `true`
+     */
     plain?: boolean;
+    /**
+     * Data type that the single result is converted to: `INTEGER` / `BIGINT` give a number,
+     * `FLOAT` / `DECIMAL` a float, `DATE` a `Date`. Defaults to the type of the aggregated
+     * attribute, or `FLOAT` for `'*'`. Ignored with `plain: false`.
+     */
+    dataType?: DataTypeInput;
   }>;
 
 /** Options of `findOrCreate` / `findOrBuild`. */

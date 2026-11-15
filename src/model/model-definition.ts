@@ -28,6 +28,8 @@ export type DefinitionOptions = ModelDefaults &
     modelName?: string;
     /** Table name. Defaults to the pluralized model name. */
     tableName?: string;
+    /** Separator between schema and table that `getTableName` reports (PostgreSQL always uses `.` in SQL). */
+    schemaDelimiter?: string;
     /** Name of the created-at attribute, or `false` to disable it. */
     createdAt?: string | boolean;
     /** Name of the updated-at attribute, or `false` to disable it. */

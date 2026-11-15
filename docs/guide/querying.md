@@ -40,7 +40,7 @@ PostgreSQL additions and fixes:
 
 <<< @/examples/querying.ts#aggregates{ts}
 
-`count`, `sum`, `min`, `max` and `aggregate` accept the same `where` as finders; `count` also takes `distinct`, `col` and `group`. `increment` and `decrement` work on the model (with `where`) and on instances.
+`count`, `sum`, `min`, `max` and `aggregate` accept the same `where` as finders; `aggregate` and the helpers convert the result to the type of the attribute (`FLOAT` for `'*'`), `dataType` overrides that, and `plain: false` returns the raw rows with the driver's strings (like v6); `count` also takes `distinct`, `col` and `group`. `increment` and `decrement` work on the model (with `where`) and on instances.
 
 Build SQL expressions with `fn`, `col`, `literal`, `cast`, `json` and `where`. Values inside them are bound parameters; identifiers are quoted. Use `literal` only with trusted SQL text.
 

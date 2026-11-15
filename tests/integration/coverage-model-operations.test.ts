@@ -276,10 +276,8 @@ describe('association properties of instances', () => {
     }));
 });
 
-// Sequelize v6 adds createdAt / updatedAt to an explicit `fields` list of create (checked on
-// 6.37); postgrelize leaves them out and the NOT NULL timestamp columns reject the INSERT.
 describe('create with an explicit fields list', () => {
-  it.fails('still writes the timestamps (v6)', () =>
+  it('still writes the timestamps (v6)', () =>
     withSchema(async ({ schema }) => {
       const { Stock } = await setup(schema);
       const created = await Stock.create({ sku: 'f', qty: 3 }, { fields: ['sku', 'qty'] });
@@ -288,20 +286,6 @@ describe('create with an explicit fields list', () => {
 });
 
 describe('aggregates', () => {
-  it('aggregate with plain: false returns numeric group values', () =>
-    withSchema(async ({ schema }) => {
-      const { Stock } = await setup(schema);
-      const rows = await Stock.aggregate('qty', 'sum', {
-        plain: false,
-        group: ['kind'],
-        order: [['kind', 'ASC']],
-      } as never);
-      expect(rows).toEqual([
-        { kind: 'a', sum: 1 },
-        { kind: 'b', sum: 2 },
-      ]);
-    }));
-
   it('count with group returns grouped rows with numeric counts', () =>
     withSchema(async ({ schema }) => {
       const { Stock } = await setup(schema);

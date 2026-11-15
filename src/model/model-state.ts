@@ -87,6 +87,23 @@ export class ModelStateFactory {
     };
   }
 
+  /**
+   * State of a schema-bound copy of a model: the definition is rebuilt with the schema.
+   *
+   * @param state - State of the model the copy extends.
+   * @param schema - Schema name.
+   * @param delimiter - Separator reported by `getTableName`, `.` when not given.
+   * @returns The new state.
+   */
+  withSchema(state: ModelState, schema: string, delimiter: string | undefined): ModelState {
+    const options = {
+      ...state.input.options,
+      schema,
+      ...(delimiter === undefined ? {} : { schemaDelimiter: delimiter }),
+    };
+    return this.withAssociationAttributes({ ...state, input: { ...state.input, options } }, {});
+  }
+
   #definitionState(
     className: string,
     attributes: ModelAttributes,

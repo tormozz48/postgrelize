@@ -63,7 +63,11 @@ export class InstanceSaver {
       opts: { hooks: true, validate: true, ...options },
       options,
       isNew: instance.isNewRecord,
-      explicitFields: options.fields as readonly string[] | undefined,
+      explicitFields: this.#services.values.saveFields(
+        definition,
+        options.fields as readonly string[] | undefined,
+        instance.isNewRecord,
+      ),
     };
   }
 

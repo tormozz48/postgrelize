@@ -157,7 +157,7 @@ describe('compat: model metadata and helpers', () => {
       return {
         has: Note.hasHooks('beforeFind'),
         hasOne: Note.hasHook('beforeFind'),
-        missing: Boolean(Note.hasHooks('afterBulkDestroy')),
+        missing: Note.hasHooks('afterBulkDestroy'),
         log,
       };
     }));
