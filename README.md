@@ -1,4 +1,9 @@
-<h1 align="center">postgrelize</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/public/logo-wordmark-dark.svg">
+    <img alt="postgrelize" src="docs/public/logo-wordmark.svg" height="64">
+  </picture>
+</p>
 
 <p align="center">
   PostgreSQL-only ORM for Node.js with the <a href="https://sequelize.org/docs/v6/">Sequelize v6</a> API — plus the PostgreSQL features Sequelize can't express.
