@@ -101,15 +101,15 @@ export class FindOperation extends FindLookups {
   }
 
   #raw({ definition, opts, includes }: FindCall, rows: QueryResult['rows']): AnyModel[] {
-    const { loader } = this.services;
-    const parseMain = (row: Row) => this.services.rows.parse(definition, row);
-    return rows
-      .map((row) =>
-        includes.length === 0 ? parseMain(row) : loader.parseRawRow(includes, row, parseMain),
-      )
-      .map((row) =>
-        opts['nest'] === true ? this.services.rows.nest(row as Values) : row,
-      ) as unknown as AnyModel[];
+    const { loader, rows: mapper } = this.services;
+    const parseMain = (row: Row) => mapper.parse(definition, row);
+    return rows.map((row) => {
+      const parsed =
+        includes.length === 0
+          ? mapper.parseOwned(definition, row)
+          : loader.parseRawRow(includes, row, parseMain);
+      return opts['nest'] === true ? mapper.nest(parsed as Values) : parsed;
+    }) as unknown as AnyModel[];
   }
 
   /**

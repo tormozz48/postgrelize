@@ -112,10 +112,17 @@ const end = (callback?: () => void): Promise<void> | undefined => {
   return undefined;
 };
 
+// A pooled client per `connect()`, like pg-pool: the library attaches listeners and wraps `release`.
+const poolClient = (): Record<string, unknown> => ({
+  query: handle,
+  release: () => undefined,
+  on: () => undefined,
+  removeListener: () => undefined,
+});
+
 export const installStub = (): void => {
-  const client = { query: handle, release: () => undefined };
   (Pool.prototype as unknown as { connect: () => Promise<unknown> }).connect = () =>
-    Promise.resolve(client);
+    Promise.resolve(poolClient());
   const proto = Client.prototype as unknown as Record<string, unknown>;
   proto['connect'] = connect;
   proto['query'] = handle;

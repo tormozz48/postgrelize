@@ -248,10 +248,11 @@ export class InstanceLifecycle {
     values: Values,
     options: BuildOptions,
   ): readonly IncludeNode[] {
-    const includes =
-      options.include === undefined
-        ? []
-        : this.#services.includes.normalize(model, options.include);
+    if (options.include === undefined) {
+      instance.set(values, options.raw === true ? { raw: true } : {});
+      return [];
+    }
+    const includes = this.#services.includes.normalize(model, options.include);
     const nested = new Set(includes.map((node) => node.as));
     const own = Object.fromEntries(Object.entries(values).filter(([key]) => !nested.has(key)));
     instance.set(own, options.raw === true ? { raw: true } : {});
