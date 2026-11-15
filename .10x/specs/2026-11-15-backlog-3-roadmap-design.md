@@ -116,7 +116,7 @@ Proposed (detailed spec at stage start, owner approval):
 
 ## S10+ — Closing gaps
 
-- One stage per coherent group of `planned` rows (e.g. full-text search, range functions, partitioning DDL), in the priority order approved by the owner after S6.
+- One stage per coherent group of `planned` rows (e.g. full-text search, range functions, partitioning DDL), in the priority order approved by the owner after S9.
 - Each stage:
   - a spec;
   - an ADR when an API shape is new;
