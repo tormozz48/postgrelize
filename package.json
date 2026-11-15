@@ -1,6 +1,6 @@
 {
   "name": "@tormozz48/postgrelize",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "PostgreSQL-only ORM, drop-in compatible with the Sequelize v6 API. Ships llm/USAGE.md and an Agent Skill for LLMs.",
   "license": "MIT",
   "repository": {
