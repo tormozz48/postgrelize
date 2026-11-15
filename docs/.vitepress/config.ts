@@ -15,6 +15,7 @@ const guide = [
       { text: 'Models and data types', link: '/guide/models' },
       { text: 'Querying', link: '/guide/querying' },
       { text: 'Associations', link: '/guide/associations' },
+      { text: 'Decorators', link: '/guide/decorators' },
       { text: 'Transactions', link: '/guide/transactions' },
       { text: 'Hooks and validation', link: '/guide/hooks-validation' },
       { text: 'Schema, sync and migrations', link: '/guide/schema' },

@@ -55,6 +55,7 @@ Gated cases must stay within +10% of `bench/baseline.json`. Update the baseline 
 | `src/sql/`                                           | SQL AST types and `SqlCompiler` (AST → `{ text, values }`)                                |
 | `src/where/`, `src/expressions/`                     | `WhereCompiler`, `Op`, expression classes (`literal`, `fn`, `col`, …)                     |
 | `src/associations/`                                  | Association classes, include resolution/loading, nested creation                          |
+| `src/decorators/`                                    | Public model decorators and `addModels` applier (metadata store, both signatures)         |
 | `src/data-types/`, `src/validation/`, `src/hooks/`   | DataTypes, validators, hook registry                                                      |
 | `src/ddl/`, `src/query-interface/`                   | DDL generation, `QueryInterface`, `sync`                                                  |
 | `src/connection/`, `src/transaction/`, `src/errors/` | Pool, replicas, COPY, LISTEN/NOTIFY, transactions, error mapping                          |
@@ -75,7 +76,7 @@ Current architecture: [ADR-018](.10x/adrs/018-oop-architecture.md), refined by [
 - **Plain data stays plain**: SQL AST node shapes, option bags, `Op`, constant tables (`HOOK_TYPES`, `ISOLATION_LEVELS`, …) are types and frozen objects, not classes.
 - **No exported free functions in `src/`**, except the v6 helpers Sequelize itself exposes as functions (`literal`, `fn`, `col`, `cast`, `json`, `where`, …). These are thin factories that return class instances.
 - No static-only classes (oxlint `no-extraneous-class`). No TypeScript parameter properties. No default exports. No import cycles.
-- **Decorators** are TC39 standard decorators (no `experimentalDecorators`), written on their own line. `build/decorators-plugin.ts` lowers them for the build and every Vitest project; Node cannot run them directly, so run TypeScript through Vitest (`npm run bench`, tests), not `node --experimental-strip-types`. Use internal decorators only for cross-cutting concerns that would otherwise repeat (hooks around operations, transaction scope, logging, memoization), never on hot paths that fail the bench gate. Public decorators accept both TC39 and legacy call signatures.
+- **Decorators** are TC39 standard decorators (no `experimentalDecorators`), written on their own line. `build/decorators-plugin.ts` lowers them for the build and every Vitest project; Node cannot run them directly, so run TypeScript through Vitest (`npm run bench`, tests), not `node --experimental-strip-types`. Public model decorators (`@Table`, `@Column`, associations, hooks) live in `src/decorators/` ([ADR-022](.10x/adrs/022-public-decorator-api.md)): they only record metadata, `sequelize.addModels` applies it through `Model.init` and the association methods; every public decorator accepts both TC39 and legacy call signatures through `DecoratorSignature`. Legacy mode is tested by `npx vitest run --project decorators-legacy`. Use internal decorators only for cross-cutting concerns that would otherwise repeat (hooks around operations, transaction scope, logging, memoization), never on hot paths that fail the bench gate. Public decorators accept both TC39 and legacy call signatures.
 - **Mixins** (`<TBase extends Constructor>(Base: TBase) => class extends Base { … }`) compose classes with several independent capabilities (e.g. `Model`). Each mixin is a named factory with TSDoc on its members.
   - `Model` = `ModelBase` + static mixins in `src/model/mixins/` (associations, schema, hooks, scopes, finders, aggregates, writers, PostgreSQL extensions). Instance methods need the class type parameters, so they live in `ModelInstanceValues` / `ModelInstancePersistence`, merged into `interface Model` and copied onto the prototype.
   - A mixin factory line carries `// oxlint-disable-next-line max-lines-per-function, typescript/explicit-module-boundary-types` (its body is the class; methods are still checked; the type can only be inferred).
@@ -206,6 +207,7 @@ Everything lives in `.10x/`:
 | [019](.10x/adrs/019-documentation-sync.md)              | `AGENTS.md` and documentation sync rules                     | Accepted                                              |
 | [020](.10x/adrs/020-injection-assurance.md)             | SQL-injection assurance policy                               | Accepted                                              |
 | [021](.10x/adrs/021-decorators-mixins-size-limits.md)   | TC39 decorators, mixins, size limits                         | Accepted                                              |
+| [022](.10x/adrs/022-public-decorator-api.md)            | Public model decorator API, `sequelize.addModels`            | Accepted                                              |
 
 ## Git, PRs and releases
 

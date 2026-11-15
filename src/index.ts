@@ -99,7 +99,6 @@ export type {
   ValuesList,
   CreationOptional,
   Expression,
-  ForeignKey,
   InferAttributes,
   InferAttributesOptions,
   InferCreationAttributes,
@@ -242,3 +241,15 @@ export type {
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type { CteDefinition, CteFindOptions, WithOption } from './model/cte-builder.ts';
+export * from './decorators/association-decorators.ts';
+export * from './decorators/column-decorators.ts';
+export * from './decorators/foreign-key-decorator.ts';
+export * from './decorators/hook-decorators.ts';
+export * from './decorators/table-decorators.ts';
+export * from './decorators/timestamp-decorators.ts';
+export type {
+  ModelClassDecorator,
+  ModelPropertyDecorator,
+  ModelStaticMethodDecorator,
+} from './decorators/decorator-types.ts';
+export type { ModelGetter, ScopesInput, TableOptions } from './decorators/model-metadata.ts';

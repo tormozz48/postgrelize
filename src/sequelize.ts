@@ -1,4 +1,5 @@
 import type { PoolConfig } from 'pg';
+import { ModelDecorators } from './decorators/model-decorators.ts';
 import { ConnectionConfig } from './connection/connection-config.ts';
 import {
   ConnectionManager,
@@ -42,6 +43,7 @@ import {
 export { QueryTypes } from './query/query-result-shaper.ts';
 export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';
 
+const decorators = new ModelDecorators();
 const rawQuery = new RawQuery();
 const registry = new ModelRegistry();
 const resultShaper = new QueryResultShaper(new RowMapper(registry));
@@ -299,6 +301,24 @@ export class Sequelize {
       modelName,
       sequelize: this,
     }) as ModelStatic<M>;
+  }
+
+  /**
+   * Registers model classes defined with decorators (`@Table`, `@Column`, `@HasMany`, …): initializes
+   * each one like `Model.init` and then adds its associations, so classes may refer to each other
+   * in any order. Pass every class of an association before using it.
+   *
+   * @param models - Model classes.
+   * @returns This instance.
+   * @example
+   * ```ts
+   * sequelize.addModels([User, Post]);
+   * ```
+   * @see {@link Table}
+   */
+  addModels(models: readonly ModelStatic<AnyModel>[]): this {
+    decorators.register(this, models);
+    return this;
   }
 
   /**

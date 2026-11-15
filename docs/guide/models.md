@@ -17,6 +17,10 @@ The example shows:
 
 Other type helpers from v6 are available: `ForeignKey<T>` for foreign key attributes created by associations, and `NonAttribute<T>` for class fields that are not columns (for example, included associations).
 
+## Decorators
+
+Models can also be declared with decorators (`@Table`, `@Column`, `@HasMany`, …) and registered with `sequelize.addModels`; see [Decorators](/guide/decorators).
+
 ## `sequelize.define`
 
 `define` returns a model class without static attribute types. It is convenient in scripts and tests:
