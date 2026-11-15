@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 2 — brainstorm done (spec `.10x/specs/2026-11-14-backlog-2-roadmap-design.md`); S1–S4 (steps 1–3) done; open: intermittent suite timeouts, S4 later steps
+**Current phase:** OOP rewrite + Effect removal (spec `.10x/specs/2026-11-15-oop-rewrite-design.md`, ADR-018); S4 stopped after step 4
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -126,3 +126,10 @@
 
 ## Release 0.7.0 (2026-11-15)
 - Tag `v0.7.0` → release.yml green, `@tormozz48/postgrelize@0.7.0` published. Contents: Effect-based connection/transaction layer, `postgrelize/effect`, transaction-start leak fix, separate-include `limit` per parent, `findEach` separate includes, VitePress docs site.
+
+## OOP rewrite (2026-11-15) — owner decision: stop S4, remove Effect, everything as classes, one PR, release 0.8.0
+- [ ] remove Effect and `postgrelize/effect`
+- [ ] connection, errors, transactions, hooks
+- [ ] SQL compiler, where, expressions
+- [ ] data types, validation, DDL, QueryInterface, sync
+- [ ] model internals, associations, includes
