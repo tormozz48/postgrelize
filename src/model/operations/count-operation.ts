@@ -1,10 +1,11 @@
 import type { IncludeOption } from '../../associations/include.ts';
 import type { IncludeQueryBuilder } from '../../associations/include-query-builder.ts';
 import type { IncludeResolver } from '../../associations/include-resolver.ts';
+import type { QueryResult } from '../../connection/connection-manager.ts';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { CteBuilder } from '../cte-builder.ts';
-import type { InstanceLifecycle } from '../instance-lifecycle.ts';
+import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type {
   AggregateOptions,
@@ -15,56 +16,34 @@ import type {
 } from '../options.ts';
 import type { RowMapper } from '../row-mapper.ts';
 import type { SelectOptions, SelectQueryBuilder } from '../select-query-builder.ts';
+import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link CountOperation}. */
-export type CountOperationServices = Readonly<{
-  /** Model state and scopes. */
-  registry: ModelRegistry;
-  /** Hooks. */
-  lifecycle: InstanceLifecycle;
-  /** Paranoid filter. */
-  columns: AttributeColumns;
-  /** SELECT builder. */
-  selects: SelectQueryBuilder;
-  /** CTE options. */
-  cte: CteBuilder;
-  /** Row parsing. */
-  rows: RowMapper;
-  /** Include trees. */
-  includes: IncludeResolver;
-  /** Include count joins. */
-  includeQueries: IncludeQueryBuilder;
-  /** SQL compiler. */
-  compiler: SqlCompiler;
-}>;
+export type CountOperationServices = OperationServices &
+  Readonly<{
+    /** Model state and scopes. */
+    registry: ModelRegistry;
+    /** Paranoid filter. */
+    columns: AttributeColumns;
+    /** SELECT builder. */
+    selects: SelectQueryBuilder;
+    /** CTE options. */
+    cte: CteBuilder;
+    /** Row parsing. */
+    rows: RowMapper;
+    /** Include trees. */
+    includes: IncludeResolver;
+    /** Include count joins. */
+    includeQueries: IncludeQueryBuilder;
+    /** SQL compiler. */
+    compiler: SqlCompiler;
+  }>;
+
+// Count options after scopes and the paranoid filter.
+type CountQuery = Omit<CountOptions, 'where'> & Readonly<{ where: unknown }>;
 
 /** `Model.count` (with includes and `group`) and `Model.aggregate` (`max`, `min`, `sum`, ...). */
-export class CountOperation {
-  readonly #registry: ModelRegistry;
-  readonly #lifecycle: InstanceLifecycle;
-  readonly #columns: AttributeColumns;
-  readonly #selects: SelectQueryBuilder;
-  readonly #cte: CteBuilder;
-  readonly #rows: RowMapper;
-  readonly #includes: IncludeResolver;
-  readonly #includeQueries: IncludeQueryBuilder;
-  readonly #compiler: SqlCompiler;
-
-  /**
-   * @param services - Collaborators.
-   */
-  constructor(services: CountOperationServices) {
-    this.#registry = services.registry;
-    this.#lifecycle = services.lifecycle;
-    this.#columns = services.columns;
-    this.#selects = services.selects;
-    this.#cte = services.cte;
-    this.#rows = services.rows;
-    this.#includes = services.includes;
-    this.#includeQueries = services.includeQueries;
-    this.#compiler = services.compiler;
-  }
-
+export class CountOperation extends ModelOperation<CountOperationServices> {
   /**
    * `Model.count` (default scope and paranoid filter applied).
    *
@@ -73,45 +52,67 @@ export class CountOperation {
    * @returns Count, or `{ count, ...groups }[]` with `group`.
    */
   async count(model: ModelStatic<AnyModel>, options: CountOptions): Promise<number> {
-    const { definition, runtime } = this.#registry.state(model);
-    const opts: MutableOptions = { hooks: true, ...this.#registry.scoped(model, options) };
+    const { definition, runtime } = this.services.registry.state(model);
+    const { compiler, includes, lifecycle } = this.services;
+    const opts: MutableOptions = { hooks: true, ...this.services.registry.scoped(model, options) };
     if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'beforeCount', opts);
+      await lifecycle.runHooks(model, 'beforeCount', opts);
     }
-    const query = {
-      ...(opts as CountOptions),
-      where: this.#columns.paranoid(
-        definition,
-        opts['where'],
-        opts['paranoid'] as boolean | undefined,
-      ),
+    const query = this.#filtered(definition, opts as CountOptions) as CountQuery;
+    const normalized = includes.normalize(model, opts['include'] as IncludeOption | undefined);
+    const select = this.#countSelect(model, query, normalized);
+    const result = await runtime.execute(compiler.compile(select), query, 'read');
+    return this.#counted(definition, query, result.rows);
+  }
+
+  #filtered<Q extends Readonly<{ where?: unknown; paranoid?: boolean }>>(
+    definition: ModelDefinition,
+    query: Q,
+  ): Omit<Q, 'where'> & Readonly<{ where: unknown }> {
+    return {
+      ...query,
+      where: this.services.columns.paranoid(definition, query.where, query.paranoid),
     };
-    const includes = this.#includes.normalize(model, opts['include'] as IncludeOption | undefined);
-    const countQuery = (
-      includes.length === 0 || query.col !== undefined
-        ? query
-        : {
-            ...query,
-            col: `${definition.name}.${definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id'}`,
-          }
-    ) as SelectOptions & CountOptions;
-    const counted = this.#selects.count(
-      this.#cte.sourceDefinition(definition, query.source),
-      { ...countQuery, ...this.#cte.selectOptions(query) },
-      runtime.inAsAnyThreshold,
-    );
-    const select =
-      includes.length === 0
-        ? counted
-        : { ...counted, joins: this.#includeQueries.countJoins(definition, includes) };
-    const result = await runtime.execute(this.#compiler.compile(select), query, 'read');
+  }
+
+  #counted(definition: ModelDefinition, query: CountQuery, rows: QueryResult['rows']): number {
     if (query.group !== undefined) {
-      return result.rows.map((row) => ({
-        ...this.#rows.parse(definition, row),
+      return rows.map((row) => ({
+        ...this.services.rows.parse(definition, row),
         count: Number(row['count']),
       })) as unknown as number;
     }
-    return Number(result.rows[0]?.['count'] ?? 0);
+    return Number(rows[0]?.['count'] ?? 0);
+  }
+
+  #countSelect(
+    model: ModelStatic<AnyModel>,
+    query: CountQuery,
+    includes: ReturnType<IncludeResolver['normalize']>,
+  ) {
+    const { definition, runtime } = this.services.registry.state(model);
+    const { cte, includeQueries, selects } = this.services;
+    const countQuery = CountOperation.#countQuery(definition, query, includes.length);
+    const counted = selects.count(
+      cte.sourceDefinition(definition, query.source),
+      { ...countQuery, ...cte.selectOptions(query) },
+      runtime.inAsAnyThreshold,
+    );
+    return includes.length === 0
+      ? counted
+      : { ...counted, joins: includeQueries.countJoins(definition, includes) };
+  }
+
+  static #countQuery(
+    definition: ModelDefinition,
+    query: CountQuery,
+    includes: number,
+  ): SelectOptions & CountOptions {
+    if (includes === 0 || query.col !== undefined) {
+      return query as SelectOptions & CountOptions;
+    }
+    const field = definition.attributes.get(definition.primaryKeys[0] ?? 'id')?.field ?? 'id';
+    return { ...query, col: `${definition.name}.${field}` } as SelectOptions & CountOptions;
   }
 
   /**
@@ -129,36 +130,36 @@ export class CountOperation {
     aggregateFunction: string,
     options: AggregateOptions,
   ): Promise<unknown> {
-    const { definition, runtime } = this.#registry.state(model);
-    const scoped = this.#registry.scoped(model, options);
-    const query = {
-      ...scoped,
-      where: this.#columns.paranoid(definition, scoped.where, scoped.paranoid),
-    };
-    const result = await runtime.execute(
-      this.#compiler.compile(
-        this.#selects.aggregate(
-          definition,
-          field,
-          aggregateFunction,
-          query as SelectOptions,
-          runtime.inAsAnyThreshold,
-        ),
-      ),
-      query,
-      'read',
+    const { definition, runtime } = this.services.registry.state(model);
+    const { compiler, registry, selects } = this.services;
+    const query = this.#filtered(definition, registry.scoped(model, options));
+    const threshold = runtime.inAsAnyThreshold;
+    const select = selects.aggregate(
+      definition,
+      field,
+      aggregateFunction,
+      query as SelectOptions,
+      threshold,
     );
+    const result = await runtime.execute(compiler.compile(select), query, 'read');
+    return this.#aggregated(definition, field, aggregateFunction, options, result.rows);
+  }
+
+  #aggregated(
+    definition: ModelDefinition,
+    field: string,
+    aggregateFunction: string,
+    options: AggregateOptions,
+    rows: QueryResult['rows'],
+  ): unknown {
     const attribute = definition.attributes.get(field);
+    const mapper = this.services.rows;
     if (options.plain === false) {
-      return result.rows.map((row) => ({
+      return rows.map((row) => ({
         ...row,
-        [aggregateFunction]: this.#rows.aggregate(
-          attribute,
-          aggregateFunction,
-          row[aggregateFunction],
-        ),
+        [aggregateFunction]: mapper.aggregate(attribute, aggregateFunction, row[aggregateFunction]),
       }));
     }
-    return this.#rows.aggregate(attribute, aggregateFunction, result.rows[0]?.[aggregateFunction]);
+    return mapper.aggregate(attribute, aggregateFunction, rows[0]?.[aggregateFunction]);
   }
 }

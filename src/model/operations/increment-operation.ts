@@ -1,5 +1,6 @@
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
+import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type { ModelValues } from '../model-values.ts';
 import type {
@@ -30,23 +31,13 @@ export type IncrementOperationServices = Readonly<{
 
 /** `Model.increment` / `Model.decrement`: `SET x = x ± by` (and `updatedAt`) on matching rows. */
 export class IncrementOperation {
-  readonly #registry: ModelRegistry;
-  readonly #values: ModelValues;
-  readonly #columns: AttributeColumns;
-  readonly #updates: UpdateQueryBuilder;
-  readonly #rows: RowMapper;
-  readonly #compiler: SqlCompiler;
+  readonly #services: IncrementOperationServices;
 
   /**
    * @param services - Collaborators.
    */
   constructor(services: IncrementOperationServices) {
-    this.#registry = services.registry;
-    this.#values = services.values;
-    this.#columns = services.columns;
-    this.#updates = services.updates;
-    this.#rows = services.rows;
-    this.#compiler = services.compiler;
+    this.#services = services;
   }
 
   /**
@@ -64,25 +55,27 @@ export class IncrementOperation {
     options: IncrementOptions,
     sign: 1 | -1,
   ): Promise<[M[], number]> {
-    const { definition, runtime } = this.#registry.state(model);
-    const amounts = this.#values.amounts(fields, options.by ?? 1);
-    const timestamp = this.#values.withTimestamps(
-      definition,
-      {},
-      new Date(),
-      false,
-      options.silent === true,
-    );
-    const node = this.#updates.build(
-      definition,
-      [
-        ...this.#updates.increment(definition, amounts, sign),
-        ...this.#columns.setItems(definition, timestamp),
-      ],
-      options.where ?? {},
-      { returning: true },
-    );
-    const result = await runtime.execute(this.#compiler.compile(node), options);
-    return [result.rows.map((row) => this.#rows.instance(model, row)), result.rowCount];
+    const { definition, runtime } = this.#services.registry.state(model);
+    const { compiler, rows, updates } = this.#services;
+    const set = this.#setItems(definition, fields, options, sign);
+    const node = updates.build(definition, set, options.where ?? {}, { returning: true });
+    const result = await runtime.execute(compiler.compile(node), options);
+    return [result.rows.map((row) => rows.instance(model, row)), result.rowCount];
+  }
+
+  #setItems(
+    definition: ModelDefinition,
+    fields: AttributeAmounts<Values>,
+    options: IncrementOptions,
+    sign: 1 | -1,
+  ) {
+    const { columns, updates, values } = this.#services;
+    const amounts = values.amounts(fields, options.by ?? 1);
+    const silent = options.silent === true;
+    const timestamp = values.withTimestamps(definition, {}, new Date(), false, silent);
+    return [
+      ...updates.increment(definition, amounts, sign),
+      ...columns.setItems(definition, timestamp),
+    ];
   }
 }

@@ -1,5 +1,5 @@
 import { InstanceState } from '../instance-state.ts';
-import type { InstanceLifecycle } from '../instance-lifecycle.ts';
+import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type { ModelValues } from '../model-values.ts';
 import type { OnConflictBuilder, OnConflictOptions } from '../on-conflict-builder.ts';
@@ -12,40 +12,32 @@ import type {
   Values,
 } from '../options.ts';
 import type { InsertOperation } from './insert-operation.ts';
+import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link CreateOperation}. */
-export type CreateOperationServices = Readonly<{
-  /** Model state. */
-  registry: ModelRegistry;
-  /** Hooks. */
-  lifecycle: InstanceLifecycle;
-  /** Value rules. */
-  values: ModelValues;
-  /** ON CONFLICT builder. */
-  conflicts: OnConflictBuilder;
-  /** Conflict-aware inserts. */
-  inserter: InsertOperation;
+export type CreateOperationServices = OperationServices &
+  Readonly<{
+    /** Model state. */
+    registry: ModelRegistry;
+    /** Value rules. */
+    values: ModelValues;
+    /** ON CONFLICT builder. */
+    conflicts: OnConflictBuilder;
+    /** Conflict-aware inserts. */
+    inserter: InsertOperation;
+  }>;
+
+// One `Model.create` call with `onConflict`: the built instance and both option objects.
+type CreateCall = Readonly<{
+  model: ModelStatic<AnyModel>;
+  definition: ModelDefinition;
+  instance: AnyModel;
+  opts: MutableOptions;
+  options: CreateOptions;
 }>;
 
 /** `Model.create`: builds and saves an instance, or inserts it with `onConflict`. */
-export class CreateOperation {
-  readonly #registry: ModelRegistry;
-  readonly #lifecycle: InstanceLifecycle;
-  readonly #values: ModelValues;
-  readonly #conflicts: OnConflictBuilder;
-  readonly #inserter: InsertOperation;
-
-  /**
-   * @param services - Collaborators.
-   */
-  constructor(services: CreateOperationServices) {
-    this.#registry = services.registry;
-    this.#lifecycle = services.lifecycle;
-    this.#values = services.values;
-    this.#conflicts = services.conflicts;
-    this.#inserter = services.inserter;
-  }
-
+export class CreateOperation extends ModelOperation<CreateOperationServices> {
   /**
    * `Model.create`.
    *
@@ -67,34 +59,47 @@ export class CreateOperation {
     if (options.onConflict === undefined) {
       return instance.save(options as SaveOptions);
     }
-    const { definition } = this.#registry.state(model);
+    const { definition } = this.services.registry.state(model);
     const opts: MutableOptions = { hooks: true, validate: true, ...options };
+    return (await this.#createOnConflict({ model, definition, instance, opts, options })) as M;
+  }
+
+  async #createOnConflict(call: CreateCall): Promise<AnyModel> {
+    const { model, instance, opts } = call;
     if (opts['validate'] === true) {
       await instance.validate({ hooks: opts['hooks'] === true });
     }
     if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'beforeCreate', instance, opts);
+      await this.services.lifecycle.runHooks(model, 'beforeCreate', instance, opts);
     }
-    const row = this.#values.withTimestamps(
-      definition,
-      instance.dataValues as Values,
-      new Date(),
-      true,
-      opts['silent'] === true,
-    );
-    const [inserted] = await this.#inserter.withConflict(
-      model,
-      [this.#values.pick(row, options.fields as readonly string[] | undefined)],
-      this.#conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>),
-      options,
-    );
+    const [inserted] = await this.#insert(call);
     if (inserted === undefined) {
       InstanceState.of(instance).wasInserted = false;
       return instance;
     }
     if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'afterCreate', inserted, opts);
+      await this.services.lifecycle.runHooks(model, 'afterCreate', inserted, opts);
     }
     return inserted;
+  }
+
+  #insert({ model, definition, instance, opts, options }: CreateCall): Promise<AnyModel[]> {
+    const { conflicts, inserter, values } = this.services;
+    const silent = opts['silent'] === true;
+    const row = values.withTimestamps(
+      definition,
+      instance.dataValues as Values,
+      new Date(),
+      true,
+      silent,
+    );
+    const fields = options.fields as readonly string[] | undefined;
+    const onConflict = options.onConflict as OnConflictOptions<unknown>;
+    return inserter.withConflict(
+      model,
+      [values.pick(row, fields)],
+      conflicts.build(definition, onConflict),
+      options,
+    );
   }
 }

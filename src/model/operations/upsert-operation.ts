@@ -1,7 +1,6 @@
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { InsertQueryBuilder } from '../insert-query-builder.ts';
-import type { InstanceLifecycle } from '../instance-lifecycle.ts';
 import { InstanceState } from '../instance-state.ts';
 import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
@@ -9,52 +8,43 @@ import type { ModelValues } from '../model-values.ts';
 import { OnConflictBuilder, type OnConflictOptions } from '../on-conflict-builder.ts';
 import type { AnyModel, ModelStatic, MutableOptions, UpsertOptions, Values } from '../options.ts';
 import type { WrittenRows } from '../written-rows.ts';
+import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link UpsertOperation}. */
-export type UpsertOperationServices = Readonly<{
-  /** Model state. */
-  registry: ModelRegistry;
-  /** Hooks and refresh of instances. */
-  lifecycle: InstanceLifecycle;
-  /** Value rules. */
-  values: ModelValues;
-  /** RETURNING lists. */
-  columns: AttributeColumns;
-  /** INSERT builder. */
-  inserts: InsertQueryBuilder;
-  /** ON CONFLICT builder. */
-  conflicts: OnConflictBuilder;
-  /** Marker columns of returned rows. */
-  written: WrittenRows;
-  /** SQL compiler. */
-  compiler: SqlCompiler;
+export type UpsertOperationServices = OperationServices &
+  Readonly<{
+    /** Model state. */
+    registry: ModelRegistry;
+    /** Value rules. */
+    values: ModelValues;
+    /** RETURNING lists. */
+    columns: AttributeColumns;
+    /** INSERT builder. */
+    inserts: InsertQueryBuilder;
+    /** ON CONFLICT builder. */
+    conflicts: OnConflictBuilder;
+    /** Marker columns of returned rows. */
+    written: WrittenRows;
+    /** SQL compiler. */
+    compiler: SqlCompiler;
+  }>;
+
+type UpsertResult = [AnyModel, boolean | null];
+
+// One `Model.upsert` call: the built instance, both option objects and the updatable attributes.
+type UpsertCall = Readonly<{
+  model: ModelStatic<AnyModel>;
+  definition: ModelDefinition;
+  instance: AnyModel;
+  values: Values;
+  opts: MutableOptions;
+  options: UpsertOptions;
+  now: Date;
+  updatable: readonly string[];
 }>;
 
 /** `Model.upsert`: `INSERT ... ON CONFLICT DO UPDATE` with Sequelize v6 target rules or `onConflict`. */
-export class UpsertOperation {
-  readonly #registry: ModelRegistry;
-  readonly #lifecycle: InstanceLifecycle;
-  readonly #values: ModelValues;
-  readonly #columns: AttributeColumns;
-  readonly #inserts: InsertQueryBuilder;
-  readonly #conflicts: OnConflictBuilder;
-  readonly #written: WrittenRows;
-  readonly #compiler: SqlCompiler;
-
-  /**
-   * @param services - Collaborators.
-   */
-  constructor(services: UpsertOperationServices) {
-    this.#registry = services.registry;
-    this.#lifecycle = services.lifecycle;
-    this.#values = services.values;
-    this.#columns = services.columns;
-    this.#inserts = services.inserts;
-    this.#conflicts = services.conflicts;
-    this.#written = services.written;
-    this.#compiler = services.compiler;
-  }
-
+export class UpsertOperation extends ModelOperation<UpsertOperationServices> {
   /**
    * `Model.upsert`.
    *
@@ -68,57 +58,84 @@ export class UpsertOperation {
     values: Values,
     options: UpsertOptions,
   ): Promise<[M, boolean | null]> {
-    const { definition, runtime } = this.#registry.state(model);
+    const { definition } = this.services.registry.state(model);
     const opts: MutableOptions = { hooks: true, validate: true, returning: true, ...options };
     const instance = new model(values);
     const now = new Date();
+    const updatable = UpsertOperation.#updatable(definition, values, options);
+    const call = { model, definition, instance, values, opts, options, now, updatable };
+    await this.#before(call);
+    const upserted = await this.#write(call);
+    if (opts['hooks'] === true) {
+      await this.services.lifecycle.runHooks(model, 'afterUpsert', upserted, opts);
+    }
+    return upserted as [M, boolean | null];
+  }
+
+  static #updatable(definition: ModelDefinition, values: Values, options: UpsertOptions): string[] {
     const provided = Object.keys(values).filter((name) => definition.attributes.has(name));
-    const updatable =
-      options.fields === undefined
-        ? provided
-        : provided.filter((name) => options.fields?.includes(name as never));
+    return options.fields === undefined
+      ? provided
+      : provided.filter((name) => options.fields?.includes(name as never));
+  }
+
+  async #before({ model, instance, values, opts, updatable }: UpsertCall): Promise<void> {
     if (opts['validate'] === true) {
       await instance.validate({ hooks: opts['hooks'] === true, fields: updatable });
     }
     if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'beforeUpsert', values, opts);
+      await this.services.lifecycle.runHooks(model, 'beforeUpsert', values, opts);
     }
-    const insertValues = this.#withoutGeneratedKey(definition, values, {
-      ...this.#values.withTimestamps(definition, instance.dataValues as Values, now, true, false),
+  }
+
+  async #write(call: UpsertCall): Promise<UpsertResult> {
+    const { runtime } = this.services.registry.state(call.model);
+    const insert = this.#statement(call);
+    const result = await runtime.execute(this.services.compiler.compile(insert), call.options);
+    return this.#refresh(call, result.rows[0]);
+  }
+
+  #statement(call: UpsertCall) {
+    const { definition, options, updatable } = call;
+    const { columns, conflicts, inserts } = this.services;
+    const insertValues = this.#insertValues(call);
+    const onConflict =
+      options.onConflict === undefined
+        ? conflicts.v6Upsert(definition, insertValues, updatable, options.conflictFields)
+        : conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>);
+    return inserts.build(definition, [insertValues], {
+      onConflict,
+      ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
+      returning: [...columns.returningAll(definition), conflicts.insertedFlagColumn()],
+    });
+  }
+
+  #insertValues({ definition, instance, values, now }: UpsertCall): Values {
+    const data = instance.dataValues as Values;
+    return this.#withoutGeneratedKey(definition, values, {
+      ...this.services.values.withTimestamps(definition, data, now, true, false),
       ...(definition.updatedAt !== undefined &&
       values[definition.updatedAt] !== undefined &&
       values[definition.updatedAt] !== null
-        ? { [definition.updatedAt]: (instance.dataValues as Values)[definition.updatedAt] }
+        ? { [definition.updatedAt]: data[definition.updatedAt] }
         : {}),
     });
-    const onConflict =
-      options.onConflict === undefined
-        ? this.#conflicts.v6Upsert(definition, insertValues, updatable, options.conflictFields)
-        : this.#conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>);
-    const insert = this.#inserts.build(definition, [insertValues], {
-      onConflict,
-      ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-      returning: [...this.#columns.returningAll(definition), this.#conflicts.insertedFlagColumn()],
-    });
-    const result = await runtime.execute(this.#compiler.compile(insert), options);
-    const row = result.rows[0];
+  }
+
+  #refresh(
+    { definition, instance, options }: UpsertCall,
+    row: Readonly<Record<string, unknown>> | undefined,
+  ): UpsertResult {
     const flag = row?.[OnConflictBuilder.INSERTED_FLAG];
-    this.#lifecycle.refresh(
+    this.services.lifecycle.refresh(
       instance,
       definition,
-      row === undefined ? undefined : this.#written.withoutMarkers(row),
+      row === undefined ? undefined : this.services.written.withoutMarkers(row),
     );
     if (options.onConflict !== undefined) {
       InstanceState.of(instance).wasInserted = flag === true;
     }
-    const upserted: [M, boolean | null] = [
-      instance,
-      options.onConflict === undefined ? null : flag === true,
-    ];
-    if (opts['hooks'] === true) {
-      await this.#lifecycle.runHooks(model, 'afterUpsert', upserted, opts);
-    }
-    return upserted;
+    return [instance, options.onConflict === undefined ? null : flag === true];
   }
 
   /** Leaves out an auto-generated primary key that was not provided (so the sequence fills it). */

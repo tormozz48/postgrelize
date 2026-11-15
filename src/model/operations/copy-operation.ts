@@ -1,10 +1,9 @@
 import type { IncludeResolver } from '../../associations/include-resolver.ts';
 import type { CopyEncoder } from '../../connection/copy.ts';
 import type { SqlLiteral } from '../../ddl/sql-literal.ts';
-import { SqlCompiler } from '../../sql/compile.ts';
+import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { FindQueryBuilder } from '../find-query-builder.ts';
-import type { AttributeDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type {
   AnyModel,
@@ -15,6 +14,7 @@ import type {
   ModelStatic,
   Values,
 } from '../options.ts';
+import { CopyFromSource } from './copy-from-source.ts';
 
 const COPY_FORMATS: ReadonlySet<string> = new Set(['text', 'csv', 'binary']);
 
@@ -38,25 +38,15 @@ export type CopyOperationServices = Readonly<{
 
 /** `Model.copyFrom` (`COPY ... FROM STDIN`) and `Model.copyTo` (`COPY (SELECT ...) TO STDOUT`). */
 export class CopyOperation {
-  readonly #registry: ModelRegistry;
-  readonly #columns: AttributeColumns;
-  readonly #finds: FindQueryBuilder;
-  readonly #includes: IncludeResolver;
-  readonly #encoder: CopyEncoder;
-  readonly #literals: SqlLiteral;
-  readonly #compiler: SqlCompiler;
+  readonly #services: CopyOperationServices;
+  readonly #source: CopyFromSource;
 
   /**
    * @param services - Collaborators.
    */
   constructor(services: CopyOperationServices) {
-    this.#registry = services.registry;
-    this.#columns = services.columns;
-    this.#finds = services.finds;
-    this.#includes = services.includes;
-    this.#encoder = services.encoder;
-    this.#literals = services.literals;
-    this.#compiler = services.compiler;
+    this.#services = services;
+    this.#source = new CopyFromSource(services.encoder);
   }
 
   /**
@@ -74,47 +64,11 @@ export class CopyOperation {
     rows: Iterable<Values> | AsyncIterable<Values>,
     options: CopyFromOptions,
   ): Promise<number> {
-    const { definition, runtime } = this.#registry.state(model);
-    const listed =
-      options.columns ??
-      (Array.isArray(rows) && rows.length > 0
-        ? Object.keys(rows[0] as Values).filter((name) => definition.attributes.has(name))
-        : undefined);
-    if (listed === undefined || listed.length === 0) {
-      throw new Error('copyFrom: columns are required for non-array sources');
-    }
-    const stamps = [definition.createdAt, definition.updatedAt].filter(
-      (name): name is string => name !== undefined && !listed.includes(name as never),
-    );
-    const columns = [...(listed as readonly string[]), ...stamps];
-    columns.forEach((name) => {
-      if (!definition.attributes.has(name)) {
-        throw new Error(`copyFrom: unknown attribute "${name}" of model ${definition.name}`);
-      }
-    });
-    const attributes = columns.map(
-      (name) => definition.attributes.get(name) as AttributeDefinition,
-    );
-    const table = [definition.schema, definition.tableName]
-      .filter((part): part is string => part !== undefined)
-      .map(SqlCompiler.quoteIdent)
-      .join('.');
-    const text = `COPY ${table} (${attributes.map((attribute) => SqlCompiler.quoteIdent(attribute.field)).join(', ')}) FROM STDIN`;
-    const now = new Date();
-    const encoder = this.#encoder;
-    async function* lines(): AsyncGenerator<string> {
-      for await (const row of rows as AsyncIterable<Values>) {
-        yield encoder.encodeRow(
-          attributes.map((attribute) => {
-            const value = stamps.includes(attribute.fieldName) ? now : row[attribute.fieldName];
-            return value === undefined || value === null || attribute.type.serialize === undefined
-              ? value
-              : attribute.type.serialize(value);
-          }),
-        );
-      }
-    }
-    return runtime.copyFrom(text, lines(), options);
+    const { definition, runtime } = this.#services.registry.state(model);
+    const columns = this.#source.columns(definition, rows, options);
+    const text = this.#source.sql(definition, columns.attributes);
+    const lines = this.#source.lines(rows, columns, new Date());
+    return runtime.copyFrom(text, lines, options);
   }
 
   /**
@@ -130,24 +84,26 @@ export class CopyOperation {
     model: ModelStatic<AnyModel>,
     options: CopyToOptions,
   ): AsyncGenerator<Buffer, void, undefined> {
-    const { definition, runtime } = this.#registry.state(model);
-    const scoped = this.#registry.scoped(model, options);
-    const query = {
-      ...scoped,
-      where: this.#columns.paranoid(definition, scoped.where, scoped.paranoid),
-    };
-    const includes = this.#includes.normalize(model, query.include);
-    const select = this.#finds.build(
-      definition,
-      query as FindOptions,
-      includes,
-      runtime.inAsAnyThreshold,
-    );
+    const { runtime } = this.#services.registry.state(model);
+    const { compiler, literals } = this.#services;
+    const select = this.#select(model, options);
     return runtime.copyTo(
-      `COPY (${this.#literals.inlineValues(this.#compiler.compile(select))}) TO STDOUT${this.#formatSql(options)}`,
+      `COPY (${literals.inlineValues(compiler.compile(select))}) TO STDOUT${this.#formatSql(options)}`,
       options,
       'read',
     );
+  }
+
+  #select(model: ModelStatic<AnyModel>, options: CopyToOptions) {
+    const { definition, runtime } = this.#services.registry.state(model);
+    const { registry, columns, includes, finds } = this.#services;
+    const scoped = registry.scoped(model, options);
+    const query = {
+      ...scoped,
+      where: columns.paranoid(definition, scoped.where, scoped.paranoid),
+    };
+    const normalized = includes.normalize(model, query.include);
+    return finds.build(definition, query as FindOptions, normalized, runtime.inAsAnyThreshold);
   }
 
   #formatSql(options: CopyToFormatOptions): string {
@@ -165,7 +121,7 @@ export class CopyOperation {
         : [`QUOTE ${this.#singleCharacter(options.quote, 'quote')}`]),
       ...(options.nullString === undefined
         ? []
-        : [`NULL ${this.#literals.escape(options.nullString)}`]),
+        : [`NULL ${this.#services.literals.escape(options.nullString)}`]),
     ];
     return parts.length === 0 ? '' : ` WITH (${parts.join(', ')})`;
   }
@@ -174,6 +130,6 @@ export class CopyOperation {
     if ([...value].length !== 1) {
       throw new Error(`copyTo: ${name} must be a single character`);
     }
-    return this.#literals.escape(value);
+    return this.#services.literals.escape(value);
   }
 }
