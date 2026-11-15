@@ -87,7 +87,12 @@ export type FromSourceOption =
   | string
   | Readonly<{
       /** `(VALUES …) AS alias(columns)`: bound rows. */
-      values: Readonly<{ columns: readonly string[]; rows: readonly (readonly unknown[])[] }>;
+      values: Readonly<{
+        /** Column names. */
+        columns: readonly string[];
+        /** Rows: one cell per column, bound as parameters. */
+        rows: readonly (readonly unknown[])[];
+      }>;
     }>
   | Readonly<{
       /** Set-returning function (`generate_series`, `unnest`, …), optionally schema-qualified. */
