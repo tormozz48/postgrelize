@@ -20,14 +20,15 @@ Without a callback, `transaction()` resolves to a started `Transaction`. Commit 
 
 Options of `sequelize.transaction(options)`:
 
-| Option           | Description                                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `isolationLevel` | `Transaction.ISOLATION_LEVELS.READ_COMMITTED` (PostgreSQL default), `REPEATABLE_READ`, `SERIALIZABLE`, `READ_UNCOMMITTED` (behaves as read committed) |
-| `readOnly`       | Starts the transaction `READ ONLY`. PostgreSQL extension.                                                                                             |
-| `transaction`    | Parent transaction: the new one becomes a savepoint inside it.                                                                                        |
-| `settings`       | Settings applied with `SET LOCAL` semantics. PostgreSQL extension, see [Sessions](./sessions#transaction-settings).                                   |
-| `logging`        | Logger for the `BEGIN` / `COMMIT` / `ROLLBACK` statements.                                                                                            |
-| `type`           | Accepted for v6 compatibility (`DEFERRED`, ...) and ignored.                                                                                          |
+| Option           | Description                                                                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `isolationLevel` | `Transaction.ISOLATION_LEVELS.READ_COMMITTED` (PostgreSQL default), `REPEATABLE_READ`, `SERIALIZABLE`, `READ_UNCOMMITTED` (behaves as read committed)     |
+| `readOnly`       | Starts the transaction `READ ONLY`. PostgreSQL extension.                                                                                                 |
+| `deferrable`     | `true` / `false` adds `DEFERRABLE` / `NOT DEFERRABLE`; see [Deferrable read-only transactions](#deferrable-read-only-transactions). PostgreSQL extension. |
+| `transaction`    | Parent transaction: the new one becomes a savepoint inside it.                                                                                            |
+| `settings`       | Settings applied with `SET LOCAL` semantics. PostgreSQL extension, see [Sessions](./sessions#transaction-settings).                                       |
+| `logging`        | Logger for the `BEGIN` / `COMMIT` / `ROLLBACK` statements.                                                                                                |
+| `type`           | Accepted for v6 compatibility (`DEFERRED`, ...) and ignored.                                                                                              |
 
 ## Savepoints
 
@@ -70,6 +71,12 @@ CLS is a global switch for all `Sequelize` instances in the process. Nested `seq
 `readOnly: true` makes PostgreSQL reject every write in the transaction. On a [read replica setup](./sessions#read-replicas) the transaction still runs on the writer.
 
 <<< @/examples/transactions.ts#read-only{ts}
+
+## Deferrable read-only transactions
+
+`deferrable: true` together with `isolationLevel: SERIALIZABLE` and `readOnly: true` starts a `SERIALIZABLE READ ONLY DEFERRABLE` transaction, meant for long reports. PostgreSQL waits for a snapshot that cannot be involved in a serialization failure, then runs the transaction without taking predicate locks and without ever failing with `40001`. The start may be delayed while other serializable transactions finish. For any other transaction PostgreSQL accepts the flag and ignores it; `deferrable` must be a boolean and is ignored for savepoints.
+
+<<< @/examples/transactions.ts#deferrable{ts}
 
 ## Errors
 

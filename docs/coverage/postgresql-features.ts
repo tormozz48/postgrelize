@@ -28,6 +28,7 @@ const PG = 'tests/integration/pg-coverage.test.ts';
 const POWER = 'tests/integration/query-power.test.ts';
 const WRITE = 'tests/integration/write-power.test.ts';
 const CONFLICT = 'tests/integration/on-conflict.test.ts';
+const SX = 'tests/integration/session-extras.test.ts';
 const CONN = 'tests/integration/connection-power.test.ts';
 const BASE = 'tests/integration/postgrelize.test.ts';
 const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
@@ -88,7 +89,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DML, feature: 'TRUNCATE', minPg: '16', status: 'supported', test: t(CRUD, 'truncate'), note: '`Model.truncate()`.' },
   { area: DML, feature: 'COPY FROM STDIN (bulk load)', minPg: '16', status: 'supported', test: t(CONN, 'bulk-loads rows from arrays and async iterables with escaping'), note: '`Model.copyFrom()` streams arrays and async iterables.' },
   { area: DML, feature: 'COPY TO STDOUT (export)', minPg: '16', status: 'supported', test: t(CTE, 'exports CSV with header, quoting and NULL handling'), note: '`Model.copyTo()` returns an async iterable.' },
-  { area: DML, feature: 'Bulk insert via UNNEST arrays', minPg: '16', status: 'planned', note: 'Multi-row VALUES is used today; one array parameter per column would allow very large batches under the 65535-parameter limit.' },
+  { area: DML, feature: 'Bulk insert via UNNEST arrays', minPg: '16', status: 'supported', test: t(SX, 'inserts past the 65535 parameter limit with one array parameter per column'), note: '`bulkCreate(rows, { unnest: true })`.' },
 
   // Operators and functions
   { area: OPS, feature: 'Comparison and logical operators (=, <>, <, >, BETWEEN, IN, IS NULL, AND/OR/NOT)', minPg: '16', status: 'supported', test: t(CRUD, 'findAll with operators'), note: '`Op.*` as in Sequelize v6.' },
@@ -174,7 +175,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: SESSION, feature: 'Transactions: managed, unmanaged, CLS, afterCommit hooks', minPg: '16', status: 'supported', test: t(BASE, 'CLS picks up the managed transaction automatically'), note: '`sequelize.transaction()`.' },
   { area: SESSION, feature: 'Isolation levels', minPg: '16', status: 'supported', test: t(PG, 'applies transaction isolation levels'), note: '`isolationLevel` option.' },
   { area: SESSION, feature: 'READ ONLY transactions', minPg: '16', status: 'supported', test: t(PG, 'starts READ ONLY transactions'), note: '`readOnly: true`.' },
-  { area: SESSION, feature: 'DEFERRABLE transaction mode (SERIALIZABLE READ ONLY DEFERRABLE)', minPg: '16', status: 'planned', note: 'Small option for long read-only reports. Workaround: `SET TRANSACTION` through a raw query.' },
+  { area: SESSION, feature: 'DEFERRABLE transaction mode (SERIALIZABLE READ ONLY DEFERRABLE)', minPg: '16', status: 'supported', test: t(SX, 'starts SERIALIZABLE READ ONLY DEFERRABLE and NOT DEFERRABLE'), note: '`deferrable` transaction option.' },
   { area: SESSION, feature: 'Savepoints (nested transactions)', minPg: '16', status: 'supported', test: t(BASE, 'nested transactions use savepoints'), note: 'A `transaction` option inside a transaction creates a savepoint.' },
   { area: SESSION, feature: 'Advisory locks', minPg: '16', status: 'supported', test: t(CONN, 'serializes work with advisory locks'), note: '`sequelize.withAdvisoryLock()`, `transaction.advisoryLock()`.' },
   { area: SESSION, feature: 'LISTEN / NOTIFY', minPg: '16', status: 'supported', test: t(CONN, 'delivers notifications and unsubscribes'), note: '`sequelize.listen()`, `sequelize.notify()` on a dedicated client.' },
@@ -185,7 +186,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: SESSION, feature: 'Bound parameters and replacements in raw queries', minPg: '16', status: 'supported', test: t(PG, 'runs raw queries with bind parameters and replacements'), note: '`sequelize.query()` with `bind` and `replacements`.' },
   { area: SESSION, feature: 'Named prepared statements', minPg: '16', status: 'supported', test: t('tests/integration/statement-cache.test.ts', 'creates named statements only when enabled'), note: '`statementCache` option; opt-in, bounded per connection, ADR-023.' },
   { area: SESSION, feature: 'SSL / TLS connections', minPg: '16', status: 'literal', note: 'The `ssl` option and `dialectOptions` pass through to `pg`; no test runs against a TLS server.' },
-  { area: SESSION, feature: 'Per-query statement timeout', minPg: '16', status: 'planned', note: 'Only through the transaction `settings`. Workaround: `dialectOptions.statement_timeout` for the whole pool.' },
+  { area: SESSION, feature: 'Per-query statement timeout', minPg: '16', status: 'supported', test: t(SX, 'cancels a slow query and leaves the pooled connection untouched'), note: '`statementTimeout` query option (ms).' },
   { area: SESSION, feature: 'EXPLAIN / EXPLAIN ANALYZE', minPg: '16', status: 'literal', note: '`sequelize.query("EXPLAIN (FORMAT JSON) …")`.' },
   { area: SESSION, feature: 'Two-phase commit (PREPARE TRANSACTION)', minPg: '16', status: 'out-of-scope', note: 'Needs a transaction manager outside the ORM.' },
 

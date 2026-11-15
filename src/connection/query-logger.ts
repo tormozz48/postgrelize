@@ -16,6 +16,19 @@ export class QueryLogger {
   readonly #defaults: QueryLogSettings;
 
   /**
+   * Logger for the `logging` / `benchmark` constructor options (`console.log` when `logging` is unset).
+   *
+   * @param options - Instance-level options.
+   * @returns Logger.
+   */
+  static fromOptions(options: QueryLogSettings): QueryLogger {
+    return new QueryLogger({
+      logging: options.logging === undefined ? console.log : options.logging,
+      ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
+    });
+  }
+
+  /**
    * @param defaults - Instance-level `logging` and `benchmark` settings.
    */
   constructor(defaults: QueryLogSettings) {

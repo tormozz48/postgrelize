@@ -1,5 +1,4 @@
-import type { SqlCompiler } from '../../sql/compile.ts';
-import type { InsertQueryBuilder } from '../insert-query-builder.ts';
+import type { BulkInsertBuilder } from '../bulk-insert-builder.ts';
 import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
 import type { ModelValues } from '../model-values.ts';
@@ -23,15 +22,13 @@ export type BulkCreateOperationServices = OperationServices &
     /** Value rules. */
     values: ModelValues;
     /** INSERT builder. */
-    inserts: InsertQueryBuilder;
+    bulkInserts: BulkInsertBuilder;
     /** ON CONFLICT builder. */
     conflicts: OnConflictBuilder;
     /** Conflict-aware inserts. */
     inserter: InsertOperation;
     /** Alignment of `ignoreDuplicates` results. */
     written: WrittenRows;
-    /** SQL compiler. */
-    compiler: SqlCompiler;
   }>;
 
 // One `Model.bulkCreate` call: the built instances, hook-visible options and caller's options.
@@ -163,13 +160,9 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
   async #insertRows(call: BulkCreateCall, rows: Values[]): Promise<AnyModel[]> {
     const { model, definition, instances, options } = call;
     const { runtime } = this.services.registry.state(model);
-    const { compiler, conflicts, inserts, lifecycle, written } = this.services;
-    const insert = inserts.build(definition, rows, {
-      returning: options.returning !== false,
-      ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-      ...conflicts.v6Bulk(definition, options),
-    });
-    const result = await runtime.execute(compiler.compile(insert), options);
+    const { bulkInserts, lifecycle, written } = this.services;
+    const query = bulkInserts.build(definition, rows, options);
+    const result = await runtime.execute(query, options);
     const returned =
       options.ignoreDuplicates === true
         ? written.aligned(definition, rows, result.rows)
