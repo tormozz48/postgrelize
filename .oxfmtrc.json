@@ -2,5 +2,5 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "printWidth": 100,
   "singleQuote": true,
-  "ignorePatterns": ["dist", "coverage", ".10x", "package-lock.json"]
+  "ignorePatterns": ["dist", "llm", "skills", "coverage", ".10x", "package-lock.json"]
 }

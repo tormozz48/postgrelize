@@ -21,6 +21,15 @@
       "postgrelize": ["./src/index.ts"]
     }
   },
-  "include": ["src", "tests", "docs/examples", "bench", "build", "*.config.ts"],
+  "include": [
+    "src",
+    "tests",
+    "docs/examples",
+    "docs/.vitepress/llm",
+    "scripts/generate-llm.ts",
+    "bench",
+    "build",
+    "*.config.ts"
+  ],
   "exclude": ["tests/build/fixtures"]
 }
