@@ -6,6 +6,9 @@ Owner goals:
 
 1. Be sure the package withstands SQL injection.
 2. Be sure the package supports PostgreSQL's capabilities.
+3. (added 2026-11-15) Smaller classes and functions; use decorators and mixins, internally and as an optional public model API.
+4. (added 2026-11-15) Test coverage at ~98%.
+5. (added 2026-11-15) Make it easy for LLMs to understand and use the package from other programs.
 
 Delivered as separate stages, each with its own branch, PR, and ADR where a decision is architectural. This document fixes scope, decisions and order.
 
@@ -15,7 +18,9 @@ Delivered as separate stages, each with its own branch, PR, and ADR where a deci
 | --- | --- |
 | Injection assurance level | Audit of every input surface + payload and property-based tests on real PostgreSQL + CodeQL in CI. No sqlmap/demo app. |
 | "All PostgreSQL features" | An explicit coverage matrix of PostgreSQL 16–18 features an ORM can reasonably expose. Each row: supported (with a test), via `literal`, or out of scope (with a reason). Gaps closed in later stages, in priority order. |
-| Order | S5 security → S6 matrix → S7+ gap stages |
+| Order | S5 security → S6 refactor (decorators, mixins, size limits) → S7 coverage ~98% → S8 LLM-facing docs → S9 PostgreSQL matrix → S10+ gap stages |
+| Decorators | Internal (cross-cutting concerns) and an optional public decorator API for models next to `init`/`define` |
+| Size limits | Functions ≤ 20 lines, classes (files) ≤ 150 lines, enforced by oxlint |
 | New dev dependency | `fast-check` (property-based tests). No new runtime dependencies. |
 
 ## S5 — SQL-injection assurance
@@ -69,7 +74,29 @@ Surfaces to cover (at least):
 - ADR-020 records the assurance policy, including the rule "a new input surface is not merged without an inventory row and tests";
 - `AGENTS.md` is updated.
 
-## S6 — PostgreSQL coverage matrix
+## S6 — Refactor: small units, decorators, mixins
+
+- Functions ≤ 20 lines and class files ≤ 150 lines, enforced by oxlint `max-lines-per-function` / `max-lines` (tests and generated code excluded).
+- Decorators (TC39 standard decorators, not `experimentalDecorators`) for cross-cutting concerns inside `src` (hook pipelines, validation, logging, transaction scoping); mixins for capabilities shared by classes (e.g. scoping, hooks, association accessors) instead of deep inheritance or god classes.
+- Public, optional decorator API for models (`@Table`, `@Column`, association decorators, hook decorators) that produces exactly what `Model.init` / associations produce; v6 API unchanged.
+- Constraint: Node's `--experimental-strip-types` cannot run decorators, so `bench/` moves to a runner that compiles TypeScript (Vite/Vitest), and the docs and AGENTS.md drop that command.
+- Gates: all suites unchanged and green; `bench/compare.ts` ≤ +10%; ADR superseding the "classes without decorators" parts of ADR-018.
+
+## S7 — Test coverage ~98%
+
+- Target: ≥ 98% lines, statements and functions, measured on the post-S6 code; branches reported and raised where meaningful.
+- Enforced by `coverage.thresholds` in `vitest.config.ts`, so CI fails below the target.
+- New tests follow AGENTS.md placement rules (unit / compat / integration); no tests that only touch lines without asserting behaviour.
+
+## S8 — LLM-facing documentation
+
+Proposed (detailed spec at stage start, owner approval):
+- `llms.txt` and `llms-full.txt` on the docs site, generated from the VitePress pages and API reference.
+- A compact usage guide shipped inside the npm package next to the typed `.d.ts` files, so agents can read it from `node_modules`.
+- An Agent Skill (`SKILL.md`): usage patterns, v6 differences, PostgreSQL features and common mistakes, with examples checked by tests like `docs/examples`.
+- No MCP server: no runtime value for a library.
+
+## S9 — PostgreSQL coverage matrix
 
 - **Scope:** PostgreSQL 16–18 features an ORM can reasonably expose:
   - SELECT clauses, DML (INSERT/UPDATE/DELETE/MERGE/RETURNING), operators;
@@ -85,9 +112,9 @@ Surfaces to cover (at least):
   - It refreshes and replaces the 2026-11-14 gap analysis.
 - **Drift check:** a `docs` test asserts that every `supported` row references an existing test (file exists and contains the test name).
 - **Site page:** "PostgreSQL coverage" is rendered from the data file at docs build time.
-- **Done when:** the matrix covers all areas above, every supported row is test-backed, and the page is published. The `planned` rows are grouped into proposed S7+ stages for owner approval.
+- **Done when:** the matrix covers all areas above, every supported row is test-backed, and the page is published. The `planned` rows are grouped into proposed S10+ stages for owner approval.
 
-## S7+ — Closing gaps
+## S10+ — Closing gaps
 
 - One stage per coherent group of `planned` rows (e.g. full-text search, range functions, partitioning DDL), in the priority order approved by the owner after S6.
 - Each stage:
