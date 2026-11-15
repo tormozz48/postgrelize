@@ -6,6 +6,8 @@ export type Case = Readonly<{ iterations: number; run: () => Promise<unknown>; r
 export type Scenario = Readonly<{
   cases: Readonly<Record<string, Case>>;
   sequelize: any;
+  /** Extra instances (e.g. with `statementCache`) closed together with `sequelize`. */
+  others: readonly any[];
   setup: () => Promise<void>;
 }>;
 
@@ -188,6 +190,22 @@ const pureCases = (sequelize: any, models: Record<string, any>, lib: Lib): Recor
   };
 };
 
+// Same findByPk with `statementCache: true` (postgrelize only; v6 ignores the option). The effect is
+// visible only against a real database, where PostgreSQL skips parse and plan.
+const cachedCases = (lib: Lib, url: string, schema: string): [any, Record<string, Case>] => {
+  const sequelize = new lib.Sequelize(url, {
+    logging: false,
+    pool: { max: 5 },
+    dialectOptions: { options: `-c search_path=${schema}` },
+    statementCache: true,
+  });
+  const { Item } = defineModels(sequelize, lib);
+  return [
+    sequelize,
+    { 'findByPk statementCache': { iterations: 1000, run: () => Item.findByPk(500) } },
+  ];
+};
+
 export const createScenario = (lib: Lib, url: string, schema: string, stub: boolean): Scenario => {
   const sequelize = new lib.Sequelize(url, {
     logging: false,
@@ -195,11 +213,14 @@ export const createScenario = (lib: Lib, url: string, schema: string, stub: bool
     dialectOptions: { options: `-c search_path=${schema}` },
   });
   const models = defineModels(sequelize, lib);
+  const [cached, cachedScenarios] = cachedCases(lib, url, schema);
   return {
     sequelize,
+    others: [cached],
     setup: async () => (stub ? undefined : seed(sequelize, models)),
     cases: {
       ...readCases(models, lib),
+      ...cachedScenarios,
       ...writeCases(sequelize, models),
       ...pureCases(sequelize, models, lib),
     },

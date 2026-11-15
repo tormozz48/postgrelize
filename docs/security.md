@@ -26,6 +26,8 @@ To report a vulnerability, see [SECURITY.md](https://github.com/tormozz48/postgr
 | `COPY FROM` data                                                                                                                                                                                                                                                                                                                                                              | Escaped in the `COPY` text format |
 | `literal()`, the SQL text of `sequelize.query`, string `where` / `order`                                                                                                                                                                                                                                                                                                      | **Raw by design**                 |
 
+The `statementCache` option sends no user data to PostgreSQL as a name: a prepared statement is named `pgz_` plus a hash of the SQL text, and its `max` must be a positive integer. Values stay bound parameters.
+
 ## Safe patterns
 
 User values in model queries are always bound:

@@ -79,7 +79,15 @@ Read-only traffic can go to replicas ([Sessions and scaling](./sessions)); the p
 
 ### Prepared statements
 
-Every query is sent as an unnamed statement; named (server-side cached) statements are not supported yet. See the [PostgreSQL coverage](../postgresql-coverage) page.
+By default every query is sent as an unnamed statement, so PostgreSQL parses and plans it on each call. The `statementCache` constructor option names repeated statements so each connection parses and plans them once:
+
+<<< @/examples/performance.ts#statement-cache{ts}
+
+- Only `SELECT`, `INSERT`, `UPDATE`, `DELETE` and `WITH` texts of at most 8192 characters are named. Multi-statement texts, DDL, `COPY`, `LISTEN` / `NOTIFY` and cursors stay unnamed. The name is `pgz_` plus a hash of the SQL text; values are still bound as `$n` parameters.
+- Each connection names at most `max` statements (default 100); further texts run unnamed. There is no eviction: statements disappear with the connection (`pool.maxUses` and `pool.idle` recycle them). Keep `pool.max` bounded: server memory is `pool.max × max` statements.
+- Texts that vary per call (long `IN` lists, dynamic `where` shapes) fill the slots without being reused; the cache pays off for a small set of hot, repeated queries (`findByPk`, counts, single-row writes).
+- After a schema change that alters a result's columns, PostgreSQL rejects the cached statement with "cached plan must not change result type". Outside a transaction the query is retried once unnamed and that text stays unnamed on that connection; inside a transaction the error is thrown like any other.
+- Not for PgBouncer in transaction pooling mode (without protocol-level prepared statement support). The gain is visible only against a real database; the `findByPk statementCache` case of `npm run bench` shows it.
 
 ## What the library does for you
 

@@ -150,15 +150,15 @@ export class SequelizeInternals {
       ...config,
       password: () => this.#connectPassword(config.password),
     });
-    const defaults: ExecuteOptions = {
-      logging: options.logging === undefined ? console.log : options.logging,
-      ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
-    };
     return new ConnectionManager(
       withHookPassword(pools.write),
       pools.read.map(withHookPassword),
-      new QueryLogger(defaults),
+      new QueryLogger({
+        logging: options.logging === undefined ? console.log : options.logging,
+        ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
+      }),
       new PgErrorMapper(),
+      options.statementCache,
     );
   }
 
