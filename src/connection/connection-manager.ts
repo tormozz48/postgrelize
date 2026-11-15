@@ -144,7 +144,7 @@ export class ConnectionManager {
 
   async #acquire(pool: Pool): Promise<PoolClient> {
     try {
-      return await pool.connect();
+      return ConnectionManager.#guard(await pool.connect());
     } catch (error) {
       throw ConnectionManager.#isAcquireTimeout(error)
         ? new ConnectionAcquireTimeoutError(
@@ -152,6 +152,20 @@ export class ConnectionManager {
           )
         : this.#errors.mapConnectionError(error);
     }
+  }
+
+  static #guard(client: PoolClient): PoolClient {
+    let broken: Error | undefined;
+    const onError = (error: Error): void => {
+      broken = error;
+    };
+    client.on('error', onError);
+    const release = client.release.bind(client);
+    client.release = (error?: Error | boolean): void => {
+      client.removeListener('error', onError);
+      release(error ?? broken);
+    };
+    return client;
   }
 
   static #pool(config: PoolConfig): Pool {

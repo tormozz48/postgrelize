@@ -7,9 +7,9 @@ Coverage went from 94.4 / 94.2 / 93.5 / 82.6 to **99.7 / 99.5 / 99.2 / 91.7** (l
 | # | Where | Problem | Pinned by |
 |---|---|---|---|
 | 1 | `Model.create(values, { fields })` | Timestamps are not added to an explicit `fields` list (v6 adds them): INSERT fails with NOT NULL on `createdAt`; unlisted attributes are still inserted. **Fixed (S7b-2):** `save` / `create` / `bulkCreate` extend `fields` like v6 | `tests/compat/model-api-parity.test.ts` |
-| 2 | `connection/notifications.ts` | A failed reconnect caches the rejected `connect()` promise; LISTEN never recovers | `tests/unit/connection/coverage-notifications.test.ts` |
-| 3 | `Sequelize#sync` | `beforeBulkSync` / `afterBulkSync` (and per-model `beforeSync` / `afterSync`) are accepted but never run; v6 fires them | `tests/integration/coverage-core.test.ts` |
-| 4 | `ConnectionManager` | A backend killed while its client is checked out emits an unhandled `error` on the pooled client and crashes the process (only idle clients have a handler) | documented only (an uncaught exception cannot be pinned by a test) |
+| 2 | `connection/notifications.ts` | A failed reconnect caches the rejected `connect()` promise; LISTEN never recovers | **Fixed in S7b** (`tests/unit/connection/coverage-notifications.test.ts`) |
+| 3 | `Sequelize#sync` | `beforeBulkSync` / `afterBulkSync` (and per-model `beforeSync` / `afterSync`) are accepted but never run; v6 fires them | **Fixed in S7b** (`tests/integration/coverage-core.test.ts`, `tests/compat/sync-hooks.test.ts`) |
+| 4 | `ConnectionManager` | A backend killed while its client is checked out emits an unhandled `error` on the pooled client and crashes the process (only idle clients have a handler) | **Fixed in S7b** (`tests/integration/coverage-connection.test.ts`) |
 | 5 | `Model.schema(name)` | Missing (v6 returns a model clone bound to a schema). **Fixed (S7b-2):** `Model.schema(name, options?)`, `getTableName()` reports the delimiter | `tests/compat/model-api-parity.test.ts` |
 
 ## v6 parity differences

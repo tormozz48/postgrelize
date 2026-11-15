@@ -10,6 +10,7 @@ import { DeleteQueryBuilder } from './delete-query-builder.ts';
 import { FindQueryBuilder } from './find-query-builder.ts';
 import { InsertQueryBuilder } from './insert-query-builder.ts';
 import { InstanceLifecycle } from './instance-lifecycle.ts';
+import { SyncHooks } from './sync-hooks.ts';
 import { InstanceState } from './instance-state.ts';
 import { InstanceValues } from './instance-values.ts';
 import { JoinSourceBuilder } from './join-source-builder.ts';
@@ -62,3 +63,4 @@ export const lifecycle = new InstanceLifecycle({
   validator: new InstanceValidator(),
   compiler: sqlCompiler,
 });
+export const syncHooks = new SyncHooks(lifecycle);
