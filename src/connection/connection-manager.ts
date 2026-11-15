@@ -6,6 +6,8 @@ import type { PgErrorMapper } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { QueryLogger } from './query-logger.ts';
 import { ReplicaRouter } from './replica-router.ts';
+import { StatementCache, type StatementClient } from './statement-cache.ts';
+import type { StatementCacheOptions } from './options.ts';
 
 export type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
 
@@ -30,22 +32,29 @@ export class ConnectionManager {
   readonly #logger: QueryLogger;
   readonly #errors: PgErrorMapper;
   readonly #copies: CopyRunner;
+  readonly #statements: StatementCache | undefined;
 
   /**
    * @param config - Writer pool configuration.
    * @param readConfigs - Read replica pool configurations.
    * @param logger - Logger of executed statements.
    * @param errors - Driver error mapper.
+   * @param statementCache - Named prepared statement settings; unnamed statements when absent.
    */
   constructor(
     config: PoolConfig,
     readConfigs: readonly PoolConfig[],
     logger: QueryLogger,
     errors: PgErrorMapper,
+    statementCache?: boolean | StatementCacheOptions,
   ) {
     this.#config = config;
     this.#logger = logger;
     this.#errors = errors;
+    this.#statements =
+      statementCache === undefined || statementCache === false
+        ? undefined
+        : new StatementCache(statementCache);
     this.#copies = new CopyRunner(() => this.acquire(), logger, errors);
     this.#router = new ReplicaRouter(
       ConnectionManager.#pool(config),
@@ -65,7 +74,7 @@ export class ConnectionManager {
     const logged = this.#logger.enabled(options);
     const started = logged ? performance.now() : 0;
     try {
-      const result = await client.query({ text: query.text, values: query.values as unknown[] });
+      const result = await this.#send(client, query, options.client === undefined);
       if (logged) {
         this.#logger.log(query, options, performance.now() - started);
       }
@@ -143,6 +152,16 @@ export class ConnectionManager {
       this.#router.writer.end(),
       ...this.#router.readers.map((reader) => reader.end()),
     ]);
+  }
+
+  #send(
+    client: Client,
+    query: CompiledQuery,
+    retryable: boolean,
+  ): ReturnType<StatementClient['query']> {
+    return this.#statements === undefined
+      ? client.query({ text: query.text, values: query.values as unknown[] })
+      : this.#statements.run(client, query, retryable);
   }
 
   async #acquire(pool: Pool): Promise<PoolClient> {

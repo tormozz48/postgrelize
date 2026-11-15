@@ -1,4 +1,9 @@
-<h1 align="center">postgrelize</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/public/logo-wordmark-dark.svg">
+    <img alt="postgrelize" src="docs/public/logo-wordmark.svg" height="64">
+  </picture>
+</p>
 
 <p align="center">
   PostgreSQL-only ORM for Node.js with the <a href="https://sequelize.org/docs/v6/">Sequelize v6</a> API — plus the PostgreSQL features Sequelize can't express.
@@ -32,7 +37,7 @@
 | Import / export | `COPY FROM STDIN` / `COPY TO STDOUT` streaming (`Model.copyFrom`, `Model.copyTo`)                                                                                                                                              | —                                                      |
 | Queries         | CTEs incl. `WITH RECURSIVE`, subqueries (`Model.subquery`, `exists()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists       | literals only                                          |
 | Sessions        | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks                                                                                                                                                                           | —                                                      |
-| Scaling         | read replicas with round-robin readers (`replication`, `useMaster`)                                                                                                                                                            | read replicas                                          |
+| Scaling         | read replicas with round-robin readers (`replication`, `useMaster`); opt-in named prepared statements (`statementCache`)                                                                                                       | read replicas                                          |
 | Models          | optional decorators (`@Table`, `@Column`, `@HasMany`, hook decorators, …) and `sequelize.addModels`, in both TC39 and legacy decorator modes                                                                                   | `Model.init` / `define` only                           |
 | Schema          | identity and generated columns, `INTERVAL`, `HSTORE` objects, `LTREE`, `TIMESTAMP`, `MONEY`, `BIT` / `VARBIT`, `XML`, `MACADDR8`, `TSQUERY`, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation | —                                                      |
 

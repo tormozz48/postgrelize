@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" width="280" height="64" role="img" aria-label="postgrelize">
+  <rect x="9" y="8" width="10" height="50" rx="5" fill="#5850ec"/>
+  <path d="M18 20v24a19 7 0 0 0 38 0V20z" fill="#818cf8"/>
+  <path d="M18 32a19 7 0 0 0 38 0" fill="none" stroke="#5850ec" stroke-width="3"/>
+  <ellipse cx="37" cy="20" rx="19" ry="7" fill="#c7d2fe"/>
+  <text x="72" y="44" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="-0.5" fill="#1e1b4b">postgrelize</text>
+</svg>
