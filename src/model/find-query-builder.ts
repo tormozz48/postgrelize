@@ -1,6 +1,7 @@
 import type { IncludeNode } from '../associations/include.ts';
 import type { IncludeQueryBuilder } from '../associations/include-query-builder.ts';
 import type { SelectNode } from '../sql/ast.ts';
+import { LateralKeysBuilder, type LateralKeys } from './lateral-keys-builder.ts';
 import type { CteBuilder } from './cte-builder.ts';
 import type { ModelDefinition } from './model-definition.ts';
 import type { FindOptions } from './options.ts';
@@ -14,6 +15,7 @@ export class FindQueryBuilder {
   readonly #selects: SelectQueryBuilder;
   readonly #cte: CteBuilder;
   readonly #includes: IncludeQueryBuilder;
+  readonly #laterals = new LateralKeysBuilder();
 
   /**
    * @param selects - SELECT builder.
@@ -43,16 +45,46 @@ export class FindQueryBuilder {
     inAsAnyThreshold: number | undefined,
     alias?: string,
   ): SelectNode {
-    const base = this.#selects.build(
+    if (query.lateralKeys !== undefined) {
+      return this.#lateral(definition, query, inAsAnyThreshold, alias);
+    }
+    const base = this.#base(definition, query, includes.length > 0, inAsAnyThreshold, alias);
+    return includes.length === 0 ? base : this.#includes.build(definition, base, includes, query);
+  }
+
+  #base(
+    definition: ModelDefinition,
+    query: FindOptions,
+    joined: boolean,
+    inAsAnyThreshold: number | undefined,
+    alias: string | undefined,
+  ): SelectNode {
+    return this.#selects.build(
       this.#cte.sourceDefinition(definition, query.source),
       {
-        ...(includes.length === 0 ? query : { ...query, order: undefined }),
+        ...(joined ? { ...query, order: undefined } : query),
         ...this.#cte.selectOptions(query),
       } as SelectOptions,
       inAsAnyThreshold,
       undefined,
       alias,
     );
-    return includes.length === 0 ? base : this.#includes.build(definition, base, includes, query);
+  }
+
+  #lateral(
+    definition: ModelDefinition,
+    query: FindOptions,
+    inAsAnyThreshold: number | undefined,
+    alias: string | undefined,
+  ): SelectNode {
+    const name = alias ?? definition.name;
+    const inner = this.#selects.build(
+      definition,
+      query as SelectOptions,
+      inAsAnyThreshold,
+      undefined,
+      name,
+    );
+    return this.#laterals.build(definition, inner, query.lateralKeys as LateralKeys, name);
   }
 }

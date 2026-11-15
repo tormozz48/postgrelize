@@ -5,6 +5,12 @@ export type { NamedHookAdder } from './model/model.ts';
 export type { MergeActionName, MergeResult } from './model/operations/merge-operation.ts';
 export type { JoinSources } from './model/join-source-builder.ts';
 export type {
+  FromSourceOption,
+  JsonTableColumnOptions,
+  JsonTableOptions,
+  TableSampleOptions,
+} from './model/source-options.ts';
+export type {
   MergeInsertAction,
   MergeMatchedAction,
   MergeOptions,

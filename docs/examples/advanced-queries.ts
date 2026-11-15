@@ -1,6 +1,7 @@
 import {
   DataTypes,
   Op,
+  cast,
   col,
   exists,
   fn,
@@ -10,6 +11,8 @@ import {
   where,
   type Sequelize,
 } from 'postgrelize';
+
+type Row = Record<string, unknown>;
 
 const names = (rows: readonly { get: (key: string) => unknown }[], key = 'name'): string =>
   rows.map((row) => String(row.get(key))).join(',');
@@ -173,6 +176,73 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // topPublished: a1, b1, b2 — every row that ties with the first on `published`
   // #endregion with-ties
 
+  // #region from-sources
+  const ordered = await User.findAll({
+    from: {
+      v: {
+        values: {
+          columns: ['id', 'rank'],
+          rows: [
+            [cast(3, 'integer'), 1],
+            [cast(1, 'integer'), 2],
+          ],
+        },
+      },
+    },
+    where: { id: col('v.id') },
+    order: [[col('v.rank'), 'ASC']],
+  });
+  // ordered: cid, ann — joined to an inline VALUES list
+
+  const numbered = await User.findAll({
+    attributes: ['name', [col('n.pos'), 'pos']],
+    from: {
+      n: {
+        function: 'unnest',
+        args: [cast([3, 1], 'integer[]')],
+        columns: ['id'],
+        ordinality: 'pos',
+      },
+    },
+    where: { id: col('n.id') },
+    order: [[col('n.pos'), 'ASC']],
+    raw: true,
+  });
+  // numbered: cid at position 1, ann at position 2 (WITH ORDINALITY)
+  // #endregion from-sources
+
+  // #region lateral
+  const latest = await User.findAll({
+    attributes: ['name', [col('latest.title'), 'title']],
+    from: {
+      latest: {
+        lateral: Post.subquery({
+          attributes: ['title'],
+          where: { UserId: col('User.id') },
+          order: [['id', 'DESC']],
+          limit: 1,
+        }),
+      },
+    },
+    order: [['id', 'ASC']],
+    raw: true,
+  });
+  // latest: ann → a2, bob → b2 (cid has no posts, so the join drops it)
+
+  const withLatestPost = await User.findAll({
+    include: [
+      { association: 'Posts', separate: true, lateral: true, limit: 1, order: [['id', 'DESC']] },
+    ],
+    order: [['id', 'ASC']],
+  });
+  // each user's Posts holds at most one row, read with one LATERAL query
+  // #endregion lateral
+
+  // #region tablesample
+  const sampled = await Post.findAll({ sample: { method: 'BERNOULLI', percent: 100, seed: 1 } });
+  // sampled: every row at 100 percent; use a smaller percent to read a random part of a big table
+  // #endregion tablesample
+
   // #region find-each
   const seen: string[] = [];
   for await (const post of Post.findEach({ order: [['id', 'ASC']] }, { batchSize: 2 })) {
@@ -194,6 +264,11 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     names(withoutPosts),
     names(pair),
     names(topPublished, 'title').split(',').toSorted().join(','),
+    names(ordered),
+    (numbered as unknown as Row[]).map((row) => `${row['name']}:${row['pos']}`).join(','),
+    (latest as unknown as Row[]).map((row) => `${row['name']}:${row['title']}`).join(','),
+    withLatestPost.map((user) => (user.get('Posts') as unknown[]).length).join(','),
+    sampled.length,
     seen.join(','),
   ]);
   const expected = JSON.stringify([
@@ -218,6 +293,11 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     'cid',
     'cid,ann',
     'a1,b1,b2',
+    'cid,ann',
+    'cid:1,ann:2',
+    'ann:a2,bob:b2',
+    '1,1,0',
+    4,
     'a1,a2,b1,b2',
   ]);
   if (actual !== expected) {

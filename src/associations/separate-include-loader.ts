@@ -68,12 +68,7 @@ export class SeparateIncludeLoader {
   #query(node: IncludeNode, keys: readonly unknown[], options: FindOptions): Values {
     return {
       ...(options['transaction'] === undefined ? {} : { transaction: options['transaction'] }),
-      where: {
-        [Op.and]: [
-          { [node.association.foreignKey]: keys },
-          ...(node.where === undefined ? [] : [node.where]),
-        ],
-      },
+      ...this.#scope(node, keys),
       attributes:
         node.attributes ?? columns.stored(node.definition).map((attribute) => attribute.fieldName),
       ...(node.order === undefined ? {} : { order: node.order }),
@@ -81,6 +76,21 @@ export class SeparateIncludeLoader {
         ? {}
         : { include: node.children.map((child) => this.#resolver.toOptions(child)) }),
       paranoid: node.paranoid,
+    };
+  }
+
+  #scope(node: IncludeNode, keys: readonly unknown[]): Values {
+    const own = node.where === undefined ? [] : [node.where];
+    if (!node.lateral) {
+      return { where: { [Op.and]: [{ [node.association.foreignKey]: keys }, ...own] } };
+    }
+    if (node.limit === undefined || node.children.length > 0) {
+      throw new Error('A lateral include needs a limit and no nested includes');
+    }
+    return {
+      ...(own.length === 0 ? {} : { where: { [Op.and]: own } }),
+      limit: node.limit,
+      lateralKeys: { attribute: node.association.foreignKey, values: keys },
     };
   }
 

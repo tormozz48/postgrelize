@@ -64,6 +64,14 @@ export type IncludeOptions = Readonly<{
   separate?: boolean;
   /** Junction options for belongsToMany. */
   through?: IncludeThroughOptions;
+  /**
+   * Fetch only the first `limit` rows per parent in the database (`JOIN LATERAL` over the parent
+   * keys) instead of loading every child and trimming in memory. Needs `separate` and `limit`.
+   * PostgreSQL extension.
+   *
+   * @defaultValue false
+   */
+  lateral?: boolean;
   /** Order of a separate include. */
   order?: unknown;
   /** Maximum rows per include of a separate include. */
@@ -96,6 +104,7 @@ export type IncludeNode = Readonly<{
   right: boolean;
   attributes: FindAttributeOptions | undefined;
   separate: boolean;
+  lateral: boolean;
   paranoid: boolean;
   order: unknown;
   limit: number | undefined;

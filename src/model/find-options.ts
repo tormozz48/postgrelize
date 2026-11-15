@@ -3,6 +3,7 @@ import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { CteFindOptions } from './cte-builder.ts';
 import type { Values } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
+import type { TableSampleOptions } from './source-options.ts';
 import type { SelectOptions } from './select-query-builder.ts';
 import type { WhereOptions } from './types.ts';
 
@@ -98,6 +99,8 @@ export type CountOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Join associations (rows are counted per joined row unless `distinct`). */
     include?: IncludeOption;
+    /** Count only a random sample of the table (`TABLESAMPLE`). PostgreSQL extension. */
+    sample?: TableSampleOptions;
   }> &
   CteFindOptions;
 
