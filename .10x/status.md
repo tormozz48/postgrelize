@@ -2,9 +2,9 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 — S5, S6 and S9 done; S7 coverage in PR (99.7% lines); next S7b parity and robustness (spec 2026-11-15-s7b), then S8 API/LLM docs, S10 performance
+**Current phase:** Backlog 3 delivered except S10 performance (in progress); next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); release 0.9.0 awaits owner approval
 
-**S9 (PostgreSQL coverage matrix):** done in PR — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); proposed gap stages S11–S17 await owner approval: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
+**S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
 ## Phases
 - [x] Phase 0: Brainstorming — spec `.10x/specs/2026-11-14-postgrelize-mvp-design.md`, gap analysis `.10x/specs/2026-11-14-pg-sql-gap-analysis.md`
@@ -141,3 +141,10 @@
 
 ## Release 0.8.0 (2026-11-15)
 - Tag `v0.8.0` → release.yml green, `@tormozz48/postgrelize@0.8.0` published. Breaking: `postgrelize/effect` removed. Contents: object-oriented architecture (ADR-018), describeTable enum fix.
+
+## Backlog 3 progress (2026-11-15)
+- [x] S5 injection assurance, S6 refactor (a–g), S9 PostgreSQL matrix, S7 coverage (99.7% lines)
+- [x] S7b parity and robustness (PRs 47, 48, 50): bugs 1–5 fixed, v6 differences matched or documented; no `it.fails` left
+- [x] S8a LLM docs (PR 46), S8b TSDoc pass + enforcement (PR 49)
+- [ ] S10 performance: bench + spec merged (PR 51), PR A rows/instances (52), PR B includes (53); more PRs may follow
+
