@@ -35,6 +35,7 @@ const guide = [
   {
     text: 'Reference',
     items: [
+      { text: 'Performance', link: '/guide/performance' },
       { text: 'PostgreSQL coverage', link: '/postgresql-coverage' },
       { text: 'Security', link: '/security' },
       { text: 'Sequelize issues fixed', link: '/sequelize-issues' },

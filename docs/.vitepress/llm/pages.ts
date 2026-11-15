@@ -25,6 +25,7 @@ export const PAGES: readonly DocPage[] = [
   { file: 'guide/bulk-writes.md', url: '/guide/bulk-writes', section: 'PostgreSQL features', description: 'UPDATE FROM, DELETE USING, INSERT FROM, MERGE, COPY' },
   { file: 'guide/advanced-queries.md', url: '/guide/advanced-queries', section: 'PostgreSQL features', description: 'Subqueries, CTEs, window functions, DISTINCT ON, cursors' },
   { file: 'guide/sessions.md', url: '/guide/sessions', section: 'PostgreSQL features', description: 'LISTEN/NOTIFY, advisory locks, session settings, read replicas' },
+  { file: 'guide/performance.md', url: '/guide/performance', section: 'Reference', description: 'Measured speed against Sequelize v6, how to run the benchmark, tuning tips' },
   { file: 'postgresql-coverage.md', url: '/postgresql-coverage', section: 'Reference', description: 'Which PostgreSQL features are supported, via literal, planned or out of scope' },
   { file: 'security.md', url: '/security', section: 'Reference', description: 'How every input reaches SQL (bound, identifier, allowlist, literal, raw)' },
   { file: 'sequelize-issues.md', url: '/sequelize-issues', section: 'Reference', description: 'Sequelize v6 bugs fixed in postgrelize and intentional differences' },
