@@ -72,3 +72,38 @@ describe('FETCH FIRST ... WITH TIES', () => {
     expect(compiled.values).toEqual([2, 3]);
   });
 });
+
+describe('CTE bodies', () => {
+  it('renders data-modifying statements, SEARCH and CYCLE', () => {
+    const del = { kind: 'delete', table: { name: 't' }, returning: [ast.ident('id')] } as const;
+    expect(
+      sql(
+        select('x', {
+          with: {
+            recursive: false,
+            ctes: [{ name: 'gone', query: del, materialized: true }],
+          },
+        }),
+      ),
+    ).toBe('WITH "gone" AS MATERIALIZED (DELETE FROM "t" RETURNING "id") SELECT "id" FROM "x"');
+    expect(
+      sql(
+        select('x', {
+          with: {
+            recursive: true,
+            ctes: [
+              {
+                name: 'r',
+                query: setop('UNION', select('a'), select('b'), true),
+                search: { mode: 'BREADTH', by: ['id', 'n'], set: 'ord' },
+                cycle: { columns: ['id'], set: 'c', using: 'p' },
+              },
+            ],
+          },
+        }),
+      ),
+    ).toBe(
+      'WITH RECURSIVE "r" AS (SELECT "id" FROM "a" UNION ALL SELECT "id" FROM "b") SEARCH BREADTH FIRST BY "id", "n" SET "ord" CYCLE "id" SET "c" USING "p" SELECT "id" FROM "x"',
+    );
+  });
+});

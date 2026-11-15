@@ -251,6 +251,55 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // seen: a1, a2, b1, b2 — fetched two rows at a time through a server-side cursor
   // #endregion find-each
 
+  // #region cte-search
+  const depthFirst = await Category.findAll({
+    with: {
+      tree: {
+        query: Category.subquery({ where: { name: 'root' } }),
+        recursive: Category.subquery({
+          where: { parentId: col('tree.id') },
+          from: { tree: 'tree' },
+        }),
+        search: { by: ['id'], mode: 'depth', set: 'walk' },
+      },
+    },
+    source: 'tree',
+    attributes: ['name'],
+    order: [[col('walk'), 'ASC']],
+    raw: true,
+  });
+  // depthFirst: root, a, a1, a1x, b — `walk` orders the rows depth first
+  // #endregion cte-search
+
+  // #region cte-cycle
+  await Category.update({ parentId: 5 }, { where: { name: 'root' } }); // root → a → a1 → a1x → root
+  const cyclic = await Category.findAll({
+    with: {
+      tree: {
+        query: Category.subquery({ where: { name: 'root' } }),
+        recursive: Category.subquery({
+          where: { parentId: col('tree.id') },
+          from: { tree: 'tree' },
+        }),
+        cycle: { columns: ['id'], set: 'looped', using: 'trail' },
+      },
+    },
+    source: 'tree',
+    attributes: ['name', [col('looped'), 'looped']],
+    order: [[col('trail'), 'ASC']],
+    raw: true,
+  });
+  // cyclic: root, a, a1, a1x, then root again with looped = true (the recursion stops there), then b
+  // #endregion cte-cycle
+
+  // #region data-modifying-cte
+  const removed = await Post.findAll({
+    with: { gone: Post.deleteStatement({ where: { published: false }, returning: true }) },
+    source: 'gone',
+  });
+  // removed: a2 — deleted and returned by one statement
+  // #endregion data-modifying-cte
+
   const actual = JSON.stringify([
     names(authors),
     counted,
@@ -269,6 +318,10 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     (latest as unknown as Row[]).map((row) => `${row['name']}:${row['title']}`).join(','),
     withLatestPost.map((user) => (user.get('Posts') as unknown[]).length).join(','),
     sampled.length,
+    (depthFirst as unknown as Row[]).map((row) => row['name']).join(','),
+    (cyclic as unknown as Row[]).map((row) => `${row['name']}:${row['looped']}`).join(','),
+    names(removed, 'title'),
+    await Post.count(),
     seen.join(','),
   ]);
   const expected = JSON.stringify([
@@ -298,6 +351,10 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     'ann:a2,bob:b2',
     '1,1,0',
     4,
+    'root,a,a1,a1x,b',
+    'root:false,a:false,a1:false,a1x:false,root:true,b:false',
+    'a2',
+    3,
     'a1,a2,b1,b2',
   ]);
   if (actual !== expected) {

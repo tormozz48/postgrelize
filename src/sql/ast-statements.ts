@@ -91,6 +91,9 @@ export type MergeNode = Readonly<{
   returningOld?: string;
 }>;
 
+/** Data-modifying statement usable as a CTE body. */
+export type ModifyingNode = InsertNode | UpdateNode | DeleteNode;
+
 export type StatementNode =
   | SelectNode
   | SetOperationNode

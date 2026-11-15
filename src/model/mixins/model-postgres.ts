@@ -1,6 +1,8 @@
-import type { Subquery } from '../../expressions/methods.ts';
+import type { Subquery, WriteStatement } from '../../expressions/methods.ts';
 import type { MergeOptions } from '../merge-query-builder.ts';
 import { copier, finder, inserter, merger } from '../model-operations.ts';
+import { statements } from '../statement-services.ts';
+import type { UpdateStatementOptions, WriteStatementOptions } from '../statement-builder.ts';
 import type { MergeCallOptions, MergeResult } from '../operations/merge-operation.ts';
 import type {
   AnyModel,
@@ -18,7 +20,7 @@ import type { QueryOptionsBase } from '../runtime.ts';
 import type { ModelConstructor } from './model-constructor.ts';
 
 /**
- * PostgreSQL extension statics of `Model`: `insert`, `insertFrom`, `merge`, `subquery`, `findEach`, `copyFrom`, `copyTo`.
+ * PostgreSQL extension statics of `Model`: `insert`, `insertFrom`, `merge`, `subquery`, `updateStatement`, `deleteStatement`, `insertStatement`, `findEach`, `copyFrom`, `copyTo`.
  *
  * @internal
  */
@@ -127,6 +129,73 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
       options: FindOptions<Attributes<M>> & Readonly<{ as?: string }> = {},
     ): Subquery {
       return finder.subquery(this, options as FindOptions & Readonly<{ as?: string }>);
+    }
+
+    /**
+     * Builds an `UPDATE` for a data-modifying CTE (`with`); nothing runs until the outer query does.
+     * No hooks or validation run; `updatedAt` is set unless `silent`. With `returning: true` the CTE
+     * can be read through `source`. Queries with such a CTE always use the writer. PostgreSQL extension.
+     *
+     * @param this - The model class.
+     * @param values - New attribute values.
+     * @param options - `where`, `returning`, `silent`.
+     * @returns Statement for the `with` option.
+     * @example
+     * ```ts
+     * const bumped = Task.updateStatement({ done: true }, { where: { id: 1 }, returning: true });
+     * const rows = await Task.findAll({ with: { bumped }, source: 'bumped' });
+     * ```
+     */
+    static updateStatement<M extends AnyModel>(
+      this: ModelStatic<M>,
+      values: Partial<Attributes<M>>,
+      options: UpdateStatementOptions<Attributes<M>> = {},
+    ): WriteStatement {
+      return statements.update(this, values as Values, options as UpdateStatementOptions);
+    }
+
+    /**
+     * Builds a `DELETE` for a data-modifying CTE (`with`). It is a real delete, also for paranoid
+     * models, and ignores the paranoid filter. With `returning: true` the deleted rows can be read
+     * through `source`, e.g. to move them to another table. PostgreSQL extension.
+     *
+     * @param this - The model class.
+     * @param options - `where`, `returning`.
+     * @returns Statement for the `with` option.
+     * @example
+     * ```ts
+     * const done = Task.deleteStatement({ where: { done: true }, returning: true });
+     * const removed = await Task.findAll({ with: { done }, source: 'done' });
+     * ```
+     */
+    static deleteStatement<M extends AnyModel>(
+      this: ModelStatic<M>,
+      options: WriteStatementOptions<Attributes<M>> = {},
+    ): WriteStatement {
+      return statements.delete(this, options as WriteStatementOptions);
+    }
+
+    /**
+     * Builds an `INSERT` of attribute-keyed rows for a data-modifying CTE (`with`). Defaults and
+     * timestamps are filled in; no hooks or validation run. PostgreSQL extension.
+     *
+     * @param this - The model class.
+     * @param rows - Rows to insert (at least one).
+     * @param options - `returning`.
+     * @returns Statement for the `with` option.
+     * @throws Error without rows.
+     * @example
+     * ```ts
+     * const added = Task.insertStatement([{ title: 'write docs' }], { returning: true });
+     * const rows = await Task.findAll({ with: { added }, source: 'added' });
+     * ```
+     */
+    static insertStatement<M extends AnyModel>(
+      this: ModelStatic<M>,
+      rows: readonly CreationAttributes<M>[],
+      options: Pick<WriteStatementOptions<Attributes<M>>, 'returning'> = {},
+    ): WriteStatement {
+      return statements.insert(this, rows as readonly Values[], options);
     }
 
     /**

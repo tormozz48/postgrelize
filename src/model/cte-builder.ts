@@ -1,5 +1,5 @@
-import { Subquery } from '../expressions/methods.ts';
-import type { CteNode, FromItem, QueryNode, WithClause } from '../sql/ast.ts';
+import { Subquery, WriteStatement } from '../expressions/methods.ts';
+import type { CteNode, FromItem, QueryNode, SelectNode, WithClause } from '../sql/ast.ts';
 import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
 import { ModelDefinition } from './model-definition.ts';
 
@@ -16,18 +16,57 @@ import { ModelDefinition } from './model-definition.ts';
  * ```
  */
 export type CteDefinition = Readonly<{
-  /** Non-recursive part. */
-  query: Subquery;
+  /** Non-recursive part, or a data-modifying statement with `returning` (never with `recursive`). */
+  query: Subquery | WriteStatement;
   /** Recursive part (makes the whole clause `WITH RECURSIVE`); reference the CTE through `from`. */
   recursive?: Subquery;
   /** `UNION ALL` (default) or `UNION` between `query` and `recursive`. */
   unionAll?: boolean;
   /** `MATERIALIZED` / `NOT MATERIALIZED` hint. */
   materialized?: boolean;
+  /** `SEARCH … FIRST BY … SET …`: adds a column that orders the rows breadth or depth first. Needs `recursive`. */
+  search?: CteSearchOptions;
+  /** `CYCLE … SET … [USING …]`: marks rows that revisit a key, and stops the recursion there. Needs `recursive`. */
+  cycle?: CteCycleOptions;
+}>;
+
+/**
+ * `search` of a recursive CTE definition.
+ *
+ * @example
+ * ```ts
+ * const search: CteSearchOptions = { by: ['id'], mode: 'breadth', set: 'ordercol' };
+ * ```
+ */
+export type CteSearchOptions = Readonly<{
+  /** Columns of the CTE that define the order. */
+  by: readonly string[];
+  /** Traversal order.
+   * @defaultValue 'depth' */
+  mode?: 'breadth' | 'depth';
+  /** Name of the added ordering column. */
+  set: string;
+}>;
+
+/**
+ * `cycle` of a recursive CTE definition.
+ *
+ * @example
+ * ```ts
+ * const cycle: CteCycleOptions = { columns: ['id'], set: 'is_cycle', using: 'path' };
+ * ```
+ */
+export type CteCycleOptions = Readonly<{
+  /** Columns that identify a visited row. */
+  columns: readonly string[];
+  /** Name of the added boolean column that is true on the row that closes a cycle. */
+  set: string;
+  /** Name of the added array column with the path of visited keys (required: PostgreSQL 16 and 17 need it). */
+  using: string;
 }>;
 
 /** `with` option: CTEs by name. */
-export type WithOption = Readonly<Record<string, Subquery | CteDefinition>>;
+export type WithOption = Readonly<Record<string, Subquery | WriteStatement | CteDefinition>>;
 
 /**
  * CTE-related find options. PostgreSQL extension.
@@ -55,7 +94,8 @@ export type CteFindOptions = Readonly<{
   from?: JoinSources;
 }>;
 
-const isDefinition = (value: Subquery | CteDefinition): value is CteDefinition => 'query' in value;
+const isDefinition = (value: Subquery | WriteStatement | CteDefinition): value is CteDefinition =>
+  'query' in value;
 
 /**
  * Resolves the CTE-related find options (PostgreSQL extension): the `WITH [RECURSIVE]` clause,
@@ -136,22 +176,61 @@ export class CteBuilder {
     };
   }
 
-  static #cte(name: string, value: Subquery | CteDefinition): CteNode {
+  /**
+   * Route of a statement: `'write'` when a CTE modifies data, so it never goes to a replica.
+   *
+   * @param select - Built SELECT.
+   * @returns `'read'` or `'write'`.
+   */
+  route(select: SelectNode): 'read' | 'write' {
+    const modifying = select.with?.ctes.some(
+      (cte) => cte.query.kind !== 'select' && cte.query.kind !== 'setop',
+    );
+    return modifying === true ? 'write' : 'read';
+  }
+
+  static #cte(name: string, value: Subquery | WriteStatement | CteDefinition): CteNode {
     const cte: CteDefinition = isDefinition(value) ? value : { query: value };
-    const base = cte.query.build();
     return {
       name,
-      query:
-        cte.recursive === undefined
-          ? base
-          : {
-              kind: 'setop' as const,
-              op: 'UNION' as const,
-              left: base,
-              right: cte.recursive.build(),
-              all: cte.unionAll !== false,
-            },
+      query: CteBuilder.#body(name, cte),
       ...(cte.materialized === undefined ? {} : { materialized: cte.materialized }),
+      ...CteBuilder.#extras(name, cte),
+    };
+  }
+
+  static #body(name: string, cte: CteDefinition): CteNode['query'] {
+    const base = cte.query.build();
+    if (cte.query instanceof WriteStatement) {
+      if (cte.recursive !== undefined) {
+        throw new Error(`CTE "${name}": a data-modifying statement cannot be recursive`);
+      }
+      return base;
+    }
+    return cte.recursive === undefined
+      ? base
+      : {
+          kind: 'setop',
+          op: 'UNION',
+          left: base as QueryNode,
+          right: cte.recursive.build(),
+          all: cte.unionAll !== false,
+        };
+  }
+
+  static #extras(name: string, cte: CteDefinition): Pick<CteNode, 'search' | 'cycle'> {
+    if ((cte.search !== undefined || cte.cycle !== undefined) && cte.recursive === undefined) {
+      throw new Error(`CTE "${name}": search and cycle need a recursive part`);
+    }
+    const mode = (cte.search?.mode ?? 'depth').toUpperCase();
+    if (mode !== 'DEPTH' && mode !== 'BREADTH') {
+      throw new Error(`Invalid CTE search mode: ${String(cte.search?.mode)}`);
+    }
+    return {
+      ...(cte.search === undefined
+        ? {}
+        : { search: { mode, by: cte.search.by, set: cte.search.set } }),
+      ...(cte.cycle === undefined ? {} : { cycle: cte.cycle }),
     };
   }
 }

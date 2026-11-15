@@ -52,6 +52,16 @@ export class FindQueryBuilder {
     return includes.length === 0 ? base : this.#includes.build(definition, base, includes, query);
   }
 
+  /**
+   * Route of the built SELECT: the writer when a CTE modifies data.
+   *
+   * @param select - Built SELECT.
+   * @returns `'read'` or `'write'`.
+   */
+  route(select: SelectNode): 'read' | 'write' {
+    return this.#cte.route(select);
+  }
+
   #base(
     definition: ModelDefinition,
     query: FindOptions,

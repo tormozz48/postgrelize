@@ -35,7 +35,7 @@ Source options (`values`, `function`, `jsonTable`, `lateral`, `model` + `sample`
 - `withTies` needs `limit` and `order` (PostgreSQL rejects it otherwise; the error surfaces as a `DatabaseError`).
 - `sample` percent must be a finite number in [0, 100]; seed an integer; method one of `BERNOULLI`, `SYSTEM`. Applies to the model table only.
 - Set-operation operands must expose the same column list; PostgreSQL validates it.
-- Data-modifying CTEs force the writer connection. They are supported only in `findAll`-style reads (top-level `SELECT`).
+- Data-modifying CTEs force the writer connection (`finds.route`). They are supported only in `findAll` / `count` style reads (top-level `SELECT`). `cycle.using` is required: PostgreSQL 16 and 17 do not accept `CYCLE` without `USING`.
 - `jsonTable` needs PostgreSQL 17; older servers reject the statement (no client-side version check). Paths are rendered as escaped literals (PostgreSQL accepts only constants there); column types go through the cast-type allowlist.
 
 ## Tests

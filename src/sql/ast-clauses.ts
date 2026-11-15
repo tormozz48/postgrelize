@@ -1,5 +1,5 @@
 import type { ExprNode } from './ast-expressions.ts';
-import type { QueryNode } from './ast-statements.ts';
+import type { ModifyingNode, QueryNode } from './ast-statements.ts';
 
 /** `TABLESAMPLE method (percent) [REPEATABLE (seed)]` of a FROM table. */
 export type TableSample = Readonly<{
@@ -71,10 +71,23 @@ export type SetOperationNode = Readonly<{
   right: QueryNode;
 }>;
 
+/** `SEARCH { BREADTH | DEPTH } FIRST BY columns SET column` of a recursive CTE. */
+export type CteSearch = Readonly<{
+  mode: 'BREADTH' | 'DEPTH';
+  by: readonly string[];
+  set: string;
+}>;
+
+/** `CYCLE columns SET column [USING path]` of a recursive CTE. */
+export type CteCycle = Readonly<{ columns: readonly string[]; set: string; using: string }>;
+
 export type CteNode = Readonly<{
   name: string;
-  query: QueryNode;
+  /** A query, or (non-recursive only) a data-modifying statement with RETURNING. */
+  query: QueryNode | ModifyingNode;
   materialized?: boolean;
+  search?: CteSearch;
+  cycle?: CteCycle;
 }>;
 
 export type WithClause = Readonly<{ recursive: boolean; ctes: readonly CteNode[] }>;

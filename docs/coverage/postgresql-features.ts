@@ -35,6 +35,7 @@ const BASE = 'tests/integration/postgrelize.test.ts';
 const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
 const SCHEMA = 'tests/integration/schema.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
+const CTEX = 'tests/integration/cte-extras.test.ts';
 const SETOPS = 'tests/integration/set-ops-from.test.ts';
 const ISSUES = 'tests/integration/sequelize-issues.test.ts';
 const CRUD = 'tests/compat/crud.test.ts';
@@ -60,8 +61,8 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: SELECT, feature: 'Window functions (OVER, PARTITION BY)', minPg: '16', status: 'supported', test: t(POWER, 'ranks rows with window functions'), note: '`over()` expression; named `WINDOW` clauses and frame clauses are not modelled.' },
   { area: SELECT, feature: 'CTEs and WITH RECURSIVE', minPg: '16', status: 'supported', test: t(CTE, 'walks a tree with WITH RECURSIVE'), note: '`with` find option.' },
   { area: SELECT, feature: 'CTE MATERIALIZED / NOT MATERIALIZED', minPg: '16', status: 'supported', test: t(CTE, 'uses materialized CTEs'), note: '`materialized` flag of a CTE definition.' },
-  { area: SELECT, feature: 'Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING)', minPg: '16', status: 'planned', note: 'CTE bodies are SELECT builders only. Workaround: `sequelize.query()` with raw SQL.' },
-  { area: SELECT, feature: 'CTE SEARCH / CYCLE clauses', minPg: '16', status: 'planned', note: 'Rare; recursive CTEs themselves work. Workaround: raw query.' },
+  { area: SELECT, feature: 'Data-modifying CTEs (WITH … UPDATE/DELETE … RETURNING)', minPg: '16', status: 'supported', test: t(CTEX, 'deletes rows and reads the deleted rows through source'), note: '`Model.updateStatement()`, `deleteStatement()`, `insertStatement()` in `with`; the query goes to the writer. `INSERT … SELECT FROM cte` as the main statement is not supported.' },
+  { area: SELECT, feature: 'CTE SEARCH / CYCLE clauses', minPg: '16', status: 'supported', test: t(CTEX, 'orders a tree depth first and breadth first'), note: '`search` and `cycle` in a recursive `with` definition; `cycle.using` is required.' },
   { area: SELECT, feature: 'LATERAL joins', minPg: '16', status: 'supported', test: t(SETOPS, 'correlates a LATERAL subquery with the model row'), note: '`from: { alias: { lateral: subquery } }`; `lateral: true` on a `separate` include with `limit` reads the top rows per parent.' },
   { area: SELECT, feature: 'GROUPING SETS / ROLLUP / CUBE', minPg: '16', status: 'literal', test: t(PG, 'groups with GROUPING SETS / ROLLUP through literal()'), note: '`group: literal("ROLLUP (a, b)")`. `GROUPING()` through `fn("grouping", …)`.' },
   { area: SELECT, feature: 'Row locks: FOR UPDATE / NO KEY UPDATE / SHARE / KEY SHARE, OF, NOWAIT, SKIP LOCKED', minPg: '16', status: 'supported', test: t(PG, 'renders every row-lock strength with OF, NOWAIT and SKIP LOCKED'), note: '`lock`, `skipLocked`, `noWait` find options.' },

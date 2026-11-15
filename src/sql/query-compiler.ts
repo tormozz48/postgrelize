@@ -1,13 +1,12 @@
 import type {
-  CteNode,
   FromItem,
   JoinNode,
   LockNode,
   QueryNode,
   SelectNode,
   SetOperationNode,
-  WithClause,
 } from './ast.ts';
+import { WithCompiler, type CteBodyCompiler } from './with-compiler.ts';
 import { FromCompiler } from './from-compiler.ts';
 import { ExpressionCompiler } from './expression-compiler.ts';
 import { ChunkBuilder, type Chunks } from './sql-chunks.ts';
@@ -17,14 +16,16 @@ export class QueryCompiler extends ChunkBuilder {
   /** Expression compiler that compiles subqueries through this compiler. */
   readonly expr: ExpressionCompiler;
   readonly #sources: FromCompiler;
+  readonly #with: WithCompiler;
+  #modifying: CteBodyCompiler = (node) => this.unexpected(node as never);
   readonly #fromItem = (from: FromItem): Chunks => this.from(from);
   readonly #joinClause = (node: JoinNode): Chunks => this.#join(node);
-  readonly #cte = (cte: CteNode): Chunks => this.#cteItem(cte);
 
   constructor() {
     super();
     this.expr = new ExpressionCompiler(this);
     this.#sources = new FromCompiler(this.expr);
+    this.#with = new WithCompiler((node) => this.#cteBody(node));
   }
 
   /**
@@ -45,6 +46,15 @@ export class QueryCompiler extends ChunkBuilder {
    */
   query(node: QueryNode): Chunks {
     return node.kind === 'setop' ? this.#setOperation(node) : this.select(node);
+  }
+
+  /**
+   * Sets the compiler of data-modifying CTE bodies (which live in the DML compiler).
+   *
+   * @param compile - Compiler of INSERT / UPDATE / DELETE statements.
+   */
+  useModifying(compile: CteBodyCompiler): void {
+    this.#modifying = compile;
   }
 
   /**
@@ -83,7 +93,7 @@ export class QueryCompiler extends ChunkBuilder {
   #selectHead(node: SelectNode): Chunks {
     const distinctOn = node.distinctOn ?? [];
     return [
-      ...(node.with === undefined ? [] : this.#with(node.with)),
+      ...(node.with === undefined ? [] : this.#with.with(node.with)),
       node.distinct === true || distinctOn.length > 0 ? 'SELECT DISTINCT ' : 'SELECT ',
       ...(distinctOn.length === 0
         ? []
@@ -156,23 +166,9 @@ export class QueryCompiler extends ChunkBuilder {
     return needsParens ? this.wrap(this.query(node)) : this.select(node);
   }
 
-  #with(clause: WithClause): Chunks {
-    return [
-      clause.recursive ? 'WITH RECURSIVE ' : 'WITH ',
-      ...this.joinAll(clause.ctes.map(this.#cte), ', '),
-      ' ',
-    ];
-  }
-
-  #cteItem(cte: CteNode): Chunks {
-    return [
-      `${this.quote(cte.name)} AS `,
-      cte.materialized === undefined
-        ? ''
-        : cte.materialized
-          ? 'MATERIALIZED '
-          : 'NOT MATERIALIZED ',
-      ...this.wrap(this.query(cte.query)),
-    ];
+  #cteBody(node: Parameters<CteBodyCompiler>[0]): Chunks {
+    return node.kind === 'select' || node.kind === 'setop'
+      ? this.query(node)
+      : this.#modifying(node);
   }
 }
