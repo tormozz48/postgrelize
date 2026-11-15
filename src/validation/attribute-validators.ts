@@ -74,18 +74,10 @@ export class AttributeValidators {
   ): Promise<readonly ValidationErrorItem[]> {
     const message = await this.#custom.failure(target.instance, fn, [value]);
     const { instance } = target;
+    const { fieldName } = attribute;
     return message === undefined
       ? []
-      : [
-          new ValidationErrorItem(
-            message,
-            'Validation error',
-            attribute.fieldName,
-            value,
-            instance,
-            name,
-          ),
-        ];
+      : [new ValidationErrorItem(message, 'Validation error', fieldName, value, instance, name)];
   }
 
   #builtinItems(
