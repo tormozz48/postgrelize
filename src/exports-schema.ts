@@ -59,6 +59,14 @@ export type {
   DropViewOptions,
   RefreshMaterializedViewOptions,
 } from './ddl/view-ddl.ts';
+export type {
+  AlterPolicyOptions,
+  CreatePolicyOptions,
+  DisableRowLevelSecurityOptions,
+  DropPolicyOptions,
+  EnableRowLevelSecurityOptions,
+  PolicyCondition,
+} from './ddl/policy-ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type {

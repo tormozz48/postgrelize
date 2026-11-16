@@ -231,4 +231,47 @@ describe('DDL object names and keywords cannot break out of their quoting', () =
         await queryInterface.dropView(payload, { ifExists: true });
       }
     }));
+
+  it('quotes policy names and roles, allowlists commands and kinds, escapes where-object values', () =>
+    withCanary(async ({ sequelize, client }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await client.query('CREATE TABLE labels (label text)');
+      await fc.assert(
+        fc.asyncProperty(identifier(), identifier(), async (policy, role) => {
+          const created = await settle(
+            queryInterface.createPolicy('labels', policy, { roles: [role, 'public'] }),
+          );
+          const code = (created as { original?: { code?: string } } | undefined)?.original?.code;
+          expect(code === undefined || code === '42704').toBe(true);
+        }),
+        { ...propertyParameters(), numRuns: 15 },
+      );
+      for (const payload of PAYLOADS.filter((value) => !/^[A-Za-z_]\w*$/.test(value))) {
+        await expect(
+          queryInterface.createPolicy('labels', 'p', { command: payload as never }),
+        ).rejects.toThrow(/command/);
+        await expect(
+          queryInterface.createPolicy('labels', 'p', { kind: payload as never }),
+        ).rejects.toThrow(/kind/);
+        await queryInterface.createPolicy('labels', payload, { using: { label: payload } });
+        const stored = await client.query('SELECT qual FROM pg_policies WHERE policyname = $1', [
+          payload,
+        ]);
+        expect(stored.rowCount).toBe(1);
+        await queryInterface
+          .alterPolicy('labels', payload, { withCheck: { label: payload } })
+          .catch((error: unknown) => error);
+        await queryInterface.dropPolicy('labels', payload);
+        expect(
+          syntaxError(
+            await settle(
+              queryInterface.enableRowLevelSecurity({ tableName: payload, schema: payload }),
+            ),
+          ),
+        ).toBe(false);
+        expect(
+          syntaxError(await settle(queryInterface.alterPolicy('labels', 'x', { rename: payload }))),
+        ).toBe(false);
+      }
+    }));
 });

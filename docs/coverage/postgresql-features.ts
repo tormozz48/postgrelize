@@ -173,7 +173,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DDL, feature: 'Functions and triggers', minPg: '16', status: 'supported', test: t(FNTRIG, 'fires a row trigger on insert and update'), note: '`createFunction`, `dropFunction`, `renameFunction`, `createTrigger`, `dropTrigger`, `renameTrigger` with the v6 names; bodies and `WHEN` clauses are trusted SQL.' },
   { area: DDL, feature: 'Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH)', minPg: '16', status: 'planned', note: 'Workaround: raw DDL; queries against the parent table work.' },
   { area: DDL, feature: 'Extensions (CREATE EXTENSION)', minPg: '16', status: 'supported', test: t(OBJECTS, 'creates and drops an extension'), note: '`createExtension`, `dropExtension` with `ifNotExists`, `schema`, `version`, `cascade`.' },
-  { area: DDL, feature: 'Row-level security policies', minPg: '16', status: 'planned', note: 'Session variables for policies work (see `SET LOCAL`); `CREATE POLICY` and `ENABLE ROW LEVEL SECURITY` need raw DDL.' },
+  { area: DDL, feature: 'Row-level security policies', minPg: '16', status: 'supported', test: t(OBJECTS, 'enforces policies for a non-owner role'), note: '`enableRowLevelSecurity`, `disableRowLevelSecurity`, `createPolicy`, `alterPolicy`, `dropPolicy`; string conditions are trusted SQL, where objects are escaped.' },
   { area: DDL, feature: 'UNLOGGED and TEMPORARY tables', minPg: '16', status: 'planned', note: 'No `createTable` option. Workaround: raw DDL.' },
   { area: DDL, feature: 'Rules (CREATE RULE)', minPg: '16', status: 'out-of-scope', note: 'Legacy mechanism; triggers and views cover the use cases.' },
 

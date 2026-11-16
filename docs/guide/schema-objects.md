@@ -41,6 +41,16 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - A model can read a view like a table (`freezeTableName` or `tableName`, `timestamps: false`).
 - A `temporary` view lives only as long as its database session, which is one pooled connection: create and use it in one transaction (`transaction` option).
 
+## Row-level security
+
+<<< @/examples/schema-objects.ts#rls{ts}
+
+- `enableRowLevelSecurity(table, { force })` and `disableRowLevelSecurity(table, { noForce })`. `force` also subjects the table owner to the policies; superusers and roles with `BYPASSRLS` are never subject to them.
+- `createPolicy(table, name, { command, kind, roles, using, withCheck })`: `command` is `'all'` (default), `'select'`, `'insert'`, `'update'` or `'delete'`; `kind` is `'permissive'` (default) or `'restrictive'`; `roles` are role names or `'public'`, `'current_user'`, `'current_role'`, `'session_user'`.
+- `alterPolicy(table, name, { roles, using, withCheck, rename })`, `dropPolicy(table, name, { ifExists, cascade })`.
+- **A string condition is SQL you write**: not escaped, never build it from user input. A where object (`{ edits: { [Op.gt]: 0 } }`) compiles like a partial-index condition and its values are escaped as literals. See [Security](/security).
+- Policies usually read a per-request setting. Set it with the `settings` option of a transaction ([Sessions](/guide/sessions)) and refer to it with `current_setting('app.tenant_id')::int`.
+
 ## API reference
 
 - [`QueryInterface`](/api/classes/QueryInterface)
