@@ -160,3 +160,7 @@
 - [x] PR 1 (#61): named prepared statements, `statementCache` (ADR-023), bench case `findByPk statementCache`.
 - [x] PR 2: `DEFERRABLE` transaction mode (`deferrable`), per-query `statementTimeout`, `bulkCreate({ unnest: true })`; spec `.10x/specs/2026-11-15-s16-session-extras-design.md`. All four matrix rows `supported`.
 - Open: the `unnest` builder swaps a placeholder table for `unnest(...)` because the AST has no function in FROM; move it to the S12 `function` FromItem (ADR-024) once S12 lands. The stub bench gate for the default path was not rerun under load; run it before the next release.
+
+## Release 0.10.0 (2026-11-16)
+- Tag `v0.10.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.10.0` published. Contents: S12 set operations, LATERAL, FROM sources, data-modifying CTEs, CTE SEARCH/CYCLE; S14 types (HSTORE objects, ltree, MONEY, XML, BIT, TSQUERY, …); S16 opt-in `statementCache` (ADR-023), DEFERRABLE, statement timeout, UNNEST bulk insert; S10b faster raw reads; logo. `main` now requires a pull request: the release commit goes through a PR. Open: bench gate showed `bulkCreate 100` at +10.7% under load (S10b re-checked it).
+
