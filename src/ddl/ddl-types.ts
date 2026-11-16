@@ -165,6 +165,7 @@ export type ConstraintOptions = Readonly<{
   references?: Readonly<{
     /** Referenced table. */ table: TableName;
     /** Referenced column. */ field: string;
+    /** Referenced columns, replacing `field` (needed with `period`). */ fields?: readonly string[];
   }>;
   /** `ON DELETE` action. */
   onDelete?: string;
@@ -180,6 +181,12 @@ export type ConstraintOptions = Readonly<{
   using?: string;
   /** Covering columns of an `exclude` constraint (`INCLUDE (...)`). */
   include?: readonly string[];
+  /** Last field of a `unique` / `primary key` constraint is `WITHOUT OVERLAPS` (temporal key, PostgreSQL 18). */
+  withoutOverlaps?: boolean;
+  /** Last field (and last referenced field) of a foreign key is `PERIOD` (PostgreSQL 18). */
+  period?: boolean;
+  /** `false` adds `NOT ENFORCED` (check and foreign key, PostgreSQL 18). */
+  enforced?: boolean;
   /** Adds `NOT VALID` (check and foreign key only); run `validateConstraint` later. PostgreSQL extension. */
   notValid?: boolean;
 }>;

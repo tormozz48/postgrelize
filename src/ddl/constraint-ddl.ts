@@ -32,9 +32,9 @@ export class ConstraintDdl {
   addConstraintSql(table: TableName, options: ConstraintOptions, defaultSchema?: string): string {
     const type = options.type.toLowerCase();
     const name = options.name ?? this.#defaultName(table, this.#nameFields(type, options), type);
-    const fields = (options.fields ?? []).map(SqlCompiler.quoteIdent).join(', ');
+    const fields = this.#fieldList(type, options);
     const body = this.#body(type, fields, options, defaultSchema);
-    return `ALTER TABLE ${sqlLiteral.quoteTable(table, defaultSchema)} ADD CONSTRAINT ${SqlCompiler.quoteIdent(name)} ${body}${this.#notValid(type, options)}`;
+    return `ALTER TABLE ${sqlLiteral.quoteTable(table, defaultSchema)} ADD CONSTRAINT ${SqlCompiler.quoteIdent(name)} ${body}${this.#attributes(type, options)}`;
   }
 
   /**
@@ -62,14 +62,39 @@ export class ConstraintDdl {
     });
   }
 
-  #notValid(type: string, options: ConstraintOptions): string {
-    if (options.notValid !== true) {
-      return '';
+  #attributes(type: string, options: ConstraintOptions): string {
+    const checkable = type === 'check' || type === 'foreign key';
+    if ((options.notValid === true || options.enforced === false) && !checkable) {
+      throw new Error('notValid and enforced apply to check and foreign key constraints only');
     }
-    if (type !== 'check' && type !== 'foreign key') {
-      throw new Error('notValid applies to check and foreign key constraints only');
+    return `${options.enforced === false ? ' NOT ENFORCED' : ''}${options.notValid === true ? ' NOT VALID' : ''}`;
+  }
+
+  #fieldList(type: string, options: ConstraintOptions): string {
+    const names = (options.fields ?? []).map(SqlCompiler.quoteIdent);
+    if (options.withoutOverlaps === true) {
+      this.#requireType(type, ['unique', 'primary key'], 'withoutOverlaps');
+      return this.#withLast(names, (last) => `${last} WITHOUT OVERLAPS`);
     }
-    return ' NOT VALID';
+    if (options.period === true) {
+      this.#requireType(type, ['foreign key'], 'period');
+      return this.#withLast(names, (last) => `PERIOD ${last}`);
+    }
+    return names.join(', ');
+  }
+
+  #requireType(type: string, allowed: readonly string[], option: string): void {
+    if (!allowed.includes(type)) {
+      throw new Error(`${option} applies to ${allowed.join(' and ')} constraints only`);
+    }
+  }
+
+  #withLast(names: readonly string[], mark: (last: string) => string): string {
+    const last = names.at(-1);
+    if (last === undefined) {
+      throw new Error('withoutOverlaps and period need at least one field');
+    }
+    return [...names.slice(0, -1), mark(last)].join(', ');
   }
 
   #defaultName(table: TableName, fields: readonly string[], type: string): string {
@@ -119,8 +144,13 @@ export class ConstraintDdl {
     if (options.references === undefined) {
       throw new Error('Foreign key constraint requires references');
     }
-    const target = `FOREIGN KEY (${fields}) REFERENCES ${sqlLiteral.quoteTable(options.references.table, defaultSchema)} (${SqlCompiler.quoteIdent(options.references.field)})`;
+    const target = `FOREIGN KEY (${fields}) REFERENCES ${sqlLiteral.quoteTable(options.references.table, defaultSchema)} (${this.#referenced(options.references, options.period === true)})`;
     return `${target}${guards.foreignKeySuffix(options.onDelete, options.onUpdate, options.deferrable)}`;
+  }
+
+  #referenced(references: NonNullable<ConstraintOptions['references']>, period: boolean): string {
+    const names = (references.fields ?? [references.field]).map(SqlCompiler.quoteIdent);
+    return period ? this.#withLast(names, (last) => `PERIOD ${last}`) : names.join(', ');
   }
 
   #exclude(options: ConstraintOptions): string {

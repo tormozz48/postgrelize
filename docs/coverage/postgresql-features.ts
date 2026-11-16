@@ -39,6 +39,7 @@ const SCHEMA = 'tests/integration/schema.test.ts';
 const FNTRIG = 'tests/compat/functions-triggers.test.ts';
 const OBJECTS = 'tests/integration/ddl-objects.test.ts';
 const CONSTRAINTS = 'tests/integration/constraints-indexes.test.ts';
+const CONSTRAINTS18 = 'tests/integration/constraints-indexes-pg18.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
 const CTEX = 'tests/integration/cte-extras.test.ts';
 const SETOPS = 'tests/integration/set-ops-from.test.ts';
@@ -162,7 +163,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DDL, feature: 'UNIQUE NULLS NOT DISTINCT', minPg: '16', status: 'supported', test: t(SCHEMA, 'creates UNIQUE NULLS NOT DISTINCT constraints and indexes'), note: '`nullsNotDistinct` on unique columns, constraints and indexes.' },
   { area: DDL, feature: 'EXCLUDE constraints', minPg: '16', status: 'supported', test: t(CONSTRAINTS, 'rejects overlapping ranges for the same room and honours the predicate'), note: '`addConstraint({ type: \'exclude\', exclude: [{ name | expression, with }], using, where, include, deferrable })`; violations raise `ExclusionConstraintError`.' },
   { area: DDL, feature: 'NOT VALID constraints and VALIDATE CONSTRAINT', minPg: '16', status: 'supported', test: t(CONSTRAINTS, 'adds a constraint over bad rows, then validates after the fix'), note: '`notValid` on check and foreign key constraints, `validateConstraint`.' },
-  { area: DDL, feature: 'NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD', minPg: '18', status: 'planned', note: 'PostgreSQL 18 constraint forms. Workaround: raw DDL.' },
+  { area: DDL, feature: 'NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD', minPg: '18', status: 'supported', test: t(CONSTRAINTS18, 'creates temporal keys and PERIOD foreign keys'), note: '`enforced: false`, `withoutOverlaps`, `period` and `references.fields` on `addConstraint`; PostgreSQL 18 syntax, sent as written.' },
   { area: DDL, feature: 'Indexes: unique, partial, covering (INCLUDE), GIN, BRIN, CONCURRENTLY, IF NOT EXISTS', minPg: '16', status: 'supported', test: t(PG, 'creates partial, expression, covering, GIN and concurrent indexes'), note: '`addIndex` / model `indexes`: `where`, `include`, `using`, `operator`, `concurrently`, `ifNotExists`. GiST, SP-GiST and hash go through `using`.' },
   { area: DDL, feature: 'Expression indexes (lower(email))', minPg: '16', status: 'supported', test: t(CONSTRAINTS, 'creates unique expression indexes with addIndex and enforces them'), note: '`{ expression }` index fields (trusted SQL) with `collate`, `operator`, `order`, `nulls`, `include`; an explicit `name` is required.' },
   { area: DDL, feature: 'ALTER TABLE: add / change / rename / remove column, rename table', minPg: '16', status: 'supported', test: t(QI, 'column, index and constraint operations'), note: '`QueryInterface` methods.' },
