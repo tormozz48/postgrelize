@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DataTypes, QueryTypes, Sequelize } from '../../src/index.ts';
+import { DataTypes, QueryTypes, Sequelize, type Transaction } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
 
@@ -343,5 +343,66 @@ describe('row-level security', () => {
         await client.query(`DROP OWNED BY "${role}"`);
         await client.query(`DROP ROLE "${role}"`);
       }
+    }));
+});
+
+const persistence = async (
+  sequelize: Sequelize,
+  table: string,
+  transaction?: Transaction,
+): Promise<string[]> => {
+  const rows = (await sequelize.query(
+    `SELECT relpersistence FROM pg_class WHERE relname = '${table}'`,
+    {
+      type: QueryTypes.SELECT,
+      ...(transaction === undefined ? {} : { transaction }),
+    },
+  )) as { relpersistence: string }[];
+  return rows.map((row) => row.relpersistence);
+};
+
+describe('unlogged and temporary tables', () => {
+  it('creates unlogged tables with createTable and with models', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      await sequelize
+        .getQueryInterface()
+        .createTable('fast_log', { msg: DataTypes.TEXT }, { unlogged: true });
+      const Cache = sequelize.define(
+        'Cache',
+        { k: DataTypes.TEXT },
+        { tableName: 'cache', unlogged: true },
+      );
+      const Plain = sequelize.define('Plain', { k: DataTypes.TEXT }, { tableName: 'plain' });
+      await sequelize.sync();
+      expect(await persistence(sequelize, 'fast_log')).toEqual(['u']);
+      expect(await persistence(sequelize, 'cache')).toEqual(['u']);
+      expect(await persistence(sequelize, 'plain')).toEqual(['p']);
+      await Cache.create({ k: 'a' });
+      expect(await Cache.count()).toBe(1);
+      expect(await Plain.count()).toBe(0);
+    }));
+
+  it('creates temporary tables that live in one session', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Scratch = sequelize.define(
+        'Scratch',
+        { n: DataTypes.INTEGER },
+        { tableName: 'scratch', temporary: true, timestamps: false },
+      );
+      await sequelize.transaction(async (transaction) => {
+        await sequelize
+          .getQueryInterface()
+          .createTable('tmp_one', { n: DataTypes.INTEGER }, { temporary: true, transaction });
+        await Scratch.sync({ transaction });
+        await Scratch.create({ n: 1 }, { transaction });
+        expect(await Scratch.count({ transaction })).toBe(1);
+        expect(await persistence(sequelize, 'scratch', transaction)).toEqual(['t']);
+        expect(await persistence(sequelize, 'tmp_one', transaction)).toEqual(['t']);
+      });
+      await expect(
+        sequelize.getQueryInterface().createTable('bad', {}, { temporary: true, unlogged: true }),
+      ).rejects.toThrow(/both/);
     }));
 });

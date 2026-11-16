@@ -1,4 +1,4 @@
-import { Op, type Sequelize } from 'postgrelize';
+import { DataTypes, Op, type Sequelize } from 'postgrelize';
 
 export const run = async (sequelize: Sequelize): Promise<void> => {
   const queryInterface = sequelize.getQueryInterface();
@@ -82,13 +82,34 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   await queryInterface.dropPolicy('posts', 'edited_only');
   await queryInterface.disableRowLevelSecurity('posts', { noForce: true });
 
+  // #region persistence
+  const Cache = sequelize.define(
+    'Cache',
+    { key: DataTypes.TEXT },
+    { tableName: 'cache', unlogged: true },
+  );
+  await Cache.sync();
+  await sequelize.transaction(async (transaction) => {
+    await queryInterface.createTable(
+      'scratch',
+      { n: DataTypes.INTEGER },
+      { temporary: true, transaction },
+    );
+    await sequelize.query('INSERT INTO scratch (n) VALUES (1)', { transaction });
+  });
+  // #endregion persistence
+  const [cache] = (await sequelize.query(
+    "SELECT relpersistence FROM pg_class WHERE relname = 'cache'",
+  )) as [{ relpersistence: string }[], unknown];
+
   await queryInterface.dropExtension('pg_trgm');
   if (
     first !== '1000' ||
     afterSet !== '5001' ||
     post[0]?.edits !== 1 ||
     stats[0]?.posts !== 1 ||
-    policies[0][0]?.policyname !== 'edited_only'
+    policies[0][0]?.policyname !== 'edited_only' ||
+    cache[0]?.relpersistence !== 'u'
   ) {
     throw new Error('schema objects example: unexpected result');
   }

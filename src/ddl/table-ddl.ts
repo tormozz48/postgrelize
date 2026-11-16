@@ -39,13 +39,15 @@ export class TableDdl {
     columns: readonly ColumnDefinition[],
     options: CreateTableOptions = {},
   ): readonly string[] {
-    const body = this.#tableBody(table, columns, options.defaultSchema);
-    const qualified = sqlLiteral.quoteTable(table, options.defaultSchema);
+    this.#checkPersistence(table, options);
+    const defaultSchema = options.temporary === true ? undefined : options.defaultSchema;
+    const body = this.#tableBody(table, columns, defaultSchema);
+    const qualified = sqlLiteral.quoteTable(table, defaultSchema);
     return [
       ...columns
         .map((column) => this.#enums.createSql(table, column))
         .filter((sql): sql is string => sql !== undefined),
-      `CREATE TABLE ${options.ifNotExists === false ? '' : 'IF NOT EXISTS '}${qualified} (${body})`,
+      `CREATE ${this.#persistence(options)}TABLE ${options.ifNotExists === false ? '' : 'IF NOT EXISTS '}${qualified} (${body})`,
       ...(options.comment === undefined
         ? []
         : [`COMMENT ON TABLE ${qualified} IS ${sqlLiteral.escape(options.comment)}`]),
@@ -80,6 +82,19 @@ export class TableDdl {
       `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${SqlCompiler.quoteIdent(column.field)}::${type})` : ''}`,
       ...this.#columns.commentSql(table, column),
     ];
+  }
+
+  #persistence(options: CreateTableOptions): string {
+    return options.temporary === true ? 'TEMPORARY ' : options.unlogged === true ? 'UNLOGGED ' : '';
+  }
+
+  #checkPersistence(table: TableName, options: CreateTableOptions): void {
+    if (options.temporary === true && options.unlogged === true) {
+      throw new Error('A table cannot be both temporary and unlogged');
+    }
+    if (options.temporary === true && sqlLiteral.tableParts(table).schema !== undefined) {
+      throw new Error('A temporary table lives in the session schema and cannot have a schema');
+    }
   }
 
   #tableBody(

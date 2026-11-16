@@ -29,18 +29,23 @@ export type ForeignKeyReference = Readonly<{
 }>;
 
 /**
- * Options of `createTable`: a table comment plus the common query options.
+ * Options of `createTable`: a table comment, the table persistence and the common query options.
  *
  * @example
  * ```ts
  * const options: CreateTableOptions = { comment: 'Blog posts', transaction };
  * await queryInterface.createTable('posts', { title: DataTypes.STRING }, options);
+ * await queryInterface.createTable('scratch', { n: DataTypes.INTEGER }, { temporary: true, transaction });
  * ```
  */
 export type CreateTableOptions = QueryOptionsBase &
   Readonly<{
     /** Table comment. */
     comment?: string;
+    /** `CREATE UNLOGGED TABLE`: not written to the WAL, faster writes, emptied after a crash and not replicated. */
+    unlogged?: boolean;
+    /** `CREATE TEMPORARY TABLE`: lives as long as the database session (one pooled connection, so pass a `transaction` or use `pool.max = 1`), is dropped automatically and cannot have a schema. Cannot be combined with `unlogged`. */
+    temporary?: boolean;
   }>;
 
 /**

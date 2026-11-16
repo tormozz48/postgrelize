@@ -5,6 +5,7 @@ import { DdlGuards } from './ddl-guards.ts';
 import type {
   ColumnDefinition,
   ConstraintOptions,
+  CreateTableOptions,
   DeferrableValue,
   IndexField,
   IndexOptions,
@@ -132,13 +133,13 @@ export class DdlGenerator {
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param columns - Column definitions.
-   * @param options - Table comment, default schema and `ifNotExists` (default true).
+   * @param options - Table comment, persistence (`unlogged`, `temporary`), default schema and `ifNotExists` (default true).
    * @returns Statements in execution order.
    */
   createTableSql(
     table: TableName,
     columns: readonly ColumnDefinition[],
-    options: Readonly<{ comment?: string; defaultSchema?: string; ifNotExists?: boolean }> = {},
+    options: CreateTableOptions = {},
   ): readonly string[] {
     return this.#tables.createTableSql(table, columns, options);
   }

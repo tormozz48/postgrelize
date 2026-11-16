@@ -150,6 +150,8 @@ export type ColumnSqlOptions = Readonly<{ inlinePrimaryKey?: boolean; defaultSch
 /** Options of `CREATE TABLE`. */
 export type CreateTableOptions = Readonly<{
   comment?: string;
+  unlogged?: boolean;
+  temporary?: boolean;
   defaultSchema?: string;
   ifNotExists?: boolean;
 }>;

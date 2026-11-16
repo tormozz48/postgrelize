@@ -174,7 +174,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DDL, feature: 'Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH)', minPg: '16', status: 'planned', note: 'Workaround: raw DDL; queries against the parent table work.' },
   { area: DDL, feature: 'Extensions (CREATE EXTENSION)', minPg: '16', status: 'supported', test: t(OBJECTS, 'creates and drops an extension'), note: '`createExtension`, `dropExtension` with `ifNotExists`, `schema`, `version`, `cascade`.' },
   { area: DDL, feature: 'Row-level security policies', minPg: '16', status: 'supported', test: t(OBJECTS, 'enforces policies for a non-owner role'), note: '`enableRowLevelSecurity`, `disableRowLevelSecurity`, `createPolicy`, `alterPolicy`, `dropPolicy`; string conditions are trusted SQL, where objects are escaped.' },
-  { area: DDL, feature: 'UNLOGGED and TEMPORARY tables', minPg: '16', status: 'planned', note: 'No `createTable` option. Workaround: raw DDL.' },
+  { area: DDL, feature: 'UNLOGGED and TEMPORARY tables', minPg: '16', status: 'supported', test: t(OBJECTS, 'creates unlogged tables with createTable and with models'), note: '`unlogged` and `temporary` options on `createTable` and on model options (`sync`); a temporary table lives in one session, so use a transaction.' },
   { area: DDL, feature: 'Rules (CREATE RULE)', minPg: '16', status: 'out-of-scope', note: 'Legacy mechanism; triggers and views cover the use cases.' },
 
   // Session features

@@ -51,6 +51,14 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - **A string condition is SQL you write**: not escaped, never build it from user input. A where object (`{ edits: { [Op.gt]: 0 } }`) compiles like a partial-index condition and its values are escaped as literals. See [Security](/security).
 - Policies usually read a per-request setting. Set it with the `settings` option of a transaction ([Sessions](/guide/sessions)) and refer to it with `current_setting('app.tenant_id')::int`.
 
+## Unlogged and temporary tables
+
+<<< @/examples/schema-objects.ts#persistence{ts}
+
+- `unlogged: true` (on `createTable` options and on the model options used by `sync`) creates an `UNLOGGED` table: writes skip the write-ahead log, so they are faster, but the table is emptied after a crash and is not replicated. Use it for caches and staging data.
+- `temporary: true` creates a `TEMPORARY` table that exists only for the database session and is dropped when the connection closes. A pool hands out different connections, so create and use the table inside one transaction (pass `transaction`), or run with a single connection. A temporary table cannot have a `schema`, and it cannot be combined with `unlogged`.
+- Existing tables are not converted: `sync({ alter: true })` does not change the persistence of a table that already exists.
+
 ## API reference
 
 - [`QueryInterface`](/api/classes/QueryInterface)

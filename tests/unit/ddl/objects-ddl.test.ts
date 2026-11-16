@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtensionDdl } from '../../../src/ddl/extension-ddl.ts';
+import { DdlGenerator } from '../../../src/ddl/ddl-generator.ts';
 import { SequenceDdl } from '../../../src/ddl/sequence-ddl.ts';
 
 const extension = new ExtensionDdl();
@@ -72,5 +73,28 @@ describe('sequence DDL', () => {
       /whole number/,
     );
     expect(() => sequence.alterSql('s', {})).toThrow(/at least one/);
+  });
+});
+
+describe('table persistence', () => {
+  const ddl = new DdlGenerator();
+
+  it('renders UNLOGGED and TEMPORARY tables', () => {
+    expect(ddl.createTableSql('t', [], { unlogged: true })[0]).toBe(
+      'CREATE UNLOGGED TABLE IF NOT EXISTS "t" ()',
+    );
+    expect(
+      ddl.createTableSql('t', [], { temporary: true, defaultSchema: 's', ifNotExists: false })[0],
+    ).toBe('CREATE TEMPORARY TABLE "t" ()');
+    expect(ddl.createTableSql('t', [], { unlogged: false })[0]).toBe(
+      'CREATE TABLE IF NOT EXISTS "t" ()',
+    );
+  });
+
+  it('rejects temporary tables with a schema or with unlogged', () => {
+    expect(() =>
+      ddl.createTableSql({ tableName: 't', schema: 's' }, [], { temporary: true }),
+    ).toThrow(/schema/);
+    expect(() => ddl.createTableSql('t', [], { temporary: true, unlogged: true })).toThrow(/both/);
   });
 });
