@@ -14,6 +14,9 @@ const noContext = new WhereCompiler({ resolve: () => undefined });
 
 const sqlLiteral = new SqlLiteral();
 
+/** Types whose object defaults are serialized to their text form before escaping. */
+const SERIALIZED_DEFAULTS = /^(HSTORE|POINT|LINE|LSEG|BOX|PATH|POLYGON|CIRCLE)$/;
+
 /**
  * Column parts of DDL: the SQL type, `DEFAULT`, `REFERENCES`, column definitions and comments.
  *
@@ -97,7 +100,9 @@ export class ColumnDdl {
     if (column.type.isJson === true) {
       return sqlLiteral.escape(JSON.stringify(value));
     }
-    return sqlLiteral.escape(column.type.key === 'HSTORE' ? column.type.serialize?.(value) : value);
+    return sqlLiteral.escape(
+      SERIALIZED_DEFAULTS.test(column.type.key) ? column.type.serialize?.(value) : value,
+    );
   }
 
   /**

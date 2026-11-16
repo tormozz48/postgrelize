@@ -26,6 +26,7 @@ export type FeatureRow = Readonly<{
 
 const PG = 'tests/integration/pg-coverage.test.ts';
 const TYPES_I = 'tests/integration/types-i.test.ts';
+const TYPES_II = 'tests/integration/types-ii.test.ts';
 const POWER = 'tests/integration/query-power.test.ts';
 const WRITE = 'tests/integration/write-power.test.ts';
 const CONFLICT = 'tests/integration/on-conflict.test.ts';
@@ -114,7 +115,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: OPS, feature: 'Full-text search match (@@)', minPg: '16', status: 'supported', test: t(PG, 'stores tsvector and matches it with a tsquery'), note: '`Op.match` with `fn("to_tsquery", …)` / `fn("websearch_to_tsquery", …)`.' },
   { area: OPS, feature: 'Full-text ranking and highlighting (ts_rank, ts_headline, setweight)', minPg: '16', status: 'supported', test: t(OPH, 'searches, ranks and highlights text'), note: '`tsRank` (also `ts_rank_cd`), `tsHeadline`, `setWeight`, `toTsVector`, `toTsQuery`, `plainToTsQuery`, `phraseToTsQuery`, `websearchToTsQuery` with an optional configuration.' },
   { area: OPS, feature: 'Network operators (<<, <<=, >>, >>=, host(), network())', minPg: '16', status: 'supported', test: t(OPH, 'filters inet and cidr with subnet operators'), note: '`Op.strictLeft`, `Op.strictRight`, `Op.containedOrEqual`, `Op.containsOrEqual`, `Op.overlap`; `host()` and `network()` through `fn()`.' },
-  { area: OPS, feature: 'Geometric operators and functions', minPg: '16', status: 'planned', note: 'Needs the geometric data types first.' },
+  { area: OPS, feature: 'Geometric operators and functions', minPg: '16', status: 'supported', test: t(TYPES_II, 'filters with geometric operators'), note: '`Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft`, `Op.strictRight` on geometric columns; operands of another type need `cast()`; `<->`, `?#` and functions through `literal()` / `fn()`.' },
   { area: OPS, feature: 'hstore operators (->, ?, @>)', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips hstore as objects and filters with hstore operators'), note: '`Op.contains` and `Op.eq` take objects; `->`, `?` and other operators through `literal()`.' },
   { area: OPS, feature: 'ltree operators (@>, <@, ~, ?)', minPg: '16', status: 'literal', note: 'Equality and `IN` work on `DataTypes.LTREE` columns; `<@`, `@>`, `~` and `?` through `literal()` (see the ltree row in Data types).' },
   { area: OPS, feature: 'pg_trgm similarity (%, similarity(), word_similarity())', minPg: '16', status: 'supported', test: t(OPH, 'filters and orders by pg_trgm similarity'), note: '`Op.trigramSimilar` and word variants, `trigramSimilarity()`, `trigramWordSimilarity()`, `trigramDistance()` (`<->`); needs `CREATE EXTENSION pg_trgm`; the `gin_trgm_ops` index uses the `operator` index option.' },
@@ -143,7 +144,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: TYPES, feature: 'uuid', minPg: '16', status: 'supported', test: t(PG, 'round-trips uuid, bytea, jsonb and arrays'), note: '`DataTypes.UUID` with `UUIDV4` client default.' },
   { area: TYPES, feature: 'inet, cidr, macaddr', minPg: '16', status: 'supported', test: t(PG, 'round-trips inet, cidr, macaddr and interval'), note: '`DataTypes.INET`, `CIDR`, `MACADDR`.' },
   { area: TYPES, feature: 'macaddr8', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips macaddr8'), note: '`DataTypes.MACADDR8`.' },
-  { area: TYPES, feature: 'geometric types (point, line, lseg, box, path, polygon, circle)', minPg: '16', status: 'planned', note: 'No data types or value mapping yet.' },
+  { area: TYPES, feature: 'geometric types (point, line, lseg, box, path, polygon, circle)', minPg: '16', status: 'supported', test: t(TYPES_II, 'round-trips every geometric type'), note: '`DataTypes.POINT`, `LINE`, `LSEG`, `BOX`, `PATH`, `POLYGON`, `CIRCLE` with object / point-array values.' },
   { area: TYPES, feature: 'tsvector', minPg: '16', status: 'supported', test: t(PG, 'stores tsvector and matches it with a tsquery'), note: '`DataTypes.TSVECTOR`.' },
   { area: TYPES, feature: 'tsquery', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips tsquery and matches tsvector against it'), note: '`DataTypes.TSQUERY`; values are query strings (`\'fat\' & \'rat\'`).' },
   { area: TYPES, feature: 'pg_lsn, txid_snapshot and other system types', minPg: '16', status: 'out-of-scope', note: 'Replication and internals types; read through raw queries.' },

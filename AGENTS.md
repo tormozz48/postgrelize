@@ -222,6 +222,7 @@ Everything lives in `.10x/`:
 | [022](.10x/adrs/022-public-decorator-api.md)             | Public model decorator API, `sequelize.addModels`             | Accepted                                              |
 | [023](.10x/adrs/023-named-prepared-statements.md)        | Opt-in named prepared statements (`statementCache`)           | Accepted                                              |
 | [025](.10x/adrs/025-ddl-object-names-and-trusted-sql.md) | DDL object APIs: quoted names, guarded fragments, trusted SQL | Accepted                                              |
+| [026](.10x/adrs/026-types-ii-value-mapping.md)           | Value shapes of geometric, multirange, composite, PostGIS     | Accepted                                              |
 
 ## Git, PRs and releases
 
