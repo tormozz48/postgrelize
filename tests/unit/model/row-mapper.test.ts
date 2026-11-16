@@ -56,3 +56,33 @@ describe('RowMapper.parseOwned', () => {
     expect(Object.keys(owned)).toEqual(Object.keys(copied));
   });
 });
+
+describe('RowMapper.parseAllOwned', () => {
+  it('applies parsers in place to every row and returns the same rows', () => {
+    const rows = [
+      { id: 1, at: stamp, title: 't' },
+      { id: 2, at: null, title: 'u' },
+    ];
+    const parsed = rowMapper.parseAllOwned(definition, rows);
+    expect(parsed[0]).toBe(rows[0]);
+    expect(parsed).toEqual([
+      { id: 1, at: new Date(stamp), title: 't' },
+      { id: 2, at: null, title: 'u' },
+    ]);
+  });
+
+  it('returns rows without parsers untouched and handles an empty result', () => {
+    const rows = [{ id: 1, title: 't' }];
+    expect(rowMapper.parseAllOwned(definition, rows)).toBe(rows);
+    expect(rowMapper.parseAllOwned(definition, [])).toEqual([]);
+  });
+
+  it('matches parse for every row when a column is renamed', () => {
+    const parsed = rowMapper.parseAllOwned(definition, [make(), make()]);
+    expect(parsed).toEqual([
+      rowMapper.parse(definition, make()),
+      rowMapper.parse(definition, make()),
+    ]);
+    expect(Object.keys(parsed[0] ?? {})).toEqual(Object.keys(rowMapper.parse(definition, make())));
+  });
+});

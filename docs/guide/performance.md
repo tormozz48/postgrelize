@@ -25,7 +25,7 @@ The benchmark (`bench/`) runs the same scenarios on postgrelize and on `sequeliz
 | `build` + `toJSON`                            |               2.1 |             3.1× |
 | model definition                              |                17 |             8.3× |
 
-Measured on one developer machine (Node 24; no database involved in stub mode); absolute numbers differ on yours, the ratios are what to compare. Against a real database a statement spends most of its time in the network and in PostgreSQL, so the end-to-end difference is smaller: in database mode postgrelize used 1.1–2.4× less CPU than v6 per operation, and read 10 000 rows at about 255 000 rows/s (344 000 rows/s with `raw: true`).
+Measured on one developer machine (Node 24; no database involved in stub mode); absolute numbers differ on yours, the ratios are what to compare. Against a real database a statement spends most of its time in the network and in PostgreSQL, so the end-to-end difference is smaller: in database mode postgrelize used 1.1–2.4× less CPU than v6 per operation (`raw: true` reads of 10 000 rows about 1.1× less), and read 10 000 rows at about 255 000 rows/s (344 000 rows/s with `raw: true`).
 
 Run it yourself:
 
