@@ -113,7 +113,10 @@ Column kinds that Sequelize v6 cannot create:
 
 <<< @/examples/models.ts#postgres-columns{ts}
 
-- `identity: 'always'` or `'byDefault'` creates `GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY` instead of `SERIAL`. To write an explicit value into a `GENERATED ALWAYS` column, pass `overriding: 'system'` to `create`, `bulkCreate`, `upsert` or `insert`.
+- `identity: 'always'` or `'byDefault'` creates `GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY` instead of `SERIAL`. To write an explicit value into a `GENERATED ALWAYS` column (for example when importing rows with their ids), pass `overriding: 'system'` to `create`, `bulkCreate`, `upsert` or `insert`; `overriding: 'user'` makes a `BY DEFAULT` column ignore the supplied value.
+
+<<< @/examples/models.ts#overriding{ts}
+
 - `generated: { as: expression }` creates a stored generated column. postgrelize never writes it in `INSERT` or `UPDATE` and reads the computed value back after each write. `generated: { as, stored: false }` creates a virtual generated column, which needs PostgreSQL 18.
 - `INTERVAL` is a plain data type here; Sequelize v6 has no interval type.
 

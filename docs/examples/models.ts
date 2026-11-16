@@ -75,6 +75,16 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // line.get('id') === '1' (BIGINT is returned as a string), line.get('total') === '10.00'
   // #endregion use
 
+  // #region overriding
+  const imported = await Line.create(
+    { id: '500', price: '1.00', qty: 1 },
+    { overriding: 'system' },
+  ); // GENERATED ALWAYS rejects an explicit id unless `overriding` says so
+  // #endregion overriding
+  if (imported.get('id') !== '500') {
+    throw new Error('overriding: "system" did not write the explicit identity value');
+  }
+
   // #region schema
   await sequelize.createSchema('tenant_a');
   const TenantOrder = Order.schema('tenant_a');
