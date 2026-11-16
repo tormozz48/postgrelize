@@ -67,7 +67,32 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     rejected = true;
   }
   await queryInterface.dropTable('accounts');
-  if (!rejected || !overlap) {
+
+  // #region partitioning
+  await queryInterface.createTable(
+    'events',
+    { at: DataTypes.DATE, kind: DataTypes.TEXT },
+    { partitionBy: { strategy: 'range', columns: ['at'] } },
+  );
+  await queryInterface.createPartition('events', 'events_2026', {
+    from: ['2026-01-01'],
+    to: ['2027-01-01'],
+  });
+  await queryInterface.createPartition('events', 'events_other', { default: true });
+  await queryInterface.createTable('events_2027', { at: DataTypes.DATE, kind: DataTypes.TEXT });
+  await queryInterface.attachPartition('events', 'events_2027', {
+    from: ['2027-01-01'],
+    to: ['2028-01-01'],
+  });
+  await queryInterface.detachPartition('events', 'events_2026');
+  // #endregion partitioning
+  await sequelize.query("INSERT INTO events VALUES ('2027-05-01', 'x'), ('2030-01-01', 'y')");
+  const [placed] = (await sequelize.query(
+    "SELECT tableoid::regclass::text AS part FROM events WHERE kind = 'x'",
+  )) as [{ part: string }[], unknown];
+  await queryInterface.dropTable('events', { cascade: true });
+  await queryInterface.dropTable('events_2026');
+  if (!rejected || !overlap || !placed[0]?.part.endsWith('events_2027')) {
     throw new Error('constraints and indexes example: unexpected result');
   }
 };

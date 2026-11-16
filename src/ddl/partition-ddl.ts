@@ -16,7 +16,19 @@ const sqlLiteral = new SqlLiteral();
 
 const STRATEGIES: ReadonlySet<string> = new Set<PartitionStrategy>(['range', 'list', 'hash']);
 
-/** Options of `createPartition`. */
+/**
+ * Options of `createPartition`.
+ *
+ * @example
+ * ```ts
+ * await queryInterface.createPartition(
+ *   'events',
+ *   'events_2026',
+ *   { from: ['2026-01-01'], to: ['2027-01-01'] },
+ *   { ifNotExists: true, partitionBy: { strategy: 'list', columns: ['kind'] } },
+ * );
+ * ```
+ */
 export type CreatePartitionOptions = Readonly<{
   /** Makes the partition itself partitioned. */
   partitionBy?: PartitionKey;
@@ -24,7 +36,14 @@ export type CreatePartitionOptions = Readonly<{
   ifNotExists?: boolean;
 }>;
 
-/** Options of `detachPartition`. */
+/**
+ * Options of `detachPartition`.
+ *
+ * @example
+ * ```ts
+ * await queryInterface.detachPartition('events', 'events_2026', { concurrently: true });
+ * ```
+ */
 export type DetachPartitionOptions = Readonly<{
   /** `DETACH PARTITION ... CONCURRENTLY` (cannot run inside a transaction). */
   concurrently?: boolean;

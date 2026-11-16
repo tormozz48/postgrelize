@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DataTypes } from '../../../src/index.ts';
 import { PAYLOADS, settle, withCanary } from '../../support/injection.ts';
 
 const syntaxError = (result: unknown): boolean =>
@@ -122,6 +123,66 @@ describe('constraint names, operators and methods cannot break out', () => {
           }),
         );
         expect(syntaxError(result)).toBe(false);
+      }
+    }));
+});
+
+describe('partition names, keys and bounds cannot break out', () => {
+  it('quotes partition names and renders bound values as literals', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await queryInterface.createTable(
+        'parted',
+        { id: DataTypes.INTEGER, label: DataTypes.TEXT },
+        { partitionBy: { strategy: 'list', columns: ['label'] } },
+      );
+      for (const payload of PAYLOADS) {
+        const created = await settle(
+          queryInterface.createPartition('parted', payload, { in: [payload] }),
+        );
+        expect(syntaxError(created)).toBe(false);
+        const attached = await settle(
+          queryInterface.attachPartition('parted', payload, { in: [payload] }),
+        );
+        expect(syntaxError(attached)).toBe(false);
+        expect(syntaxError(await settle(queryInterface.detachPartition('parted', payload)))).toBe(
+          false,
+        );
+        await settle(queryInterface.dropTable(payload));
+      }
+    }));
+
+  it('rejects payload strategies, moduli and keys before sending SQL', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      for (const payload of PAYLOADS) {
+        await expect(
+          queryInterface.createTable(
+            'p1',
+            { id: DataTypes.INTEGER },
+            { partitionBy: { strategy: payload as never, columns: ['id'] } },
+          ),
+        ).rejects.toThrow(/partition strategy/);
+        await expect(
+          queryInterface.createPartition('canary', 'c', {
+            modulus: payload as never,
+            remainder: 0,
+          }),
+        ).rejects.toThrow(/whole number/);
+        const keyed = await settle(
+          queryInterface.createTable(
+            'p2',
+            { id: DataTypes.INTEGER },
+            {
+              partitionBy: {
+                strategy: 'range',
+                columns: [{ name: 'id', collate: payload, operator: 'int4_ops' }, payload],
+              },
+            },
+          ),
+        );
+        expect(syntaxError(keyed)).toBe(false);
+        await settle(queryInterface.dropTable('p2'));
       }
     }));
 });

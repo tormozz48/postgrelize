@@ -78,7 +78,23 @@ export type PartitionKey = Readonly<{
  * ```
  */
 export type PartitionBoundSpec =
-  | Readonly<{ in: readonly unknown[] }>
-  | Readonly<{ from: readonly unknown[]; to: readonly unknown[] }>
-  | Readonly<{ modulus: number; remainder: number }>
-  | Readonly<{ default: true }>;
+  | Readonly<{
+      /** List partition: the values the partition holds. */
+      in: readonly unknown[];
+    }>
+  | Readonly<{
+      /** Range partition: inclusive lower bound, one value per key column. */
+      from: readonly unknown[];
+      /** Range partition: exclusive upper bound, one value per key column. */
+      to: readonly unknown[];
+    }>
+  | Readonly<{
+      /** Hash partition: modulus. */
+      modulus: number;
+      /** Hash partition: remainder, `0 <= remainder < modulus`. */
+      remainder: number;
+    }>
+  | Readonly<{
+      /** Default partition, receiving rows that match no other partition. */
+      default: true;
+    }>;

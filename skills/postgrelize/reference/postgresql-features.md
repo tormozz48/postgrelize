@@ -153,6 +153,6 @@ Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage>. 
 - **SELECT clauses**: ONLY (table inheritance)
 - **Operators and functions**: Multirange operators and functions (range_agg, unnest)
 - **Data types**: composite types; multirange types; pg_lsn, txid_snapshot and other system types; PostGIS geometry / geography
-- **DDL (sync and QueryInterface)**: Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH); Rules (CREATE RULE)
+- **DDL (sync and QueryInterface)**: Rules (CREATE RULE)
 - **Session features**: Two-phase commit (PREPARE TRANSACTION)
 - **Out of scope**: Roles, GRANT / REVOKE, default privileges; Replication setup (publications, subscriptions, slots, logical decoding); Tablespaces; VACUUM, ANALYZE, REINDEX, CLUSTER, pg_stat views; Procedural languages (PL/pgSQL bodies, DO blocks, procedures); Extension internals (writing or configuring extensions); Foreign data wrappers and foreign tables; Server configuration (ALTER SYSTEM, pg_hba.conf, event triggers)
