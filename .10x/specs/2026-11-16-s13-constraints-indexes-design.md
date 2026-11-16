@@ -1,6 +1,6 @@
 # S13: Constraints and indexes — design
 
-**Date:** 2026-11-16 · **Stage:** backlog 4 / S13 · **ADR:** [026](../adrs/026-constraint-index-partition-options.md)
+**Date:** 2026-11-16 · **Stage:** backlog 4 / S13 · **ADR:** [027](../adrs/027-constraint-index-partition-options.md)
 
 ## Scope
 Matrix rows `planned` in the DDL area: expression indexes, EXCLUDE constraints, NOT VALID + VALIDATE CONSTRAINT, PG18 NOT ENFORCED / WITHOUT OVERLAPS / FK PERIOD, declarative partitioning. New options and methods only; v6 option shapes and defaults do not change.

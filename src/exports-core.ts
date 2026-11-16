@@ -3,6 +3,10 @@ export type {
   DataType,
   DataTypeInput,
   DefaultValueGenerator,
+  GeoCircle,
+  GeoLine,
+  GeoPath,
+  GeoPoint,
   IntegerDataType,
   RangeBound,
 } from './data-types/data-types.ts';

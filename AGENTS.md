@@ -196,32 +196,34 @@ Everything lives in `.10x/`:
 
 ### ADR index
 
-| ADR                                                      | Decision                                                      | Status                                                |
-| -------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
-| [001](.10x/adrs/001-clean-room-typescript-v6-dropin.md)  | Clean-room TypeScript, Sequelize v6 drop-in, PostgreSQL only  | Accepted                                              |
-| [002](.10x/adrs/002-pg-driver-bound-parameters.md)       | `pg` driver, always-bound parameters                          | Accepted                                              |
-| [003](.10x/adrs/003-on-conflict-extension-api.md)        | `onConflict` option and `Model.insert()`                      | Accepted                                              |
-| [004](.10x/adrs/004-differential-compat-testing.md)      | Differential testing against sequelize@6                      | Accepted                                              |
-| [005](.10x/adrs/005-functional-core-class-shell.md)      | Functional core, thin class shell                             | Superseded by 018                                     |
-| [006](.10x/adrs/006-ci-cd-github-actions-packages.md)    | CI/CD on GitHub Actions, GitHub Packages                      | Accepted                                              |
-| [007](.10x/adrs/007-typed-public-api-typedoc-pages.md)   | Typed public API, mandatory TSDoc, docs on Pages              | Accepted (site moved to VitePress + TypeDoc markdown) |
-| [008](.10x/adrs/008-model-lifecycle-validation.md)       | Hook pipeline, validator.js + Standard Schema                 | Accepted                                              |
-| [009](.10x/adrs/009-eager-loading-join-strategy.md)      | Eager loading via v6 JOIN strategy                            | Accepted                                              |
-| [010](.10x/adrs/010-ddl-literals.md)                     | DDL with escaped literals                                     | Accepted                                              |
-| [011](.10x/adrs/011-subquery-expressions.md)             | Subqueries as expressions                                     | Accepted                                              |
-| [012](.10x/adrs/012-connection-features.md)              | Connection features without extra deps                        | Accepted                                              |
-| [013](.10x/adrs/013-cte-and-copy-to.md)                  | CTE options, COPY TO                                          | Accepted                                              |
-| [014](.10x/adrs/014-replica-routing.md)                  | Read replica routing                                          | Accepted                                              |
-| [015](.10x/adrs/015-returning-old-include-scopes.md)     | `returningOld`, scopes of includes                            | Accepted                                              |
-| [016](.10x/adrs/016-v6-bug-divergence.md)                | Fix inherited v6 bugs by default                              | Accepted                                              |
-| [017](.10x/adrs/017-effect-core.md)                      | Effect as internal effect system                              | Superseded by 018                                     |
-| [018](.10x/adrs/018-oop-architecture.md)                 | OOP architecture, no Effect                                   | Accepted                                              |
-| [019](.10x/adrs/019-documentation-sync.md)               | `AGENTS.md` and documentation sync rules                      | Accepted                                              |
-| [020](.10x/adrs/020-injection-assurance.md)              | SQL-injection assurance policy                                | Accepted                                              |
-| [021](.10x/adrs/021-decorators-mixins-size-limits.md)    | TC39 decorators, mixins, size limits                          | Accepted                                              |
-| [022](.10x/adrs/022-public-decorator-api.md)             | Public model decorator API, `sequelize.addModels`             | Accepted                                              |
-| [023](.10x/adrs/023-named-prepared-statements.md)        | Opt-in named prepared statements (`statementCache`)           | Accepted                                              |
-| [025](.10x/adrs/025-ddl-object-names-and-trusted-sql.md) | DDL object APIs: quoted names, guarded fragments, trusted SQL | Accepted                                              |
+| ADR                                                        | Decision                                                      | Status                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| [001](.10x/adrs/001-clean-room-typescript-v6-dropin.md)    | Clean-room TypeScript, Sequelize v6 drop-in, PostgreSQL only  | Accepted                                              |
+| [002](.10x/adrs/002-pg-driver-bound-parameters.md)         | `pg` driver, always-bound parameters                          | Accepted                                              |
+| [003](.10x/adrs/003-on-conflict-extension-api.md)          | `onConflict` option and `Model.insert()`                      | Accepted                                              |
+| [004](.10x/adrs/004-differential-compat-testing.md)        | Differential testing against sequelize@6                      | Accepted                                              |
+| [005](.10x/adrs/005-functional-core-class-shell.md)        | Functional core, thin class shell                             | Superseded by 018                                     |
+| [006](.10x/adrs/006-ci-cd-github-actions-packages.md)      | CI/CD on GitHub Actions, GitHub Packages                      | Accepted                                              |
+| [007](.10x/adrs/007-typed-public-api-typedoc-pages.md)     | Typed public API, mandatory TSDoc, docs on Pages              | Accepted (site moved to VitePress + TypeDoc markdown) |
+| [008](.10x/adrs/008-model-lifecycle-validation.md)         | Hook pipeline, validator.js + Standard Schema                 | Accepted                                              |
+| [009](.10x/adrs/009-eager-loading-join-strategy.md)        | Eager loading via v6 JOIN strategy                            | Accepted                                              |
+| [010](.10x/adrs/010-ddl-literals.md)                       | DDL with escaped literals                                     | Accepted                                              |
+| [011](.10x/adrs/011-subquery-expressions.md)               | Subqueries as expressions                                     | Accepted                                              |
+| [012](.10x/adrs/012-connection-features.md)                | Connection features without extra deps                        | Accepted                                              |
+| [013](.10x/adrs/013-cte-and-copy-to.md)                    | CTE options, COPY TO                                          | Accepted                                              |
+| [014](.10x/adrs/014-replica-routing.md)                    | Read replica routing                                          | Accepted                                              |
+| [015](.10x/adrs/015-returning-old-include-scopes.md)       | `returningOld`, scopes of includes                            | Accepted                                              |
+| [016](.10x/adrs/016-v6-bug-divergence.md)                  | Fix inherited v6 bugs by default                              | Accepted                                              |
+| [017](.10x/adrs/017-effect-core.md)                        | Effect as internal effect system                              | Superseded by 018                                     |
+| [018](.10x/adrs/018-oop-architecture.md)                   | OOP architecture, no Effect                                   | Accepted                                              |
+| [019](.10x/adrs/019-documentation-sync.md)                 | `AGENTS.md` and documentation sync rules                      | Accepted                                              |
+| [020](.10x/adrs/020-injection-assurance.md)                | SQL-injection assurance policy                                | Accepted                                              |
+| [021](.10x/adrs/021-decorators-mixins-size-limits.md)      | TC39 decorators, mixins, size limits                          | Accepted                                              |
+| [022](.10x/adrs/022-public-decorator-api.md)               | Public model decorator API, `sequelize.addModels`             | Accepted                                              |
+| [023](.10x/adrs/023-named-prepared-statements.md)          | Opt-in named prepared statements (`statementCache`)           | Accepted                                              |
+| [025](.10x/adrs/025-ddl-object-names-and-trusted-sql.md)   | DDL object APIs: quoted names, guarded fragments, trusted SQL | Accepted                                              |
+| [027](.10x/adrs/027-constraint-index-partition-options.md) | Constraint, index-expression and partition options            | Accepted                                              |
+| [026](.10x/adrs/026-types-ii-value-mapping.md)             | Value shapes of geometric, multirange, composite, PostGIS     | Accepted                                              |
 
 ## Git, PRs and releases
 

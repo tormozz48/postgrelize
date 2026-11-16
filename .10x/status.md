@@ -11,6 +11,7 @@
 **S12 (Set operations and FROM sources):** done — set operations (`Subquery#union/intersect/except`), `source: Subquery`, `withTies`, `from` sources (`values`, `function` + ordinality, `jsonTable` PG17, `lateral`, `{ model, sample }`), `sample` (TABLESAMPLE), lateral top-N includes, data-modifying CTEs (`Model.insert/update/deleteStatement`), CTE `search` / `cycle`; 8 matrix rows flipped; spec `.10x/specs/2026-11-15-s12-set-ops-from-design.md`, ADR-024. Not modelled: `NESTED PATH` in JSON_TABLE, `INSERT … SELECT FROM cte` as main statement.
 
 **S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.
+**S15 (Types II):** in progress — spec `.10x/specs/2026-11-16-s15-types-ii-design.md`, ADR-026. PR 1 geometric types (`POINT` … `CIRCLE`); next multirange, composite, PostGIS.
 
 **S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
@@ -168,9 +169,12 @@
 ## Release 0.10.0 (2026-11-16)
 - Tag `v0.10.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.10.0` published. Contents: S12 set operations, LATERAL, FROM sources, data-modifying CTEs, CTE SEARCH/CYCLE; S14 types (HSTORE objects, ltree, MONEY, XML, BIT, TSQUERY, …); S16 opt-in `statementCache` (ADR-023), DEFERRABLE, statement timeout, UNNEST bulk insert; S10b faster raw reads; logo. `main` now requires a pull request: the release commit goes through a PR. Open: bench gate showed `bulkCreate 100` at +10.7% under load (S10b re-checked it).
 
+## Release 0.11.0 (2026-11-16)
+- Tag `v0.11.0` → release.yml, `@tormozz48/postgrelize@0.11.0`. Contents: S11 DDL objects (extensions, sequences, views and materialized views, functions and triggers, RLS policies, UNLOGGED/TEMPORARY tables; ADR-025) and S17 operator helpers (SIMILAR TO, jsonpath, full-text, network operators, `pg_trgm`). Next: S13 constraints/indexes/partitioning and S15 types II (running).
+
 
 ## Backlog 4 / S13 constraints and indexes (2026-11-16)
-Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-026.
+Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - [x] PR 1: expression indexes (`{ expression }` index fields, `nulls`)
 - [x] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
 - [ ] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
