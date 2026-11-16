@@ -68,6 +68,8 @@ export class ModelTables {
         ...(definition.options.comment === undefined
           ? {}
           : { comment: definition.options.comment }),
+        ...(definition.options.unlogged === true ? { unlogged: true } : {}),
+        ...(definition.options.temporary === true ? { temporary: true } : {}),
         ...(schema === undefined ? {} : { defaultSchema: schema }),
       },
     );
