@@ -45,3 +45,66 @@ describe('index fields cannot break out of their quoting', () => {
       }
     }));
 });
+
+describe('constraint names, operators and methods cannot break out', () => {
+  it('quotes constraint names and validateConstraint arguments', () =>
+    withCanary(async ({ sequelize, schema }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      for (const payload of PAYLOADS) {
+        const added = await settle(
+          queryInterface.addConstraint('canary', {
+            type: 'check',
+            name: payload,
+            fields: ['id'],
+            where: { id: 1 },
+            notValid: true,
+          }),
+        );
+        expect(syntaxError(added)).toBe(false);
+        expect(
+          syntaxError(await settle(queryInterface.validateConstraint('canary', payload))),
+        ).toBe(false);
+        expect(
+          syntaxError(
+            await settle(
+              queryInterface.validateConstraint({ tableName: payload, schema }, payload),
+            ),
+          ),
+        ).toBe(false);
+        await settle(queryInterface.removeConstraint('canary', payload));
+      }
+    }));
+
+  it('rejects payload operators and methods before sending SQL; quotes element columns', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      for (const payload of PAYLOADS) {
+        const base = { type: 'exclude' as const, name: 'e' };
+        await expect(
+          queryInterface.addConstraint('canary', {
+            ...base,
+            exclude: [{ name: 'id', with: payload }],
+          }),
+        ).rejects.toThrow(/Invalid operator/);
+        const method = await settle(
+          queryInterface.addConstraint('canary', {
+            ...base,
+            using: payload,
+            exclude: [{ name: 'id', with: '=' }],
+          }),
+        );
+        expect(syntaxError(method)).toBe(false);
+        for (const element of [
+          { name: payload, with: '=' },
+          { name: 'id', collate: payload, with: '=' },
+          { name: 'id', operator: payload, with: '=' },
+        ]) {
+          const result = await settle(
+            queryInterface.addConstraint('canary', { ...base, exclude: [element] }),
+          );
+          expect(syntaxError(result)).toBe(false);
+          await settle(queryInterface.removeConstraint('canary', 'e'));
+        }
+      }
+    }));
+});

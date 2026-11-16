@@ -3,9 +3,12 @@ import { SqlCompiler } from '../sql/compile.ts';
 import { WhereCompiler } from '../where/where.ts';
 import { DdlGuards } from './ddl-guards.ts';
 import type { IndexField, IndexOptions } from './ddl-types.ts';
+import { IndexElementDdl } from './index-element-ddl.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
 
 const guards = new DdlGuards();
+
+const elements = new IndexElementDdl();
 
 const identity = new WhereCompiler({ resolve: (field) => ({ field }) });
 
@@ -52,7 +55,7 @@ export class IndexDdl {
     if (fields.length === 0) {
       throw new Error('Index requires at least one field');
     }
-    const columns = fields.map((field) => this.#column(field, options.operator)).join(', ');
+    const columns = fields.map((field) => elements.elementSql(field, options.operator)).join(', ');
     const where = this.#whereSql(options.where);
     return [
       this.#head(options),
@@ -73,31 +76,5 @@ export class IndexDdl {
 
   #head(options: IndexOptions): string {
     return `CREATE ${options.unique === true ? 'UNIQUE ' : ''}INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}${options.ifNotExists === true ? 'IF NOT EXISTS ' : ''}`;
-  }
-
-  #column(field: IndexField, operator: string | undefined): string {
-    if (typeof field === 'string') {
-      return `${SqlCompiler.quoteIdent(field)}${this.#operatorClass(operator)}`;
-    }
-    return [
-      field.expression === undefined
-        ? SqlCompiler.quoteIdent(field.name)
-        : this.#expression(field.expression),
-      field.collate === undefined ? '' : ` COLLATE ${SqlCompiler.quoteIdent(field.collate)}`,
-      this.#operatorClass(field.operator ?? operator),
-      field.order === undefined ? '' : ` ${field.order === 'DESC' ? 'DESC' : 'ASC'}`,
-      field.nulls === undefined ? '' : ` NULLS ${field.nulls === 'FIRST' ? 'FIRST' : 'LAST'}`,
-    ].join('');
-  }
-
-  #expression(expression: string): string {
-    if (typeof expression !== 'string' || expression.trim() === '') {
-      throw new Error('Index expression must be a non-empty SQL string');
-    }
-    return `(${expression})`;
-  }
-
-  #operatorClass(operator: string | undefined): string {
-    return operator === undefined ? '' : ` ${guards.word(operator, 'operator class')}`;
   }
 }

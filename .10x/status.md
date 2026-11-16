@@ -176,6 +176,6 @@
 ## Backlog 4 / S13 constraints and indexes (2026-11-16)
 Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - [x] PR 1: expression indexes (`{ expression }` index fields, `nulls`)
-- [ ] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
+- [x] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
 - [ ] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
 - [ ] PR 4: declarative partitioning
