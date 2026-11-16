@@ -39,6 +39,20 @@ export type {
   SequenceNumber,
   SequenceOwner,
 } from './ddl/sequence-ddl.ts';
+export type {
+  CreateFunctionOptions,
+  DropFunctionOptions,
+  FunctionName,
+  FunctionParam,
+  FunctionVariable,
+} from './ddl/function-ddl.ts';
+export type {
+  CreateTriggerOptions,
+  DropTriggerOptions,
+  TriggerArgument,
+  TriggerEvent,
+  TriggerTiming,
+} from './ddl/trigger-ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type {

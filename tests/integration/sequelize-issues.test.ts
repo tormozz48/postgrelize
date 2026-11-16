@@ -425,4 +425,30 @@ describe('Sequelize issues fixed in postgrelize', () => {
       expect((await Doc.findOne())?.get('meta')).toEqual({ a: '1', b: 'two words' });
       expect(await Doc.count({ where: { meta: { [Op.contains]: { a: '1' } } } })).toBe(1);
     }));
+
+  // v6 renders trigger arguments as typed parameter declarations (`name type`), which PostgreSQL rejects.
+  it('createTrigger passes literal arguments to the trigger function', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query('CREATE TABLE tagged (id serial PRIMARY KEY, tag text)');
+      await queryInterface.createFunction(
+        'set_tag',
+        [],
+        'trigger',
+        'plpgsql',
+        'NEW.tag := TG_ARGV[0]; RETURN NEW;',
+      );
+      await queryInterface.createTrigger(
+        'tagged',
+        'tagged_set',
+        'before',
+        ['insert'],
+        'set_tag',
+        ['from trigger'],
+        ['FOR EACH ROW'],
+      );
+      await sequelize.query('INSERT INTO tagged DEFAULT VALUES');
+      expect(await select(sequelize, 'SELECT tag FROM tagged')).toEqual([{ tag: 'from trigger' }]);
+    }));
 });

@@ -87,3 +87,83 @@ describe('sequences', () => {
       await queryInterface.dropSequence('owned', { cascade: true });
     }));
 });
+
+describe('functions and triggers', () => {
+  it('passes literal arguments, WHEN conditions and schema-qualified names to triggers', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query('CREATE TABLE audit (id serial PRIMARY KEY, label text, n integer)');
+      await sequelize.query('CREATE TABLE things (id serial PRIMARY KEY, v integer)');
+      await queryInterface.createFunction(
+        { name: 'Log Change', schema },
+        [],
+        'trigger',
+        'plpgsql',
+        'INSERT INTO audit (label, n) VALUES (TG_ARGV[0], TG_ARGV[1]::integer); RETURN NEW;',
+        ['SECURITY INVOKER'],
+      );
+      await queryInterface.createTrigger(
+        { tableName: 'things', schema },
+        'things_log',
+        'after',
+        ['update'],
+        { name: 'Log Change', schema },
+        ["it's", 42],
+        ['FOR EACH ROW', 'WHEN (OLD.v IS DISTINCT FROM NEW.v)'],
+      );
+      await sequelize.query('INSERT INTO things (v) VALUES (1)');
+      await sequelize.query('UPDATE things SET v = 1');
+      await sequelize.query('UPDATE things SET v = 2');
+      expect(await select(sequelize, 'SELECT label, n FROM audit')).toEqual([
+        { label: "it's", n: 42 },
+      ]);
+      await queryInterface.createTrigger(
+        'things',
+        'things_log',
+        'after',
+        ['update'],
+        { name: 'Log Change', schema },
+        [],
+        ['FOR EACH STATEMENT'],
+        { replace: true },
+      );
+      await queryInterface.dropTrigger('things', 'things_log');
+      await queryInterface.dropTrigger('things', 'things_log', { ifExists: true });
+      await queryInterface.dropFunction({ name: 'Log Change', schema }, [], { cascade: true });
+    }));
+
+  it('creates deferred constraint triggers', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query('CREATE TABLE guarded (id serial PRIMARY KEY, v integer)');
+      await queryInterface.createFunction(
+        'must_be_positive',
+        [],
+        'trigger',
+        'plpgsql',
+        "IF NEW.v < 0 THEN RAISE EXCEPTION 'negative'; END IF; RETURN NULL;",
+      );
+      await queryInterface.createTrigger(
+        'guarded',
+        'guard',
+        'after_constraint',
+        ['insert'],
+        'must_be_positive',
+        [],
+        ['DEFERRABLE', 'INITIALLY DEFERRED', 'FOR EACH ROW'],
+      );
+      await sequelize.transaction(async (transaction) => {
+        await sequelize.query('INSERT INTO guarded (v) VALUES (1)', { transaction });
+      });
+      let inserted = false;
+      await expect(
+        sequelize.transaction(async (transaction) => {
+          await sequelize.query('INSERT INTO guarded (v) VALUES (-1)', { transaction });
+          inserted = true;
+        }),
+      ).rejects.toThrow(/negative/);
+      expect(inserted).toBe(true);
+    }));
+});
