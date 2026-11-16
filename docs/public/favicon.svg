@@ -1,6 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="postgrelize">
-  <rect x="9" y="8" width="10" height="50" rx="5" fill="#5850ec"/>
-  <path d="M18 20v24a19 7 0 0 0 38 0V20z" fill="#818cf8"/>
-  <path d="M18 32a19 7 0 0 0 38 0" fill="none" stroke="#5850ec" stroke-width="3"/>
-  <ellipse cx="37" cy="20" rx="19" ry="7" fill="#c7d2fe"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+  <rect x="13" y="11" width="9" height="42" rx="4.5" fill="#fff"/>
+  <clipPath id="c"><path d="M21 22v22a17 7 0 0 0 34 0V22z"/></clipPath>
+  <path d="M21 22v22a17 7 0 0 0 34 0V22z" fill="#c7d2fe"/>
+  <path d="M21 33a17 7 0 0 0 34 0" fill="none" stroke="#4f46e5" stroke-width="3" clip-path="url(#c)"/>
+  <ellipse cx="38" cy="22" rx="17" ry="7" fill="#fff"/>
 </svg>
