@@ -104,6 +104,26 @@ export type WhereOperators<V = unknown> = {
   [Op.hasAnyKeys]?: readonly string[];
   /** jsonb `?&` — all of the keys exist. PostgreSQL extension. */
   [Op.hasAllKeys]?: readonly string[];
+  /** `SIMILAR TO pattern` (SQL regular expression). PostgreSQL extension. */
+  [Op.similarTo]?: string | SqlValue;
+  /** `NOT SIMILAR TO pattern`. PostgreSQL extension. */
+  [Op.notSimilarTo]?: string | SqlValue;
+  /** jsonb `@?` — the jsonpath returns any item; the value is a jsonpath string. PostgreSQL extension. */
+  [Op.jsonPathExists]?: string | SqlValue;
+  /** `<<=` — inet/cidr subnet is contained within or equals the value. PostgreSQL extension. */
+  [Op.containedOrEqual]?: unknown;
+  /** `>>=` — inet/cidr subnet contains or equals the value. PostgreSQL extension. */
+  [Op.containsOrEqual]?: unknown;
+  /** `%` — `pg_trgm` trigram similarity above `pg_trgm.similarity_threshold`. PostgreSQL extension. */
+  [Op.trigramSimilar]?: string | SqlValue;
+  /** `<%` — `pg_trgm`: the column is similar to a part of the value. PostgreSQL extension. */
+  [Op.trigramWordSimilar]?: string | SqlValue;
+  /** `<<%` — `pg_trgm`: the column is strictly similar to a word of the value. PostgreSQL extension. */
+  [Op.trigramStrictWordSimilar]?: string | SqlValue;
+  /** `%>` — `pg_trgm`: the column has a part similar to the value. PostgreSQL extension. */
+  [Op.trigramHasSimilarWord]?: string | SqlValue;
+  /** `%>>` — `pg_trgm`: the column has a strictly similar word of the value. PostgreSQL extension. */
+  [Op.trigramHasSimilarStrictWord]?: string | SqlValue;
 };
 
 /** `{ [Op.any]: values }` / `{ [Op.all]: values }` used with comparison operators. */

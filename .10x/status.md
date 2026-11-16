@@ -6,6 +6,8 @@
 
 **S11 (DDL objects):** in progress — PR1 extensions and sequences done; next functions/triggers, views, RLS, UNLOGGED/TEMP; spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
+**S17 (Operator helpers):** done — `Op.similarTo` / `notSimilarTo`, `jsonPathExists`, `containedOrEqual` / `containsOrEqual`, `pg_trgm` `Op`s; helpers `jsonbPath`, `toTsVector` / `*ToTsQuery`, `tsRank`, `tsHeadline`, `setWeight`, `trigramSimilarity` / `trigramWordSimilarity` / `trigramDistance`; 5 `literal` rows promoted; spec `.10x/specs/2026-11-16-s17-operator-helpers-design.md`.
+
 **S12 (Set operations and FROM sources):** done — set operations (`Subquery#union/intersect/except`), `source: Subquery`, `withTies`, `from` sources (`values`, `function` + ordinality, `jsonTable` PG17, `lateral`, `{ model, sample }`), `sample` (TABLESAMPLE), lateral top-N includes, data-modifying CTEs (`Model.insert/update/deleteStatement`), CTE `search` / `cycle`; 8 matrix rows flipped; spec `.10x/specs/2026-11-15-s12-set-ops-from-design.md`, ADR-024. Not modelled: `NESTED PATH` in JSON_TABLE, `INSERT … SELECT FROM cte` as main statement.
 
 **S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.

@@ -28,6 +28,30 @@ PostgreSQL additions and fixes:
 - `{ [Op.any]: [1, 3] }` is shorthand for `= ANY($1)` with one array parameter.
 - `IN` lists with 100 or more values are sent as `= ANY($1)` with a single array parameter instead of one parameter per value. Change the threshold with the `inAsAnyThreshold` constructor option.
 
+## Operator and search helpers
+
+PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `Op` entries and expression helpers. Every value is a bound parameter; regconfig names, weights and function kinds are validated.
+
+**`SIMILAR TO`.** `Op.similarTo` / `Op.notSimilarTo` take an SQL regular expression. `%`, `_`, `|`, `*`, `+`, `?`, `{}`, `()`, `[]` and `\` are pattern syntax: escape them with `\` to match literally.
+
+<<< @/examples/operator-helpers.ts#similar-to{ts}
+
+**jsonpath.** `Op.jsonPathExists` is `@?`; `@@` for a jsonpath predicate is `where(col('attrs'), Op.match, '$.price > 10')` (use `where()` so the string is not serialized as a JSON value). `jsonbPath(kind, target, path, { vars, silent, tz })` calls `jsonb_path_exists`, `jsonb_path_match`, `jsonb_path_query`, `jsonb_path_query_first` or `jsonb_path_query_array`; `vars` are passed as one bound jsonb parameter.
+
+<<< @/examples/operator-helpers.ts#jsonpath{ts}
+
+**Network.** `Op.containedOrEqual` (`<<=`) and `Op.containsOrEqual` (`>>=`) are new; `<<`, `>>` and `&&` are `Op.strictLeft`, `Op.strictRight` and `Op.overlap`. `host()`, `network()` and the other functions go through `fn()`.
+
+<<< @/examples/operator-helpers.ts#network{ts}
+
+**Full-text search.** `toTsVector`, `toTsQuery`, `plainToTsQuery`, `phraseToTsQuery` and `websearchToTsQuery` take an optional text search configuration (`'english'`, `'pg_catalog.simple'`). `tsRank` (with `cd`, `weights`, `normalization`), `tsHeadline` and `setWeight` cover ranking and highlighting. Use `Op.match` for `@@`.
+
+<<< @/examples/operator-helpers.ts#full-text{ts}
+
+**Trigram similarity (`pg_trgm`).** Run `CREATE EXTENSION pg_trgm` first. `Op.trigramSimilar` (`%`), `Op.trigramWordSimilar` (`<%`), `Op.trigramStrictWordSimilar` (`<<%`) and the commutators `Op.trigramHasSimilarWord` (`%>`), `Op.trigramHasSimilarStrictWord` (`%>>`) filter; `trigramSimilarity`, `trigramWordSimilarity` and `trigramDistance` (`<->`) build expressions for `attributes` and `order`. The similarity threshold is the `pg_trgm.similarity_threshold` setting.
+
+<<< @/examples/operator-helpers.ts#trigram{ts}
+
 ## Selecting, ordering and paginating
 
 `attributes` selects columns (`['id', 'code']`, `{ exclude: [...] }`, `{ include: [...] }`, or `[expression, 'alias']` pairs). `order` takes `[attribute, direction]` pairs, expressions, and nested association paths. Directions are allow-listed: `ASC`, `DESC`, optionally with `NULLS FIRST` / `NULLS LAST`.

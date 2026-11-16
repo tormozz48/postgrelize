@@ -69,10 +69,21 @@ export const binaryOps: ReadonlyMap<symbol, string> = new Map<symbol, string>([
   [Op.hasKey, '?'],
   [Op.hasAnyKeys, '?|'],
   [Op.hasAllKeys, '?&'],
+  [Op.similarTo, 'SIMILAR TO'],
+  [Op.notSimilarTo, 'NOT SIMILAR TO'],
+  [Op.jsonPathExists, '@?'],
+  [Op.containedOrEqual, '<<='],
+  [Op.containsOrEqual, '>>='],
+  [Op.trigramSimilar, '%'],
+  [Op.trigramWordSimilar, '<%'],
+  [Op.trigramStrictWordSimilar, '<<%'],
+  [Op.trigramHasSimilarWord, '%>'],
+  [Op.trigramHasSimilarStrictWord, '%>>'],
 ]);
 
-/** jsonb key existence operators. */
+/** jsonb key existence and jsonpath operators; their values are never serialized as JSON. */
 export const KEY_OPERATORS: ReadonlySet<symbol> = new Set([
+  Op.jsonPathExists,
   Op.hasKey,
   Op.hasAnyKeys,
   Op.hasAllKeys,
