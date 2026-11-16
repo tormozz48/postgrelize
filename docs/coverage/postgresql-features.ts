@@ -35,6 +35,7 @@ const OPH = 'tests/integration/operator-helpers.test.ts';
 const BASE = 'tests/integration/postgrelize.test.ts';
 const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
 const SCHEMA = 'tests/integration/schema.test.ts';
+const OBJECTS = 'tests/integration/ddl-objects.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
 const CTEX = 'tests/integration/cte-extras.test.ts';
 const SETOPS = 'tests/integration/set-ops-from.test.ts';
@@ -167,10 +168,10 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DDL, feature: 'Schemas', minPg: '16', status: 'supported', test: t(QI, 'creates, lists and drops schemas through the Sequelize instance'), note: '`createSchema`, `dropSchema`, `showAllSchemas`, model `schema` option.' },
   { area: DDL, feature: 'Introspection (describeTable, showAllTables, tableExists, foreign keys)', minPg: '16', status: 'supported', test: t(ISSUES, 'describeTable reads enum values of the column type in its own schema'), note: '`QueryInterface`; every query filters by schema.' },
   { area: DDL, feature: 'Views and materialized views', minPg: '16', status: 'planned', note: 'No create/refresh API; models can already read a view defined with `freezeTableName`. Workaround: raw DDL.' },
-  { area: DDL, feature: 'Sequences (CREATE SEQUENCE, setval)', minPg: '16', status: 'planned', note: 'Serial and identity sequences are managed by `autoIncrement`. Workaround: raw DDL.' },
+  { area: DDL, feature: 'Sequences (CREATE SEQUENCE, setval)', minPg: '16', status: 'supported', test: t(OBJECTS, 'creates, advances, alters and drops a sequence'), note: '`createSequence`, `alterSequence`, `dropSequence`, `nextval`, `setval`; serial and identity sequences stay with `autoIncrement`.' },
   { area: DDL, feature: 'Functions and triggers', minPg: '16', status: 'planned', note: 'Sequelize v6 has `createFunction`, `createTrigger`; not implemented here. Workaround: raw DDL.' },
   { area: DDL, feature: 'Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH)', minPg: '16', status: 'planned', note: 'Workaround: raw DDL; queries against the parent table work.' },
-  { area: DDL, feature: 'Extensions (CREATE EXTENSION)', minPg: '16', status: 'planned', note: 'No `QueryInterface` method. Workaround: `sequelize.query("CREATE EXTENSION …")`.' },
+  { area: DDL, feature: 'Extensions (CREATE EXTENSION)', minPg: '16', status: 'supported', test: t(OBJECTS, 'creates and drops an extension'), note: '`createExtension`, `dropExtension` with `ifNotExists`, `schema`, `version`, `cascade`.' },
   { area: DDL, feature: 'Row-level security policies', minPg: '16', status: 'planned', note: 'Session variables for policies work (see `SET LOCAL`); `CREATE POLICY` and `ENABLE ROW LEVEL SECURITY` need raw DDL.' },
   { area: DDL, feature: 'UNLOGGED and TEMPORARY tables', minPg: '16', status: 'planned', note: 'No `createTable` option. Workaround: raw DDL.' },
   { area: DDL, feature: 'Rules (CREATE RULE)', minPg: '16', status: 'out-of-scope', note: 'Legacy mechanism; triggers and views cover the use cases.' },
