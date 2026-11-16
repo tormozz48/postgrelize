@@ -62,7 +62,11 @@ export class CountOperation extends ModelOperation<CountOperationServices> {
     const query = this.#filtered(definition, opts as CountOptions) as CountQuery;
     const normalized = includes.normalize(model, opts['include'] as IncludeOption | undefined);
     const select = this.#countSelect(model, query, normalized);
-    const result = await runtime.execute(compiler.compile(select), query, 'read');
+    const result = await runtime.execute(
+      compiler.compile(select),
+      query,
+      this.services.cte.route(select),
+    );
     return this.#counted(definition, query, result.rows);
   }
 

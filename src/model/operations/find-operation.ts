@@ -50,7 +50,7 @@ export class FindOperation extends FindLookups {
     const call = this.#call(model, opts);
     const threshold = runtime.inAsAnyThreshold;
     const select = finds.build(definition, call.query, call.includes, threshold);
-    const result = await runtime.execute(compiler.compile(select), call.query, 'read');
+    const result = await runtime.execute(compiler.compile(select), call.query, finds.route(select));
     const found = await this.#found(call, result.rows);
     if (opts['hooks'] === true) {
       await lifecycle.runHooks(model, 'afterFind', found, opts);

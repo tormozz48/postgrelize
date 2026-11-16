@@ -1,4 +1,4 @@
-import type { QueryNode, SetOperator } from '../sql/ast.ts';
+import type { ModifyingNode, QueryNode, SetOperator } from '../sql/ast.ts';
 import { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 
 /**
@@ -126,5 +126,28 @@ export class Exists extends SqlExpression {
   /** @internal */
   accept<R>(visitor: SqlExpressionVisitor<R>): R {
     return visitor.visitExists(this);
+  }
+}
+
+/**
+ * INSERT, UPDATE or DELETE statement for a data-modifying CTE. Created by `Model.insertStatement()`,
+ * `Model.updateStatement()` and `Model.deleteStatement()`; not executed on its own. PostgreSQL extension.
+ *
+ * @example
+ * ```ts
+ * const moved = Task.deleteStatement({ where: { done: true }, returning: true });
+ * const rows = await Task.findAll({ with: { moved }, source: 'moved' });
+ * ```
+ */
+export class WriteStatement {
+  /** Builds the statement AST (called when the outer statement is compiled). */
+  readonly build: () => ModifyingNode;
+
+  /**
+   * @param build - Builds the statement AST.
+   */
+  constructor(build: () => ModifyingNode) {
+    this.build = build;
+    Object.freeze(this);
   }
 }

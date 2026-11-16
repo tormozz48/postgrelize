@@ -60,7 +60,28 @@ CTEs can also be used as filters:
 
 <<< @/examples/advanced-queries.ts#cte{ts}
 
-Data-modifying CTEs (`WITH x AS (UPDATE ...)`) and the `SEARCH` / `CYCLE` clauses are not supported yet.
+### `SEARCH` and `CYCLE`
+
+A recursive CTE definition accepts `search` and `cycle`:
+
+- `search: { by, mode?, set }` adds a column `set` that orders the rows depth first (`mode: 'depth'`, the default) or breadth first (`'breadth'`) by the `by` columns. Order the result by it.
+- `cycle: { columns, set, using }` adds a boolean column `set` that is true on the row that revisits the same `columns`, and an array column `using` with the path. The recursion stops at such a row, so cyclic data cannot loop forever.
+
+Both need `recursive`. The added columns are not model attributes: select them with `[col('walk'), 'walk']` (or read `raw` rows).
+
+<<< @/examples/advanced-queries.ts#cte-search{ts}
+
+<<< @/examples/advanced-queries.ts#cte-cycle{ts}
+
+### Data-modifying CTEs
+
+`Model.updateStatement(values, { where, returning })`, `Model.deleteStatement({ where, returning })` and `Model.insertStatement(rows, { returning })` build a statement for the `with` option. The statement runs as part of the finder's query. With `returning: true`, read its rows through `source: '<cte name>'`, or filter with them. No hooks or validation run; `updatedAt` is set (not with `silent: true`), defaults and timestamps are filled for inserts, and `deleteStatement` is a real delete, also for paranoid models.
+
+<<< @/examples/advanced-queries.ts#data-modifying-cte{ts}
+
+- The query is sent to the writer, never to a read replica.
+- A data-modifying statement cannot be `recursive`, and cannot be the main statement of a finder: only the CTE body is supported (for example, there is no `INSERT … SELECT FROM cte`).
+- All CTEs of one statement see the same snapshot: the main query does not see the changes of a data-modifying CTE in the tables, only in its `RETURNING` rows.
 
 ## Set operations
 

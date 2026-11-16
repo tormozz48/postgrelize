@@ -22,6 +22,10 @@ export class SqlCompiler {
   readonly #dml = new DmlCompiler(this.#query);
   readonly #merge = new MergeCompiler(this.#query, this.#dml);
 
+  constructor() {
+    this.#query.useModifying((node) => this.#statement(node));
+  }
+
   /** Quotes an identifier: `"name"`, doubling embedded quotes. */
   static quoteIdent(name: string): string {
     return quoter.quote(name);

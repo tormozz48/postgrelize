@@ -142,3 +142,86 @@ describe('payloads in FROM sources', () => {
       ).rejects.toThrow('Invalid cast type');
     }));
 });
+
+describe('payloads in data-modifying CTEs and SEARCH / CYCLE', () => {
+  it('statement values and conditions stay bound', () =>
+    withCanary(async ({ sequelize }) => {
+      const Note = await defineNote(sequelize);
+      for (const payload of PAYLOADS) {
+        const [added] = await Note.findAll({
+          with: { added: Note.insertStatement([{ body: payload }], { returning: true }) },
+          source: 'added',
+        });
+        expect(added?.get('body')).toBe(payload);
+        const [renamed] = await Note.findAll({
+          with: {
+            renamed: Note.updateStatement(
+              { body: `${payload}!` },
+              { where: { body: payload }, returning: true },
+            ),
+          },
+          source: 'renamed',
+        });
+        expect(renamed?.get('body')).toBe(`${payload}!`);
+        const gone = await Note.findAll({
+          with: { gone: Note.deleteStatement({ where: { body: `${payload}!` }, returning: true }) },
+          source: 'gone',
+        });
+        expect(gone).toHaveLength(1);
+      }
+    }));
+
+  it('CTE names, search and cycle columns are identifiers; the mode is an allowlist', () =>
+    withCanary(async ({ sequelize }) => {
+      const Note = await defineNote(sequelize);
+      await Note.create({ body: 'x' });
+      await fc.assert(
+        fc.asyncProperty(
+          identifier(),
+          identifier(),
+          identifier(),
+          identifier(),
+          async (name, ord, flag, trail) => {
+            fc.pre(new Set([name, ord, flag, trail]).size === 4 && !name.includes('.'));
+            const query = Note.subquery({ attributes: ['id'] });
+            const outcome = await settle(
+              Note.findAll({
+                with: {
+                  [name]: {
+                    query,
+                    recursive: Note.subquery({
+                      attributes: ['id'],
+                      where: { id: -1 },
+                      from: { [name]: name },
+                    }),
+                    search: { by: ['id'], set: ord },
+                    cycle: { columns: ['id'], set: flag, using: trail },
+                  },
+                },
+                source: name,
+                attributes: ['id'],
+                raw: true,
+              }),
+            );
+            expect(outcome).not.toBeInstanceOf(Error);
+          },
+        ),
+        { ...propertyParameters(), numRuns: 25 },
+      );
+      for (const payload of PAYLOADS.slice(0, 10)) {
+        const mode = payload as never;
+        await expect(
+          Note.findAll({
+            with: {
+              t: {
+                query: Note.subquery(),
+                recursive: Note.subquery(),
+                search: { by: ['id'], set: 's', mode },
+              },
+            },
+            source: 't',
+          }),
+        ).rejects.toThrow('Invalid CTE search mode');
+      }
+    }));
+});

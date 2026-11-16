@@ -33,6 +33,7 @@ export type {
   SqlExpression,
   SetOperationOptions,
   Subquery,
+  WriteStatement,
   Tuple,
   Where,
   WhereFactory,

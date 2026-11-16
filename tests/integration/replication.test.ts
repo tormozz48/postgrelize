@@ -118,4 +118,19 @@ describe('read replicas', () => {
         expect(new Set(pids).size).toBeGreaterThan(1);
       }),
     ));
+
+  it('sends finds with a data-modifying CTE to the writer', () =>
+    withReaderRole((role) =>
+      withSchema(async ({ schema }) => {
+        const { sequelize, Item } = await setup(schema, role);
+        await Item.create({ name: 'a' });
+        const removed = await Item.findAll({
+          with: { gone: Item.deleteStatement({ where: { name: 'a' }, returning: true }) },
+          source: 'gone',
+        });
+        expect(removed.map((row) => row.get('name'))).toEqual(['a']);
+        expect(await Item.count({ useMaster: true })).toBe(0);
+        expect(await sequelize.query('SELECT 1')).toBeDefined();
+      }),
+    ));
 });

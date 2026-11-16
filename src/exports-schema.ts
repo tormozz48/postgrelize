@@ -33,4 +33,10 @@ export type {
 } from './ddl/ddl-generator.ts';
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
-export type { CteDefinition, CteFindOptions, WithOption } from './model/cte-builder.ts';
+export type {
+  CteCycleOptions,
+  CteDefinition,
+  CteFindOptions,
+  CteSearchOptions,
+  WithOption,
+} from './model/cte-builder.ts';
