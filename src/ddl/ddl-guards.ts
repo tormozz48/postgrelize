@@ -10,6 +10,8 @@ const ACTIONS: ReadonlySet<string> = new Set([
 
 const IDENTIFIER_PATTERN = /^[A-Za-z_][\w]*$/;
 
+const OPERATOR_PATTERN = /^[-+*/<>=~!@#%^&|`?]{1,63}$/;
+
 const DEFERRABLE_SQL: ReadonlySet<string> = new Set(
   Object.values(Deferrable).map((value) => value.sql),
 );
@@ -61,6 +63,20 @@ export class DdlGuards {
   word(value: string, kind: string): string {
     if (!IDENTIFIER_PATTERN.test(value)) {
       throw new Error(`Invalid ${kind}: ${value}`);
+    }
+    return value;
+  }
+
+  /**
+   * An operator symbol (EXCLUDE `WITH` operator), rendered unquoted.
+   *
+   * @param value - Operator such as `&&` or `=`.
+   * @returns The operator.
+   * @throws Error for anything but 1-63 operator characters, or one that opens a comment.
+   */
+  operator(value: string): string {
+    if (!OPERATOR_PATTERN.test(value) || value.includes('--') || value.includes('/*')) {
+      throw new Error(`Invalid operator: ${value}`);
     }
     return value;
   }

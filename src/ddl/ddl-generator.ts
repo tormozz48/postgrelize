@@ -20,6 +20,7 @@ export {
   type ColumnDefinition,
   type ConstraintOptions,
   type DeferrableValue,
+  type ExcludeElement,
   type IndexField,
   type IndexOptions,
 } from './ddl-types.ts';
@@ -220,5 +221,17 @@ export class DdlGenerator {
    */
   addConstraintSql(table: TableName, options: ConstraintOptions, defaultSchema?: string): string {
     return this.#constraints.addConstraintSql(table, options, defaultSchema);
+  }
+
+  /**
+   * `ALTER TABLE ... VALIDATE CONSTRAINT` statement.
+   *
+   * @param table - Table name or `{ tableName, schema }`.
+   * @param name - Constraint name.
+   * @param defaultSchema - Schema used when the table reference has none.
+   * @returns Statement.
+   */
+  validateConstraintSql(table: TableName, name: string, defaultSchema?: string): string {
+    return this.#constraints.validateConstraintSql(table, name, defaultSchema);
   }
 }
