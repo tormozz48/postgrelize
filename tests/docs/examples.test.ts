@@ -23,14 +23,15 @@ describe('documentation examples', () => {
     expect(files.length).toBeGreaterThan(0);
   });
 
-  it.each(files)('%s runs', (file) =>
+  it.for(files)('%s runs', (file, { skip }) =>
     withSchema(async ({ schema, client }) => {
       const example = (await import(new URL(file, directory).href)) as Example;
+      expect(typeof example.run, `${file} must export run`).toBe('function');
       const version = Number(
         (await client.query('SHOW server_version_num')).rows[0].server_version_num,
       );
       if (version < (example.minimumServerVersion ?? 0)) {
-        return;
+        skip(`${file} needs server_version_num >= ${example.minimumServerVersion}`);
       }
       const sequelize = new Sequelize(testDatabaseUrl(), {
         logging: false,

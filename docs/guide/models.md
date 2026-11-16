@@ -107,7 +107,9 @@ Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, 
 
 `DataTypes.COMPOSITE(name, fields)` maps a `CREATE TYPE … AS (…)` type to an object keyed by field name; each field is converted by its own data type (`NULL` is `null`; numbers, booleans, `Date`, `Buffer`, JSON and nested composites are supported, array fields are not). The type must exist: `createSql()` returns its `CREATE TYPE` statement (name and field names quoted), which you run once with `sequelize.query()`; `sync()` does not create it. `where` values compare the whole row (`Op.eq`); single fields go through `literal('("home").zip = 12345')`.
 
-Two column kinds that Sequelize v6 cannot create:
+### Identity, generated and interval columns {#identity-generated}
+
+Column kinds that Sequelize v6 cannot create:
 
 <<< @/examples/models.ts#postgres-columns{ts}
 

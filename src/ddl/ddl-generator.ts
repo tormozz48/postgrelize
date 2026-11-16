@@ -12,6 +12,12 @@ import type {
 } from './ddl-types.ts';
 import { EnumDdl } from './enum-ddl.ts';
 import { IndexDdl } from './index-ddl.ts';
+import {
+  PartitionDdl,
+  type CreatePartitionOptions,
+  type DetachPartitionOptions,
+} from './partition-ddl.ts';
+import type { PartitionBoundSpec } from './partition-types.ts';
 import type { TableName } from './sql-literal.ts';
 import { TableDdl } from './table-ddl.ts';
 
@@ -39,6 +45,7 @@ export class DdlGenerator {
   readonly #tables = new TableDdl(this.#columns, this.#enums);
   readonly #indexes = new IndexDdl();
   readonly #constraints = new ConstraintDdl();
+  readonly #partitions = new PartitionDdl();
 
   /**
    * SQL of a `Deferrable` value; anything that is not one of them is rejected.
@@ -233,5 +240,51 @@ export class DdlGenerator {
    */
   validateConstraintSql(table: TableName, name: string, defaultSchema?: string): string {
     return this.#constraints.validateConstraintSql(table, name, defaultSchema);
+  }
+
+  /**
+   * `CREATE TABLE ... PARTITION OF` statement.
+   *
+   * @param parent - Partitioned table.
+   * @param partition - New partition name.
+   * @param bound - Bounds.
+   * @param options - Sub-partitioning and `ifNotExists`.
+   * @returns Statement.
+   */
+  createPartitionSql(
+    parent: TableName,
+    partition: TableName,
+    bound: PartitionBoundSpec,
+    options?: CreatePartitionOptions,
+  ): string {
+    return this.#partitions.createPartitionSql(parent, partition, bound, options);
+  }
+
+  /**
+   * `ALTER TABLE ... ATTACH PARTITION` statement.
+   *
+   * @param parent - Partitioned table.
+   * @param partition - Existing table to attach.
+   * @param bound - Bounds.
+   * @returns Statement.
+   */
+  attachPartitionSql(parent: TableName, partition: TableName, bound: PartitionBoundSpec): string {
+    return this.#partitions.attachPartitionSql(parent, partition, bound);
+  }
+
+  /**
+   * `ALTER TABLE ... DETACH PARTITION` statement.
+   *
+   * @param parent - Partitioned table.
+   * @param partition - Partition to detach.
+   * @param options - `concurrently` or `finalize`.
+   * @returns Statement.
+   */
+  detachPartitionSql(
+    parent: TableName,
+    partition: TableName,
+    options?: DetachPartitionOptions,
+  ): string {
+    return this.#partitions.detachPartitionSql(parent, partition, options);
   }
 }

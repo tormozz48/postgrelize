@@ -66,11 +66,12 @@ export class TableCommands {
     const columns = Object.entries(attributes).map(([name, attribute]) =>
       ddl.columnOf(ModelDefinition.attribute(name, attribute, false)),
     );
-    const { comment, unlogged, temporary } = options;
+    const { comment, unlogged, temporary, partitionBy } = options;
     const persistence = {
       ...(comment === undefined ? {} : { comment }),
       ...(unlogged === undefined ? {} : { unlogged }),
       ...(temporary === undefined ? {} : { temporary }),
+      ...(partitionBy === undefined ? {} : { partitionBy }),
     };
     await this.#runner.runAll(ddl.createTableSql(table, columns, persistence), options);
   }

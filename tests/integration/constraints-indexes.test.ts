@@ -4,6 +4,7 @@ import {
   Deferrable,
   ExclusionConstraintError,
   Op,
+  PartitionBound,
   QueryTypes,
   Sequelize,
   UniqueConstraintError,
@@ -157,5 +158,73 @@ describe('NOT VALID constraints', () => {
         "SELECT convalidated FROM pg_constraint WHERE conname = 'products_price_positive'",
       );
       expect(row?.convalidated).toBe(true);
+    }));
+});
+
+describe('declarative partitioning', () => {
+  it('routes rows through range partitions, a default partition and sub-partitions', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await queryInterface.createTable(
+        'events',
+        { at: DataTypes.INTEGER, kind: DataTypes.TEXT },
+        { partitionBy: { strategy: 'range', columns: ['at'] } },
+      );
+      await queryInterface.createPartition('events', 'events_low', {
+        from: [PartitionBound.MINVALUE],
+        to: [10],
+      });
+      await queryInterface.createPartition(
+        'events',
+        { tableName: 'events_mid', schema },
+        { from: [10], to: [20] },
+        { partitionBy: { strategy: 'list', columns: ['kind'] }, ifNotExists: true },
+      );
+      await queryInterface.createPartition('events_mid', 'events_mid_a', { in: ['a'] });
+      await queryInterface.createPartition('events', 'events_rest', { default: true });
+      await sequelize.query("INSERT INTO events VALUES (1, 'x'), (15, 'a'), (99, 'z')");
+      const where = await select<{ tableoid: string; at: number }>(
+        sequelize,
+        'SELECT tableoid::regclass::text AS tableoid, at FROM events ORDER BY at',
+      );
+      expect(where.map((row) => row.tableoid.replace(`${schema}.`, ''))).toEqual([
+        'events_low',
+        'events_mid_a',
+        'events_rest',
+      ]);
+      const tables = await queryInterface.showAllTables();
+      expect(tables).toEqual(
+        expect.arrayContaining([
+          'events',
+          'events_low',
+          'events_mid',
+          'events_mid_a',
+          'events_rest',
+        ]),
+      );
+      const description = await queryInterface.describeTable('events');
+      expect(Object.keys(description)).toEqual(['at', 'kind']);
+    }));
+
+  it('creates hash and list partitions, attaches and detaches', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await queryInterface.createTable(
+        'shards',
+        { id: DataTypes.INTEGER },
+        { partitionBy: { strategy: 'hash', columns: ['id'] } },
+      );
+      await queryInterface.createPartition('shards', 'shards_0', { modulus: 2, remainder: 0 });
+      await queryInterface.createTable('shards_1', { id: DataTypes.INTEGER });
+      await queryInterface.attachPartition('shards', 'shards_1', { modulus: 2, remainder: 1 });
+      await sequelize.query('INSERT INTO shards SELECT generate_series(1, 20)');
+      const counts = await select<{ n: string }>(sequelize, 'SELECT count(*) AS n FROM shards_1');
+      expect(Number(counts[0]?.n)).toBeGreaterThan(0);
+      await queryInterface.detachPartition('shards', 'shards_1');
+      await queryInterface.detachPartition('shards', 'shards_0', { concurrently: true });
+      const rest = await select<{ n: string }>(sequelize, 'SELECT count(*) AS n FROM shards');
+      expect(rest[0]?.n).toBe('0');
     }));
 });
