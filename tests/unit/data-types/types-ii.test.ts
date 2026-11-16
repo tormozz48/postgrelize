@@ -170,3 +170,134 @@ describe('COMPOSITE', () => {
     expect(() => withArray.serialize?.({ list: ['a'] })).toThrow(/array/);
   });
 });
+
+describe('GEOMETRY / GEOGRAPHY', () => {
+  const { parse, serialize } = DataTypes.GEOMETRY;
+  const crs = { type: 'name', properties: { name: 'EPSG:4326' } };
+  const geometries = [
+    { type: 'Point', coordinates: [1, 2] },
+    { type: 'Point', coordinates: [1, 2, 3] },
+    {
+      type: 'LineString',
+      coordinates: [
+        [0, 0],
+        [1, 1.5],
+      ],
+    },
+    {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [0, 0],
+          [4, 0],
+          [4, 4],
+          [0, 0],
+        ],
+        [
+          [1, 1],
+          [2, 1],
+          [1, 2],
+          [1, 1],
+        ],
+      ],
+    },
+    {
+      type: 'MultiPoint',
+      coordinates: [
+        [0, 0],
+        [1, 1],
+      ],
+    },
+    {
+      type: 'MultiLineString',
+      coordinates: [
+        [
+          [0, 0],
+          [1, 1],
+        ],
+        [
+          [2, 2],
+          [3, 3],
+        ],
+      ],
+    },
+    {
+      type: 'MultiPolygon',
+      coordinates: [
+        [
+          [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 0],
+          ],
+        ],
+      ],
+    },
+    {
+      type: 'GeometryCollection',
+      geometries: [
+        { type: 'Point', coordinates: [1, 2] },
+        {
+          type: 'LineString',
+          coordinates: [
+            [0, 0],
+            [1, 1],
+          ],
+        },
+      ],
+    },
+  ];
+
+  it('writes known EWKB', () => {
+    expect(serialize?.({ type: 'Point', coordinates: [1, 2] })).toBe(
+      '0101000020e6100000000000000000f03f0000000000000040',
+    );
+    expect(
+      serialize?.({
+        type: 'Point',
+        coordinates: [1, 2],
+        crs: { properties: { name: 'urn:ogc:def:crs:EPSG::3857' } },
+      }),
+    ).toBe('0101000020110f0000000000000000f03f0000000000000040');
+  });
+
+  it('round-trips every geometry type with its SRID', () => {
+    for (const geometry of geometries) {
+      expect(parse?.(serialize?.(geometry) as string)).toEqual({ ...geometry, crs });
+    }
+  });
+
+  it('reads big-endian EWKB without SRID', () => {
+    expect(parse?.('00000000013ff00000000000004000000000000000')).toEqual({
+      type: 'Point',
+      coordinates: [1, 2],
+    });
+    expect(parse?.('0101000000000000000000f87f000000000000f87f')).toEqual({
+      type: 'Point',
+      coordinates: [],
+    });
+  });
+
+  it('skips the M coordinate and keeps other values', () => {
+    expect(
+      parse?.('01010000400000000000000000000000000000004000000000000008 40'.replace(' ', '')),
+    ).toEqual({
+      type: 'Point',
+      coordinates: [0, 2],
+    });
+    expect(parse?.('POINT(1 2)')).toBe('POINT(1 2)');
+    expect(parse?.(null)).toBeNull();
+    expect(serialize?.('POINT(1 2)')).toBe('POINT(1 2)');
+    expect(DataTypes.GEOGRAPHY.serialize?.(geometries[0])).toBe(serialize?.(geometries[0]));
+  });
+
+  it('rejects malformed GeoJSON and unsupported EWKB', () => {
+    expect(() => serialize?.({ type: 'Curve', coordinates: [] })).toThrow(/Unsupported GeoJSON/);
+    expect(() => serialize?.({ type: 'Point', coordinates: [1, 'x'] })).toThrow(/finite numbers/);
+    expect(() => serialize?.({ type: 'Point', coordinates: [1, Number.NaN] })).toThrow(/finite/);
+    expect(() => serialize?.({ type: 'LineString', coordinates: 'x' })).toThrow(/arrays/);
+    expect(() => serialize?.([1])).toThrow(/object/);
+    expect(() => parse?.('010800000000000000')).toThrow(/Unsupported EWKB/);
+  });
+});
