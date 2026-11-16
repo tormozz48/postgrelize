@@ -13,6 +13,8 @@
 **S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.
 **S15 (Types II):** in progress — spec `.10x/specs/2026-11-16-s15-types-ii-design.md`, ADR-026. PR 1 geometric types (`POINT` … `CIRCLE`) merged (#77); PR 2 `MULTIRANGE` (#79); PR 3 `COMPOSITE`; next PostGIS.
 
+**Feature examples (S16b):** in progress — every beyond-v6 feature needs a runnable example, a guide section and CI proof; audit `.10x/reviews/2026-11-16-feature-example-audit.md`, spec `.10x/specs/2026-11-16-feature-examples-design.md`. PR 1: matrix fields (`beyondV6`, `example`, `guide`), `EXTRA_FEATURES`, `tests/docs/feature-examples.test.ts` with 3 known gaps (NULLS FIRST/LAST, OVERRIDING, `= ANY`); next: backfill PR, then empty `KNOWN_GAPS`, then fold in S13/S15 rows after their merge.
+
 **S9 (PostgreSQL coverage matrix):** done — 133 rows (69 supported, 13 literal, 39 planned, 12 out-of-scope); gap stages S11–S17 queued in backlog 4: `.10x/reviews/2026-11-15-pg-coverage-matrix.md`.
 
 ## Phases
