@@ -168,3 +168,6 @@
 ## Release 0.10.0 (2026-11-16)
 - Tag `v0.10.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.10.0` published. Contents: S12 set operations, LATERAL, FROM sources, data-modifying CTEs, CTE SEARCH/CYCLE; S14 types (HSTORE objects, ltree, MONEY, XML, BIT, TSQUERY, …); S16 opt-in `statementCache` (ADR-023), DEFERRABLE, statement timeout, UNNEST bulk insert; S10b faster raw reads; logo. `main` now requires a pull request: the release commit goes through a PR. Open: bench gate showed `bulkCreate 100` at +10.7% under load (S10b re-checked it).
 
+## Release 0.11.0 (2026-11-16)
+- Tag `v0.11.0` → release.yml, `@tormozz48/postgrelize@0.11.0`. Contents: S11 DDL objects (extensions, sequences, views and materialized views, functions and triggers, RLS policies, UNLOGGED/TEMPORARY tables; ADR-025) and S17 operator helpers (SIMILAR TO, jsonpath, full-text, network operators, `pg_trgm`). Next: S13 constraints/indexes/partitioning and S15 types II (running).
+
