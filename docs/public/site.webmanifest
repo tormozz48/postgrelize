@@ -1,0 +1,14 @@
+{
+  "name": "postgrelize",
+  "short_name": "postgrelize",
+  "description": "PostgreSQL-only ORM with the Sequelize v6 API",
+  "start_url": "/postgrelize/",
+  "scope": "/postgrelize/",
+  "display": "browser",
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/postgrelize/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/postgrelize/favicon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
