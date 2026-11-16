@@ -46,19 +46,39 @@ export type ColumnDefinition = Readonly<{
   generated: AttributeDefinition['generated'];
 }>;
 
-/** Index field: a column name or `{ name, order, collate, operator, length }`. */
+/** Modifiers shared by every index element. */
+type IndexElementModifiers = Readonly<{
+  /** `ASC` / `DESC`. */
+  order?: 'ASC' | 'DESC';
+  /** `NULLS FIRST` / `NULLS LAST`. PostgreSQL extension. */
+  nulls?: 'FIRST' | 'LAST';
+  /** Collation name (quoted identifier). */
+  collate?: string;
+  /** Operator class, e.g. `'jsonb_path_ops'`. */
+  operator?: string;
+}>;
+
+/**
+ * Index field: a column name, `{ name, order, nulls, collate, operator }` or an expression
+ * `{ expression, ... }`. The `expression` is trusted SQL (not escaped): never build it from user
+ * input. An index with an expression field needs an explicit `name`.
+ */
 export type IndexField =
   | string
-  | Readonly<{
-      /** Column name. */
-      name: string;
-      /** `ASC` / `DESC`. */
-      order?: 'ASC' | 'DESC';
-      /** Collation. */
-      collate?: string;
-      /** Operator class, e.g. `'jsonb_path_ops'`. */
-      operator?: string;
-    }>;
+  | (IndexElementModifiers &
+      Readonly<{
+        /** Column name. */
+        name: string;
+        /** Not used for a column field. */
+        expression?: undefined;
+      }>)
+  | (IndexElementModifiers &
+      Readonly<{
+        /** Trusted SQL expression, wrapped in parentheses. */
+        expression: string;
+        /** Not used for an expression field. */
+        name?: undefined;
+      }>);
 
 /**
  * Options of `addIndex` and model `indexes` (Sequelize v6 `IndexesOptions`).
@@ -77,7 +97,7 @@ export type IndexField =
 export type IndexOptions = Readonly<{
   /** Indexed columns. */
   fields?: readonly IndexField[];
-  /** Index name; default `underscore(<table>_<fields>)`. */
+  /** Index name; default `underscore(<table>_<fields>)`. Required when a field is an expression. */
   name?: string;
   /** Unique index. */
   unique?: boolean;
