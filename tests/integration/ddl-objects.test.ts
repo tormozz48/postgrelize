@@ -280,3 +280,68 @@ describe('views and materialized views', () => {
       await queryInterface.dropMaterializedView('empty_view', { cascade: true });
     }));
 });
+
+describe('row-level security', () => {
+  it('enforces policies for a non-owner role', () =>
+    withSchema(async ({ schema, client }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      const role = `pgz_rls_${schema}`;
+      await client.query(`CREATE ROLE "${role}" NOLOGIN`);
+      try {
+        await sequelize.query(
+          'CREATE TABLE docs (id serial PRIMARY KEY, tenant_id integer, title text)',
+        );
+        await sequelize.query("INSERT INTO docs (tenant_id, title) VALUES (1, 'a'), (2, 'b')");
+        await client.query(`GRANT USAGE ON SCHEMA "${schema}" TO "${role}"`);
+        await client.query(`GRANT ALL ON docs TO "${role}"`);
+        await queryInterface.enableRowLevelSecurity('docs', { force: true });
+        await queryInterface.createPolicy('docs', 'tenant_isolation', {
+          roles: [role],
+          using: "tenant_id = current_setting('app.tenant_id')::int",
+          withCheck: "tenant_id = current_setting('app.tenant_id')::int",
+        });
+        const visible = (tenant: number) =>
+          sequelize.transaction(
+            { settings: { 'app.tenant_id': String(tenant) } },
+            async (transaction) => {
+              await sequelize.query(`SET LOCAL ROLE "${role}"`, { transaction });
+              return await sequelize.query('SELECT title FROM docs', {
+                type: QueryTypes.SELECT,
+                transaction,
+              });
+            },
+          );
+        expect(await visible(1)).toEqual([{ title: 'a' }]);
+        expect(await visible(2)).toEqual([{ title: 'b' }]);
+        await queryInterface.alterPolicy('docs', 'tenant_isolation', {
+          using: { tenant_id: 1 },
+          withCheck: { tenant_id: 1 },
+        });
+        expect(await visible(2)).toEqual([{ title: 'a' }]);
+        await queryInterface.alterPolicy('docs', 'tenant_isolation', { rename: 'only_one' });
+        await queryInterface.createPolicy({ tableName: 'docs', schema }, 'no_deletes', {
+          kind: 'restrictive',
+          command: 'delete',
+          using: 'false',
+        });
+        const names = await select<{ policyname: string }>(
+          sequelize,
+          `SELECT policyname FROM pg_policies WHERE schemaname = '${schema}' ORDER BY 1`,
+        );
+        expect(names.map((row) => row.policyname)).toEqual(['no_deletes', 'only_one']);
+        await queryInterface.dropPolicy('docs', 'no_deletes');
+        await queryInterface.dropPolicy('docs', 'no_deletes', { ifExists: true });
+        await queryInterface.dropPolicy('docs', 'only_one', { cascade: true });
+        await queryInterface.disableRowLevelSecurity('docs', { noForce: true });
+        const flags = await select<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
+          sequelize,
+          "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'docs'",
+        );
+        expect(flags).toEqual([{ relrowsecurity: false, relforcerowsecurity: false }]);
+      } finally {
+        await client.query(`DROP OWNED BY "${role}"`);
+        await client.query(`DROP ROLE "${role}"`);
+      }
+    }));
+});

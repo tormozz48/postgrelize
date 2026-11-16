@@ -1,4 +1,4 @@
-import type { Sequelize } from 'postgrelize';
+import { Op, type Sequelize } from 'postgrelize';
 
 export const run = async (sequelize: Sequelize): Promise<void> => {
   const queryInterface = sequelize.getQueryInterface();
@@ -68,8 +68,28 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   await queryInterface.dropMaterializedView('post_stats');
   await queryInterface.dropView('edited_posts');
 
+  // #region rls
+  await queryInterface.enableRowLevelSecurity('posts', { force: true });
+  await queryInterface.createPolicy('posts', 'edited_only', {
+    command: 'select',
+    using: { edits: { [Op.gt]: 0 } },
+  });
+  await queryInterface.alterPolicy('posts', 'edited_only', { using: 'edits >= 0' });
+  // #endregion rls
+  const policies = (await sequelize.query(
+    "SELECT policyname FROM pg_policies WHERE tablename = 'posts'",
+  )) as [{ policyname: string }[], unknown];
+  await queryInterface.dropPolicy('posts', 'edited_only');
+  await queryInterface.disableRowLevelSecurity('posts', { noForce: true });
+
   await queryInterface.dropExtension('pg_trgm');
-  if (first !== '1000' || afterSet !== '5001' || post[0]?.edits !== 1 || stats[0]?.posts !== 1) {
+  if (
+    first !== '1000' ||
+    afterSet !== '5001' ||
+    post[0]?.edits !== 1 ||
+    stats[0]?.posts !== 1 ||
+    policies[0][0]?.policyname !== 'edited_only'
+  ) {
     throw new Error('schema objects example: unexpected result');
   }
 };
