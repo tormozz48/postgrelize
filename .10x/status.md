@@ -181,3 +181,7 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - [x] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
 - [x] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
 - [x] PR 4: declarative partitioning
+
+## Release 0.12.0 (2026-11-16)
+- Tag `v0.12.0` → release.yml, `@tormozz48/postgrelize@0.12.0`. Contents: S13 expression indexes, EXCLUDE, NOT VALID / `validateConstraint`, PG18 NOT ENFORCED / WITHOUT OVERLAPS / PERIOD, partitioning (ADR-027); S15 geometric, multirange, composite types and PostGIS GeoJSON (ADR-026, optional CI job); a runnable example, guide entry and CI check for every beyond-v6 feature. Backlog 4 (S11–S17) is complete.
+
