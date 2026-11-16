@@ -7,7 +7,7 @@ import { BulkData } from './bulk-data.ts';
 import { ColumnCommands } from './column-commands.ts';
 import { EnumCommands } from './enum-commands.ts';
 import { IndexCommands } from './index-commands.ts';
-import { QueryInterfacePolicies } from './query-interface-policies.ts';
+import { QueryInterfacePartitions } from './query-interface-partitions.ts';
 import { StatementRunner } from './statement-runner.ts';
 
 export type {
@@ -34,7 +34,7 @@ export type {
  * ```
  * @see [Schema guide](/guide/schema)
  */
-export class QueryInterface extends QueryInterfacePolicies {
+export class QueryInterface extends QueryInterfacePartitions {
   readonly #columns: ColumnCommands;
   readonly #indexes: IndexCommands;
   readonly #enums: EnumCommands;

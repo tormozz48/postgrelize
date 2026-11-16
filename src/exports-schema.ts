@@ -32,6 +32,15 @@ export type {
   IndexField,
   IndexOptions,
 } from './ddl/ddl-generator.ts';
+export { PartitionBound } from './ddl/partition-types.ts';
+export type {
+  PartitionBoundMarker,
+  PartitionBoundSpec,
+  PartitionKey,
+  PartitionKeyElement,
+  PartitionStrategy,
+} from './ddl/partition-types.ts';
+export type { CreatePartitionOptions, DetachPartitionOptions } from './ddl/partition-ddl.ts';
 export type { CreateExtensionOptions, DropExtensionOptions } from './ddl/extension-ddl.ts';
 export type {
   AlterSequenceOptions,
