@@ -91,7 +91,21 @@ As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precisi
 
 Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft` and `Op.strictRight` take the column's own shape; an operand of another type (a point against a box column) is a text literal wrapped in `cast('(1,1)', 'point')`. Distance (`<->`), intersection (`?#`) and the geometric functions go through `literal()` or `fn()`. `point` has no `=` operator in PostgreSQL (use `~=`).
 
-## Identity and generated columns
+### Multirange types
+
+<<< @/examples/multirange.ts#define{ts}
+
+<<< @/examples/multirange.ts#use{ts}
+
+`DataTypes.MULTIRANGE(subtype)` needs PostgreSQL 14+. The subtype is `INTEGER` (`int4multirange`), `BIGINT`, `DECIMAL`, `TIMESTAMP` (`tsmultirange`), `DATE` (`tstzmultirange`) or `DATEONLY`. A value is an array of ranges; each range is a `[lower, upper]` pair as for `RANGE` (plain values or `{ value, inclusive }` bounds); `[]` is the empty multirange. `Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft`, `Op.strictRight`, `Op.adjacent` and the other range operators apply; an element operand (`multirange @> int`) is wrapped in `cast('9', 'int4')`. `range_agg`, `unnest` and the other multirange functions go through `fn()`.
+
+### Composite types
+
+<<< @/examples/composite.ts#define{ts}
+
+<<< @/examples/composite.ts#use{ts}
+
+`DataTypes.COMPOSITE(name, fields)` maps a `CREATE TYPE … AS (…)` type to an object keyed by field name; each field is converted by its own data type (`NULL` is `null`; numbers, booleans, `Date`, `Buffer`, JSON and nested composites are supported, array fields are not). The type must exist: `createSql()` returns its `CREATE TYPE` statement (name and field names quoted), which you run once with `sequelize.query()`; `sync()` does not create it. `where` values compare the whole row (`Op.eq`); single fields go through `literal('("home").zip = 12345')`.
 
 Two column kinds that Sequelize v6 cannot create:
 

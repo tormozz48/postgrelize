@@ -15,6 +15,8 @@ export type DataType = Readonly<{
   subtype?: DataType;
   /** Allowed values for `ENUM`. */
   values?: readonly string[];
+  /** SQL type that `where` parameters of this type are cast to (types PostgreSQL cannot infer from an untyped parameter). */
+  bindCast?: string;
   /** Converts a value read from the driver into the attribute value. */
   parse?: (value: unknown) => unknown;
   /** Converts an attribute value into a driver parameter. */

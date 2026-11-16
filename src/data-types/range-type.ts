@@ -1,4 +1,7 @@
 import { AbstractDataType, type DataType, type DataTypeInput } from './abstract-data-type.ts';
+import { WallClock } from './wall-clock.ts';
+
+const wallClock = new WallClock();
 
 /** Range bound as returned by Sequelize v6 for `RANGE` attributes. */
 export type RangeBound<T> = Readonly<{
@@ -12,6 +15,7 @@ const RANGE_SQL_TYPES: Readonly<Record<string, string>> = {
   INTEGER: 'INT4RANGE',
   BIGINT: 'INT8RANGE',
   DECIMAL: 'NUMRANGE',
+  TIMESTAMP: 'TSRANGE',
   DATE: 'TSTZRANGE',
   DATEONLY: 'DATERANGE',
 };
@@ -34,7 +38,7 @@ export class RangeType extends AbstractDataType {
   readonly #parseBound: ((value: unknown) => unknown) | undefined;
 
   /**
-   * @param subtype - Element type: `INTEGER`, `BIGINT`, `DECIMAL`, `DATE` or `DATEONLY`.
+   * @param subtype - Element type: `INTEGER`, `BIGINT`, `DECIMAL`, `TIMESTAMP`, `DATE` or `DATEONLY`.
    * @throws Error for any other element type.
    */
   constructor(subtype: DataTypeInput) {
@@ -71,11 +75,12 @@ export class RangeType extends AbstractDataType {
   }
 
   #formatBound(bound: RangeBound<unknown>): string {
-    return bound.value === null
-      ? ''
-      : bound.value instanceof Date
-        ? bound.value.toISOString()
-        : String(bound.value);
+    if (bound.value instanceof Date) {
+      return this.subtype.key === 'TIMESTAMP'
+        ? wallClock.format(bound.value)
+        : bound.value.toISOString();
+    }
+    return bound.value === null ? '' : String(bound.value);
   }
 
   #parse(value: unknown): unknown {
