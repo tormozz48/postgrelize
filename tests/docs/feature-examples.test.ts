@@ -28,7 +28,7 @@ const targets: readonly Target[] = [
 const slugify = (heading: string): string =>
   heading
     .replace(/\{#[^}]+\}\s*$/, '')
-    .replace(/[\s~`!@#$%^&*()\-_+=[\]{}|\;:"'“”‘’<>,.?/…]+/g, '-')
+    .replace(/[\s~`!@#$%^&*()\-_+=[\]{}|;:"'“”‘’<>,.?/…]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase();
 

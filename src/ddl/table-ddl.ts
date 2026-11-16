@@ -2,9 +2,12 @@ import { SqlCompiler } from '../sql/compile.ts';
 import type { ColumnDdl } from './column-ddl.ts';
 import type { ColumnDefinition, CreateTableOptions } from './ddl-types.ts';
 import type { EnumDdl } from './enum-ddl.ts';
+import { PartitionDdl } from './partition-ddl.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
 
 const sqlLiteral = new SqlLiteral();
+
+const partitions = new PartitionDdl();
 
 type NamedUniqueKey = Readonly<{ fields: readonly string[]; nullsNotDistinct: boolean }>;
 
@@ -47,7 +50,7 @@ export class TableDdl {
       ...columns
         .map((column) => this.#enums.createSql(table, column))
         .filter((sql): sql is string => sql !== undefined),
-      `CREATE ${this.#persistence(options)}TABLE ${options.ifNotExists === false ? '' : 'IF NOT EXISTS '}${qualified} (${body})`,
+      `CREATE ${this.#persistence(options)}TABLE ${options.ifNotExists === false ? '' : 'IF NOT EXISTS '}${qualified} (${body})${options.partitionBy === undefined ? '' : partitions.partitionBySql(options.partitionBy)}`,
       ...(options.comment === undefined
         ? []
         : [`COMMENT ON TABLE ${qualified} IS ${sqlLiteral.escape(options.comment)}`]),

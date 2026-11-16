@@ -1,3 +1,4 @@
+import type { PartitionKey } from '../ddl/partition-types.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 
 /** Column description returned by `describeTable` (Sequelize v6 shape). */
@@ -36,6 +37,7 @@ export type ForeignKeyReference = Readonly<{
  * const options: CreateTableOptions = { comment: 'Blog posts', transaction };
  * await queryInterface.createTable('posts', { title: DataTypes.STRING }, options);
  * await queryInterface.createTable('scratch', { n: DataTypes.INTEGER }, { temporary: true, transaction });
+ * await queryInterface.createTable('events', { at: DataTypes.DATE }, { partitionBy: { strategy: 'range', columns: ['at'] } });
  * ```
  */
 export type CreateTableOptions = QueryOptionsBase &
@@ -46,6 +48,8 @@ export type CreateTableOptions = QueryOptionsBase &
     unlogged?: boolean;
     /** `CREATE TEMPORARY TABLE`: lives as long as the database session (one pooled connection, so pass a `transaction` or use `pool.max = 1`), is dropped automatically and cannot have a schema. Cannot be combined with `unlogged`. */
     temporary?: boolean;
+    /** `PARTITION BY RANGE | LIST | HASH (...)`: creates a partitioned table; add partitions with `createPartition`. PostgreSQL requires primary and unique keys to include the partition columns. */
+    partitionBy?: PartitionKey;
   }>;
 
 /**

@@ -4,13 +4,13 @@ Owner requirement: every feature beyond Sequelize v6 has (1) a complete example,
 
 ## Result
 
-- Matrix: 133 rows, 109 `supported`. 71 are beyond v6, 38 have a v6 equivalent (no example required).
+- Matrix: 133 rows, 111 `supported`. 73 are beyond v6, 38 have a v6 equivalent (no example required).
 - Extras outside the matrix: 3.
-- Features audited: 74. With example and guide before this work: 71. Missing: 3 (ORDER BY … NULLS FIRST / LAST; INSERT … OVERRIDING SYSTEM / USER VALUE; = ANY($1) for long IN lists).
+- Features audited: 76. With example and guide before this work: 73. Missing: 3 (ORDER BY … NULLS FIRST / LAST; INSERT … OVERRIDING SYSTEM / USER VALUE; = ANY($1) for long IN lists).
 - Existing example coverage was already broad: the `docs` project runs every `docs/examples/*.ts`. Weak spots found: `minimumServerVersion` skips passed silently (now reported as skipped); no check linked a feature to its example or guide.
 - Rows with other statuses (`literal`, `planned`, `out-of-scope`) are not features yet and are not audited. S13 (partitioning, PG18 constraints) and S15 (PostGIS) rows join once merged.
 
-## Beyond v6 (71)
+## Beyond v6 (73)
 
 | Feature | Example | Guide | Test |
 | --- | --- | --- | --- |
@@ -65,13 +65,15 @@ Owner requirement: every feature beyond Sequelize v6 has (1) a complete example,
 | tsquery | `types.ts#use` | `models#postgresql-specific-types` | `integration/types-i.test.ts` |
 | ltree (extension) | `types.ts#use` | `models#postgresql-specific-types` | `integration/types-i.test.ts` |
 | Stored and virtual generated columns, identity columns | `models.ts#postgres-columns` | `models#identity-generated` | `integration/schema-power.test.ts` |
-| UNIQUE NULLS NOT DISTINCT | `schema.ts#sync` | `schema#sync` | `integration/schema.test.ts` |
+| UNIQUE NULLS NOT DISTINCT | `schema.ts#sync` | `schema#postgresql-index-and-constraint-options` | `integration/schema.test.ts` |
 | EXCLUDE constraints | `constraints-indexes.ts#exclude` | `constraints-indexes#exclude-constraints` | `integration/constraints-indexes.test.ts` |
 | NOT VALID constraints and VALIDATE CONSTRAINT | `constraints-indexes.ts#not-valid` | `constraints-indexes#not-valid-and-validate-constraint` | `integration/constraints-indexes.test.ts` |
+| NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD | `constraints-indexes-pg18.ts#temporal` | `constraints-indexes#postgresql-18-constraints` | `integration/constraints-indexes-pg18.test.ts` |
 | Expression indexes (lower(email)) | `constraints-indexes.ts#expression-index` | `constraints-indexes#expression-indexes` | `integration/constraints-indexes.test.ts` |
 | Views and materialized views | `schema-objects.ts#views` | `schema-objects#views-and-materialized-views` | `integration/ddl-objects.test.ts` |
 | Sequences (CREATE SEQUENCE, setval) | `schema-objects.ts#sequence` | `schema-objects#sequences` | `integration/ddl-objects.test.ts` |
 | Functions and triggers | `schema-objects.ts#function-trigger` | `schema-objects#functions-and-triggers` | `compat/functions-triggers.test.ts` |
+| Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH) | `constraints-indexes.ts#partitioning` | `constraints-indexes#declarative-partitioning` | `integration/constraints-indexes.test.ts` |
 | Extensions (CREATE EXTENSION) | `schema-objects.ts#extension` | `schema-objects#extensions` | `integration/ddl-objects.test.ts` |
 | Row-level security policies | `schema-objects.ts#rls` | `schema-objects#row-level-security` | `integration/ddl-objects.test.ts` |
 | UNLOGGED and TEMPORARY tables | `schema-objects.ts#persistence` | `schema-objects#unlogged-and-temporary-tables` | `integration/ddl-objects.test.ts` |

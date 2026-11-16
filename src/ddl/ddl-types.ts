@@ -1,5 +1,6 @@
 import type { DataType } from '../data-types/data-types.ts';
 import type { AttributeDefinition } from '../model/model-definition.ts';
+import type { PartitionKey } from './partition-types.ts';
 import type { TableName } from './sql-literal.ts';
 
 /** `Deferrable` setting of a foreign key or transaction (Sequelize v6 `Deferrable`). */
@@ -165,6 +166,7 @@ export type ConstraintOptions = Readonly<{
   references?: Readonly<{
     /** Referenced table. */ table: TableName;
     /** Referenced column. */ field: string;
+    /** Referenced columns, replacing `field` (needed with `period`). */ fields?: readonly string[];
   }>;
   /** `ON DELETE` action. */
   onDelete?: string;
@@ -180,6 +182,12 @@ export type ConstraintOptions = Readonly<{
   using?: string;
   /** Covering columns of an `exclude` constraint (`INCLUDE (...)`). */
   include?: readonly string[];
+  /** Last field of a `unique` / `primary key` constraint is `WITHOUT OVERLAPS` (temporal key, PostgreSQL 18). */
+  withoutOverlaps?: boolean;
+  /** Last field (and last referenced field) of a foreign key is `PERIOD` (PostgreSQL 18). */
+  period?: boolean;
+  /** `false` adds `NOT ENFORCED` (check and foreign key, PostgreSQL 18). */
+  enforced?: boolean;
   /** Adds `NOT VALID` (check and foreign key only); run `validateConstraint` later. PostgreSQL extension. */
   notValid?: boolean;
 }>;
@@ -194,4 +202,5 @@ export type CreateTableOptions = Readonly<{
   temporary?: boolean;
   defaultSchema?: string;
   ifNotExists?: boolean;
+  partitionBy?: PartitionKey;
 }>;
