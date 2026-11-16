@@ -224,14 +224,14 @@ Everything lives in `.10x/`:
 
 ## Git, PRs and releases
 
-- Branch from `main`: `feat/…`, `fix/…`, `refactor/…`, `docs/…`, `test/…`, `chore/…`. Never commit to `main` directly, except the release commit.
+- Branch from `main`: `feat/…`, `fix/…`, `refactor/…`, `docs/…`, `test/…`, `chore/…`. `main` is protected: nothing is pushed to it directly, not even the release commit; every change reaches it through a pull request.
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, plus `!` for breaking changes. State-only commits in `.10x/` use `state(<phase>): …`.
 - One topic per PR. Fill in the PR template checklist.
 - CI (`ci.yml`) runs on every PR: lint, format, typecheck, unit tests, build and package smoke test on Node 20 and 22 (docs build on 22), plus DB tests on PostgreSQL 16, 17 and 18. Merge only when all checks are green (merge commit, `gh pr merge --merge`). Never chain the merge after a CI wait without reading the result.
 - **Releases need the maintainer's explicit approval.** Flow:
-  1. `npm version X.Y.Z --no-git-tag-version`.
-  2. Commit `chore(release): X.Y.Z` on `main`.
-  3. Tag `vX.Y.Z` and push the tag. `release.yml` re-runs the checks and publishes to GitHub Packages.
+  1. On a branch `chore/release-X.Y.Z` from up-to-date `main`: `npm version X.Y.Z --no-git-tag-version`, commit `chore(release): X.Y.Z`, open a PR.
+  2. Merge the PR after green CI (merge commit).
+  3. Pull `main`, tag the merge commit `vX.Y.Z` and push the tag only. `release.yml` re-runs the checks and publishes to GitHub Packages; read its result.
   4. Record the release in `.10x` (`state(delivery): record X.Y.Z release`) via a PR.
 - Semver while < 1.0: breaking change → minor bump, everything else → patch.
 - `docs.yml` deploys the site from `main` on every push.
