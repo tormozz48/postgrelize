@@ -1,4 +1,7 @@
 import { AbstractDataType, type DataType, type DataTypeInput } from './abstract-data-type.ts';
+import { WallClock } from './wall-clock.ts';
+
+const wallClock = new WallClock();
 
 /** Range bound as returned by Sequelize v6 for `RANGE` attributes. */
 export type RangeBound<T> = Readonly<{
@@ -16,8 +19,6 @@ const RANGE_SQL_TYPES: Readonly<Record<string, string>> = {
   DATE: 'TSTZRANGE',
   DATEONLY: 'DATERANGE',
 };
-
-const pad = (value: number, width = 2): string => String(value).padStart(width, '0');
 
 const RANGE_PATTERN = /^([[(])"?(.*?)"?,"?(.*?)"?([\])])$/;
 
@@ -76,7 +77,7 @@ export class RangeType extends AbstractDataType {
   #formatBound(bound: RangeBound<unknown>): string {
     if (bound.value instanceof Date) {
       return this.subtype.key === 'TIMESTAMP'
-        ? RangeType.#wallClock(bound.value)
+        ? wallClock.format(bound.value)
         : bound.value.toISOString();
     }
     return bound.value === null ? '' : String(bound.value);
@@ -98,10 +99,6 @@ export class RangeType extends AbstractDataType {
       { value: this.#parseBoundValue(low), inclusive: open === '[' },
       { value: this.#parseBoundValue(high), inclusive: close === ']' },
     ];
-  }
-
-  static #wallClock(date: Date): string {
-    return `${pad(date.getFullYear(), 4)}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
   }
 
   #parseBoundValue(raw: string): unknown {

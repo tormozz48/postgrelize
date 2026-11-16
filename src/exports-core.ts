@@ -1,5 +1,6 @@
 export { DataTypes } from './data-types/data-types.ts';
 export type {
+  CompositeValue,
   DataType,
   DataTypeInput,
   DefaultValueGenerator,

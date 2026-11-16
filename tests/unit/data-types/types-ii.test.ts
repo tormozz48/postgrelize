@@ -103,3 +103,70 @@ describe('MULTIRANGE', () => {
     );
   });
 });
+
+describe('COMPOSITE', () => {
+  const address = DataTypes.COMPOSITE('address', {
+    street: DataTypes.TEXT,
+    zip: DataTypes.INTEGER,
+    primary: DataTypes.BOOLEAN,
+    meta: DataTypes.JSONB,
+    seen: DataTypes.TIMESTAMP,
+    data: DataTypes.BLOB,
+    big: DataTypes.BIGINT,
+  });
+
+  it('quotes the type name and renders CREATE TYPE', () => {
+    expect(address.sqlType).toBe('"address"');
+    expect(DataTypes.COMPOSITE('we"ird', { 'a"b': DataTypes.TEXT }).createSql()).toBe(
+      'CREATE TYPE "we""ird" AS ("a""b" TEXT)',
+    );
+    expect(address.createSql()).toContain('"zip" INTEGER, "primary" BOOLEAN, "meta" JSONB');
+    expect(() => DataTypes.COMPOSITE('empty', {})).toThrow(/at least one field/);
+  });
+
+  it('serializes objects to record text', () => {
+    expect(
+      address.serialize?.({
+        street: 'Main "St", (1)',
+        zip: 12345,
+        primary: true,
+        meta: { a: [1] },
+        seen: new Date(2024, 0, 2, 3, 4, 5, 6),
+        data: Buffer.from([1, 255]),
+        big: '9007199254740993',
+      }),
+    ).toBe(
+      '("Main ""St"", (1)",12345,t,"{""a"":[1]}","2024-01-02 03:04:05.006","\\\\x01ff",9007199254740993)',
+    );
+    expect(address.serialize?.({ street: '', zip: null })).toBe('("",,,,,,)');
+    expect(address.serialize?.('(x,1)')).toBe('(x,1)');
+    expect(address.serialize?.(null)).toBeNull();
+  });
+
+  it('parses record text into objects', () => {
+    const text =
+      '("Main ""St"", \\\\ (1)",12345,t,"{""a"":[1]}","2024-01-02 03:04:05.006","\\\\x01ff",9007199254740993)';
+    expect(address.parse?.(text)).toEqual({
+      street: 'Main "St", \\ (1)',
+      zip: 12345,
+      primary: true,
+      meta: { a: [1] },
+      seen: new Date(2024, 0, 2, 3, 4, 5, 6),
+      data: Buffer.from([1, 255]),
+      big: '9007199254740993',
+    });
+    expect(address.parse?.('("",,f,,,,)')).toMatchObject({ street: '', zip: null, primary: false });
+    expect(address.parse?.({ street: 'x' })).toEqual({ street: 'x' });
+  });
+
+  it('nests composites and rejects arrays', () => {
+    const inner = DataTypes.COMPOSITE('point2', { x: DataTypes.INTEGER, y: DataTypes.INTEGER });
+    const outer = DataTypes.COMPOSITE('segment', { from: inner, to: inner, label: DataTypes.TEXT });
+    const value = { from: { x: 1, y: 2 }, to: { x: 3, y: null }, label: 'a b' };
+    const text = outer.serialize?.(value) as string;
+    expect(text).toBe('("(1,2)","(3,)","a b")');
+    expect(outer.parse?.(text)).toEqual(value);
+    const withArray = DataTypes.COMPOSITE('arr', { list: DataTypes.ARRAY(DataTypes.TEXT) });
+    expect(() => withArray.serialize?.({ list: ['a'] })).toThrow(/array/);
+  });
+});

@@ -414,7 +414,7 @@ Not available from v6: other dialects, `minifyAliases`, `Model.schema('tenant')`
 Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage> (generated from `docs/coverage/postgresql-features.ts`). "Planned" and "out of scope" rows; most can be done with `sequelize.query()` raw SQL or `literal()`:
 
 - **SELECT clauses**: ONLY (table inheritance)
-- **Data types**: composite types; pg_lsn, txid_snapshot and other system types; PostGIS geometry / geography
+- **Data types**: pg_lsn, txid_snapshot and other system types; PostGIS geometry / geography
 - **DDL (sync and QueryInterface)**: NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD; Declarative partitioning (PARTITION BY / PARTITION OF / ATTACH); Rules (CREATE RULE)
 - **Session features**: Two-phase commit (PREPARE TRANSACTION)
 - **Out of scope**: Roles, GRANT / REVOKE, default privileges; Replication setup (publications, subscriptions, slots, logical decoding); Tablespaces; VACUUM, ANALYZE, REINDEX, CLUSTER, pg_stat views; Procedural languages (PL/pgSQL bodies, DO blocks, procedures); Extension internals (writing or configuring extensions); Foreign data wrappers and foreign tables; Server configuration (ALTER SYSTEM, pg_hba.conf, event triggers)

@@ -4,6 +4,7 @@ import { ArrayType } from './array-type.ts';
 import { BitType } from './bit-type.ts';
 import { BlobType } from './blob-type.ts';
 import { CharType } from './char-type.ts';
+import { CompositeType } from './composite-type.ts';
 import { DateType } from './date-type.ts';
 import { DecimalType } from './decimal-type.ts';
 import { DefaultValueGenerator } from './default-value-generator.ts';
@@ -25,6 +26,7 @@ import { VirtualType } from './virtual-type.ts';
 export type { DataType, DataTypeInput } from './abstract-data-type.ts';
 export type { GeoCircle, GeoLine, GeoPath } from './geometric-type.ts';
 export type { GeoPoint } from './geometric-text.ts';
+export type { CompositeValue } from './composite-type.ts';
 export type { HstoreValue } from './hstore-type.ts';
 export type { IntegerDataType } from './integer-type.ts';
 export type { RangeBound } from './range-type.ts';
@@ -181,6 +183,12 @@ export const DataTypes = {
     (subtype: DataTypeInput = INTEGER) => new MultirangeType(subtype),
     new MultirangeType(INTEGER),
   ),
+  /**
+   * Composite type, e.g. `DataTypes.COMPOSITE('address', { street: DataTypes.TEXT, zip: DataTypes.INTEGER })`;
+   * values are objects keyed by field name. Create the type first with `createSql()`. PostgreSQL extension.
+   */
+  COMPOSITE: (name: string, fields: Readonly<Record<string, DataTypeInput>>): CompositeType =>
+    new CompositeType(name, fields),
   /** Enumerated values: `DataTypes.ENUM('a', 'b')` or `DataTypes.ENUM({ values: ['a', 'b'] })`. */
   ENUM: (
     ...args: readonly (string | readonly string[] | Readonly<{ values: readonly string[] }>)[]

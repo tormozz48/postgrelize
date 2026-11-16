@@ -96,9 +96,11 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
 
   /** Converts an expression builder or a plain value (bound as a parameter) into an AST node. */
   toExpr(value: unknown, ref?: AttributeRef): ExprNode {
-    return value instanceof SqlExpression
-      ? value.accept(this)
-      : ast.param(serializeWith(ref, value));
+    if (value instanceof SqlExpression) {
+      return value.accept(this);
+    }
+    const param = ast.param(serializeWith(ref, value));
+    return ref?.castType === undefined ? param : { kind: 'cast', expr: param, type: ref.castType };
   }
 
   /** @internal */
