@@ -28,6 +28,8 @@ PostgreSQL additions and fixes:
 - `{ [Op.any]: [1, 3] }` is shorthand for `= ANY($1)` with one array parameter.
 - `IN` lists with 100 or more values are sent as `= ANY($1)` with a single array parameter instead of one parameter per value. Change the threshold with the `inAsAnyThreshold` constructor option.
 
+<<< @/examples/querying.ts#any-list{ts}
+
 ## Operator and search helpers
 
 PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `Op` entries and expression helpers. Every value is a bound parameter; regconfig names, weights and function kinds are validated.
@@ -57,6 +59,10 @@ PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `O
 `attributes` selects columns (`['id', 'code']`, `{ exclude: [...] }`, `{ include: [...] }`, or `[expression, 'alias']` pairs). `order` takes `[attribute, direction]` pairs, expressions, and nested association paths. Directions are allow-listed: `ASC`, `DESC`, optionally with `NULLS FIRST` / `NULLS LAST`.
 
 <<< @/examples/querying.ts#pagination{ts}
+
+PostgreSQL sorts `NULL` last in `ASC` and first in `DESC` order. Add `NULLS FIRST` or `NULLS LAST` to the direction to choose where rows with `NULL` go; any other direction text is rejected.
+
+<<< @/examples/querying.ts#nulls-order{ts}
 
 `findOne`, `findByPk`, `findOrCreate`, `findOrBuild` and `findAndCountAll` behave as in v6. Pass `rejectOnEmpty: true` to throw `EmptyResultError` instead of returning `null`. `raw: true` returns plain objects, and `nest: true` turns dotted keys into nested objects.
 
