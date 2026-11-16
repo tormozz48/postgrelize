@@ -13,6 +13,7 @@ import { GeometricType } from './geometric-type.ts';
 import { HstoreType } from './hstore-type.ts';
 import { IntegerType } from './integer-type.ts';
 import { JsonType } from './json-type.ts';
+import { MultirangeType } from './multirange-type.ts';
 import { RangeType } from './range-type.ts';
 import { ScalarType } from './scalar-type.ts';
 import { SpatialType } from './spatial-type.ts';
@@ -171,6 +172,14 @@ export const DataTypes = {
   RANGE: callable(
     (subtype: DataTypeInput = INTEGER) => new RangeType(subtype),
     new RangeType(INTEGER),
+  ),
+  /**
+   * Multirange type (PostgreSQL 14+), e.g. `DataTypes.MULTIRANGE(DataTypes.INTEGER)` →
+   * `INT4MULTIRANGE`; values are arrays of `[lower, upper]` ranges. PostgreSQL extension.
+   */
+  MULTIRANGE: callable(
+    (subtype: DataTypeInput = INTEGER) => new MultirangeType(subtype),
+    new MultirangeType(INTEGER),
   ),
   /** Enumerated values: `DataTypes.ENUM('a', 'b')` or `DataTypes.ENUM({ values: ['a', 'b'] })`. */
   ENUM: (
