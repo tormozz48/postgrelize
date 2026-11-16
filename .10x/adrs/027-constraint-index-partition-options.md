@@ -1,4 +1,4 @@
-# ADR-026: Constraint, index-expression and partition options
+# ADR-027: Constraint, index-expression and partition options
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Feature:** S13 constraints and indexes · **Author:** Claude (Architect)
 
