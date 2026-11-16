@@ -1,6 +1,6 @@
 # S11 DDL objects — design
 
-Backlog 4, stage S11. Decisions: [ADR-025](../adrs/025-ddl-object-names-and-trusted-sql.md). Matrix rows: Extensions, Sequences, Views and materialized views, Functions and triggers, Row-level security policies, UNLOGGED and TEMPORARY tables. Options are new; v6 semantics unchanged. Everything is on `QueryInterface` unless noted; names are `string | { tableName, schema }` (`TableName`) except functions (`{ name, schema }`).
+Backlog 4, stage S11. Decisions: [ADR-025](../adrs/025-ddl-object-names-and-trusted-sql.md). Matrix rows: Extensions, Sequences, Views and materialized views, Functions and triggers, Row-level security policies, UNLOGGED and TEMPORARY tables. Options are new; v6 semantics unchanged. Everything is on `QueryInterface` unless noted; names are `string | { tableName, schema }` (`TableName`) except functions (`string | { name, schema }`).
 
 ## Delivery: one PR per topic
 1. Extensions and sequences.

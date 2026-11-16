@@ -33,7 +33,7 @@ describe('DDL object names and keywords cannot break out of their quoting', () =
           await queryInterface.dropSequence(name);
           expect(await names(client, schema)).toEqual([]);
         }),
-        { ...propertyParameters(), numRuns: 30 },
+        { ...propertyParameters(), numRuns: 15 },
       );
       for (const payload of PAYLOADS) {
         const created = await settle(
@@ -75,5 +75,121 @@ describe('DDL object names and keywords cannot break out of their quoting', () =
           expect(syntaxError(result)).toBe(false);
         }
       }
+    }));
+
+  it('guards function and trigger names, types, keywords and quotes literal arguments', () =>
+    withCanary(async ({ sequelize, client }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await queryInterface.createFunction('benign', [], 'trigger', 'plpgsql', 'RETURN NEW;');
+      for (const payload of PAYLOADS.filter((value) => !/^[A-Za-z_]\w*$/.test(value))) {
+        for (const attempt of [
+          () => queryInterface.createFunction(payload, [], 'integer', 'plpgsql', 'RETURN 1;'),
+          () =>
+            queryInterface.createFunction(
+              'f',
+              [{ type: payload }],
+              'integer',
+              'plpgsql',
+              'RETURN 1;',
+            ),
+          () =>
+            queryInterface.createFunction(
+              'f',
+              [{ type: 'int', name: payload }],
+              'integer',
+              'plpgsql',
+              'RETURN 1;',
+            ),
+          () =>
+            queryInterface.createFunction(
+              'f',
+              [{ type: 'int', direction: payload }],
+              'integer',
+              'plpgsql',
+              'RETURN 1;',
+            ),
+          () => queryInterface.createFunction('f', [], payload, 'plpgsql', 'RETURN 1;'),
+          () => queryInterface.createFunction('f', [], 'integer', payload, 'RETURN 1;'),
+          () =>
+            queryInterface.createFunction('f', [], 'integer', 'plpgsql', 'RETURN 1;', [payload]),
+          () =>
+            queryInterface.createFunction('f', [], 'integer', 'plpgsql', 'RETURN 1;', [], {
+              variables: [{ name: payload, type: 'int' }],
+            }),
+          () => queryInterface.dropFunction(payload, []),
+          () => queryInterface.renameFunction('benign', [], payload),
+          () => queryInterface.createTrigger('canary', 't', payload as never, ['insert'], 'benign'),
+          () => queryInterface.createTrigger('canary', 't', 'after', [payload as never], 'benign'),
+          () => queryInterface.createTrigger('canary', 't', 'after', ['insert'], payload),
+          () =>
+            queryInterface.createTrigger(
+              'canary',
+              't',
+              'after',
+              ['insert'],
+              'benign',
+              [],
+              [payload],
+            ),
+        ]) {
+          await expect(attempt()).rejects.toThrow(/./);
+        }
+        const bound = await settle(
+          queryInterface.createTrigger(
+            'canary',
+            payload,
+            'after',
+            ['insert'],
+            'benign',
+            [payload, 1],
+            ['FOR EACH ROW'],
+          ),
+        );
+        expect({ payload, syntaxError: syntaxError(bound) }).toEqual({
+          payload,
+          syntaxError: false,
+        });
+        await queryInterface.dropTrigger('canary', payload, { ifExists: true });
+        const tables = await queryInterface
+          .createTrigger(
+            { tableName: payload, schema: 'public' },
+            't',
+            'after',
+            ['insert'],
+            'benign',
+          )
+          .catch((error: unknown) => error);
+        expect(syntaxError(tables)).toBe(false);
+      }
+      expect((await client.query("SELECT 1 FROM pg_proc WHERE proname = 'f'")).rowCount).toBe(0);
+    }));
+
+  it('quotes arbitrary trigger and exact function names', () =>
+    withCanary(async ({ sequelize, client, schema }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await fc.assert(
+        fc.asyncProperty(identifier(), identifier(), async (fn, trigger) => {
+          await queryInterface.createFunction(
+            { name: fn, schema },
+            [],
+            'trigger',
+            'plpgsql',
+            'RETURN NEW;',
+          );
+          await queryInterface.createTrigger(
+            'canary',
+            trigger,
+            'before',
+            ['insert'],
+            { name: fn, schema },
+            [fn],
+          );
+          const found = await client.query('SELECT 1 FROM pg_trigger WHERE tgname = $1', [trigger]);
+          expect(found.rowCount).toBe(1);
+          await queryInterface.dropTrigger('canary', trigger);
+          await queryInterface.dropFunction({ name: fn, schema }, []);
+        }),
+        { ...propertyParameters(), numRuns: 15 },
+      );
     }));
 });

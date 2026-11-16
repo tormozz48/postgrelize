@@ -18,6 +18,19 @@
 
 Sequences of `autoIncrement` and identity columns are created by `sync`; use these methods for standalone counters.
 
+## Functions and triggers
+
+`createFunction`, `dropFunction`, `renameFunction`, `createTrigger`, `dropTrigger` and `renameTrigger` have the Sequelize v6 names and argument order, so v6 migrations run unchanged.
+
+<<< @/examples/schema-objects.ts#function-trigger{ts}
+
+- **The function `body` is SQL you write.** It is wrapped in `BEGIN ... END;` like v6 and is not escaped: never build it from user input. The same holds for a `WHEN (...)` clause in the trigger options. See [Security](/security).
+- A function name given as a string (`'touch_post'`, `'app.touch_post'`) is an unquoted identifier that folds to lower case, like v6. Use `{ name, schema }` for an exact, quoted name.
+- Parameter and variable names and the language are identifier words. Types (`'integer'`, `'varchar(10)'`, `'text[]'`, `'SETOF users'`) and keywords (`'IMMUTABLE'`, `'SECURITY DEFINER'`, `'COST 10'`, `'FOR EACH ROW'`, `'DEFERRABLE'`) are checked against strict patterns and allowlists; anything else throws before SQL is sent.
+- Trigger arguments are literals: `createTrigger(table, name, 'before', ['insert'], 'f', ['a', 1])` renders `EXECUTE FUNCTION f('a', 1)`. v6 rendered typed parameter declarations, which PostgreSQL rejects.
+- New options: `dropFunction` / `dropTrigger` accept `ifExists` and `cascade`; `createTrigger` accepts `replace` (`CREATE OR REPLACE TRIGGER`, PostgreSQL 14+).
+- Timing is `'before' | 'after' | 'instead_of' | 'after_constraint'` (a deferrable `CONSTRAINT TRIGGER`); events are `'insert' | 'update' | 'delete' | 'truncate'`.
+
 ## API reference
 
 - [`QueryInterface`](/api/classes/QueryInterface)
