@@ -5,6 +5,7 @@ import { SqlAst, type ExprNode } from '../sql/ast.ts';
 export type AttributeRef = Readonly<{
   field: string;
   isJson?: boolean;
+  castType?: string;
   serialize?: (value: unknown) => unknown;
 }>;
 
