@@ -161,3 +161,46 @@ describe('multirange types', () => {
       expect(agg?.get('agg')).toBe('{[1,5),[10,20),[100,200)}');
     }));
 });
+
+describe('composite types', () => {
+  it('round-trips composite values and filters by them', () =>
+    inSchema(async (sequelize) => {
+      const address = DataTypes.COMPOSITE('address', {
+        street: DataTypes.TEXT,
+        zip: DataTypes.INTEGER,
+        verified: DataTypes.BOOLEAN,
+        tags: DataTypes.JSONB,
+        seen: DataTypes.TIMESTAMP,
+      });
+      await sequelize.query(address.createSql());
+      const Person = sequelize.define(
+        'Person',
+        { name: DataTypes.STRING, home: address },
+        { timestamps: false },
+      );
+      await sequelize.sync();
+      const home = {
+        street: 'Main "St", (1)',
+        zip: 12345,
+        verified: true,
+        tags: { a: [1, 2] },
+        seen: new Date(2024, 0, 2, 3, 4, 5),
+      };
+      await Person.create({ name: 'ann', home });
+      await Person.create({ name: 'bob', home: { street: '', zip: null, verified: false } });
+      await Person.create({ name: 'none' });
+      const rows = await Person.findAll({ order: [['name', 'ASC']] });
+      expect(rows.map((row) => row.get('home'))).toEqual([
+        home,
+        { street: '', zip: null, verified: false, tags: null, seen: null },
+        null,
+      ]);
+      expect(await Person.count({ where: { home: { [Op.eq]: home } } })).toBe(1);
+      expect(await Person.count({ where: literal('("home").zip = 12345') })).toBe(1);
+      await Person.update({ home: { street: 'New', zip: 1 } }, { where: { name: 'bob' } });
+      expect((await Person.findOne({ where: { name: 'bob' } }))?.get('home')).toMatchObject({
+        street: 'New',
+        zip: 1,
+      });
+    }));
+});

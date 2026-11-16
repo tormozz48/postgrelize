@@ -1,7 +1,13 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { DataTypes } from '../../../src/index.ts';
-import { PAYLOADS, propertyParameters, settle, withCanary } from '../../support/injection.ts';
+import { DataTypes, Op } from '../../../src/index.ts';
+import {
+  PAYLOADS,
+  propertyParameters,
+  settle,
+  textValue,
+  withCanary,
+} from '../../support/injection.ts';
 
 describe('S15 data types keep values bound', () => {
   it('binds payload text written to and filtered on geometric columns', () =>
@@ -77,4 +83,38 @@ describe('S15 data types keep values bound', () => {
   it('rejects unsupported multirange element types before SQL is built', () => {
     expect(() => DataTypes.MULTIRANGE(DataTypes.TEXT)).toThrow(/does not support subtype/);
   });
+});
+
+describe('S15 composite types keep names quoted and values bound', () => {
+  it('quotes composite type and field names taken from payloads', () =>
+    withCanary(async ({ sequelize }) => {
+      for (const [index, payload] of PAYLOADS.entries()) {
+        const type = DataTypes.COMPOSITE(payload, {
+          [payload]: DataTypes.TEXT,
+          other: DataTypes.INTEGER,
+        });
+        await sequelize.query(type.createSql());
+        const Item = sequelize.define(`Item${index}`, { value: type }, { timestamps: false });
+        await Item.sync();
+        await Item.create({ value: { [payload]: payload, other: 1 } });
+        expect((await Item.findOne())?.get('value')).toEqual({ [payload]: payload, other: 1 });
+      }
+    }));
+
+  it('round-trips arbitrary text through composite fields', () =>
+    withCanary(async ({ sequelize }) => {
+      const type = DataTypes.COMPOSITE('pair', { a: DataTypes.TEXT, b: DataTypes.TEXT });
+      await sequelize.query(type.createSql());
+      const Item = sequelize.define('Item', { value: type }, { timestamps: false });
+      await Item.sync();
+      await fc.assert(
+        fc.asyncProperty(textValue(), textValue(), async (a, b) => {
+          await Item.destroy({ where: {}, truncate: true });
+          await Item.create({ value: { a, b } });
+          expect((await Item.findOne())?.get('value')).toEqual({ a, b });
+          expect(await Item.count({ where: { value: { [Op.eq]: { a, b } } } })).toBe(1);
+        }),
+        propertyParameters(),
+      );
+    }));
 });

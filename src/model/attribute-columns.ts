@@ -9,6 +9,7 @@ const ast = new SqlAst();
 const attributeRef = (attribute: AttributeDefinition): AttributeRef => ({
   field: attribute.field,
   ...(attribute.type.isJson === true ? { isJson: true } : {}),
+  ...(attribute.type.bindCast === undefined ? {} : { castType: attribute.type.bindCast }),
   ...(attribute.type.serialize === undefined ? {} : { serialize: attribute.type.serialize }),
 });
 
