@@ -53,6 +53,12 @@ export type {
   TriggerEvent,
   TriggerTiming,
 } from './ddl/trigger-ddl.ts';
+export type {
+  CreateMaterializedViewOptions,
+  CreateViewOptions,
+  DropViewOptions,
+  RefreshMaterializedViewOptions,
+} from './ddl/view-ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type {
