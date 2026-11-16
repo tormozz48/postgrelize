@@ -82,6 +82,54 @@ export class RowMapper {
     return row;
   }
 
+  /**
+   * {@link RowMapper.parseOwned} for every row of one result. All rows of a query have the same
+   * columns, so the column plan is resolved once from the first row and each row only runs the
+   * parsers: a result without parsers is returned untouched.
+   *
+   * @param definition - Model definition.
+   * @param rows - Driver rows of one query; modified.
+   * @returns Attribute values per row (the same array).
+   */
+  parseAllOwned(
+    definition: ModelDefinition,
+    rows: readonly QueryResultRow[],
+  ): readonly Readonly<Record<string, unknown>>[] {
+    const first = rows[0];
+    const parsers = first === undefined ? [] : this.#parsersOf(definition, first);
+    if (parsers === undefined) {
+      return rows.map((row) => this.parseOwned(definition, row));
+    }
+    for (const row of rows) {
+      for (const [key, parse] of parsers) {
+        const value: unknown = row[key];
+        if (value !== null) {
+          row[key] = parse(value);
+        }
+      }
+    }
+    return rows;
+  }
+
+  // Parsers of the columns of a row; `undefined` when a column maps to another attribute name.
+  #parsersOf(
+    definition: ModelDefinition,
+    row: QueryResultRow,
+  ): [string, (value: unknown) => unknown][] | undefined {
+    const columns = this.#plans.columns(definition);
+    const parsers: [string, (value: unknown) => unknown][] = [];
+    for (const key of Object.keys(row)) {
+      const { name, parse } = columns.get(key) ?? this.#plans.plan(definition, columns, key);
+      if (name !== key) {
+        return undefined;
+      }
+      if (parse !== undefined) {
+        parsers.push([key, parse]);
+      }
+    }
+    return parsers;
+  }
+
   #renamed(
     definition: ModelDefinition,
     row: QueryResultRow,
