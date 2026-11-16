@@ -21,6 +21,7 @@ export const PAGES: readonly DocPage[] = [
   { file: 'guide/hooks-validation.md', url: '/guide/hooks-validation', section: 'Guide', description: 'Hooks, validators, Standard Schema validation' },
   { file: 'guide/schema.md', url: '/guide/schema', section: 'Guide', description: 'sync, QueryInterface, migrations' },
   { file: 'guide/schema-objects.md', url: '/guide/schema-objects', section: 'PostgreSQL features', description: 'Extensions, sequences, views, functions, triggers, row-level security policies' },
+  { file: 'guide/constraints-indexes.md', url: '/guide/constraints-indexes', section: 'PostgreSQL features', description: 'Expression indexes, EXCLUDE, NOT VALID, PostgreSQL 18 constraints, partitioning' },
   { file: 'guide/llm.md', url: '/guide/llm', section: 'Guide', description: 'Using postgrelize from LLMs and agents: llms.txt, USAGE.md, Agent Skill' },
   { file: 'guide/upserts.md', url: '/guide/upserts', section: 'PostgreSQL features', description: 'ON CONFLICT upserts, Model.insert, RETURNING' },
   { file: 'guide/bulk-writes.md', url: '/guide/bulk-writes', section: 'PostgreSQL features', description: 'UPDATE FROM, DELETE USING, INSERT FROM, MERGE, COPY' },

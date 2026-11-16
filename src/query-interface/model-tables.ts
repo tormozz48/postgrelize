@@ -105,8 +105,11 @@ export class ModelTables {
   }
 
   #indexField(definition: ModelDefinition, field: IndexField): IndexField {
-    return typeof field === 'string'
-      ? (definition.attributes.get(field)?.field ?? field)
+    if (typeof field === 'string') {
+      return definition.attributes.get(field)?.field ?? field;
+    }
+    return field.name === undefined
+      ? field
       : { ...field, name: definition.attributes.get(field.name)?.field ?? field.name };
   }
 

@@ -39,6 +39,7 @@ const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
 const SCHEMA = 'tests/integration/schema.test.ts';
 const FNTRIG = 'tests/compat/functions-triggers.test.ts';
 const OBJECTS = 'tests/integration/ddl-objects.test.ts';
+const CONSTRAINTS = 'tests/integration/constraints-indexes.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
 const CTEX = 'tests/integration/cte-extras.test.ts';
 const SETOPS = 'tests/integration/set-ops-from.test.ts';
@@ -164,7 +165,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: DDL, feature: 'NOT VALID constraints and VALIDATE CONSTRAINT', minPg: '16', status: 'planned', note: 'Online migration pattern for large tables. Workaround: raw DDL.' },
   { area: DDL, feature: 'NOT ENFORCED constraints, WITHOUT OVERLAPS keys, FK PERIOD', minPg: '18', status: 'planned', note: 'PostgreSQL 18 constraint forms. Workaround: raw DDL.' },
   { area: DDL, feature: 'Indexes: unique, partial, covering (INCLUDE), GIN, BRIN, CONCURRENTLY, IF NOT EXISTS', minPg: '16', status: 'supported', test: t(PG, 'creates partial, expression, covering, GIN and concurrent indexes'), note: '`addIndex` / model `indexes`: `where`, `include`, `using`, `operator`, `concurrently`, `ifNotExists`. GiST, SP-GiST and hash go through `using`.' },
-  { area: DDL, feature: 'Expression indexes (lower(email))', minPg: '16', status: 'planned', note: '`IndexField.name` is a column. Workaround: raw DDL (an `onConflict` target on an expression index already works).' },
+  { area: DDL, feature: 'Expression indexes (lower(email))', minPg: '16', status: 'supported', test: t(CONSTRAINTS, 'creates unique expression indexes with addIndex and enforces them'), note: '`{ expression }` index fields (trusted SQL) with `collate`, `operator`, `order`, `nulls`, `include`; an explicit `name` is required.' },
   { area: DDL, feature: 'ALTER TABLE: add / change / rename / remove column, rename table', minPg: '16', status: 'supported', test: t(QI, 'column, index and constraint operations'), note: '`QueryInterface` methods.' },
   { area: DDL, feature: 'Enum ALTER (ADD VALUE)', minPg: '16', status: 'supported', test: t(SCHEMA_POWER, 'adds new enum values to the existing type'), note: '`sync({ alter: true })`; `dropEnum` and `dropAllEnums`.' },
   { area: DDL, feature: 'Comments on tables and columns', minPg: '16', status: 'supported', test: t(PG, 'sets table comments and creates identity columns'), note: '`comment` option on `createTable` and columns.' },
