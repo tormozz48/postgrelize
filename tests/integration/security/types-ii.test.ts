@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DataTypes } from '../../../src/index.ts';
 import { PAYLOADS, propertyParameters, settle, withCanary } from '../../support/injection.ts';
 
-describe('S15 geometric types keep values bound', () => {
+describe('S15 data types keep values bound', () => {
   it('binds payload text written to and filtered on geometric columns', () =>
     withCanary(async ({ sequelize }) => {
       const columns = {
@@ -54,4 +54,27 @@ describe('S15 geometric types keep values bound', () => {
         propertyParameters(),
       );
     }));
+
+  it('binds payload text written to and filtered on multirange columns', () =>
+    withCanary(async ({ sequelize }) => {
+      const columns = {
+        ints: DataTypes.MULTIRANGE(DataTypes.INTEGER),
+        days: DataTypes.MULTIRANGE(DataTypes.DATEONLY),
+        stamps: DataTypes.MULTIRANGE(DataTypes.TIMESTAMP),
+      };
+      const Item = sequelize.define('Item', columns, { timestamps: false });
+      await Item.sync();
+      for (const payload of PAYLOADS) {
+        for (const name of Object.keys(columns)) {
+          await settle(Item.create({ [name]: payload }));
+          await settle(Item.create({ [name]: [[payload, payload]] }));
+          await settle(Item.count({ where: { [name]: payload } }));
+        }
+      }
+      expect(await Item.count()).toBe(0);
+    }));
+
+  it('rejects unsupported multirange element types before SQL is built', () => {
+    expect(() => DataTypes.MULTIRANGE(DataTypes.TEXT)).toThrow(/does not support subtype/);
+  });
 });

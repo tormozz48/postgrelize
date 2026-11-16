@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DataTypes, Op, Sequelize, cast, literal, type WhereOptions } from '../../src/index.ts';
+import {
+  DataTypes,
+  Op,
+  Sequelize,
+  cast,
+  col,
+  fn,
+  literal,
+  type WhereOptions,
+} from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
 
@@ -20,6 +29,7 @@ const inSchema = <T>(run: (sequelize: Sequelize) => Promise<T>): Promise<T> =>
     return run(sequelize);
   });
 
+const at = (hour: number): Date => new Date(Date.UTC(2024, 0, 1, hour));
 const p = (x: number, y: number): { x: number; y: number } => ({ x, y });
 
 describe('geometric types', () => {
@@ -88,5 +98,66 @@ describe('geometric types', () => {
       await sequelize.sync();
       await Spot.create({});
       expect((await Spot.findOne())?.get('at')).toEqual(p(3, 4));
+    }));
+});
+
+describe('multirange types', () => {
+  it('round-trips multiranges and filters with range operators', () =>
+    inSchema(async (sequelize) => {
+      const Slot = sequelize.define(
+        'Slot',
+        {
+          name: DataTypes.STRING,
+          ints: DataTypes.MULTIRANGE(DataTypes.INTEGER),
+          big: DataTypes.MULTIRANGE(DataTypes.BIGINT),
+          nums: DataTypes.MULTIRANGE(DataTypes.DECIMAL),
+          days: DataTypes.MULTIRANGE(DataTypes.DATEONLY),
+          wall: DataTypes.MULTIRANGE(DataTypes.TIMESTAMP),
+          at: DataTypes.MULTIRANGE(DataTypes.DATE),
+        },
+        { timestamps: false },
+      );
+      await sequelize.sync();
+      await Slot.create({
+        name: 'a',
+        ints: [
+          [1, 5],
+          [10, 20],
+        ],
+        big: [[1, 5]],
+        nums: [[1.5, 2.5]],
+        days: [['2024-01-01', '2024-01-05']],
+        wall: [[new Date(2024, 0, 2, 3), new Date(2024, 0, 2, 4)]],
+        at: [[at(1), at(2)]],
+      });
+      await Slot.create({ name: 'b', ints: [[100, 200]] });
+      await Slot.create({ name: 'empty', ints: [] });
+      const row = await Slot.findOne({ where: { name: 'a' } });
+      const bounds = (key: string): unknown => row?.get(key);
+      expect(bounds('ints')).toEqual([
+        [
+          { value: 1, inclusive: true },
+          { value: 5, inclusive: false },
+        ],
+        [
+          { value: 10, inclusive: true },
+          { value: 20, inclusive: false },
+        ],
+      ]);
+      expect((bounds('at') as { value: Date }[][])[0]?.[0]?.value).toEqual(at(1));
+      expect((bounds('wall') as { value: Date }[][])[0]?.[0]?.value).toEqual(
+        new Date(2024, 0, 2, 3),
+      );
+      expect((await Slot.findOne({ where: { name: 'empty' } }))?.get('ints')).toEqual([]);
+      const names = async (where: WhereOptions): Promise<string[]> =>
+        (await Slot.findAll({ where, order: [['name', 'ASC']] })).map(
+          (s) => s.get('name') as string,
+        );
+      expect(await names({ ints: { [Op.contains]: cast('12', 'int4') } })).toEqual(['a']);
+      expect(await names({ ints: { [Op.overlap]: [[150, 160]] } })).toEqual(['b']);
+      expect(await names({ ints: { [Op.strictRight]: [[50, 60]] } })).toEqual(['b']);
+      expect(await names({ ints: { [Op.eq]: [] } })).toEqual(['empty']);
+      const agg = await Slot.findOne({ attributes: [[fn('range_agg', col('ints')), 'agg']] });
+      expect(agg?.get('agg')).toBe('{[1,5),[10,20),[100,200)}');
     }));
 });
