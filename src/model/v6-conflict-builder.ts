@@ -16,8 +16,13 @@ const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefi
 const uniqueIndexKeys = (definition: ModelDefinition, withPartial: boolean): readonly UniqueKey[] =>
   (definition.options.indexes ?? [])
     .filter((index) => index.unique === true && (withPartial || index.where === undefined))
+    .filter((index) =>
+      (index.fields ?? []).every((field) => typeof field === 'string' || field.name !== undefined),
+    )
     .map((index) => ({
-      fields: (index.fields ?? []).map((field) => (typeof field === 'string' ? field : field.name)),
+      fields: (index.fields ?? []).map((field) =>
+        typeof field === 'string' ? field : (field.name as string),
+      ),
       ...(index.where === undefined ? {} : { where: index.where }),
     }))
     .filter((key) => key.fields.length > 0);

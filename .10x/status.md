@@ -172,3 +172,10 @@
 ## Release 0.11.0 (2026-11-16)
 - Tag `v0.11.0` → release.yml, `@tormozz48/postgrelize@0.11.0`. Contents: S11 DDL objects (extensions, sequences, views and materialized views, functions and triggers, RLS policies, UNLOGGED/TEMPORARY tables; ADR-025) and S17 operator helpers (SIMILAR TO, jsonpath, full-text, network operators, `pg_trgm`). Next: S13 constraints/indexes/partitioning and S15 types II (running).
 
+
+## Backlog 4 / S13 constraints and indexes (2026-11-16)
+Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
+- [x] PR 1: expression indexes (`{ expression }` index fields, `nulls`)
+- [ ] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
+- [ ] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
+- [ ] PR 4: declarative partitioning
