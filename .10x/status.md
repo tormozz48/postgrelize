@@ -11,7 +11,7 @@
 **S12 (Set operations and FROM sources):** done — set operations (`Subquery#union/intersect/except`), `source: Subquery`, `withTies`, `from` sources (`values`, `function` + ordinality, `jsonTable` PG17, `lateral`, `{ model, sample }`), `sample` (TABLESAMPLE), lateral top-N includes, data-modifying CTEs (`Model.insert/update/deleteStatement`), CTE `search` / `cycle`; 8 matrix rows flipped; spec `.10x/specs/2026-11-15-s12-set-ops-from-design.md`, ADR-024. Not modelled: `NESTED PATH` in JSON_TABLE, `INSERT … SELECT FROM cte` as main statement.
 
 **S14 (Types I):** done — HSTORE objects fixed; `LTREE`, `TIMESTAMP`, `MONEY`, `MACADDR8`, `XML`, `BIT` / `VARBIT`, `TSQUERY` added; spec `.10x/specs/2026-11-15-s14-types-i-design.md`.
-**S15 (Types II):** in progress — spec `.10x/specs/2026-11-16-s15-types-ii-design.md`, ADR-026. PR 1 geometric types (`POINT` … `CIRCLE`) merged (#77); PR 2 `MULTIRANGE` (#79); PR 3 `COMPOSITE`; next PostGIS.
+**S15 (Types II):** done (pending PR 4 merge) — spec `.10x/specs/2026-11-16-s15-types-ii-design.md`, ADR-026. PR 1 geometric types (`POINT` … `CIRCLE`) merged (#77); PR 2 `MULTIRANGE` (#79); PR 3 `COMPOSITE` (#80); PR 4 PostGIS GeoJSON (hex EWKB reader/writer, optional CI job).
 
 **Feature examples (S16b):** in progress — every beyond-v6 feature needs a runnable example, a guide section and CI proof; audit `.10x/reviews/2026-11-16-feature-example-audit.md`, spec `.10x/specs/2026-11-16-feature-examples-design.md`. PR 1 (#85, merged): matrix fields (`beyondV6`, `example`, `guide`), `EXTRA_FEATURES`, `tests/docs/feature-examples.test.ts`. PR 2: examples for NULLS FIRST/LAST, OVERRIDING and long `IN` lists; `KNOWN_GAPS` empty. S13 rows included; PostGIS joins when S15 lands it.
 

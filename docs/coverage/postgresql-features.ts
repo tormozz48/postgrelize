@@ -32,6 +32,7 @@ export type FeatureRow = Readonly<{
 
 const PG = 'tests/integration/pg-coverage.test.ts';
 const TYPES_I = 'tests/integration/types-i.test.ts';
+const POSTGIS = 'tests/integration/postgis.test.ts';
 const TYPES_II = 'tests/integration/types-ii.test.ts';
 const POWER = 'tests/integration/query-power.test.ts';
 const WRITE = 'tests/integration/write-power.test.ts';
@@ -167,7 +168,7 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: TYPES, feature: 'citext (extension)', minPg: '16', status: 'supported', beyondV6: false, test: t(PG, 'stores citext with an extension'), note: '`DataTypes.CITEXT`; run `CREATE EXTENSION citext` first.' },
   { area: TYPES, feature: 'hstore (extension)', minPg: '16', status: 'supported', beyondV6: false, test: t(TYPES_I, 'round-trips hstore as objects and filters with hstore operators'), note: '`DataTypes.HSTORE`; values are objects of strings (or `null`); run `CREATE EXTENSION hstore` first.' },
   { area: TYPES, feature: 'ltree (extension)', minPg: '16', status: 'supported', beyondV6: true, example: 'types.ts#use', guide: 'models#postgresql-specific-types', test: t(TYPES_I, 'round-trips ltree paths and matches ltree operators'), note: '`DataTypes.LTREE`; values are strings (`\'Top.Science\'`); run `CREATE EXTENSION ltree` first.' },
-  { area: TYPES, feature: 'PostGIS geometry / geography', minPg: '16', status: 'planned', note: '`GEOMETRY` / `GEOGRAPHY` types exist for DDL but no test or GeoJSON round trip runs against PostGIS.' },
+  { area: TYPES, feature: 'PostGIS geometry / geography', minPg: '16', status: 'supported', beyondV6: false, test: t(POSTGIS, 'round-trips GeoJSON through geometry and geography columns'), note: '`DataTypes.GEOMETRY(type, srid)` / `GEOGRAPHY(type, srid)` with GeoJSON values (SRID in `crs`); needs `CREATE EXTENSION postgis`; tests run only where PostGIS is installed (CI job `PostGIS`).' },
   { area: TYPES, feature: 'Stored and virtual generated columns, identity columns', minPg: '16', status: 'supported', beyondV6: true, example: 'models.ts#postgres-columns', guide: 'models#identity-generated', test: t(SCHEMA_POWER, 'creates identity and stored generated columns'), note: '`generated: { as, stored }` and `identity: "always" | "byDefault"` column options. `VIRTUAL` generated columns need PostgreSQL 18.' },
 
   // DDL

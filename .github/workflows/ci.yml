@@ -74,3 +74,33 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:db
+
+  postgis:
+    name: PostGIS (optional)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgrelize
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgrelize"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      PGZ_TEST_URL: postgres://postgres:postgres@localhost:54329/postgrelize
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run --project integration tests/integration/postgis.test.ts tests/integration/security/types-ii.test.ts
+      - run: npx vitest run --project docs

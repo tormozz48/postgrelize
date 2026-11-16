@@ -118,3 +118,38 @@ describe('S15 composite types keep names quoted and values bound', () => {
       );
     }));
 });
+
+describe('S15 GeoJSON values never reach SQL text', () => {
+  it('rejects payload geometry types and coordinates before SQL is built', () => {
+    for (const payload of PAYLOADS) {
+      expect(() => DataTypes.GEOMETRY.serialize?.({ type: payload, coordinates: [1, 2] })).toThrow(
+        /Unsupported GeoJSON/,
+      );
+      expect(() =>
+        DataTypes.GEOMETRY.serialize?.({ type: 'Point', coordinates: [payload, 2] }),
+      ).toThrow(/finite numbers/);
+    }
+  });
+
+  it('turns a payload crs name into the default SRID, never into text', () => {
+    const plain = DataTypes.GEOMETRY.serialize?.({ type: 'Point', coordinates: [1, 2] });
+    for (const payload of PAYLOADS) {
+      const geometry = {
+        type: 'Point',
+        coordinates: [1, 2],
+        crs: { type: 'name', properties: { name: payload } },
+      };
+      expect(DataTypes.GEOMETRY.serialize?.(geometry)).toBe(plain);
+    }
+  });
+
+  it('validates GEOMETRY and GEOGRAPHY type and SRID parameters', () => {
+    // A plain word (the 10 000 character payload) is a valid, harmless type name.
+    for (const payload of PAYLOADS.filter((value) => !/^\w+$/.test(value))) {
+      expect(() => DataTypes.GEOMETRY(payload)).toThrow(/Invalid spatial type/);
+      expect(() => DataTypes.GEOGRAPHY('POINT', payload as unknown as number)).toThrow(
+        /non-negative integer/,
+      );
+    }
+  });
+});
