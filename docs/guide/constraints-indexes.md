@@ -10,3 +10,19 @@
 - **The `expression` is SQL you write.** It is wrapped in parentheses and is not escaped: never build it from user input. See [Security](/security).
 - A name cannot be derived from an expression, so an index with an expression field needs an explicit `name`.
 - Model `indexes` accept the same fields. An expression must be immutable (PostgreSQL rejects `date_trunc` on `timestamptz`, for example).
+
+## EXCLUDE constraints
+
+<<< @/examples/constraints-indexes.ts#exclude{ts}
+
+- `addConstraint(table, { type: 'exclude', exclude: [{ name | expression, with }], using, where, include, deferrable })`. Each element is a column or an expression with the operator it is compared with (`with`), and accepts `collate`, `operator` (operator class), `order` and `nulls`.
+- Scalar columns with `=` in a `gist` / `spgist` exclusion need the `btree_gist` extension (`createExtension('btree_gist')`).
+- The operator is checked against a pattern of operator characters (`=`, `&&`, `-|-`, `<->`); a name or expression cannot be smuggled in. Expressions are trusted SQL (see above). `where` is a where-object compiled like a partial-index condition; `deferrable` takes a `Deferrable` constant.
+- Without `name` the constraint is called `<table>_<columns>_excl`; with an expression element give a `name`.
+- A violation raises `ExclusionConstraintError`.
+
+## NOT VALID and VALIDATE CONSTRAINT
+
+<<< @/examples/constraints-indexes.ts#not-valid{ts}
+
+`notValid: true` (check and foreign key constraints) adds the constraint without scanning existing rows, so it takes only a short lock; new and updated rows are checked at once. After cleaning the old rows, `validateConstraint(table, name)` scans the table without blocking writes. Using `notValid` with another constraint type throws.

@@ -101,4 +101,19 @@ export class IndexCommands {
       options,
     );
   }
+
+  /**
+   * Validates a `NOT VALID` constraint.
+   *
+   * @param table - Table name or `{ tableName, schema }`.
+   * @param name - Constraint name.
+   * @param options - Query options.
+   */
+  async validateConstraint(
+    table: TableName,
+    name: string,
+    options?: QueryOptionsBase,
+  ): Promise<void> {
+    await this.#runner.run(ddl.validateConstraintSql(table, name), options);
+  }
 }

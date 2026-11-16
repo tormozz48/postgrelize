@@ -28,6 +28,7 @@ export { Deferrable } from './ddl/ddl-generator.ts';
 export type {
   ConstraintOptions,
   DeferrableValue,
+  ExcludeElement,
   IndexField,
   IndexOptions,
 } from './ddl/ddl-generator.ts';

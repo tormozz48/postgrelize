@@ -79,9 +79,9 @@ describe('constraint DDL', () => {
   });
 
   it('rejects unknown types and foreign keys without references', () => {
-    expect(() =>
-      ddl.addConstraintSql('Users', { type: 'exclude' as never, fields: ['a'] }),
-    ).toThrow(/Constraint type must be specified through options.type/);
+    expect(() => ddl.addConstraintSql('Users', { type: 'bogus' as never, fields: ['a'] })).toThrow(
+      /Constraint type must be specified through options.type/,
+    );
     expect(() => ddl.addConstraintSql('Users', { type: 'foreign key', fields: ['a'] })).toThrow(
       'Foreign key constraint requires references',
     );

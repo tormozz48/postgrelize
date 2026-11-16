@@ -186,7 +186,9 @@ export class QueryInterface extends QueryInterfacePolicies {
   }
 
   /**
-   * Adds a `CHECK`, `UNIQUE`, `PRIMARY KEY` or `FOREIGN KEY` constraint to a table.
+   * Adds a `CHECK`, `UNIQUE`, `PRIMARY KEY`, `FOREIGN KEY` or `EXCLUDE` constraint to a table.
+   * `notValid: true` skips checking existing rows (check and foreign key); validate later with
+   * {@link QueryInterface.validateConstraint}.
    *
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - Constraint definition.
@@ -199,6 +201,15 @@ export class QueryInterface extends QueryInterfacePolicies {
    *   name: 'products_price_positive',
    *   where: { price: { [Op.gt]: 0 } },
    * });
+   * await queryInterface.addConstraint('bookings', {
+   *   type: 'exclude',
+   *   name: 'bookings_no_overlap',
+   *   using: 'gist',
+   *   exclude: [
+   *     { name: 'room', with: '=' },
+   *     { expression: 'tstzrange(starts, ends)', with: '&&' },
+   *   ],
+   * });
    * ```
    */
   async addConstraint(
@@ -206,6 +217,32 @@ export class QueryInterface extends QueryInterfacePolicies {
     options: ConstraintOptions & QueryOptionsBase,
   ): Promise<void> {
     await this.#indexes.addConstraint(table, options);
+  }
+
+  /**
+   * Validates a constraint added with `notValid: true`, scanning existing rows without blocking writes.
+   *
+   * @param table - Table name or `{ tableName, schema }`.
+   * @param name - Constraint name.
+   * @param options - Query options.
+   *
+   * @example
+   * ```ts
+   * await queryInterface.addConstraint('products', {
+   *   type: 'check',
+   *   name: 'products_price_positive',
+   *   where: { price: { [Op.gt]: 0 } },
+   *   notValid: true,
+   * });
+   * await queryInterface.validateConstraint('products', 'products_price_positive');
+   * ```
+   */
+  async validateConstraint(
+    table: TableName,
+    name: string,
+    options?: QueryOptionsBase,
+  ): Promise<void> {
+    await this.#indexes.validateConstraint(table, name, options);
   }
 
   /**
