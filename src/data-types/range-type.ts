@@ -12,9 +12,12 @@ const RANGE_SQL_TYPES: Readonly<Record<string, string>> = {
   INTEGER: 'INT4RANGE',
   BIGINT: 'INT8RANGE',
   DECIMAL: 'NUMRANGE',
+  TIMESTAMP: 'TSRANGE',
   DATE: 'TSTZRANGE',
   DATEONLY: 'DATERANGE',
 };
+
+const pad = (value: number, width = 2): string => String(value).padStart(width, '0');
 
 const RANGE_PATTERN = /^([[(])"?(.*?)"?,"?(.*?)"?([\])])$/;
 
@@ -34,7 +37,7 @@ export class RangeType extends AbstractDataType {
   readonly #parseBound: ((value: unknown) => unknown) | undefined;
 
   /**
-   * @param subtype - Element type: `INTEGER`, `BIGINT`, `DECIMAL`, `DATE` or `DATEONLY`.
+   * @param subtype - Element type: `INTEGER`, `BIGINT`, `DECIMAL`, `TIMESTAMP`, `DATE` or `DATEONLY`.
    * @throws Error for any other element type.
    */
   constructor(subtype: DataTypeInput) {
@@ -71,11 +74,12 @@ export class RangeType extends AbstractDataType {
   }
 
   #formatBound(bound: RangeBound<unknown>): string {
-    return bound.value === null
-      ? ''
-      : bound.value instanceof Date
-        ? bound.value.toISOString()
-        : String(bound.value);
+    if (bound.value instanceof Date) {
+      return this.subtype.key === 'TIMESTAMP'
+        ? RangeType.#wallClock(bound.value)
+        : bound.value.toISOString();
+    }
+    return bound.value === null ? '' : String(bound.value);
   }
 
   #parse(value: unknown): unknown {
@@ -94,6 +98,10 @@ export class RangeType extends AbstractDataType {
       { value: this.#parseBoundValue(low), inclusive: open === '[' },
       { value: this.#parseBoundValue(high), inclusive: close === ']' },
     ];
+  }
+
+  static #wallClock(date: Date): string {
+    return `${pad(date.getFullYear(), 4)}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
   }
 
   #parseBoundValue(raw: string): unknown {
