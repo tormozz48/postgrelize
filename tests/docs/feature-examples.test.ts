@@ -13,11 +13,7 @@ const root = new URL('../../', import.meta.url);
 type Target = Readonly<{ name: string; example?: string; guide?: string }>;
 
 // Known gaps: features that still lack an example. The list only shrinks (checked below).
-const KNOWN_GAPS: readonly string[] = [
-  'ORDER BY … NULLS FIRST / LAST',
-  'INSERT … OVERRIDING SYSTEM / USER VALUE',
-  '= ANY($1) for long IN lists',
-];
+const KNOWN_GAPS: readonly string[] = [];
 
 const supported = POSTGRESQL_FEATURES.filter((row) => row.status === 'supported');
 const targets: readonly Target[] = [

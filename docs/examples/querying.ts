@@ -34,6 +34,18 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   const listed = await Item.count({ where: { id: { [Op.any]: [1, 3] } } });
   // #endregion where
 
+  // #region any-list
+  const ids = Array.from({ length: 150 }, (_, index) => index + 1);
+  const statements: string[] = [];
+  const longIn = await Item.count({
+    where: { id: { [Op.in]: ids } },
+    logging: (sql) => statements.push(sql),
+  }); // 150 values: one array parameter, `"id" = ANY($1)`
+  // #endregion any-list
+  if (longIn !== 3 || !statements.some((sql) => sql.includes('ANY($1)'))) {
+    throw new Error('long IN list was not sent as = ANY($1)');
+  }
+
   // #region pagination
   const { count, rows } = await Item.findAndCountAll({
     attributes: ['id', 'code'],
@@ -42,6 +54,17 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     offset: 1,
   });
   // #endregion pagination
+
+  // #region nulls-order
+  const nullsFirst = await Item.findAll({ order: [['code', 'ASC NULLS FIRST']] });
+  const nullsLast = await Item.findAll({ order: [['code', 'ASC NULLS LAST']] });
+  // #endregion nulls-order
+  if (
+    nullsFirst[0]?.get('code') !== null ||
+    nullsLast[nullsLast.length - 1]?.get('code') !== null
+  ) {
+    throw new Error('NULLS FIRST / NULLS LAST did not order the null code');
+  }
 
   // #region aggregates
   const total = await Item.sum('qty');
