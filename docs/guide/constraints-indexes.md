@@ -26,3 +26,15 @@
 <<< @/examples/constraints-indexes.ts#not-valid{ts}
 
 `notValid: true` (check and foreign key constraints) adds the constraint without scanning existing rows, so it takes only a short lock; new and updated rows are checked at once. After cleaning the old rows, `validateConstraint(table, name)` scans the table without blocking writes. Using `notValid` with another constraint type throws.
+
+## PostgreSQL 18 constraints
+
+<<< @/examples/constraints-indexes-pg18.ts#temporal{ts}
+
+<<< @/examples/constraints-indexes-pg18.ts#not-enforced{ts}
+
+These options render PostgreSQL 18 syntax. Older servers reject the statement with their own syntax error; nothing is sent differently by version.
+
+- `withoutOverlaps: true` (unique and primary key): the last field is a range or multirange column and no two rows with equal other fields may overlap. Scalar columns in a temporal key need the `btree_gist` extension.
+- `period: true` (foreign key): the last field and the last referenced field are `PERIOD` columns; the referenced table needs a `withoutOverlaps` key. List the referenced columns with `references.fields` (`references.field` stays the single-column form).
+- `enforced: false` (check and foreign key): `NOT ENFORCED` records the constraint without checking it, so it documents a rule or helps the planner. It can be combined with `notValid`.

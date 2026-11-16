@@ -107,4 +107,21 @@ describe('constraint names, operators and methods cannot break out', () => {
         }
       }
     }));
+
+  it('quotes foreign key field lists and referenced fields', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      for (const payload of PAYLOADS) {
+        const result = await settle(
+          queryInterface.addConstraint('canary', {
+            type: 'foreign key',
+            name: payload,
+            fields: [payload, 'id'],
+            references: { table: 'canary', field: payload, fields: [payload, 'id'] },
+            enforced: undefined,
+          }),
+        );
+        expect(syntaxError(result)).toBe(false);
+      }
+    }));
 });
