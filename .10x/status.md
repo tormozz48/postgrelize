@@ -178,4 +178,4 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - [x] PR 1: expression indexes (`{ expression }` index fields, `nulls`)
 - [x] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
 - [x] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
-- [ ] PR 4: declarative partitioning
+- [x] PR 4: declarative partitioning

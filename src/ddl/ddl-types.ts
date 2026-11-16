@@ -1,5 +1,6 @@
 import type { DataType } from '../data-types/data-types.ts';
 import type { AttributeDefinition } from '../model/model-definition.ts';
+import type { PartitionKey } from './partition-types.ts';
 import type { TableName } from './sql-literal.ts';
 
 /** `Deferrable` setting of a foreign key or transaction (Sequelize v6 `Deferrable`). */
@@ -201,4 +202,5 @@ export type CreateTableOptions = Readonly<{
   temporary?: boolean;
   defaultSchema?: string;
   ifNotExists?: boolean;
+  partitionBy?: PartitionKey;
 }>;

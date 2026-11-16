@@ -27,6 +27,15 @@
 
 `notValid: true` (check and foreign key constraints) adds the constraint without scanning existing rows, so it takes only a short lock; new and updated rows are checked at once. After cleaning the old rows, `validateConstraint(table, name)` scans the table without blocking writes. Using `notValid` with another constraint type throws.
 
+## Declarative partitioning
+
+<<< @/examples/constraints-indexes.ts#partitioning{ts}
+
+- `createTable(name, attributes, { partitionBy: { strategy: 'range' | 'list' | 'hash', columns } })` creates the partitioned parent. Columns are names or `{ name | expression, collate, operator }`; an `expression` is trusted SQL. Primary and unique keys must include every partition column (PostgreSQL rule).
+- `createPartition(parent, name, bound, { partitionBy, ifNotExists })` bounds: `{ in: [...] }` for list, `{ from: [...], to: [...] }` for range (`PartitionBound.MINVALUE` / `MAXVALUE` are markers, a string `'MINVALUE'` is just a string), `{ modulus, remainder }` for hash and `{ default: true }`. Values are literals. `partitionBy` makes the partition itself partitioned.
+- `attachPartition(parent, existingTable, bound)` and `detachPartition(parent, partition, { concurrently, finalize })`. `concurrently` cannot run inside a transaction.
+- Partitions are real tables: `showAllTables` lists them, `describeTable` works on parent and partitions, and queries and models on the parent work as usual. `sync` does not create partitions: create them with `createPartition`.
+
 ## PostgreSQL 18 constraints
 
 <<< @/examples/constraints-indexes-pg18.ts#temporal{ts}
