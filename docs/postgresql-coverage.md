@@ -13,6 +13,10 @@ const STATUS_LABELS = {
   'out-of-scope': 'Out of scope',
 };
 
+const EXAMPLES_URL = 'https://github.com/tormozz48/postgrelize/blob/main/docs/examples/';
+const guideHref = (guide) => (guide.startsWith('security#') ? `./${guide}` : `./guide/${guide}`);
+const exampleHref = (example) => EXAMPLES_URL + example.split('#')[0];
+
 const status = ref('all');
 const area = ref('all');
 const query = ref('');
@@ -42,7 +46,7 @@ const groups = computed(() => {
 
 # PostgreSQL coverage
 
-What postgrelize does with PostgreSQL 16–18 features, row by row. The list is checked against the repository: every **Supported** row names a test that exercises it, and CI fails when that test goes missing.
+What postgrelize does with PostgreSQL 16–18 features, row by row. The list is checked against the repository: every **Supported** row names a test that exercises it, and every feature that Sequelize v6 lacks also links a guide section and a runnable example. CI fails when a test, an example or a guide section goes missing.
 
 | Status            | Meaning                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------- |
@@ -68,13 +72,17 @@ What postgrelize does with PostgreSQL 16–18 features, row by row. The list is 
 <section v-for="group in groups" :key="group.name">
   <h2 :id="group.name.toLowerCase().replace(/[^a-z]+/g, '-')">{{ group.name }}</h2>
   <table class="cov-table">
-    <thead><tr><th>Feature</th><th>PG</th><th>Status</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Feature</th><th>PG</th><th>Status</th><th>Notes</th><th>Docs</th></tr></thead>
     <tbody>
       <tr v-for="row in group.rows" :key="row.feature">
         <td>{{ row.feature }}</td>
         <td>{{ row.minPg }}+</td>
         <td><span :class="['cov-badge', row.status]">{{ STATUS_LABELS[row.status] }}</span></td>
         <td>{{ row.note }}</td>
+        <td class="cov-docs">
+          <template v-if="row.guide"><a :href="guideHref(row.guide)">Guide</a> · <a :href="exampleHref(row.example)">Example</a></template>
+          <span v-else-if="row.status === 'supported' && !row.beyondV6" class="cov-v6">same as v6</span>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -84,7 +92,7 @@ What postgrelize does with PostgreSQL 16–18 features, row by row. The list is 
 
 ## Closing the gaps
 
-The rows marked **Planned** are grouped into proposed stages in the [coverage review](https://github.com/tormozz48/postgrelize/blob/main/.10x/reviews/2026-11-15-pg-coverage-matrix.md). To add or change a row, edit `docs/coverage/postgresql-features.ts`; a row becomes **Supported** only together with a test reference.
+The rows marked **Planned** are grouped into proposed stages in the [coverage review](https://github.com/tormozz48/postgrelize/blob/main/.10x/reviews/2026-11-15-pg-coverage-matrix.md). To add or change a row, edit `docs/coverage/postgresql-features.ts`; a row becomes **Supported** only together with a test reference, a `beyondV6` decision and, for features v6 lacks, an `example` and a `guide` link.
 
 <style>
 .cov-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
@@ -93,7 +101,8 @@ The rows marked **Planned** are grouped into proposed stages in the [coverage re
 .cov-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .cov-filters input, .cov-filters select { border: 1px solid var(--vp-c-divider); border-radius: 6px; padding: 6px 10px; background: var(--vp-c-bg); color: var(--vp-c-text-1); }
 .cov-filters input { flex: 1 1 220px; }
-.cov-table td:nth-child(2) { white-space: nowrap; }
+.cov-table td:nth-child(2), .cov-docs { white-space: nowrap; }
+.cov-v6 { color: var(--vp-c-text-2); font-size: 12px; }
 .cov-badge { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 12px; white-space: nowrap; font-weight: 600; }
 .cov-badge.supported { background: rgba(34, 160, 90, 0.18); color: var(--vp-c-green-1); }
 .cov-badge.literal { background: rgba(60, 120, 230, 0.18); color: var(--vp-c-indigo-1); }
