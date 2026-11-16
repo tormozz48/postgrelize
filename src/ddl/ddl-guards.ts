@@ -66,6 +66,21 @@ export class DdlGuards {
   }
 
   /**
+   * A whole number rendered into DDL (sequence bounds, cache size); anything else is rejected.
+   *
+   * @param value - Number or bigint.
+   * @param kind - Kind named in the error.
+   * @returns Decimal text of the number.
+   * @throws Error for non-integers and unsafe numbers.
+   */
+  integer(value: number | bigint, kind: string): string {
+    if (typeof value === 'bigint' || Number.isSafeInteger(value)) {
+      return value.toString();
+    }
+    throw new Error(`Invalid ${kind}: expected a whole number`);
+  }
+
+  /**
    * ` ON DELETE ... ON UPDATE ... <deferrable>` suffix of a foreign key; empty parts are omitted.
    *
    * @param onDelete - `ON DELETE` action.

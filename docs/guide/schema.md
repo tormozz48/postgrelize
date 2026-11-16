@@ -46,6 +46,7 @@ Available methods:
 - columns: `addColumn`, `removeColumn`, `changeColumn`, `renameColumn`
 - indexes and constraints: `addIndex`, `removeIndex`, `addConstraint`, `removeConstraint`, `getForeignKeyReferencesForTable`
 - schemas and enums: `createSchema`, `dropSchema`, `showAllSchemas`, `dropEnum`, `dropAllEnums`
+- extensions and sequences: `createExtension`, `dropExtension`, `createSequence`, `alterSequence`, `dropSequence`, `nextval`, `setval` (see [Schema objects](/guide/schema-objects))
 - data: `bulkInsert`, `bulkUpdate`, `bulkDelete`
 
 All methods take a `transaction` option, so a migration can run in one transaction. Table names may be strings or `{ tableName, schema }` objects.

@@ -21,6 +21,7 @@ const guide = [
       { text: 'Transactions', link: '/guide/transactions' },
       { text: 'Hooks and validation', link: '/guide/hooks-validation' },
       { text: 'Schema, sync and migrations', link: '/guide/schema' },
+      { text: 'Schema objects', link: '/guide/schema-objects' },
     ],
   },
   {

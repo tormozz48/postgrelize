@@ -31,6 +31,14 @@ export type {
   IndexField,
   IndexOptions,
 } from './ddl/ddl-generator.ts';
+export type { CreateExtensionOptions, DropExtensionOptions } from './ddl/extension-ddl.ts';
+export type {
+  AlterSequenceOptions,
+  CreateSequenceOptions,
+  DropSequenceOptions,
+  SequenceNumber,
+  SequenceOwner,
+} from './ddl/sequence-ddl.ts';
 export type { QualifiedTable, TableName } from './ddl/sql-literal.ts';
 export type { NotificationHandler } from './connection/notifications.ts';
 export type {
