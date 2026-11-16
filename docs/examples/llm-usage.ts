@@ -136,6 +136,8 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   });
   // other operators: Op.eq ne gt gte lt lte between in is not like notLike regexp overlap
   // contains contained hasKey any all isDistinctFrom; compare columns with col('other')
+  // PostgreSQL: Op.similarTo jsonPathExists containedOrEqual trigramSimilar; full text:
+  // where(toTsVector(col('body')), Op.match, websearchToTsQuery(text)), order by tsRank()
   // #endregion operators
 
   await Note.bulkCreate([

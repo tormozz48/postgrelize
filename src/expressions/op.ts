@@ -43,6 +43,18 @@ const isNotDistinctFrom: unique symbol = Symbol.for('postgrelize.isNotDistinctFr
 const hasKey: unique symbol = Symbol.for('postgrelize.hasKey');
 const hasAnyKeys: unique symbol = Symbol.for('postgrelize.hasAnyKeys');
 const hasAllKeys: unique symbol = Symbol.for('postgrelize.hasAllKeys');
+const similarTo: unique symbol = Symbol.for('postgrelize.similarTo');
+const notSimilarTo: unique symbol = Symbol.for('postgrelize.notSimilarTo');
+const jsonPathExists: unique symbol = Symbol.for('postgrelize.jsonPathExists');
+const containedOrEqual: unique symbol = Symbol.for('postgrelize.containedOrEqual');
+const containsOrEqual: unique symbol = Symbol.for('postgrelize.containsOrEqual');
+const trigramSimilar: unique symbol = Symbol.for('postgrelize.trigramSimilar');
+const trigramWordSimilar: unique symbol = Symbol.for('postgrelize.trigramWordSimilar');
+const trigramStrictWordSimilar: unique symbol = Symbol.for('postgrelize.trigramStrictWordSimilar');
+const trigramHasSimilarWord: unique symbol = Symbol.for('postgrelize.trigramHasSimilarWord');
+const trigramHasSimilarStrictWord: unique symbol = Symbol.for(
+  'postgrelize.trigramHasSimilarStrictWord',
+);
 
 /**
  * Query operators for `where` clauses.
@@ -147,6 +159,26 @@ export const Op = {
   hasAnyKeys,
   /** jsonb `?&` — all of the keys exist. PostgreSQL extension. */
   hasAllKeys,
+  /** `SIMILAR TO pattern` (SQL regular expression). PostgreSQL extension. */
+  similarTo,
+  /** `NOT SIMILAR TO pattern`. PostgreSQL extension. */
+  notSimilarTo,
+  /** jsonb `@?` — the jsonpath returns any item; the value is a jsonpath string. PostgreSQL extension. */
+  jsonPathExists,
+  /** `<<=` — inet/cidr subnet is contained within or equals the value. PostgreSQL extension. */
+  containedOrEqual,
+  /** `>>=` — inet/cidr subnet contains or equals the value. PostgreSQL extension. */
+  containsOrEqual,
+  /** `%` — `pg_trgm` trigram similarity above `pg_trgm.similarity_threshold`. PostgreSQL extension. */
+  trigramSimilar,
+  /** `<%` — `pg_trgm`: the column is similar to a part of the value (word similarity above the threshold). PostgreSQL extension. */
+  trigramWordSimilar,
+  /** `<<%` — `pg_trgm`: the column is strictly similar to a word of the value. PostgreSQL extension. */
+  trigramStrictWordSimilar,
+  /** `%>` — `pg_trgm`: the column has a part similar to the value (commutator of `<%`). PostgreSQL extension. */
+  trigramHasSimilarWord,
+  /** `%>>` — `pg_trgm`: the column has a strictly similar word of the value. PostgreSQL extension. */
+  trigramHasSimilarStrictWord,
 } as const;
 
 /** Union of all operator symbols in {@link Op}. */

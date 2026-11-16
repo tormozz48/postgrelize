@@ -8,6 +8,24 @@ export type {
 } from './data-types/data-types.ts';
 export { Op } from './expressions/op.ts';
 export type { OpSymbol } from './expressions/op.ts';
+export { jsonbPath } from './expressions/jsonpath-helpers.ts';
+export type { JsonbPathKind, JsonbPathOptions } from './expressions/jsonpath-helpers.ts';
+export {
+  plainToTsQuery,
+  phraseToTsQuery,
+  setWeight,
+  toTsQuery,
+  toTsVector,
+  tsHeadline,
+  tsRank,
+  websearchToTsQuery,
+} from './expressions/search-helpers.ts';
+export type { TsHeadlineOptions, TsRankOptions } from './expressions/search-helpers.ts';
+export {
+  trigramDistance,
+  trigramSimilarity,
+  trigramWordSimilarity,
+} from './expressions/trigram-helpers.ts';
 export {
   cast,
   col,

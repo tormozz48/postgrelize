@@ -177,6 +177,8 @@ const matches = await Note.findAll({
 });
 // other operators: Op.eq ne gt gte lt lte between in is not like notLike regexp overlap
 // contains contained hasKey any all isDistinctFrom; compare columns with col('other')
+// PostgreSQL: Op.similarTo jsonPathExists containedOrEqual trigramSimilar; full text:
+// where(toTsVector(col('body')), Op.match, websearchToTsQuery(text)), order by tsRank()
 ```
 
 `Op` has all v6 operators plus PostgreSQL ones. Write JSON paths as dotted keys (`'meta.level'`) or nested objects. Compare columns with `col('name')`. `where(fn/col, Op.x, value)` builds comparisons on expressions.

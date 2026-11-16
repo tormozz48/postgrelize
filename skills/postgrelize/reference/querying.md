@@ -39,6 +39,8 @@ const matches = await Note.findAll({
 });
 // other operators: Op.eq ne gt gte lt lte between in is not like notLike regexp overlap
 // contains contained hasKey any all isDistinctFrom; compare columns with col('other')
+// PostgreSQL: Op.similarTo jsonPathExists containedOrEqual trigramSimilar; full text:
+// where(toTsVector(col('body')), Op.match, websearchToTsQuery(text)), order by tsRank()
 ```
 
 More patterns (JSON paths, `Op.hasKey`, `Op.any`, scopes, aggregates, pagination, raw queries):

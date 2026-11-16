@@ -31,6 +31,7 @@ const WRITE = 'tests/integration/write-power.test.ts';
 const CONFLICT = 'tests/integration/on-conflict.test.ts';
 const SX = 'tests/integration/session-extras.test.ts';
 const CONN = 'tests/integration/connection-power.test.ts';
+const OPH = 'tests/integration/operator-helpers.test.ts';
 const BASE = 'tests/integration/postgrelize.test.ts';
 const SCHEMA_POWER = 'tests/integration/schema-power.test.ts';
 const SCHEMA = 'tests/integration/schema.test.ts';
@@ -100,21 +101,21 @@ export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   { area: OPS, feature: '= ANY($1) for long IN lists', minPg: '16', status: 'supported', test: t(BASE, 'long IN lists run as = ANY with one parameter'), note: 'Automatic above `inAsAnyThreshold`.' },
   { area: OPS, feature: 'LIKE / ILIKE patterns', minPg: '16', status: 'supported', test: t(PG, 'filters with pattern, regex, array and jsonb operators'), note: '`Op.like`, `Op.iLike`, `Op.startsWith`, `Op.endsWith`, `Op.substring`.' },
   { area: OPS, feature: 'POSIX regular expressions (~, ~*, !~, !~*)', minPg: '16', status: 'supported', test: t(PG, 'filters with pattern, regex, array and jsonb operators'), note: '`Op.regexp`, `Op.iRegexp` and negations.' },
-  { area: OPS, feature: 'SIMILAR TO', minPg: '16', status: 'literal', note: '`where(col("name"), literal(…))` or a raw query; no `Op` yet.' },
+  { area: OPS, feature: 'SIMILAR TO', minPg: '16', status: 'supported', test: t(OPH, 'matches SQL regular expressions with Op.similarTo and Op.notSimilarTo'), note: '`Op.similarTo`, `Op.notSimilarTo`.' },
   { area: OPS, feature: 'JSON / JSONB containment, nested paths and key-exists (@>, #>>, ?, ?|, ?&)', minPg: '16', status: 'supported', test: t(BASE, 'jsonb key operators'), note: 'Nested `where` objects, `Op.contains`, `Op.hasKey`, `Op.hasAnyKeys`, `Op.hasAllKeys`.' },
-  { area: OPS, feature: 'jsonpath operators (@?, @@) and jsonb_path_* functions', minPg: '16', status: 'literal', note: '`literal("doc @? \'$.a\'")` or `fn("jsonb_path_exists", …)`; no `Op`.' },
+  { area: OPS, feature: 'jsonpath operators (@?, @@) and jsonb_path_* functions', minPg: '16', status: 'supported', test: t(OPH, 'filters jsonb with jsonpath operators and jsonb_path_* helpers'), note: '`Op.jsonPathExists` (`@?`), `Op.match` through `where()` (`@@`), `jsonbPath()` for the `jsonb_path_*` functions.' },
   { area: OPS, feature: 'SQL/JSON constructors and query functions (JSON_EXISTS, JSON_QUERY, JSON_VALUE)', minPg: '17', status: 'literal', note: 'Through `literal()` in attributes or `where`.' },
   { area: OPS, feature: 'JSON_TABLE', minPg: '17', status: 'supported', test: t(SETOPS, 'turns a document into rows on PostgreSQL 17+'), note: '`from` entry `{ jsonTable: { doc, path, columns } }`; `NESTED PATH` is not modelled.' },
   { area: OPS, feature: 'Array operators (@>, <@, &&, ANY, ALL)', minPg: '16', status: 'supported', test: t(PG, 'filters with pattern, regex, array and jsonb operators'), note: '`Op.contains`, `Op.contained`, `Op.overlap`, `Op.any`, `Op.all`.' },
   { area: OPS, feature: 'Range operators (@>, &&, <<, >>, &<, &>, -|-)', minPg: '16', status: 'supported', test: t(PG, 'stores ranges and filters them with range operators'), note: '`Op.contains`, `Op.overlap`, `Op.strictLeft`, `Op.strictRight`, `Op.noExtendLeft`, `Op.noExtendRight`, `Op.adjacent`.' },
   { area: OPS, feature: 'Multirange operators and functions (range_agg, unnest)', minPg: '16', status: 'planned', note: 'No multirange data type yet; see Data types.' },
   { area: OPS, feature: 'Full-text search match (@@)', minPg: '16', status: 'supported', test: t(PG, 'stores tsvector and matches it with a tsquery'), note: '`Op.match` with `fn("to_tsquery", …)` / `fn("websearch_to_tsquery", …)`.' },
-  { area: OPS, feature: 'Full-text ranking and highlighting (ts_rank, ts_headline, setweight)', minPg: '16', status: 'literal', note: 'Through `fn()` in attributes and `order`; no dedicated helpers.' },
-  { area: OPS, feature: 'Network operators (<<, <<=, >>, >>=, host(), network())', minPg: '16', status: 'literal', note: 'Subnet containment through `literal()` / `fn()`; equality and IN work on inet/cidr columns.' },
+  { area: OPS, feature: 'Full-text ranking and highlighting (ts_rank, ts_headline, setweight)', minPg: '16', status: 'supported', test: t(OPH, 'searches, ranks and highlights text'), note: '`tsRank` (also `ts_rank_cd`), `tsHeadline`, `setWeight`, `toTsVector`, `toTsQuery`, `plainToTsQuery`, `phraseToTsQuery`, `websearchToTsQuery` with an optional configuration.' },
+  { area: OPS, feature: 'Network operators (<<, <<=, >>, >>=, host(), network())', minPg: '16', status: 'supported', test: t(OPH, 'filters inet and cidr with subnet operators'), note: '`Op.strictLeft`, `Op.strictRight`, `Op.containedOrEqual`, `Op.containsOrEqual`, `Op.overlap`; `host()` and `network()` through `fn()`.' },
   { area: OPS, feature: 'Geometric operators and functions', minPg: '16', status: 'planned', note: 'Needs the geometric data types first.' },
   { area: OPS, feature: 'hstore operators (->, ?, @>)', minPg: '16', status: 'supported', test: t(TYPES_I, 'round-trips hstore as objects and filters with hstore operators'), note: '`Op.contains` and `Op.eq` take objects; `->`, `?` and other operators through `literal()`.' },
   { area: OPS, feature: 'ltree operators (@>, <@, ~, ?)', minPg: '16', status: 'literal', note: 'Equality and `IN` work on `DataTypes.LTREE` columns; `<@`, `@>`, `~` and `?` through `literal()` (see the ltree row in Data types).' },
-  { area: OPS, feature: 'pg_trgm similarity (%, similarity(), word_similarity())', minPg: '16', status: 'literal', note: '`fn("similarity", …)` / `literal()`; the `gin_trgm_ops` index uses the `operator` index option.' },
+  { area: OPS, feature: 'pg_trgm similarity (%, similarity(), word_similarity())', minPg: '16', status: 'supported', test: t(OPH, 'filters and orders by pg_trgm similarity'), note: '`Op.trigramSimilar` and word variants, `trigramSimilarity()`, `trigramWordSimilarity()`, `trigramDistance()` (`<->`); needs `CREATE EXTENSION pg_trgm`; the `gin_trgm_ops` index uses the `operator` index option.' },
   { area: OPS, feature: 'UUID functions (gen_random_uuid, uuidv7)', minPg: '16', status: 'supported', test: t(PG, 'calls any SQL function through fn() and literal()'), note: '`fn("gen_random_uuid")` as default or expression; `uuidv7()` needs PostgreSQL 18; `DataTypes.UUIDV4` generates client-side.' },
   { area: OPS, feature: 'Interval arithmetic and date functions (date_trunc, age, make_interval)', minPg: '16', status: 'literal', note: 'Through `fn()` / `literal()`; the INTERVAL column type is supported.' },
   { area: OPS, feature: 'Any SQL function or expression through fn(), cast(), col(), literal()', minPg: '16', status: 'supported', test: t(PG, 'calls any SQL function through fn() and literal()'), note: 'Function names pass an allowlist; `literal()` is raw by design.' },
