@@ -118,6 +118,16 @@ export type IndexOptions = Readonly<{
 }>;
 
 /**
+ * One element of an `exclude` constraint: an index field plus the operator it is compared with.
+ * The `expression`, when used, is trusted SQL.
+ */
+export type ExcludeElement = Exclude<IndexField, string> &
+  Readonly<{
+    /** Exclusion operator, e.g. `'&&'` or `'='` (operator characters only). */
+    with: string;
+  }>;
+
+/**
  * Options of `addConstraint` (Sequelize v6).
  *
  * @example
@@ -139,15 +149,17 @@ export type ConstraintOptions = Readonly<{
     | 'unique'
     | 'primary key'
     | 'foreign key'
+    | 'exclude'
     | 'CHECK'
     | 'UNIQUE'
     | 'PRIMARY KEY'
-    | 'FOREIGN KEY';
-  /** Constrained columns. */
-  fields: readonly string[];
+    | 'FOREIGN KEY'
+    | 'EXCLUDE';
+  /** Constrained columns. Not used by `exclude` (see `exclude`). */
+  fields?: readonly string[];
   /** Constraint name. */
   name?: string;
-  /** Check condition (where object). */
+  /** Check condition, or the partial predicate of an `exclude` constraint (where object). */
   where?: unknown;
   /** Foreign key target. */
   references?: Readonly<{
@@ -162,6 +174,14 @@ export type ConstraintOptions = Readonly<{
   deferrable?: DeferrableValue;
   /** `NULLS NOT DISTINCT` for unique constraints. PostgreSQL extension. */
   nullsNotDistinct?: boolean;
+  /** Exclusion elements: `{ column | expression, with }`. Required by `exclude`. PostgreSQL extension. */
+  exclude?: readonly ExcludeElement[];
+  /** Index method of an `exclude` constraint (`gist`, `spgist`, `btree`, ...). */
+  using?: string;
+  /** Covering columns of an `exclude` constraint (`INCLUDE (...)`). */
+  include?: readonly string[];
+  /** Adds `NOT VALID` (check and foreign key only); run `validateConstraint` later. PostgreSQL extension. */
+  notValid?: boolean;
 }>;
 
 /** Options of a column inside `CREATE TABLE` / `ADD COLUMN`. */
