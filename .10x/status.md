@@ -168,3 +168,10 @@
 ## Release 0.10.0 (2026-11-16)
 - Tag `v0.10.0` → release.yml green (Node 20/22, PostgreSQL 16/17/18), `@tormozz48/postgrelize@0.10.0` published. Contents: S12 set operations, LATERAL, FROM sources, data-modifying CTEs, CTE SEARCH/CYCLE; S14 types (HSTORE objects, ltree, MONEY, XML, BIT, TSQUERY, …); S16 opt-in `statementCache` (ADR-023), DEFERRABLE, statement timeout, UNNEST bulk insert; S10b faster raw reads; logo. `main` now requires a pull request: the release commit goes through a PR. Open: bench gate showed `bulkCreate 100` at +10.7% under load (S10b re-checked it).
 
+
+## Backlog 4 / S13 constraints and indexes (2026-11-16)
+Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-026.
+- [x] PR 1: expression indexes (`{ expression }` index fields, `nulls`)
+- [ ] PR 2: EXCLUDE, NOT VALID, `validateConstraint`
+- [ ] PR 3: PG18 NOT ENFORCED, WITHOUT OVERLAPS, PERIOD
+- [ ] PR 4: declarative partitioning

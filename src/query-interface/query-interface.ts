@@ -151,6 +151,10 @@ export class QueryInterface extends QueryInterfacePolicies {
    * @example
    * ```ts
    * await queryInterface.addIndex('users', ['email'], { unique: true, name: 'users_email_unique' });
+   * await queryInterface.addIndex('users', {
+   *   name: 'users_lower_email',
+   *   fields: [{ expression: 'lower(email)', nulls: 'LAST' }],
+   * });
    * ```
    */
   async addIndex(

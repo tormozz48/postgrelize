@@ -25,10 +25,15 @@ export class IndexDdl {
    * @returns Index name.
    */
   indexName(table: TableName, fields: readonly IndexField[]): string {
+    const names = fields.map((field) => {
+      const name = typeof field === 'string' ? field : field.name;
+      if (name === undefined) {
+        throw new Error('An index on an expression requires an explicit name');
+      }
+      return name;
+    });
     return inflection
-      .underscore(
-        `${sqlLiteral.tableParts(table).name}_${fields.map((field) => (typeof field === 'string' ? field : field.name)).join('_')}`,
-      )
+      .underscore(`${sqlLiteral.tableParts(table).name}_${names.join('_')}`)
       .replaceAll('.', '_');
   }
 
@@ -39,7 +44,8 @@ export class IndexDdl {
    * @param options - Index options.
    * @param defaultSchema - Schema used when the table reference has none.
    * @returns Statement.
-   * @throws Error without fields or with an invalid method / operator class.
+   * @throws Error without fields, with an invalid method / operator class, or with an expression
+   * field and no name.
    */
   createIndexSql(table: TableName, options: IndexOptions, defaultSchema?: string): string {
     const fields = options.fields ?? [];
@@ -74,11 +80,21 @@ export class IndexDdl {
       return `${SqlCompiler.quoteIdent(field)}${this.#operatorClass(operator)}`;
     }
     return [
-      SqlCompiler.quoteIdent(field.name),
+      field.expression === undefined
+        ? SqlCompiler.quoteIdent(field.name)
+        : this.#expression(field.expression),
       field.collate === undefined ? '' : ` COLLATE ${SqlCompiler.quoteIdent(field.collate)}`,
       this.#operatorClass(field.operator ?? operator),
       field.order === undefined ? '' : ` ${field.order === 'DESC' ? 'DESC' : 'ASC'}`,
+      field.nulls === undefined ? '' : ` NULLS ${field.nulls === 'FIRST' ? 'FIRST' : 'LAST'}`,
     ].join('');
+  }
+
+  #expression(expression: string): string {
+    if (typeof expression !== 'string' || expression.trim() === '') {
+      throw new Error('Index expression must be a non-empty SQL string');
+    }
+    return `(${expression})`;
   }
 
   #operatorClass(operator: string | undefined): string {
