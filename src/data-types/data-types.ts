@@ -9,6 +9,7 @@ import { DecimalType } from './decimal-type.ts';
 import { DefaultValueGenerator } from './default-value-generator.ts';
 import { EnumType } from './enum-type.ts';
 import { FloatType } from './float-type.ts';
+import { GeometricType } from './geometric-type.ts';
 import { HstoreType } from './hstore-type.ts';
 import { IntegerType } from './integer-type.ts';
 import { JsonType } from './json-type.ts';
@@ -21,6 +22,8 @@ import { TimestampType } from './timestamp-type.ts';
 import { VirtualType } from './virtual-type.ts';
 
 export type { DataType, DataTypeInput } from './abstract-data-type.ts';
+export type { GeoCircle, GeoLine, GeoPath } from './geometric-type.ts';
+export type { GeoPoint } from './geometric-text.ts';
 export type { HstoreValue } from './hstore-type.ts';
 export type { IntegerDataType } from './integer-type.ts';
 export type { RangeBound } from './range-type.ts';
@@ -138,6 +141,20 @@ export const DataTypes = {
   TSQUERY: new ScalarType('TSQUERY', 'TSQUERY'),
   /** `TSVECTOR`. */
   TSVECTOR: new ScalarType('TSVECTOR', 'TSVECTOR'),
+  /** `POINT`; values are `{ x, y }`. PostgreSQL extension. */
+  POINT: new GeometricType('POINT'),
+  /** `LINE` (`a·x + b·y + c = 0`); values are `{ a, b, c }`. PostgreSQL extension. */
+  LINE: new GeometricType('LINE'),
+  /** `LSEG` line segment; values are `[start, end]` points. PostgreSQL extension. */
+  LSEG: new GeometricType('LSEG'),
+  /** `BOX`; values are `[corner, corner]` points (the server returns the upper right first). PostgreSQL extension. */
+  BOX: new GeometricType('BOX'),
+  /** `PATH`; values are `{ points, closed }`. PostgreSQL extension. */
+  PATH: new GeometricType('PATH'),
+  /** `POLYGON`; values are arrays of `{ x, y }` points. PostgreSQL extension. */
+  POLYGON: new GeometricType('POLYGON'),
+  /** `CIRCLE`; values are `{ x, y, radius }`. PostgreSQL extension. */
+  CIRCLE: new GeometricType('CIRCLE'),
   /** PostGIS `GEOMETRY(type, srid)`. */
   GEOMETRY: callable(
     (geometryType?: string, srid?: number) => new SpatialType('GEOMETRY', geometryType, srid),

@@ -74,6 +74,23 @@ As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precisi
 - `BIT(n)` and `VARBIT(n)` values are strings of `0` and `1`; `BIT` without a length is `BIT(1)`.
 - `XML`, `MACADDR8` and `TSQUERY` values are strings.
 
+### Geometric types
+
+<<< @/examples/geometry.ts#define{ts}
+
+<<< @/examples/geometry.ts#use{ts}
+
+| Type          | Value                                                                  |
+| ------------- | ---------------------------------------------------------------------- |
+| `POINT`       | `{ x, y }`                                                             |
+| `LINE`        | `{ a, b, c }` (`a·x + b·y + c = 0`)                                    |
+| `LSEG`, `BOX` | `[Point, Point]` (a box is returned with its upper-right corner first) |
+| `PATH`        | `{ points, closed }`                                                   |
+| `POLYGON`     | `Point[]`                                                              |
+| `CIRCLE`      | `{ x, y, radius }`                                                     |
+
+Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft` and `Op.strictRight` take the column's own shape; an operand of another type (a point against a box column) is a text literal wrapped in `cast('(1,1)', 'point')`. Distance (`<->`), intersection (`?#`) and the geometric functions go through `literal()` or `fn()`. `point` has no `=` operator in PostgreSQL (use `~=`).
+
 ## Identity and generated columns
 
 Two column kinds that Sequelize v6 cannot create:
