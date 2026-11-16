@@ -53,3 +53,53 @@ describe('geometric types', () => {
     expect(DataTypes.BOX.key).toBe('BOX');
   });
 });
+
+const bound = (value: unknown, inclusive: boolean): { value: unknown; inclusive: boolean } => ({
+  value,
+  inclusive,
+});
+
+describe('MULTIRANGE', () => {
+  const ints = DataTypes.MULTIRANGE(DataTypes.INTEGER);
+
+  it('maps subtypes to multirange SQL types', () => {
+    expect(ints.sqlType).toBe('INT4MULTIRANGE');
+    expect(DataTypes.MULTIRANGE.sqlType).toBe('INT4MULTIRANGE');
+    expect(DataTypes.MULTIRANGE(DataTypes.BIGINT).sqlType).toBe('INT8MULTIRANGE');
+    expect(DataTypes.MULTIRANGE(DataTypes.DECIMAL).sqlType).toBe('NUMMULTIRANGE');
+    expect(DataTypes.MULTIRANGE(DataTypes.TIMESTAMP).sqlType).toBe('TSMULTIRANGE');
+    expect(DataTypes.MULTIRANGE(DataTypes.DATE).sqlType).toBe('TSTZMULTIRANGE');
+    expect(DataTypes.MULTIRANGE(DataTypes.DATEONLY).sqlType).toBe('DATEMULTIRANGE');
+    expect(() => DataTypes.MULTIRANGE(DataTypes.TEXT)).toThrow(/does not support/);
+  });
+
+  it('serializes arrays of ranges', () => {
+    expect(
+      ints.serialize?.([
+        [1, 5],
+        [10, 20],
+      ]),
+    ).toBe('{[1,5),[10,20)}');
+    expect(ints.serialize?.([[bound(1, false), bound(null, false)]])).toBe('{(1,)}');
+    expect(ints.serialize?.([])).toBe('{}');
+    expect(ints.serialize?.('{[1,2)}')).toBe('{[1,2)}');
+  });
+
+  it('parses multirange literals', () => {
+    expect(ints.parse?.('{[1,5),(10,20]}')).toEqual([
+      [bound(1, true), bound(5, false)],
+      [bound(10, false), bound(20, true)],
+    ]);
+    expect(ints.parse?.('{}')).toEqual([]);
+    expect(ints.parse?.(null)).toBeNull();
+    const dates = DataTypes.MULTIRANGE(DataTypes.TIMESTAMP);
+    expect(dates.parse?.('{["2024-01-01 00:00:00","2024-01-02 00:00:00"),[,)}')).toHaveLength(2);
+  });
+
+  it('writes timestamp bounds as local wall-clock time', () => {
+    const dates = DataTypes.MULTIRANGE(DataTypes.TIMESTAMP);
+    expect(dates.serialize?.([[new Date(2024, 0, 2, 3, 4, 5, 6), new Date(2024, 0, 3)]])).toBe(
+      '{[2024-01-02 03:04:05.006,2024-01-03 00:00:00.000)}',
+    );
+  });
+});
