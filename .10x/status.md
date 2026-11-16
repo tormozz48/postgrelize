@@ -4,7 +4,7 @@
 **Feature slug:** `postgrelize-mvp`
 **Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 0.9.0 released
 
-**S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
+**S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
 **S17 (Operator helpers):** done — `Op.similarTo` / `notSimilarTo`, `jsonPathExists`, `containedOrEqual` / `containsOrEqual`, `pg_trgm` `Op`s; helpers `jsonbPath`, `toTsVector` / `*ToTsQuery`, `tsRank`, `tsHeadline`, `setWeight`, `trigramSimilarity` / `trigramWordSimilarity` / `trigramDistance`; 5 `literal` rows promoted; spec `.10x/specs/2026-11-16-s17-operator-helpers-design.md`.
 
