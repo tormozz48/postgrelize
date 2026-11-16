@@ -167,3 +167,116 @@ describe('functions and triggers', () => {
       expect(inserted).toBe(true);
     }));
 });
+
+describe('views and materialized views', () => {
+  it('creates, replaces and drops views', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query(
+        'CREATE TABLE items (id serial PRIMARY KEY, n integer, hidden boolean DEFAULT false)',
+      );
+      await sequelize.query('INSERT INTO items (n, hidden) VALUES (1, false), (2, true)');
+      await queryInterface.createView(
+        'visible_items',
+        'SELECT id, n FROM items WHERE NOT hidden;',
+        { columns: ['item_id', 'amount'] },
+      );
+      expect(await select(sequelize, 'SELECT * FROM visible_items')).toEqual([
+        { item_id: 1, amount: 1 },
+      ]);
+      await queryInterface.createView(
+        { tableName: 'visible_items', schema },
+        'SELECT id AS item_id, n AS amount FROM items',
+        { replace: true },
+      );
+      expect(await select(sequelize, 'SELECT count(*)::int AS c FROM visible_items')).toEqual([
+        { c: 2 },
+      ]);
+      await queryInterface.dropView('visible_items');
+      await queryInterface.dropView('visible_items', { ifExists: true });
+      await expect(select(sequelize, 'SELECT * FROM visible_items')).rejects.toThrow(
+        /does not exist/,
+      );
+    }));
+
+  it('supports check options, recursive, security and temporary views', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query('CREATE TABLE items (id serial PRIMARY KEY, n integer)');
+      await queryInterface.createView('small', 'SELECT id, n FROM items WHERE n < 10', {
+        checkOption: 'local',
+        securityBarrier: true,
+        securityInvoker: true,
+      });
+      await sequelize.query('INSERT INTO small (n) VALUES (5)');
+      await expect(sequelize.query('INSERT INTO small (n) VALUES (50)')).rejects.toThrow(
+        /check option/,
+      );
+      const options = await select<{ reloptions: string[] }>(
+        sequelize,
+        "SELECT reloptions FROM pg_class WHERE relname = 'small'",
+      );
+      expect((options[0]?.reloptions ?? []).toSorted()).toEqual([
+        'check_option=local',
+        'security_barrier=true',
+        'security_invoker=true',
+      ]);
+      await queryInterface.createView(
+        'counter',
+        'SELECT 1 FROM (VALUES (1)) v UNION ALL SELECT n + 1 FROM counter WHERE n < 3',
+        { recursive: true, columns: ['n'] },
+      );
+      expect(await select(sequelize, 'SELECT n FROM counter ORDER BY n')).toEqual([
+        { n: 1 },
+        { n: 2 },
+        { n: 3 },
+      ]);
+      await sequelize.transaction(async (transaction) => {
+        await queryInterface.createView('scratch', 'SELECT 1 AS one', {
+          temporary: true,
+          transaction,
+        });
+        const rows = await sequelize.query('SELECT * FROM scratch', {
+          type: QueryTypes.SELECT,
+          transaction,
+        });
+        expect(rows).toEqual([{ one: 1 }]);
+      });
+    }));
+
+  it('creates, refreshes and drops materialized views', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const queryInterface = sequelize.getQueryInterface();
+      await sequelize.query('CREATE TABLE items (id serial PRIMARY KEY, n integer)');
+      await sequelize.query('INSERT INTO items (n) VALUES (1)');
+      await queryInterface.createMaterializedView(
+        'item_total',
+        'SELECT 1 AS k, sum(n)::int AS total FROM items',
+        { using: 'heap' },
+      );
+      await queryInterface.createMaterializedView('item_total', 'SELECT 1', { ifNotExists: true });
+      await sequelize.query('CREATE UNIQUE INDEX item_total_k ON item_total (k)');
+      await sequelize.query('INSERT INTO items (n) VALUES (4)');
+      expect(await select(sequelize, 'SELECT total FROM item_total')).toEqual([{ total: 1 }]);
+      await queryInterface.refreshMaterializedView('item_total', { concurrently: true });
+      expect(await select(sequelize, 'SELECT total FROM item_total')).toEqual([{ total: 5 }]);
+      await queryInterface.refreshMaterializedView(
+        { tableName: 'item_total', schema },
+        { withData: false },
+      );
+      await expect(select(sequelize, 'SELECT total FROM item_total')).rejects.toThrow(
+        /not been populated/,
+      );
+      await queryInterface.refreshMaterializedView('item_total');
+      await queryInterface.dropMaterializedView('item_total');
+      await queryInterface.dropMaterializedView('item_total', { ifExists: true });
+      await queryInterface.createMaterializedView('empty_view', 'SELECT 1 AS a', {
+        columns: ['b'],
+        withData: false,
+      });
+      await queryInterface.dropMaterializedView('empty_view', { cascade: true });
+    }));
+});

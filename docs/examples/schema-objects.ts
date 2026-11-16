@@ -50,8 +50,26 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   await queryInterface.dropTrigger('posts', 'posts_touch');
   await queryInterface.dropFunction('touch_post', []);
 
+  // #region views
+  await queryInterface.createView('edited_posts', 'SELECT id, title FROM posts WHERE edits > 0', {
+    replace: true,
+  });
+  await queryInterface.createMaterializedView(
+    'post_stats',
+    'SELECT 1 AS k, count(*)::int AS posts, sum(edits)::int AS edits FROM posts',
+  );
+  await sequelize.query('CREATE UNIQUE INDEX post_stats_k ON post_stats (k)');
+  await queryInterface.refreshMaterializedView('post_stats', { concurrently: true });
+  // #endregion views
+  const [stats] = (await sequelize.query('SELECT posts FROM post_stats')) as [
+    { posts: number }[],
+    unknown,
+  ];
+  await queryInterface.dropMaterializedView('post_stats');
+  await queryInterface.dropView('edited_posts');
+
   await queryInterface.dropExtension('pg_trgm');
-  if (first !== '1000' || afterSet !== '5001' || post[0]?.edits !== 1) {
+  if (first !== '1000' || afterSet !== '5001' || post[0]?.edits !== 1 || stats[0]?.posts !== 1) {
     throw new Error('schema objects example: unexpected result');
   }
 };

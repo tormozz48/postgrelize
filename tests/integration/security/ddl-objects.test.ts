@@ -192,4 +192,43 @@ describe('DDL object names and keywords cannot break out of their quoting', () =
         { ...propertyParameters(), numRuns: 15 },
       );
     }));
+
+  it('quotes view names and columns and guards view keywords', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await fc.assert(
+        fc.asyncProperty(identifier(), identifier(), async (name, column) => {
+          await queryInterface.createView(name, 'SELECT 1 AS one', { columns: [column] });
+          await queryInterface.createMaterializedView(`m_${name}`.slice(0, 60), 'SELECT 1 AS one', {
+            columns: [column],
+          });
+          await queryInterface.refreshMaterializedView(`m_${name}`.slice(0, 60));
+          await queryInterface.dropMaterializedView(`m_${name}`.slice(0, 60));
+          await queryInterface.dropView(name);
+        }),
+        { ...propertyParameters(), numRuns: 15 },
+      );
+      for (const payload of PAYLOADS.filter((value) => !/^[A-Za-z_]\w*$/.test(value))) {
+        await expect(
+          queryInterface.createView('v', 'SELECT 1', { checkOption: payload as never }),
+        ).rejects.toThrow(/check option/);
+        await expect(
+          queryInterface.createMaterializedView('m', 'SELECT 1', { using: payload }),
+        ).rejects.toThrow(/access method/);
+        expect(syntaxError(await settle(queryInterface.createView(payload, 'SELECT 1')))).toBe(
+          false,
+        );
+        expect(syntaxError(await settle(queryInterface.refreshMaterializedView(payload)))).toBe(
+          false,
+        );
+        expect(
+          syntaxError(
+            await settle(
+              queryInterface.dropView({ tableName: payload, schema: payload }, { ifExists: true }),
+            ),
+          ),
+        ).toBe(false);
+        await queryInterface.dropView(payload, { ifExists: true });
+      }
+    }));
 });

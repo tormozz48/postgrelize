@@ -31,6 +31,16 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - New options: `dropFunction` / `dropTrigger` accept `ifExists` and `cascade`; `createTrigger` accepts `replace` (`CREATE OR REPLACE TRIGGER`, PostgreSQL 14+).
 - Timing is `'before' | 'after' | 'instead_of' | 'after_constraint'` (a deferrable `CONSTRAINT TRIGGER`); events are `'insert' | 'update' | 'delete' | 'truncate'`.
 
+## Views and materialized views
+
+<<< @/examples/schema-objects.ts#views{ts}
+
+- `createView(name, query, { replace, temporary, recursive, columns, checkOption, securityBarrier, securityInvoker })`, `dropView(name, { ifExists, cascade })`.
+- `createMaterializedView(name, query, { ifNotExists, columns, using, withData })`, `refreshMaterializedView(name, { concurrently, withData })`, `dropMaterializedView(name, { ifExists, cascade })`. PostgreSQL has no `OR REPLACE` for materialized views. `concurrently` needs a unique index on the view and cannot be combined with `withData: false`.
+- **The `query` is SQL you write.** It is not escaped: never build it from user input. See [Security](/security). View and column names are quoted identifiers.
+- A model can read a view like a table (`freezeTableName` or `tableName`, `timestamps: false`).
+- A `temporary` view lives only as long as its database session, which is one pooled connection: create and use it in one transaction (`transaction` option).
+
 ## API reference
 
 - [`QueryInterface`](/api/classes/QueryInterface)
