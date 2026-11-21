@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
+- A test compares the public API surface of `Sequelize`, `Model`, `QueryInterface`, `Transaction`, `DataTypes` and the exports with `sequelize@6`; every v6 name postgrelize lacks is on an allow-list (`tests/compat/api-surface-exceptions.json`) that is rendered as "API differences" in the migration guide and only shrinks (S19).
 - `minifyAliases` constructor option (Sequelize v6 parity): shortens include column aliases and table aliases of 64 or more characters so deep includes with long association names stay within PostgreSQL's 63-byte identifier limit, and maps rows back.
 
 ### Fixed

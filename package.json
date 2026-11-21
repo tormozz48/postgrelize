@@ -63,6 +63,7 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down -v",
     "prepublishOnly": "npm run llm:build && npm run build",
+    "api:differences": "node --experimental-strip-types scripts/generate-api-differences.ts",
     "llm:build": "node --experimental-strip-types scripts/generate-llm.ts",
     "release:preflight": "node --experimental-strip-types scripts/release-preflight.ts",
     "docs": "typedoc && vitepress build docs",
