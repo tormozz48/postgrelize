@@ -38,20 +38,24 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-22
+
+Sequelize v6 parity for a production migration (S19): `minifyAliases`, `afterConnect`, `useCLS(namespace)` with cls-hooked namespaces, the static aliases, hook shorthands and the missing `Model` / `QueryInterface` methods, backed by a test that compares the public API with `sequelize@6`.
+
 ### Added
 
-- `Sequelize#truncate` (empties all model tables, referencing tables first, as in v6), `Deferrable.SET_DEFERRED` / `Deferrable.SET_IMMEDIATE` for the `deferrable` transaction option and `queryInterface.deferConstraints` (S19). With these, every v6 name that postgrelize lacks is on the API-surface allow-list with a reason.
-- Sequelize v6 `QueryInterface` methods: `showIndex`, `showConstraint` (and `QueryTypes.SHOWCONSTRAINTS`), `getForeignKeysForTables`, `assertTableHasColumn`, `databaseVersion`, `createDatabase`, `dropDatabase`, `quoteIdentifier`, `quoteIdentifiers` (S19). The catalog lookups filter by schema and `showConstraint` honours the constraint name (v6 ignores it).
-- Sequelize v6 `Model` members: `describe`, `dropSchema`, `queryInterface`, `findCreateFind`, `getAssociations`, `getAssociationForAlias`, `hasAlias`, `removeAttribute`, `refreshAttributes`, and on instances `equalsOneOf`, `setAttributes`, `where` and `toString` (S19). `findCreateFind` inside a transaction uses a savepoint and returns the row that won a race with `created: false` (v6 returns an unsaved instance).
-- Hook shorthands as in Sequelize v6: `sequelize.beforeCreate(fn)` and the other hooks that run (also `beforeConnect`, `afterConnect`, `beforeBulkSync`, `afterBulkSync`), `sequelize.runHooks()`, `Model.beforeSync()` and `Model.afterSync()` (S19).
-- Sequelize v6 static aliases: the data types (`Sequelize.STRING`, ...), the error classes (also `QueryError`, `SequelizeScopeError`, `UnknownConstraintError`, `ValidationErrorItemOrigin` / `ValidationErrorItemType` and `Error`), `Deferrable`, `and`, `or`, `useInflection`, `version`, `Association` and the association classes, `QueryInterface`, `Validator`; the same data types and errors as module exports; `DataTypes.NUMERIC` and `DataTypes['DOUBLE PRECISION']`; instance members `queryInterface`, `QueryTypes`, `random()`, `escape()`, `validate()`, `getDatabaseName()`, `refreshTypes()`, `log()`, `and`, `or` (S19).
-- A test compares the public API surface of `Sequelize`, `Model`, `QueryInterface`, `Transaction`, `DataTypes` and the exports with `sequelize@6`; every v6 name postgrelize lacks is on an allow-list (`tests/compat/api-surface-exceptions.json`) that is rendered as "API differences" in the migration guide and only shrinks (S19).
-- `minifyAliases` constructor option (Sequelize v6 parity): shortens include column aliases and table aliases of 64 or more characters so deep includes with long association names stay within PostgreSQL's 63-byte identifier limit, and maps rows back.
+- `Sequelize#truncate` (empties all model tables, referencing tables first, as in v6), `Deferrable.SET_DEFERRED` / `Deferrable.SET_IMMEDIATE` for the `deferrable` transaction option and `queryInterface.deferConstraints` (S19). With these, every v6 name that postgrelize lacks is on the API-surface allow-list with a reason. [#107](https://github.com/tormozz48/postgrelize/pull/107)
+- Sequelize v6 `QueryInterface` methods: `showIndex`, `showConstraint` (and `QueryTypes.SHOWCONSTRAINTS`), `getForeignKeysForTables`, `assertTableHasColumn`, `databaseVersion`, `createDatabase`, `dropDatabase`, `quoteIdentifier`, `quoteIdentifiers` (S19). The catalog lookups filter by schema and `showConstraint` honours the constraint name (v6 ignores it). [#106](https://github.com/tormozz48/postgrelize/pull/106)
+- Sequelize v6 `Model` members: `describe`, `dropSchema`, `queryInterface`, `findCreateFind`, `getAssociations`, `getAssociationForAlias`, `hasAlias`, `removeAttribute`, `refreshAttributes`, and on instances `equalsOneOf`, `setAttributes`, `where` and `toString` (S19). `findCreateFind` inside a transaction uses a savepoint and returns the row that won a race with `created: false` (v6 returns an unsaved instance). [#105](https://github.com/tormozz48/postgrelize/pull/105)
+- Hook shorthands as in Sequelize v6: `sequelize.beforeCreate(fn)` and the other hooks that run (also `beforeConnect`, `afterConnect`, `beforeBulkSync`, `afterBulkSync`), `sequelize.runHooks()`, `Model.beforeSync()` and `Model.afterSync()` (S19). [#104](https://github.com/tormozz48/postgrelize/pull/104)
+- Sequelize v6 static aliases: the data types (`Sequelize.STRING`, ...), the error classes (also `QueryError`, `SequelizeScopeError`, `UnknownConstraintError`, `ValidationErrorItemOrigin` / `ValidationErrorItemType` and `Error`), `Deferrable`, `and`, `or`, `useInflection`, `version`, `Association` and the association classes, `QueryInterface`, `Validator`; the same data types and errors as module exports; `DataTypes.NUMERIC` and `DataTypes['DOUBLE PRECISION']`; instance members `queryInterface`, `QueryTypes`, `random()`, `escape()`, `validate()`, `getDatabaseName()`, `refreshTypes()`, `log()`, `and`, `or` (S19). [#103](https://github.com/tormozz48/postgrelize/pull/103)
+- A test compares the public API surface of `Sequelize`, `Model`, `QueryInterface`, `Transaction`, `DataTypes` and the exports with `sequelize@6`; every v6 name postgrelize lacks is on an allow-list (`tests/compat/api-surface-exceptions.json`) that is rendered as "API differences" in the migration guide and only shrinks (S19). [#102](https://github.com/tormozz48/postgrelize/pull/102)
+- `minifyAliases` constructor option (Sequelize v6 parity): shortens include column aliases and table aliases of 64 or more characters so deep includes with long association names stay within PostgreSQL's 63-byte identifier limit, and maps rows back. [#101](https://github.com/tormozz48/postgrelize/pull/101)
 
 ### Fixed
 
-- The `afterConnect` hook now runs for every new pooled connection after `beforeConnect`, with `(connection, config)` as in Sequelize v6; the hook may run queries on the connection, and an error it throws closes that connection and rejects the query that needed it (v6 parity).
-- `Sequelize.useCLS(namespace)` no longer ignores a `cls-hooked` style namespace: managed transactions store themselves under `namespace.get('transaction')` (cleared when they finish), queries without a `transaction` option read it from there, and a non-namespace argument throws `Must provide CLS namespace`, as in Sequelize v6 (v6 parity). `useCLS()` without an argument is unchanged.
+- The `afterConnect` hook now runs for every new pooled connection after `beforeConnect`, with `(connection, config)` as in Sequelize v6; the hook may run queries on the connection, and an error it throws closes that connection and rejects the query that needed it (v6 parity). [#99](https://github.com/tormozz48/postgrelize/pull/99)
+- `Sequelize.useCLS(namespace)` no longer ignores a `cls-hooked` style namespace: managed transactions store themselves under `namespace.get('transaction')` (cleared when they finish), queries without a `transaction` option read it from there, and a non-namespace argument throws `Must provide CLS namespace`, as in Sequelize v6 (v6 parity). `useCLS()` without an argument is unchanged. [#100](https://github.com/tormozz48/postgrelize/pull/100)
 
 ## [1.0.0] - 2026-11-21
 
@@ -267,7 +271,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tormozz48/postgrelize/compare/v0.12.0...v1.0.0
 [0.12.0]: https://github.com/tormozz48/postgrelize/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/tormozz48/postgrelize/compare/v0.10.0...v0.11.0
