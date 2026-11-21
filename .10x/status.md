@@ -2,9 +2,9 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 prepared (S19 v6 parity)
 
-**S19 (v6 parity from a production migration):** in progress — 1: `afterConnect` hook (#99, merged); 2: `useCLS(namespace)` with cls-hooked namespaces (#100); 3: `minifyAliases`; 4–5: API-surface test with allow-list (this PR), then static aliases and missing `Model` / `queryInterface` methods shrinking the list.
+**S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
 **S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
@@ -200,3 +200,6 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - Open: configure the Trusted Publisher on npmjs.com (done by the maintainer), PR #96 switches `release.yml` to OIDC and drops the `NPM_TOKEN` check (merged); after the next release confirms it, delete the `NPM_TOKEN` secret and revoke the token; remove the mirror job after the second release that includes it.
 - CI on Node 24 (2026-11-21): `ci.yml` check job runs Node 20/22/24 (docs build and `dist` artifact stay on 22); DB jobs run PostgreSQL 16/17/18 on Node 22 plus one extra job on Node 24 with PostgreSQL 18. Full suite (lint, format, typecheck, unit, integration, compat, docs, build, test:build, `npm run docs`) passed locally on Node 24.16 with no library changes. The ruleset for `main` has no required status checks, so no check names to update.
 - Release process (docs release process PR): project skill `.claude/skills/release/SKILL.md` (approval gate, preflight, release PR, tag, verification, failure handling), `npm run release:preflight -- X.Y.Z [--before-bump] [--fast]` (`scripts/release-preflight.ts`, pure parts in `scripts/release-lib.ts` with `tests/unit/scripts/release-lib.test.ts`), AGENTS.md "Git, PRs and releases" rewritten, Release PR section in the PR template. No release was made.
+
+## Release 1.1.0 (2026-11-22, prepared)
+- S19: Sequelize v6 parity found by migrating a production project; additive only, so a minor bump. Release PR `chore/release-1.1.0`; tag and publish only on the maintainer's explicit go.
