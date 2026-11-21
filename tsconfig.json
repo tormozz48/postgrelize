@@ -27,6 +27,7 @@
     "docs/examples",
     "docs/.vitepress/llm",
     "scripts/generate-llm.ts",
+    "scripts/release-*.ts",
     "bench",
     "build",
     "*.config.ts"

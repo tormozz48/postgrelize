@@ -64,6 +64,7 @@
     "db:down": "docker compose down -v",
     "prepublishOnly": "npm run llm:build && npm run build",
     "llm:build": "node --experimental-strip-types scripts/generate-llm.ts",
+    "release:preflight": "node --experimental-strip-types scripts/release-preflight.ts",
     "docs": "typedoc && vitepress build docs",
     "docs:dev": "typedoc && vitepress dev docs",
     "docs:examples": "vitest run --project docs",

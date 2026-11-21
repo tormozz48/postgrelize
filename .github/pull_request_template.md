@@ -20,3 +20,12 @@ See [AGENTS.md → Documentation sync](../AGENTS.md#documentation-sync).
 - [ ] Architecture or dependency decision: ADR written; `AGENTS.md` updated if a rule changed
 - [ ] New input reaching SQL: row on `docs/security.md` + tests in `tests/integration/security/` (ADR-020)
 - [ ] Hot path touched: `bench/compare.ts` gate run (≤ +10%)
+
+## Release PR (`chore/release-X.Y.Z` only)
+
+See [`.claude/skills/release/SKILL.md`](../.claude/skills/release/SKILL.md). Never tag before this PR is merged with green CI.
+
+- [ ] Maintainer asked for this release; version checked against the changelog (breaking, feature, fix)
+- [ ] `npm run release:preflight -- X.Y.Z --before-bump` on `main` ended with `PASS` (output pasted below)
+- [ ] `package.json` version, `CHANGELOG.md` section `[X.Y.Z] - date` with compare links, new empty `[Unreleased]`, `.10x/status.md` updated
+- [ ] `npm run release:preflight -- X.Y.Z` on this branch ended with `PASS`
