@@ -48,6 +48,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - Hero art and a favicon set for the documentation site. [#88](https://github.com/tormozz48/postgrelize/pull/88)
 - Backlog 5 roadmap spec for publishing on npmjs.com (planning only, no code). [#89](https://github.com/tormozz48/postgrelize/pull/89)
 
+### Changed
+
+- CI runs the checks on Node 20, 22 and 24; one integration and compat job runs on Node 24 with PostgreSQL 18. [#93](https://github.com/tormozz48/postgrelize/pull/93)
+
 ## [0.12.0] - 2026-11-16
 
 ### Added

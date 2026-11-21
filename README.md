@@ -101,7 +101,7 @@ rows.forEach((row) => console.log(row.key, row.wasInserted ? 'inserted' : 'updat
 ## Compatibility
 
 - PostgreSQL 16, 17 and 18 (tested in CI); some features need newer servers: `MERGE ... RETURNING` 17+, `returningOld` 18+.
-- Node.js 20+, `pg` driver.
+- Node.js 20+ (tested on 20, 22 and 24), `pg` driver.
 - A few behaviours intentionally differ from Sequelize v6 where v6 is wrong for PostgreSQL (e.g. `describeTable` defaults to `current_schema()` instead of `public`); see [Sequelize issues fixed in postgrelize](docs/sequelize-issues.md) for the full list.
 
 ## Links
