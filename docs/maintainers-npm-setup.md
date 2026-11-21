@@ -4,6 +4,8 @@ Steps only the package owner can do. Design: ADR-028 (`.10x/adrs/028-npmjs-publi
 
 ## Once, before the first npmjs release
 
+After the first publish the repository uses trusted publishing (OIDC) and needs no token; steps 3 to 5 are only for that first publish, while no Trusted Publisher can exist yet (npm accepts one only for an existing package).
+
 1. **Account and 2FA.** Sign in to https://www.npmjs.com with the owner account. Enable two-factor authentication (Account → Two-Factor Authentication, "Authorization and publishing").
 2. **Check the name is still free:**
    ```bash
@@ -19,7 +21,7 @@ Steps only the package owner can do. Design: ADR-028 (`.10x/adrs/028-npmjs-publi
    gh secret set NPM_TOKEN --repo tormozz48/postgrelize
    ```
    (paste the token at the prompt), or Settings → Secrets and variables → Actions → New repository secret.
-5. **Verify the secret exists** (the value is never shown): `gh secret list --repo tormozz48/postgrelize` must list `NPM_TOKEN`. Do this before every tag; `npm run release:preflight -- X.Y.Z` does it for you (full release flow: `.claude/skills/release/SKILL.md`).
+5. **Verify the secret exists** (the value is never shown): `gh secret list --repo tormozz48/postgrelize` must list `NPM_TOKEN`. Full release flow: `.claude/skills/release/SKILL.md`.
 6. The GitHub Packages mirror needs no setup: it uses the workflow's `GITHUB_TOKEN`.
 
 ## After the first publish
@@ -30,10 +32,10 @@ Steps only the package owner can do. Design: ADR-028 (`.10x/adrs/028-npmjs-publi
 - Packages → `postgrelize` → Settings: replace the broad token by a token scoped to `postgrelize`, or go to the next section.
 - The mirror: `https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize` shows the new version with the `DEPRECATED` description.
 
-## Switch to trusted publishing (drops the token)
+## Switch to trusted publishing (drops the token; do this right after the first publish)
 
 1. npmjs.com → package `postgrelize` → Settings → Trusted Publisher → GitHub Actions: owner `tormozz48`, repository `postgrelize`, workflow `release.yml`, environment empty.
-2. In `release.yml` remove the `NODE_AUTH_TOKEN` env line from the npm job (the job already has `id-token: write`; trusted publishing needs npm ≥ 11.5.1: add a step `npm install -g npm@^11.5.1` before publishing).
+2. `release.yml` already uses it: the npm job has `id-token: write`, installs npm ≥ 11.5.1 and passes no `NODE_AUTH_TOKEN`. Merge that change only after the first publish succeeded.
 3. Release once to confirm, then delete the `NPM_TOKEN` secret and revoke the token on npmjs.com.
 
 ## Retire the scoped package `@tormozz48/postgrelize`

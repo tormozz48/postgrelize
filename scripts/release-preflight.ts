@@ -264,12 +264,6 @@ function checkNpm(previous: string): void {
     }
     return `latest on npm: ${published}`;
   });
-  check('NPM_TOKEN secret exists', () => {
-    const run = gh(['secret', 'list']);
-    if (!run.ok) throw new Error(run.out);
-    if (!/^NPM_TOKEN\b/m.test(run.stdout))
-      throw new Error('gh secret list does not show NPM_TOKEN');
-  });
 }
 
 function benchReminder(tag: string): void {
