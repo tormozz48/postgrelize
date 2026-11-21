@@ -27,7 +27,8 @@
   "files": [
     "dist",
     "llm",
-    "skills"
+    "skills",
+    "CHANGELOG.md"
   ],
   "type": "module",
   "sideEffects": false,
