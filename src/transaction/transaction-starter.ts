@@ -39,7 +39,7 @@ export class TransactionStarter {
 
   #create(options: TransactionOptions): Transaction {
     const parent =
-      options.transaction === undefined ? transactionScope.active() : options.transaction;
+      options.transaction === undefined ? transactionScope.implicitParent() : options.transaction;
     return new Transaction(this.#connections, {
       ...options,
       ...(parent === undefined ? {} : { transaction: parent }),

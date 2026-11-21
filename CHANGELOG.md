@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Sequelize.useCLS(namespace)` no longer ignores a `cls-hooked` style namespace: managed transactions store themselves under `namespace.get('transaction')` (cleared when they finish), queries without a `transaction` option read it from there, and a non-namespace argument throws `Must provide CLS namespace`, as in Sequelize v6 (v6 parity). `useCLS()` without an argument is unchanged.
+
 ## [1.0.0] - 2026-11-21
 
 First release on npmjs.com, as `postgrelize` (`npm i postgrelize`). The scoped `@tormozz48/postgrelize` mirror on GitHub Packages continues at the same version and is deprecated (ADR-028). The public API exported from `src/index.ts` is now covered by Semantic Versioning.

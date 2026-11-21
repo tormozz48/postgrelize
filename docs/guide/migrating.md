@@ -35,7 +35,7 @@ The package ships ES modules and CommonJS, so `require('postgrelize')` works as 
 
 ## 4. Run your tests
 
-Things that behave the same as in Sequelize v6 include model definition (`init`, `define`), all finders, `create`/`bulkCreate`/`upsert`/`update`/`destroy`, instance methods and change tracking, hooks, validators, scopes, paranoid models, optimistic locking, associations with `include` and accessors, nested creation with `include`, managed and unmanaged transactions with savepoints and CLS (`Sequelize.useCLS()`), `QueryInterface` and `sync`.
+Things that behave the same as in Sequelize v6 include model definition (`init`, `define`), all finders, `create`/`bulkCreate`/`upsert`/`update`/`destroy`, instance methods and change tracking, hooks, validators, scopes, paranoid models, optimistic locking, associations with `include` and accessors, nested creation with `include`, managed and unmanaged transactions with savepoints and CLS (`Sequelize.useCLS()` and `Sequelize.useCLS(namespace)` with a `cls-hooked` namespace), `QueryInterface` and `sync`.
 
 Value conventions follow v6 too: `BIGINT` and `DECIMAL` values are strings, and `upsert` returns `[instance, null]` because PostgreSQL does not report whether a row was inserted (use the [`onConflict` option](./upserts) to get a boolean).
 

@@ -60,11 +60,15 @@ export class Sequelize extends SequelizeMembers {
 
   /**
    * Enables continuation-local transactions: queries inside `sequelize.transaction(fn)` use the
-   * transaction automatically. The namespace argument of Sequelize v6 is accepted and ignored;
-   * `AsyncLocalStorage` is used instead.
+   * transaction automatically. Without an argument `AsyncLocalStorage` is used. With a `cls-hooked`
+   * style namespace (an object with `bind`, `run`, `get` and `set`) it behaves as in Sequelize v6:
+   * managed transactions run in `namespace.run` and store themselves under `namespace.get('transaction')`
+   * (cleared when they finish), queries without a `transaction` option read the key, and a nested
+   * `sequelize.transaction(callback)` opens its own transaction instead of a savepoint.
    *
-   * @param _namespace - Ignored.
+   * @param namespace - CLS namespace; `AsyncLocalStorage` when omitted.
    * @returns The `Sequelize` class.
+   * @throws Error `Must provide CLS namespace` when `namespace` has no `bind` or `run`.
    * @see {@link Sequelize.transaction}
    *
    * @example
@@ -77,8 +81,8 @@ export class Sequelize extends SequelizeMembers {
    * });
    * ```
    */
-  static useCLS(_namespace?: unknown): typeof Sequelize {
-    transactionScope.enableCls();
+  static useCLS(namespace?: unknown): typeof Sequelize {
+    transactionScope.enableCls(namespace);
     return Sequelize;
   }
 

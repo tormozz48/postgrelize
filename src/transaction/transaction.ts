@@ -5,6 +5,7 @@ import type {
   ExecuteOptions,
 } from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
+import { transactionScope } from './transaction-runner.ts';
 import { AdvisoryLocks, type AdvisoryLockKey } from './advisory-locks.ts';
 import { TransactionStatements } from './transaction-statements.ts';
 import {
@@ -306,6 +307,7 @@ export class Transaction {
   }
 
   #release(): void {
+    transactionScope.release(this);
     if (this.parent === undefined && this.#client !== undefined) {
       this.#client.release();
       this.#client = undefined;
