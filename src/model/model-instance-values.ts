@@ -181,6 +181,61 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
+   * Tells whether the instance equals any of the given instances (same model and primary keys).
+   *
+   * @param others - Instances to compare with.
+   * @returns True when at least one equals this instance.
+   * @example
+   * ```ts
+   * const known = user.equalsOneOf(users);
+   * ```
+   */
+  equalsOneOf(others: readonly Model[]): boolean {
+    return others.some((other) => this.equals(other));
+  }
+
+  /**
+   * Alias of {@link Model.set} for several values (Sequelize v6 `setAttributes`).
+   *
+   * @param updates - Attribute values.
+   * @returns This instance.
+   * @example
+   * ```ts
+   * user.setAttributes({ email: 'ada@example.com' });
+   * ```
+   */
+  setAttributes(updates: Partial<TAttributes> | Values): this {
+    return this.set(updates);
+  }
+
+  /**
+   * Condition that selects this row: its primary key values keyed by column name.
+   *
+   * @param checkVersion - Also match the optimistic-locking `version` value.
+   * @returns The where object (the model's `whereCollection` option when it has no primary key).
+   * @example
+   * ```ts
+   * const where = user.where();
+   * ```
+   */
+  where(checkVersion?: boolean): Record<string, unknown> | undefined {
+    return instanceValues.where(this as unknown as AnyModel, checkVersion === true);
+  }
+
+  /**
+   * Describes the instance as `[object SequelizeInstance:Model]`.
+   *
+   * @returns The description.
+   * @example
+   * ```ts
+   * String(user); // '[object SequelizeInstance:User]'
+   * ```
+   */
+  toString(): string {
+    return `[object SequelizeInstance:${(this.constructor as { name: string }).name}]`;
+  }
+
+  /**
    * Returns a deep copy of the values with custom getters applied, used by `JSON.stringify`.
    *
    * @returns Plain object.

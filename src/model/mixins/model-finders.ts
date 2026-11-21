@@ -157,6 +157,28 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
+     * Finds a row; when none matches, inserts it and, if that fails with a unique violation (a concurrent
+     * insert won), reads the row again. Unlike `findOrCreate` the insert is not wrapped in a transaction, so it
+     * suits code that already handles the race itself. Inside a transaction the insert uses a savepoint, which
+     * fixes v6 returning an unsaved instance after a conflict.
+     *
+     * @param this - The model class (or a scoped model class from {@link Model.scope}).
+     * @param options - `where` to search (required; its equality values also seed the new row), `defaults` to add on creation.
+     * @returns `[instance, created]`.
+     * @throws Error when `where` is missing.
+     * @example
+     * ```ts
+     * const [tag, created] = await Tag.findCreateFind({ where: { name: 'news' }, defaults: { color: 'red' } });
+     * ```
+     */
+    static findCreateFind<M extends AnyModel>(
+      this: ModelStatic<M>,
+      options: FindOrCreateOptions<Attributes<M>>,
+    ): Promise<[M, boolean]> {
+      return finder.findCreateFind(this, options as FindOrCreateOptions);
+    }
+
+    /**
      * Finds a row, or builds a new unsaved instance when none matches; nothing is inserted.
      *
      * @param this - The model class (or a scoped model class from {@link Model.scope}).

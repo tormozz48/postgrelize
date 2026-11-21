@@ -38,233 +38,233 @@
     },
     {
       "name": "addHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterBulkCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterBulkDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterBulkRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterBulkUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterConnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterDefine",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterDisconnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterInit",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterPoolAcquire",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterSave",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterUpsert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "afterValidate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeBulkCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeBulkDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeBulkRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeBulkUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeConnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeCount",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeDefine",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeDisconnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeFindAfterExpandIncludeAll",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeFindAfterOptions",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeInit",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforePoolAcquire",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeSave",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeUpsert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "beforeValidate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "db2",
@@ -278,13 +278,13 @@
     },
     {
       "name": "hasHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "hasHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "mariadb",
@@ -318,13 +318,13 @@
     },
     {
       "name": "removeHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "runHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "snowflake",
@@ -338,8 +338,8 @@
     },
     {
       "name": "validationFailed",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     }
   ],
   "Sequelize.prototype": [
@@ -350,228 +350,63 @@
     },
     {
       "name": "afterAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterBulkCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterBulkDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterBulkRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterBulkUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterConnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterDefine",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterDisconnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterInit",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterPoolAcquire",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterSave",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterUpsert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "afterValidate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeBulkCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeBulkDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeBulkRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeBulkUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeConnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeCount",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeCreate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeDefine",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeDestroy",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeDisconnect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeFindAfterExpandIncludeAll",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeFindAfterOptions",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeInit",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforePoolAcquire",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeRestore",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeSave",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeUpdate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeUpsert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "beforeValidate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "connectionManager",
@@ -599,22 +434,12 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "runHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "set",
       "category": "other-dialect",
       "note": "sequelize.set only works for MySQL and MariaDB in v6 (throws on other dialects)"
     },
     {
       "name": "truncate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "validationFailed",
       "category": "tracked-in-issue",
       "note": "S19 item 4: to be implemented"
     }
@@ -627,43 +452,33 @@
     },
     {
       "name": "afterAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "afterQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "afterSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeAssociate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeBulkSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "beforeQuery",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "beforeSync",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
       "name": "default",
@@ -671,54 +486,9 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "describe",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "dropSchema",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "findCreateFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "getAssociationForAlias",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "getAssociations",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "hasAlias",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
       "name": "queryGenerator",
       "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "queryInterface",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "refreshAttributes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "removeAttribute",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "note": "v6 query generator object; postgrelize compiles SQL through its own AST"
     },
     {
       "name": "warnOnInvalidOptions",
@@ -729,53 +499,33 @@
   "Model.prototype": [
     {
       "name": "addHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "equalsOneOf",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "hasHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "hasHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "removeHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "runHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "setAttributes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "setValidators",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "toString",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "where",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "mutates the validators shared by every instance of the model in v6; define validate options on the attribute instead"
     }
   ],
   "Transaction": [
