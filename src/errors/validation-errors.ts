@@ -4,6 +4,43 @@ import type { ConstraintErrorOptions } from './database-errors.ts';
 /** Origin of a validation error item. */
 export type ValidationErrorItemOrigin = 'CORE' | 'DB' | 'FUNCTION';
 
+/** Shape of {@link ValidationErrorItemOrigin}. */
+export interface ValidationErrorItemOrigins {
+  /** Raised by a built-in check such as not-null. */
+  readonly CORE: 'CORE';
+  /** Raised by the database, e.g. a unique violation. */
+  readonly DB: 'DB';
+  /** Raised by a custom validator function. */
+  readonly FUNCTION: 'FUNCTION';
+}
+
+/** Shape of {@link ValidationErrorItemType}. */
+export interface ValidationErrorItemTypes {
+  /** A not-null violation is a `CORE` error. */
+  readonly 'notnull violation': 'CORE';
+  /** A string violation is a `CORE` error. */
+  readonly 'string violation': 'CORE';
+  /** A unique violation is a `DB` error. */
+  readonly 'unique violation': 'DB';
+  /** A failed validator is a `FUNCTION` error. */
+  readonly 'validation error': 'FUNCTION';
+}
+
+/** Values of {@link ValidationErrorItem.origin}, as in Sequelize v6. */
+export const ValidationErrorItemOrigin: ValidationErrorItemOrigins = Object.freeze({
+  CORE: 'CORE',
+  DB: 'DB',
+  FUNCTION: 'FUNCTION',
+});
+
+/** Origin by validation error type, as in Sequelize v6 (`ValidationErrorItemType['unique violation']` is `'DB'`). */
+export const ValidationErrorItemType: ValidationErrorItemTypes = Object.freeze({
+  'notnull violation': 'CORE',
+  'string violation': 'CORE',
+  'unique violation': 'DB',
+  'validation error': 'FUNCTION',
+});
+
 const ORIGIN_BY_TYPE: Readonly<Record<string, ValidationErrorItemOrigin>> = {
   'notnull violation': 'CORE',
   'string violation': 'CORE',

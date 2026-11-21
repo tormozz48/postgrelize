@@ -51,6 +51,51 @@ export class DatabaseError extends BaseError {
 }
 
 /**
+ * A constraint that does not exist was referenced (Sequelize v6 `UnknownConstraintError`).
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await queryInterface.removeConstraint('users', 'missing');
+ * } catch (e) {
+ *   if (e instanceof UnknownConstraintError) {
+ *     console.error(e.constraint, e.table);
+ *   }
+ * }
+ * ```
+ */
+export class UnknownConstraintError extends DatabaseError {
+  /** Constraint name. */
+  readonly constraint: string | undefined;
+  /** Constraint columns. */
+  readonly fields: Readonly<Record<string, unknown>> | undefined;
+  /** Table name. */
+  readonly table: string | undefined;
+
+  /**
+   * Builds the error; `message` defaults to v6's "The specified constraint does not exist".
+   *
+   * @param options - Constraint details and an optional driver error.
+   */
+  constructor(
+    options: Readonly<{
+      message?: string;
+      constraint?: string;
+      fields?: Readonly<Record<string, unknown>>;
+      table?: string;
+      parent?: DriverError;
+    }> = {},
+  ) {
+    super(options.parent ?? Object.assign(new Error(''), { sql: '' }));
+    this.name = 'SequelizeUnknownConstraintError';
+    this.message = options.message ?? 'The specified constraint does not exist';
+    this.constraint = options.constraint;
+    this.fields = options.fields;
+    this.table = options.table;
+  }
+}
+
+/**
  * Query cancelled by PostgreSQL, e.g. because `statement_timeout` elapsed (SQLSTATE `57014`).
  *
  * @example

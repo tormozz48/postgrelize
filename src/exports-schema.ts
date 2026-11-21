@@ -1,5 +1,4 @@
 export type {
-  Association,
   AssociationName,
   AssociationOptions,
   AssociationThrough,
