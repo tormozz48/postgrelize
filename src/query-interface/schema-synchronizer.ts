@@ -129,6 +129,23 @@ export class SchemaSynchronizer {
   }
 
   /**
+   * Order in which tables can be emptied: tables that reference others first. A reference cycle
+   * cannot be ordered, so `cyclic` is set and the order is only a best effort.
+   *
+   * @param definitions - Model definitions.
+   * @returns Definitions with referencing tables first, and whether foreign keys form a cycle.
+   */
+  truncationOrder(
+    definitions: readonly ModelDefinition[],
+  ): Readonly<{ models: readonly ModelDefinition[]; cyclic: boolean }> {
+    const ordered = planner.dependencyOrder(definitions);
+    const cyclic = [...planner.deferredReferences(ordered).values()].some(
+      (columns) => columns.length > 0,
+    );
+    return { models: ordered.toReversed(), cyclic };
+  }
+
+  /**
    * Drops the tables of several models in reverse foreign-key order.
    *
    * @param definitions - Model definitions.

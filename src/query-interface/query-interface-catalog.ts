@@ -1,4 +1,6 @@
+import { SET_CONSTRAINTS_VALUES, type DeferrableValue } from '../ddl/ddl-types.ts';
 import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
+import type { Transaction } from '../transaction/transaction.ts';
 import type { QueryOptionsBase, RuntimeOwner } from '../model/runtime.ts';
 import { IdentifierQuoter } from '../sql/identifier-quoter.ts';
 import { QueryInterfacePartitions } from './query-interface-partitions.ts';
@@ -250,6 +252,31 @@ export class QueryInterfaceCatalog extends QueryInterfacePartitions {
    */
   async dropDatabase(database: string, options: QueryOptionsBase = {}): Promise<void> {
     await this.#catalog.run(`DROP DATABASE IF EXISTS ${quoter.quote(database)};`, options);
+  }
+
+  /**
+   * Runs `SET CONSTRAINTS ...` for `options.deferrable` (`Deferrable.SET_DEFERRED` / `SET_IMMEDIATE`) on the
+   * connection of a transaction.
+   *
+   * @param transaction - Transaction to run in.
+   * @param options - `deferrable` and query options.
+   * @throws Error when `deferrable` is not `Deferrable.SET_DEFERRED` / `SET_IMMEDIATE`.
+   * @example
+   * ```ts
+   * await queryInterface.deferConstraints(transaction, { deferrable: Deferrable.SET_DEFERRED(['posts_user_fk']) });
+   * ```
+   */
+  async deferConstraints(
+    transaction: Transaction,
+    options: QueryOptionsBase & Readonly<{ deferrable?: DeferrableValue }> = {},
+  ): Promise<void> {
+    const { deferrable, ...query } = options;
+    if (deferrable === undefined || !SET_CONSTRAINTS_VALUES.has(deferrable)) {
+      throw new Error(
+        'deferConstraints needs the deferrable option Deferrable.SET_DEFERRED or SET_IMMEDIATE',
+      );
+    }
+    await this.#catalog.run(deferrable.sql, { ...query, transaction });
   }
 
   /**

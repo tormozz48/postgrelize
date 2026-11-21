@@ -6,6 +6,7 @@ import type {
 } from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
 import { transactionScope } from './transaction-runner.ts';
+import type { DeferrableValue } from '../ddl/ddl-types.ts';
 import { AdvisoryLocks, type AdvisoryLockKey } from './advisory-locks.ts';
 import { TransactionStatements } from './transaction-statements.ts';
 import {
@@ -44,11 +45,13 @@ export type TransactionOptions = Readonly<{
   /** Start `READ ONLY`. PostgreSQL extension. */
   readOnly?: boolean;
   /**
-   * Start `DEFERRABLE` (`true`) or `NOT DEFERRABLE` (`false`). PostgreSQL honours it only for
+   * `true` / `false`: start `DEFERRABLE` / `NOT DEFERRABLE`. PostgreSQL honours it only for
    * `SERIALIZABLE READ ONLY` transactions: a deferrable one waits for a safe snapshot and then runs
-   * without serialization failures. Ignored for savepoints. PostgreSQL extension.
+   * without serialization failures; ignored for savepoints (PostgreSQL extension).
+   * `Deferrable.SET_DEFERRED` / `Deferrable.SET_IMMEDIATE` (Sequelize v6): run `SET CONSTRAINTS ... DEFERRED` /
+   * `IMMEDIATE` right after the transaction starts, for all constraints or the names given.
    */
-  deferrable?: boolean;
+  deferrable?: boolean | DeferrableValue;
   /** Parent transaction: the new transaction becomes a savepoint inside it. */
   transaction?: Transaction | null;
   /**
@@ -148,6 +151,7 @@ export class Transaction {
     try {
       await this.#run(this.#statements.begin(this.options));
       await this.#applySettings();
+      await this.#setConstraints();
     } catch (error) {
       await this.#abortBegin();
       throw error;
@@ -271,6 +275,13 @@ export class Transaction {
    */
   afterCommit(hook: (transaction: Transaction) => unknown): void {
     this.#afterCommit = [...this.#afterCommit, hook];
+  }
+
+  async #setConstraints(): Promise<void> {
+    const { deferrable } = this.options;
+    if (typeof deferrable !== 'boolean' && deferrable !== undefined) {
+      await this.#run(deferrable.sql);
+    }
   }
 
   async #applySettings(): Promise<void> {

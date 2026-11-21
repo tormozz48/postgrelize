@@ -12,8 +12,11 @@ const IDENTIFIER_PATTERN = /^[A-Za-z_][\w]*$/;
 
 const OPERATOR_PATTERN = /^[-+*/<>=~!@#%^&|`?]{1,63}$/;
 
+// Only the constraint modes: SET_DEFERRED / SET_IMMEDIATE are `SET CONSTRAINTS` statements, not DDL clauses.
 const DEFERRABLE_SQL: ReadonlySet<string> = new Set(
-  Object.values(Deferrable).map((value) => value.sql),
+  [Deferrable.INITIALLY_IMMEDIATE, Deferrable.INITIALLY_DEFERRED, Deferrable.NOT].map(
+    (value) => value.sql,
+  ),
 );
 
 /**
