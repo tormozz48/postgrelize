@@ -11,7 +11,7 @@ npm uninstall sequelize pg-hstore
 npm install postgrelize pg
 ```
 
-If you installed the deprecated GitHub Packages name `@tormozz48/postgrelize` (or the alias `postgrelize@npm:@tormozz48/postgrelize`), remove the `.npmrc` scope line, run `npm uninstall @tormozz48/postgrelize` and install `postgrelize` as above.
+If you installed the deprecated GitHub Packages name `@tormozz48/postgrelize` (or the alias `postgrelize@npm:@tormozz48/postgrelize`), remove the `.npmrc` scope line, run `npm uninstall @tormozz48/postgrelize` and install `postgrelize` as above. Imports from `'@tormozz48/postgrelize'` become `'postgrelize'`; the API is identical.
 
 ## 2. Update imports
 
