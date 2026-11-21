@@ -36,7 +36,15 @@ sequelize.addHook('beforeConnect', async (config) => {
 });
 ```
 
-All v6 hook names are accepted, but connection and define hooks other than `beforeConnect` (`afterConnect`, `beforeDefine`, `beforeQuery`, ...) are not run yet. `beforeBulkSync` / `afterBulkSync` run around `sequelize.sync()` and `beforeSync` / `afterSync` around each model's sync (also `Model.sync()`); `hooks: false` skips them.
+`afterConnect` runs once for every new pooled connection, after `beforeConnect`, with `(connection, config)` as in v6; `connection` is the `pg` client, so the hook can run session setup on it. If the hook throws, the connection is closed and the query that needed it rejects with that error.
+
+```ts
+sequelize.addHook('afterConnect', async (connection) => {
+  await connection.query("SET idle_in_transaction_session_timeout = '30s'");
+});
+```
+
+All v6 hook names are accepted, but connection and define hooks other than `beforeConnect` and `afterConnect` (`beforeDefine`, `beforeQuery`, ...) are not run yet. `beforeBulkSync` / `afterBulkSync` run around `sequelize.sync()` and `beforeSync` / `afterSync` around each model's sync (also `Model.sync()`); `hooks: false` skips them.
 
 ### Transactions in hooks
 

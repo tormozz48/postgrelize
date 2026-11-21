@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- The `afterConnect` hook now runs for every new pooled connection after `beforeConnect`, with `(connection, config)` as in Sequelize v6; the hook may run queries on the connection, and an error it throws closes that connection and rejects the query that needed it (v6 parity).
 - `Sequelize.useCLS(namespace)` no longer ignores a `cls-hooked` style namespace: managed transactions store themselves under `namespace.get('transaction')` (cleared when they finish), queries without a `transaction` option read it from there, and a non-namespace argument throws `Must provide CLS namespace`, as in Sequelize v6 (v6 parity). `useCLS()` without an argument is unchanged.
 
 ## [1.0.0] - 2026-11-21

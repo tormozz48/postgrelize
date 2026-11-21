@@ -258,7 +258,7 @@ const mixed = await User.create({ email: 'MiXed@Example.com' });
 await mixed.update({ active: false });
 ```
 
-Hook order for `create`: `beforeValidate`, `afterValidate` (or `validationFailed`), `beforeCreate`, `afterCreate`. Updates use `beforeUpdate`/`afterUpdate`; also `beforeSave`/`afterSave`, `beforeDestroy`, `beforeUpsert`, `beforeBulkCreate`, `beforeFind`, `afterFind`. Bulk operations run row hooks only with `individualHooks: true`; `hooks: false` skips hooks for one call. Only model lifecycle hooks and `beforeConnect` are executed; connection, sync and define hooks (`afterConnect`, `beforeSync`, `beforeDefine`, ...) are accepted but never called.
+Hook order for `create`: `beforeValidate`, `afterValidate` (or `validationFailed`), `beforeCreate`, `afterCreate`. Updates use `beforeUpdate`/`afterUpdate`; also `beforeSave`/`afterSave`, `beforeDestroy`, `beforeUpsert`, `beforeBulkCreate`, `beforeFind`, `afterFind`. Bulk operations run row hooks only with `individualHooks: true`; `hooks: false` skips hooks for one call. Model lifecycle hooks, `beforeConnect`, `afterConnect` (once per new pooled connection, `(connection, config)`; may run queries on `connection`) and the sync hooks are executed; define hooks (`beforeDefine`, ...) are accepted but never called.
 
 Validators in attribute definitions work as in v6 (`validate: { isEmail: true, len: [2, 50] }`, custom functions, model-level `validate`). Extra: `validate: { schema: z.email() }` and model option `validationSchema` accept any Standard Schema library (zod, valibot, arktype).
 
@@ -390,7 +390,7 @@ const bad = await sequelize
 5. **Using `sync()` as a migration tool in production.** Use `QueryInterface` migrations.
 6. **Building SQL from user input** (see Security). Use `where`, `replacements`, `bind`.
 7. **Using other dialects or v7 API** (`@sequelize/core`). Only PostgreSQL and the v6 API exist.
-8. **Using hooks outside the model lifecycle** (`afterConnect`, `beforeSync`, ...). They are never called.
+8. **Using define hooks** (`beforeDefine`, `afterDefine`, ...). They are never called.
 9. **`Sequelize.useCLS()` is global.** Call it once at startup, not per instance.
 10. **`create(values, { ignoreDuplicates })`** is not supported; use `onConflict: { action: 'nothing' }` or `bulkCreate(..., { ignoreDuplicates })`.
 

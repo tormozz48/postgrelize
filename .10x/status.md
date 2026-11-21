@@ -4,7 +4,7 @@
 **Feature slug:** `postgrelize-mvp`
 **Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21)
 
-**S19 (v6 parity from a production migration):** in progress — 1: `afterConnect` hook (#99); 2: `useCLS(namespace)` with cls-hooked namespaces (this PR); 3: `minifyAliases`; 4–5: static aliases and missing `Model` / `queryInterface` methods with an API-surface test.
+**S19 (v6 parity from a production migration):** in progress — 1: `afterConnect` hook (#99, merged); 2: `useCLS(namespace)` with cls-hooked namespaces (#100); 3: `minifyAliases`; 4–5: static aliases and missing `Model` / `queryInterface` methods with an API-surface test.
 
 **S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 

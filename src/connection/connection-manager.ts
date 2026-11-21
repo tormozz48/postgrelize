@@ -1,4 +1,5 @@
 import { Client as PgClient, Pool, types, type PoolClient, type PoolConfig } from 'pg';
+import { hookFailures } from './after-connect-hook.ts';
 import { CopyRunner } from './copy-runner.ts';
 import type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
 import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
@@ -174,6 +175,9 @@ export class ConnectionManager {
     try {
       return ConnectionManager.#guard(await pool.connect());
     } catch (error) {
+      if (hookFailures.has(error as object)) {
+        throw error;
+      }
       throw ConnectionManager.#isAcquireTimeout(error)
         ? new ConnectionAcquireTimeoutError(
             error instanceof Error ? error : new Error(String(error)),
