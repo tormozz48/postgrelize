@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # npm provenance (and trusted publishing later)
+      id-token: write # npm trusted publishing (OIDC) and provenance
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -36,6 +36,8 @@ jobs:
             echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
             exit 1
           fi
+      - name: Use npm with trusted publishing support
+        run: npm install -g npm@^11.5.1
       - run: npm ci
       - name: Publish
         run: |
@@ -44,12 +46,6 @@ jobs:
           else
             npm publish --provenance --access public
           fi
-        env:
-          # Repository secret created by the owner (granular npm token, see
-          # docs/maintainers-npm-setup.md). Once the package exists, the owner can
-          # configure npm trusted publishing (OIDC) for this workflow, then delete
-          # this line and the secret: `id-token: write` above is already enough.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Deprecated mirror under the old name (ADR-028). Delete this job after the
   # second release that includes it.
