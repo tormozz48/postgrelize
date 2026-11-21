@@ -1,5 +1,5 @@
-import type { PoolConfig } from 'pg';
 import type { ConnectionConfig } from '../connection/connection-config.ts';
+import { ConnectHooks } from '../connection/connect-hooks.ts';
 import { ConnectionManager } from '../connection/connection-manager.ts';
 import type { ExecuteOptions, QueryResult } from '../connection/connection-types.ts';
 import { NotificationListener, type NotificationHandler } from '../connection/notifications.ts';
@@ -149,27 +149,14 @@ export class SequelizeInternals {
   #createConnections(connectionConfig: ConnectionConfig): ConnectionManager {
     const { options } = connectionConfig;
     const pools = connectionConfig.replicationPoolConfigs();
-    const withHookPassword = (config: PoolConfig): PoolConfig => ({
-      ...config,
-      password: () => this.#connectPassword(config.password),
-    });
+    const hooks = new ConnectHooks(() => this.hooks, this.#owner);
     return new ConnectionManager(
-      withHookPassword(pools.write),
-      pools.read.map(withHookPassword),
+      hooks.apply(pools.write),
+      pools.read.map((config) => hooks.apply(config)),
       QueryLogger.fromOptions(options),
       new PgErrorMapper(),
       options.statementCache,
     );
-  }
-
-  async #connectPassword(configured: PoolConfig['password']): Promise<string> {
-    const password = typeof configured === 'function' ? await configured() : (configured ?? '');
-    if (!this.hooks.has('beforeConnect')) {
-      return password;
-    }
-    const config = { ...this.#owner.config, password };
-    await this.hooks.run('beforeConnect', this.#owner, config);
-    return config.password ?? '';
   }
 
   #createRuntime(options: SequelizeOptions): ModelRuntime {
