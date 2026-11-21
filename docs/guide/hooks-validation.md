@@ -36,6 +36,8 @@ sequelize.addHook('beforeConnect', async (config) => {
 });
 ```
 
+On the `Sequelize` instance every hook that runs also has a shorthand as in v6 (`sequelize.beforeCreate(fn)`, `sequelize.afterConnect('name', fn)`, `sequelize.beforeBulkSync(fn)`, ...) next to `addHook`, `removeHook`, `hasHook(s)` and `runHooks`; models have `Model.beforeSync(fn)` / `Model.afterSync(fn)` besides the lifecycle shorthands. Hooks postgrelize never runs (`beforeDefine`, `beforeQuery`, `beforeAssociate`, ...) have no shorthand, and the class-level `Sequelize.addHook` is not provided (in v6 it only fires `beforeInit` / `afterInit`).
+
 `afterConnect` runs once for every new pooled connection, after `beforeConnect`, with `(connection, config)` as in v6; `connection` is the `pg` client, so the hook can run session setup on it. If the hook throws, the connection is closed and the query that needed it rejects with that error.
 
 ```ts

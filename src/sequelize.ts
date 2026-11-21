@@ -17,6 +17,7 @@ import { Model } from './model/model.ts';
 import type { RuntimeOwner } from './model/runtime.ts';
 import { QueryTypes } from './query/query-result-shaper.ts';
 import { SequelizeBase } from './sequelize/sequelize-base.ts';
+import type { InstanceHookAdders } from './sequelize/instance-hook-adders.ts';
 import { SequelizeHooks } from './sequelize/sequelize-hooks.ts';
 import { SequelizeNotifications } from './sequelize/sequelize-notifications.ts';
 import { SequelizeHelpers } from './sequelize/sequelize-helpers.ts';
@@ -38,7 +39,7 @@ const SequelizeMembers = SequelizeNotifications(
 
 // Declaration files cannot name the symbol key of a class member, so `RuntimeOwner` is merged in as an interface.
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- intentional merge.
-export interface Sequelize extends RuntimeOwner {}
+export interface Sequelize extends RuntimeOwner, InstanceHookAdders {}
 
 /**
  * Entry point, API-compatible with Sequelize v6 `Sequelize` for PostgreSQL.
