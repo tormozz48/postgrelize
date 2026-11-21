@@ -27,6 +27,60 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
     }
 
     /**
+     * Associations of this model whose target is the given model.
+     *
+     * @param target - Target model.
+     * @returns Matching associations.
+     * @example
+     * ```ts
+     * const toPosts = User.getAssociations(Post);
+     * ```
+     */
+    static getAssociations(target: { name: string }): Association[] {
+      return Object.values(this.associations).filter(
+        (association) => (association.target as { name: string }).name === target.name,
+      );
+    }
+
+    /**
+     * Association to `target` for an alias, or the one declared without alias when `alias` is not a string.
+     *
+     * @param target - Target model.
+     * @param alias - Association alias.
+     * @returns The association, or `null`.
+     * @example
+     * ```ts
+     * const association = User.getAssociationForAlias(Post, 'posts');
+     * ```
+     */
+    static getAssociationForAlias(
+      target: { name: string },
+      alias?: string | null | { plural?: string },
+    ): Association | null {
+      const verifies = (association: Association): boolean =>
+        typeof alias === 'string'
+          ? association.as === alias
+          : alias?.plural === undefined
+            ? !association.isAliased
+            : association.as === alias.plural;
+      return this.getAssociations(target).find(verifies) ?? null;
+    }
+
+    /**
+     * Tells whether an association with this alias exists.
+     *
+     * @param alias - Association alias.
+     * @returns True when the model has the association.
+     * @example
+     * ```ts
+     * if (User.hasAlias('posts')) {}
+     * ```
+     */
+    static hasAlias(alias: string): boolean {
+      return Object.hasOwn(this.associations, alias);
+    }
+
+    /**
      * Declares that each row of this model refers to one row of the target; the foreign key column
      * lives on this model's table. Adds accessors such as `getX` / `setX` / `createX` to instances.
      *

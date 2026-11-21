@@ -88,6 +88,29 @@ export class ModelStateFactory {
   }
 
   /**
+   * State with an attribute removed from the `init` input and the added attributes.
+   *
+   * @param state - Current state.
+   * @param attribute - Attribute name.
+   * @returns The new state.
+   */
+  withoutAttribute(state: ModelState, attribute: string): ModelState {
+    const { [attribute]: _removed, ...attributes } = state.input.attributes;
+    const { [attribute]: _added, ...extra } = state.input.extra;
+    return {
+      ...state,
+      input: { ...state.input, attributes, extra },
+      definition: ModelDefinition.normalize(
+        state.input.className,
+        attributes,
+        state.input.options,
+        state.runtime.defaults,
+        extra,
+      ),
+    };
+  }
+
+  /**
    * State of a schema-bound copy of a model: the definition is rebuilt with the schema.
    *
    * @param state - State of the model the copy extends.

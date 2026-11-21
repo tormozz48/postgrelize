@@ -3,6 +3,7 @@ import {
   type DropOptions,
   type SyncOptions,
 } from '../../query-interface/schema-synchronizer.ts';
+import type { QueryInterface } from '../../query-interface/query-interface.ts';
 import { destroyer } from '../model-operations.ts';
 import { registry, syncHooks } from '../model-services.ts';
 import type { AnyModel, ModelStatic } from '../options.ts';
@@ -70,6 +71,73 @@ export const ModelSchema = <TBase extends ModelConstructor>(Base: TBase) => {
       options: QueryOptionsBase & Readonly<{ cascade?: boolean; restartIdentity?: boolean }> = {},
     ): Promise<void> {
       return destroyer.truncate(this, options);
+    }
+
+    /** Schema API of the owning `Sequelize` instance (Sequelize v6 `Model.queryInterface`). */
+    static get queryInterface(): QueryInterface {
+      return registry.state(this).runtime.queryInterface();
+    }
+
+    /**
+     * Describes the table of this model: its columns, types, nullability and defaults.
+     *
+     * @param schema - Schema to read; defaults to the model's schema, then `current_schema()`.
+     * @param options - Query options.
+     * @returns Column descriptions by column name.
+     * @example
+     * ```ts
+     * const columns = await User.describe();
+     * ```
+     */
+    static describe(
+      schema?: string,
+      options: QueryOptionsBase = {},
+    ): ReturnType<QueryInterface['describeTable']> {
+      const { definition, runtime } = registry.state(this);
+      const target = schema ?? definition.schema;
+      return runtime.queryInterface().describeTable(definition.tableName, {
+        ...(target === undefined ? {} : { schema: target }),
+        ...options,
+      });
+    }
+
+    /**
+     * Drops a schema with `DROP SCHEMA` (shortcut of `queryInterface.dropSchema`, Sequelize v6 `Model.dropSchema`).
+     *
+     * @param schema - Schema name.
+     * @returns Resolves when done.
+     * @example
+     * ```ts
+     * await User.dropSchema('tenant_1');
+     * ```
+     */
+    static dropSchema(schema: string): Promise<void> {
+      return registry.state(this).runtime.queryInterface().dropSchema(schema);
+    }
+
+    /**
+     * Removes an attribute from the model definition, e.g. a column added by an association.
+     *
+     * @param attribute - Attribute name.
+     * @example
+     * ```ts
+     * User.removeAttribute('legacyFlag');
+     * ```
+     */
+    static removeAttribute(attribute: string): void {
+      registry.removeAttribute(this, attribute);
+    }
+
+    /**
+     * Rebuilds the normalized attribute definitions from the model's `init` input.
+     *
+     * @example
+     * ```ts
+     * User.refreshAttributes();
+     * ```
+     */
+    static refreshAttributes(): void {
+      registry.refreshAttributes(this);
     }
   };
 };

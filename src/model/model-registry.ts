@@ -240,6 +240,25 @@ export class ModelRegistry {
     return definition;
   }
 
+  /**
+   * Removes an attribute and rebuilds the definition (`Model.removeAttribute`).
+   *
+   * @param model - Model class.
+   * @param attribute - Attribute name.
+   */
+  removeAttribute(model: object, attribute: string): void {
+    this.update(model, (state) => factory.withoutAttribute(state, attribute));
+  }
+
+  /**
+   * Rebuilds the definition from the `init` input (`Model.refreshAttributes`).
+   *
+   * @param model - Model class.
+   */
+  refreshAttributes(model: object): void {
+    this.addAssociationAttributes(model, {});
+  }
+
   #owner(model: object | null): object | undefined {
     return model === null
       ? undefined

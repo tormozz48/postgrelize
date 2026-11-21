@@ -451,4 +451,30 @@ describe('Sequelize issues fixed in postgrelize', () => {
       await sequelize.query('INSERT INTO tagged DEFAULT VALUES');
       expect(await select(sequelize, 'SELECT tag FROM tagged')).toEqual([{ tag: 'from trigger' }]);
     }));
+
+  it('findCreateFind inside a transaction returns the row that won a race and keeps the transaction usable', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Tag = sequelize.define(
+        'Tag',
+        { name: { type: DataTypes.STRING, unique: true }, color: DataTypes.STRING },
+        { timestamps: false },
+      );
+      await sequelize.sync();
+      Tag.beforeCreate(async () => {
+        Tag.removeHook('beforeCreate');
+        await sequelize.query("INSERT INTO \"Tags\" (name, color) VALUES ('news', 'red')");
+      });
+      const result = await sequelize.transaction(async (transaction) => {
+        const [tag, created] = await Tag.findCreateFind({
+          where: { name: 'news' },
+          defaults: { color: 'blue' },
+          transaction,
+        });
+        const count = await Tag.count({ transaction });
+        return [tag.get('id'), tag.get('color'), created, count];
+      });
+      // v6 reports `created: true` with an unsaved instance here (it inserts with ON CONFLICT DO NOTHING).
+      expect(result).toEqual([1, 'red', false, 1]);
+    }));
 });
