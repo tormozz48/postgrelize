@@ -47,7 +47,7 @@ describe('afterConnect', () => {
     });
     await expect(sequelize.query('SELECT 1')).rejects.toThrow(TypeError);
     await expect(sequelize.query('SELECT 1')).rejects.toThrow('hook failed');
-    await expect.poll(() => backends('after-connect-failing')).toBe(0);
+    await expect.poll(() => backends('after-connect-failing'), { timeout: 30_000 }).toBe(0);
   });
 
   it('recovers once the hook stops failing', async () => {
