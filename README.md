@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/postgrelize"><img alt="version" src="https://img.shields.io/github/package-json/v/tormozz48/postgrelize?label=version"></a>
+  <a href="https://www.npmjs.com/package/postgrelize"><img alt="npm version" src="https://img.shields.io/npm/v/postgrelize?label=npm"></a>
+  <a href="https://www.npmjs.com/package/postgrelize"><img alt="npm downloads" src="https://img.shields.io/npm/dw/postgrelize?label=downloads"></a>
   <a href="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://tormozz48.github.io/postgrelize/coverage/"><img alt="coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftormozz48.github.io%2Fpostgrelize%2Fcoverage%2Fbadge.json"></a>
   <img alt="PostgreSQL 16–18" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017%20%7C%2018-336791?logo=postgresql&logoColor=white">
