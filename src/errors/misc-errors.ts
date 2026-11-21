@@ -227,3 +227,55 @@ export class AssociationError extends BaseError {
     this.name = 'SequelizeAssociationError';
   }
 }
+
+/**
+ * Base class of query construction errors (Sequelize v6 `QueryError`); postgrelize does not throw it itself.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await User.findAll();
+ * } catch (e) {
+ *   if (e instanceof QueryError) {
+ *     console.error(e.message);
+ *   }
+ * }
+ * ```
+ */
+export class QueryError extends BaseError {
+  /**
+   * Creates the error and sets `name` to `'SequelizeQueryError'`.
+   *
+   * @param message - Error message.
+   */
+  constructor(message?: string) {
+    super(message);
+    this.name = 'SequelizeQueryError';
+  }
+}
+
+/**
+ * Thrown for an invalid scope definition or use (Sequelize v6 `SequelizeScopeError`).
+ *
+ * @example
+ * ```ts
+ * try {
+ *   User.scope('missing');
+ * } catch (e) {
+ *   if (e instanceof SequelizeScopeError) {
+ *     console.error(e.message);
+ *   }
+ * }
+ * ```
+ */
+export class SequelizeScopeError extends BaseError {
+  /**
+   * Creates the error and sets `name` to `'SequelizeScopeError'`.
+   *
+   * @param message - Error message.
+   */
+  constructor(message?: string) {
+    super(message);
+    this.name = 'SequelizeScopeError';
+  }
+}

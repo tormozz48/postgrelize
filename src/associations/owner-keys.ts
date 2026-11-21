@@ -1,4 +1,4 @@
-import inflection from 'inflection';
+import { inflector as inflection } from '../model/inflector.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { AssociationKeys, AssociationKeyFields, TargetKeys } from './association-keys.ts';
 import type { AssociationOptions } from './types.ts';

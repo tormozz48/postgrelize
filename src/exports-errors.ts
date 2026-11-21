@@ -1,4 +1,5 @@
 export {
+  BaseError as Error,
   AccessDeniedError,
   AggregateError,
   AssociationError,
@@ -17,15 +18,15 @@ export {
   HostNotReachableError,
   InstanceError,
   InvalidConnectionError,
+  QueryError,
+  SequelizeScopeError,
+  UnknownConstraintError,
+  ValidationErrorItemOrigin,
+  ValidationErrorItemType,
   OptimisticLockError,
   TimeoutError,
   UniqueConstraintError,
   ValidationError,
   ValidationErrorItem,
 } from './errors/errors.ts';
-export type {
-  ConstraintErrorOptions,
-  DriverError,
-  QueryErrorContext,
-  ValidationErrorItemOrigin,
-} from './errors/errors.ts';
+export type { ConstraintErrorOptions, DriverError, QueryErrorContext } from './errors/errors.ts';
