@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 0.9.0 released
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21)
 
 **S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
@@ -192,7 +192,9 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 ## CHANGELOG.md (2026-11-21)
 - `CHANGELOG.md` (Keep a Changelog 1.1.0) covers all 13 tags v0.1.0 … v0.12.0 plus `[Unreleased]`, with a stages-and-releases table; published on the site at `/changelog`, shipped in the npm package, checked by `tests/docs/changelog.test.ts`; `release.yml` creates the GitHub Release from the matching section. Rule in AGENTS.md: every user-visible PR adds a line under `[Unreleased]`; the release PR moves it to the new version.
 
-## Release 1.0.0 (2026-11-21, prepared)
+## Release 1.0.0 (2026-11-21, released)
 - First release on npmjs.com as `postgrelize` (ADR-028); `@tormozz48/postgrelize@1.0.0` mirror on GitHub Packages (deprecated). Contents: the rename (breaking for installers), npmjs publishing with provenance, `package` CI job, npm badges and migration note, CHANGELOG, hero art. Semver from 1.0.0: breaking → major. Release PR merged; tag `v1.0.0` awaits the owner's approval.
+- Released: tag `v1.0.0` on merge commit `6551d10` (PR #95), `release.yml` run 44908491921. The first two npm publish attempts failed with `EOTP` (token without "Bypass two-factor authentication"); attempt 3 with a recreated token succeeded: `postgrelize@1.0.0` on npmjs.com (`latest`, provenance), mirror `@tormozz48/postgrelize@1.0.0`, GitHub Release v1.0.0. Verified: `npm view`, clean install plus ESM and CJS import (106 exports), docs site. npm showed a `0.0.0-stage` placeholder for a few minutes while processing.
+- Open: configure the Trusted Publisher on npmjs.com (done by the maintainer), PR #96 switches `release.yml` to OIDC and drops the `NPM_TOKEN` check (merged); after the next release confirms it, delete the `NPM_TOKEN` secret and revoke the token; remove the mirror job after the second release that includes it.
 - CI on Node 24 (2026-11-21): `ci.yml` check job runs Node 20/22/24 (docs build and `dist` artifact stay on 22); DB jobs run PostgreSQL 16/17/18 on Node 22 plus one extra job on Node 24 with PostgreSQL 18. Full suite (lint, format, typecheck, unit, integration, compat, docs, build, test:build, `npm run docs`) passed locally on Node 24.16 with no library changes. The ruleset for `main` has no required status checks, so no check names to update.
 - Release process (docs release process PR): project skill `.claude/skills/release/SKILL.md` (approval gate, preflight, release PR, tag, verification, failure handling), `npm run release:preflight -- X.Y.Z [--before-bump] [--fast]` (`scripts/release-preflight.ts`, pure parts in `scripts/release-lib.ts` with `tests/unit/scripts/release-lib.test.ts`), AGENTS.md "Git, PRs and releases" rewritten, Release PR section in the PR template. No release was made.
