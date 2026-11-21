@@ -50,6 +50,16 @@ await sequelize.transaction(async () => {
 
 CLS is a global switch for all `Sequelize` instances in the process. Nested `sequelize.transaction()` calls inside a CLS transaction become savepoints.
 
+### CLS namespaces (`cls-hooked`)
+
+Code written for v6 passes a [`cls-hooked`](https://www.npmjs.com/package/cls-hooked) or `continuation-local-storage` namespace: `Sequelize.useCLS(createNamespace('app'))`. postgrelize accepts it (any object with `bind`, `run`, `get` and `set`; `cls-hooked` is not a dependency) and then behaves as v6 does, so helpers that read `namespace.get('transaction')` keep working:
+
+- A managed transaction runs in `namespace.run` and stores itself under the key `transaction`; it clears the key when it finishes, so `afterCommit` hooks see `null`.
+- A query without a `transaction` option uses `namespace.get('transaction')`, including a transaction your own code stored there. Code outside the callback sees none.
+- As in v6, a nested `sequelize.transaction(callback)` does not join the enclosing one by itself: it opens its own transaction on another connection. Pass `{ transaction: outer }` to get a savepoint. (Without a namespace, `AsyncLocalStorage` mode turns it into a savepoint automatically.)
+
+Anything that is not a namespace (no `bind` or `run`) throws `Must provide CLS namespace`, as in v6; `useCLS()` without an argument keeps the `AsyncLocalStorage` mode.
+
 ## Row locks
 
 `lock` adds a locking clause to a `SELECT`; it must run inside a transaction. `skipLocked: true` skips rows locked by others (useful for job queues), and `noWait: true` fails immediately instead of waiting:

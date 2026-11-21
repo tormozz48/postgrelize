@@ -78,7 +78,7 @@ Managed (commit on resolve, rollback on throw) and explicit:
 
 Pass `{ transaction }` to every query that must take part. Nested `sequelize.transaction({ transaction: outer }, fn)` creates a savepoint. Options: `isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ`, `readOnly: true`, `settings: { 'app.user_id': 42 }` (SET LOCAL). Row locks: `lock: true` or `Transaction.LOCK.UPDATE`, `skipLocked`, `noWait`. Hooks after commit: `transaction.afterCommit(fn)`.
 
-CLS (implicit transaction in callbacks, a **process-wide** switch, uses `AsyncLocalStorage`, no namespace argument):
+CLS (implicit transaction in callbacks, a **process-wide** switch; `AsyncLocalStorage` by default, or pass a `cls-hooked` style namespace as in v6: `Sequelize.useCLS(namespace)` stores the transaction under `namespace.get('transaction')`, and a nested `sequelize.transaction(fn)` then opens its own transaction like v6 instead of a savepoint):
 
 <<< @/examples/llm-usage.ts#cls{ts}
 

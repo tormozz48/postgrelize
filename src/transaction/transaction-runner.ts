@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { NamespaceContext } from './cls-namespace.ts';
 import type { Transaction } from './transaction.ts';
 
 /** Continuation-local storage of the current transaction (`AsyncLocalStorage`, used by `Sequelize.useCLS`). */
@@ -28,12 +29,12 @@ export class TransactionContext {
 
 /** Runs managed transactions: begins, runs the callback, commits on success and rolls back on error. */
 export class TransactionRunner {
-  readonly #context: TransactionContext;
+  readonly #context: Pick<TransactionContext, 'run'>;
 
   /**
    * @param context - Context the transaction is made current in while the callback runs.
    */
-  constructor(context: TransactionContext) {
+  constructor(context: Pick<TransactionContext, 'run'>) {
     this.#context = context;
   }
 
@@ -68,21 +69,48 @@ export class TransactionRunner {
  */
 export class TransactionScope {
   readonly #context = new TransactionContext();
-  readonly #runner = new TransactionRunner(this.#context);
+  #namespace: NamespaceContext | undefined;
+  #runner = new TransactionRunner(this.#context);
   #cls = false;
 
-  /** Enables continuation-local transactions. */
-  enableCls(): void {
+  /**
+   * Enables continuation-local transactions.
+   *
+   * @param namespace - CLS namespace (v6 style); `AsyncLocalStorage` is used without one.
+   * @throws Error when `namespace` is given but is not a CLS namespace.
+   */
+  enableCls(namespace?: unknown): void {
+    this.#namespace = namespace === undefined ? undefined : new NamespaceContext(namespace);
+    this.#runner = new TransactionRunner(this.#namespace ?? this.#context);
     this.#cls = true;
   }
 
   /**
-   * Transaction of the current async context.
+   * Transaction that queries without a `transaction` option use.
    *
    * @returns The transaction, or `undefined` when CLS is off or outside a managed transaction.
    */
   active(): Transaction | undefined {
-    return this.#cls ? this.#context.current() : undefined;
+    return this.#namespace?.current() ?? this.implicitParent();
+  }
+
+  /**
+   * Parent of a new transaction started without `transaction`: with `AsyncLocalStorage` CLS the
+   * enclosing managed transaction (savepoint); with a v6 namespace none, as in v6.
+   *
+   * @returns The enclosing transaction, if any.
+   */
+  implicitParent(): Transaction | undefined {
+    return this.#cls && this.#namespace === undefined ? this.#context.current() : undefined;
+  }
+
+  /**
+   * Called when a transaction releases its connection.
+   *
+   * @param transaction - Finished transaction.
+   */
+  release(transaction: Transaction): void {
+    this.#namespace?.release(transaction);
   }
 
   /**
