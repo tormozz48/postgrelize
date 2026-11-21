@@ -32,6 +32,8 @@ export const QueryTypes = {
   FOREIGNKEYS: 'FOREIGNKEYS',
   /** Returns `[rows, result]`. */
   SHOWINDEXES: 'SHOWINDEXES',
+  /** Returns `[rows, result]`. */
+  SHOWCONSTRAINTS: 'SHOWCONSTRAINTS',
 } as const;
 
 /** One of {@link QueryTypes}. */

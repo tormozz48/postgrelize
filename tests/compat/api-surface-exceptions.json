@@ -564,134 +564,89 @@
   ],
   "QueryInterface.prototype": [
     {
-      "name": "assertTableHasColumn",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
       "name": "commitTransaction",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "createDatabase",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "databaseVersion",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "decrement",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "deferConstraints",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "delete",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "dropDatabase",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "ensureEnums",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "getForeignKeysForTables",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "internal",
+      "note": "v6 internal used by sync and the query generator"
     },
     {
       "name": "increment",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "insert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "normalizeAttribute",
       "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
+      "note": "v6 internal used by sync and the query generator"
     },
     {
       "name": "pgListEnums",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "internal",
+      "note": "v6 internal used by sync and the query generator"
     },
     {
       "name": "queryGenerator",
       "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "quoteIdentifier",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "quoteIdentifiers",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "note": "v6 internal used by sync and the query generator"
     },
     {
       "name": "rawSelect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "rollbackTransaction",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "select",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "setIsolationLevel",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "showConstraint",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "showIndex",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "startTransaction",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "update",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     },
     {
       "name": "upsert",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
     }
   ],
   "DataTypes": [
