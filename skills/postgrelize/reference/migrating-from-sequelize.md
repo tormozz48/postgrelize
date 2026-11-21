@@ -10,6 +10,6 @@ Behaves like v6: `init`/`define`, finders, `create`/`bulkCreate`/`upsert`/`updat
 
 Intentional differences (v6 bugs fixed on PostgreSQL): JSON `where` keys with special characters, `upsert` on partial unique indexes, `sync({ alter })` sequences, `describeTable`/`showAllTables`/`tableExists` use `current_schema()`, `Op.any` shorthand, validated function names and isolation levels, and more. Full list with issue numbers: <https://tormozz48.github.io/postgrelize/sequelize-issues>.
 
-Not supported: other dialects, `minifyAliases`, `Model.schema('tenant')` (use the `schema` option), the `searchPath` option (use `dialectOptions: { options: '-c search_path=tenant' }`), named/shared `ENUM` types, `create({ ignoreDuplicates })`, Sequelize v7 API. Connection, sync and define hooks are accepted but never called.
+Not supported: other dialects, `Model.schema('tenant')` (use the `schema` option), the `searchPath` option (use `dialectOptions: { options: '-c search_path=tenant' }`), named/shared `ENUM` types, `create({ ignoreDuplicates })`, Sequelize v7 API. Connection, sync and define hooks are accepted but never called.
 
 After migrating, replace workarounds with native features: `literal()` upserts and `updateOnDuplicate` → `onConflict`; loops of `update` → `UPDATE ... FROM` / `merge`; large `bulkCreate` → `copyFrom`; hand-written CTEs → `with`.

@@ -65,6 +65,8 @@ export type ModelRuntime = Readonly<{
   hooks: () => HookRegistry;
   defaults: ModelDefaults;
   inAsAnyThreshold: number | undefined;
+  /** `minifyAliases` option: shorten include aliases. */
+  minifyAliases?: boolean | undefined;
 }>;
 
 /** @internal */

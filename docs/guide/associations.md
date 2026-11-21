@@ -54,6 +54,8 @@ Include options follow v6: `association` or `model` + `as`, `where`, `required`,
 - **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order` and `limit` (applied per parent, as in Sequelize v6). This avoids row multiplication when a parent has many children.
 - **`$nested.attr$` keys** in the top-level `where` filter on included columns, as in v6.
 
+- **`minifyAliases: true`** (constructor option, as in v6) shortens the aliases of included columns (`Posts.Comments.title` becomes `_0`) and of table aliases of 64 or more characters, then maps the rows back. PostgreSQL identifiers hold 63 bytes: without the option a deeply nested include with long association names gets truncated column aliases that can collide, and attributes go missing. It is off by default and applies to the joined include query of `findAll`, `findOne`, `findByPk` and `findAndCountAll`; `separate` includes run their own query with their own aliases. SQL logs show the short names. Unlike v6, aliases of attributes you rename yourself (`attributes: [[fn(...), 'total']]`) are left as written.
+
 Counting with includes: `count({ include })` counts joined rows, as in v6; add `distinct: true` to count parent rows.
 
 ## Differences from Sequelize v6

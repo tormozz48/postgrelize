@@ -101,4 +101,4 @@ These fixes intentionally differ from Sequelize v6 ([ADR-016](https://github.com
 - [#11288](https://github.com/sequelize/sequelize/issues/11288) ordering by an included hasMany column with `limit` (same SQL as v6).
 - [#12948](https://github.com/sequelize/sequelize/issues/12948) memory leak report: not reproduced.
 - [#11146](https://github.com/sequelize/sequelize/issues/11146) the same association included twice under one alias (`separate: false` and `separate: true`) is not merged or rejected.
-- Not implemented v6 options: `minifyAliases`, `searchPath`, `create({ ignoreDuplicates })`, named / shared `ENUM` types.
+- Not implemented v6 options: `searchPath`, `create({ ignoreDuplicates })`, named / shared `ENUM` types.

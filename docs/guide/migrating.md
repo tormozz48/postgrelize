@@ -31,6 +31,7 @@ The package ships ES modules and CommonJS, so `require('postgrelize')` works as 
 - Only PostgreSQL is supported. Omit `dialect` or set it to `'postgres'`; any other value throws.
 - `dialectOptions` is passed to the [`pg`](https://node-postgres.com/) pool as is.
 - `pool` accepts `max`, `min`, `idle`, `acquire`, `evict` and `maxUses`. `min` and `evict` are accepted for compatibility but have no effect: `pg` does not keep idle connections open.
+- `minifyAliases: true` works as in v6 for include aliases, see [Associations](./associations#eager-loading).
 - `replication: { read, write }` works as in v6, see [Sessions and scaling](./sessions#read-replicas).
 
 ## 4. Run your tests
@@ -59,7 +60,6 @@ These Sequelize v6 features are not implemented:
 | Feature                                | What to do instead                                                                                    |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Other dialects (MySQL, SQLite, MSSQL…) | postgrelize is PostgreSQL only.                                                                       |
-| `minifyAliases`                        | Not available; keep association aliases short in deeply nested includes.                              |
 | `searchPath` query / connection option | Set `search_path` with `dialectOptions: { options: '-c search_path=tenant' }`.                        |
 | Named or shared `ENUM` types           | Each `ENUM` attribute gets its own type, `enum_<table>_<column>`, as v6 does by default.              |
 | `create({ ignoreDuplicates })`         | `create(values, { onConflict: { action: 'nothing' } })` or `bulkCreate([...], { ignoreDuplicates })`. |
