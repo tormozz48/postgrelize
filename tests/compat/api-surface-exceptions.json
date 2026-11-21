@@ -3,33 +3,8 @@
   "Sequelize": [
     {
       "name": "ABSTRACT",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "ARRAY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "AccessDeniedError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "AggregateError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Association",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "AssociationError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
     },
     {
       "name": "AsyncQueueError",
@@ -37,274 +12,9 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "BIGINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BLOB",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BOOLEAN",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BaseError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BelongsTo",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BelongsToMany",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BulkRecordError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CHAR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CIDR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CITEXT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ConnectionAcquireTimeoutError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ConnectionError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ConnectionRefusedError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ConnectionTimedOutError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DATE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DATEONLY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DECIMAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DOUBLE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DOUBLE PRECISION",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DatabaseError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Deferrable",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ENUM",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "EagerLoadingError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "EmptyResultError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Error",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ExclusionConstraintError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "FLOAT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ForeignKeyConstraintError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "GEOGRAPHY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "GEOMETRY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HSTORE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HasMany",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HasOne",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HostNotFoundError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HostNotReachableError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "INET",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "INTEGER",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "IndexHints",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
-    },
-    {
-      "name": "InstanceError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "InvalidConnectionError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "JSON",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "JSONB",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "MACADDR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "MEDIUMINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NOW",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NUMBER",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NUMERIC",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "OptimisticLockError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "QueryError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "QueryInterface",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "RANGE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "REAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "SMALLINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "STRING",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     },
     {
       "name": "Sequelize",
@@ -312,99 +22,19 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "SequelizeScopeError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TEXT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TIME",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TINYINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TSVECTOR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "TableHints",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "TimeoutError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UUID",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "UUIDV1",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UUIDV4",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UniqueConstraintError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UnknownConstraintError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
     },
     {
       "name": "Utils",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "VIRTUAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationErrorItem",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationErrorItemOrigin",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationErrorItemType",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Validator",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internal helper collection (lodash style helpers); use the exported fn, col, cast, literal, json, where"
     },
     {
       "name": "addHook",
@@ -515,11 +145,6 @@
       "name": "afterValidate",
       "category": "not-planned",
       "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "and",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     },
     {
       "name": "beforeAssociate",
@@ -682,11 +307,6 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "or",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "oracle",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -717,41 +337,16 @@
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "useInflection",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "validationFailed",
       "category": "not-planned",
       "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "version",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     }
   ],
   "Sequelize.prototype": [
     {
-      "name": "Association",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "QueryTypes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "Sequelize",
       "category": "internal",
       "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "Validator",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     },
     {
       "name": "afterAssociate",
@@ -782,11 +377,6 @@
       "name": "afterQuery",
       "category": "not-planned",
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
-    },
-    {
-      "name": "and",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     },
     {
       "name": "beforeAssociate",
@@ -820,33 +410,18 @@
     },
     {
       "name": "connectionManager",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "internal",
+      "note": "v6 connection manager object; postgrelize pools through pg, use sequelize.close()"
     },
     {
       "name": "dialect",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "escape",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "getDatabaseName",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "log",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "internal",
+      "note": "v6 dialect object; use sequelize.getDialect()"
     },
     {
       "name": "modelManager",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "internal",
+      "note": "v6 model registry object; use sequelize.models and sequelize.model(name)"
     },
     {
       "name": "normalizeAttribute",
@@ -859,37 +434,12 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "or",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "queryInterface",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "random",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "refreshTypes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "set",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "other-dialect",
+      "note": "sequelize.set only works for MySQL and MariaDB in v6 (throws on other dialects)"
     },
     {
       "name": "truncate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "validate",
       "category": "tracked-in-issue",
       "note": "S19 item 4: to be implemented"
     }
@@ -1212,23 +762,13 @@
   "DataTypes": [
     {
       "name": "ABSTRACT",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "DOUBLE PRECISION",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NUMERIC",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
     },
     {
       "name": "UUIDV1",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
     },
     {
       "name": "db2",
@@ -1274,18 +814,8 @@
   "exports": [
     {
       "name": "ABSTRACT",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "ARRAY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Association",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
     },
     {
       "name": "AsyncQueueError",
@@ -1293,184 +823,9 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "BIGINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BLOB",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "BOOLEAN",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CHAR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CIDR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "CITEXT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DATE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DATEONLY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DECIMAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "DOUBLE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ENUM",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Error",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "FLOAT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "GEOGRAPHY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "GEOMETRY",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "HSTORE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "INET",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "INTEGER",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "IndexHints",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
-    },
-    {
-      "name": "JSON",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "JSONB",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "MACADDR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "MEDIUMINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NOW",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NUMBER",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "NUMERIC",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "QueryError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "RANGE",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "REAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "SMALLINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "STRING",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "SequelizeScopeError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TEXT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TIME",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TINYINT",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "TSVECTOR",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     },
     {
       "name": "TableHints",
@@ -1478,69 +833,19 @@
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "UUID",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
       "name": "UUIDV1",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UUIDV4",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "UnknownConstraintError",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
     },
     {
       "name": "Utils",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "VIRTUAL",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationErrorItemOrigin",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "ValidationErrorItemType",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "Validator",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "and",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
+      "category": "not-planned",
+      "note": "v6 internal helper collection (lodash style helpers); use the exported fn, col, cast, literal, json, where"
     },
     {
       "name": "default",
       "category": "internal",
       "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "or",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
-    },
-    {
-      "name": "useInflection",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     }
   ]
 }
