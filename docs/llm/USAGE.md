@@ -1,27 +1,18 @@
 # postgrelize usage guide (for LLMs and agents)
 
-`@tormozz48/postgrelize` is a PostgreSQL-only ORM for Node.js and TypeScript. It implements the **Sequelize v6 public API** (same names, options, return values, error classes, hook order), so Sequelize v6 knowledge and code carry over. On top of that it adds PostgreSQL features as **new** options and methods (`onConflict`, `Model.insert`, `merge`, CTEs, `copyFrom`, `listen`, advisory locks, `returningOld`). It never changes v6 semantics.
+`postgrelize` is a PostgreSQL-only ORM for Node.js and TypeScript. It implements the **Sequelize v6 public API** (same names, options, return values, error classes, hook order), so Sequelize v6 knowledge and code carry over. On top of that it adds PostgreSQL features as **new** options and methods (`onConflict`, `Model.insert`, `merge`, CTEs, `copyFrom`, `listen`, advisory locks, `returningOld`). It never changes v6 semantics.
 
-This file is generated from code that is type-checked and run in CI (`docs/examples/llm-usage.ts` and the other `docs/examples/*.ts`), so every snippet compiles and works against the current version. Types are in the package's `.d.ts` files (`node_modules/@tormozz48/postgrelize/dist/index.d.ts`); every public item there has TSDoc.
+This file is generated from code that is type-checked and run in CI (`docs/examples/llm-usage.ts` and the other `docs/examples/*.ts`), so every snippet compiles and works against the current version. Types are in the package's `.d.ts` files (`node_modules/postgrelize/dist/index.d.ts`); every public item there has TSDoc.
 
 Requirements: Node.js 20+, PostgreSQL 16/17/18, the `pg` package (peer dependency).
 
 ## Install
 
-The package lives on GitHub Packages. Add to `.npmrc`:
-
-```ini
-@tormozz48:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Install under the alias `postgrelize` so imports read `from 'postgrelize'` (all snippets below use that):
-
 ```bash
-npm install postgrelize@npm:@tormozz48/postgrelize pg
+npm install postgrelize pg
 ```
 
-ES modules and CommonJS are both shipped. Without the alias, import from `'@tormozz48/postgrelize'`.
+Imports read `from 'postgrelize'` (all snippets below use that). ES modules and CommonJS are both shipped. The old name `@tormozz48/postgrelize` (GitHub Packages) is deprecated.
 
 ## Imports used in the snippets
 
@@ -154,7 +145,7 @@ All are exported classes, as in v6.
 ## Top mistakes
 
 1. **Forgetting `transaction`.** Queries without `{ transaction }` run on another connection and do not see uncommitted rows (unless CLS is on).
-2. **Mixing the import path.** With the alias, import from `'postgrelize'`; without it from `'@tormozz48/postgrelize'`. Do not install `sequelize` next to it.
+2. **Wrong package name.** Import from `'postgrelize'`; `@tormozz48/postgrelize` is the deprecated GitHub Packages name. Do not install `sequelize` next to it.
 3. **Expecting `upsert` to report insert vs update.** It returns `[instance, null]`; use `onConflict`.
 4. **`BIGINT` / `DECIMAL` are strings** in results. Convert explicitly.
 5. **Using `sync()` as a migration tool in production.** Use `QueryInterface` migrations.
@@ -186,4 +177,4 @@ Full table of inputs and protections: <https://tormozz48.github.io/postgrelize/s
 
 ## Verify by running
 
-Run the code against a real PostgreSQL (`docker run -e POSTGRES_PASSWORD=pw -p 5432:5432 postgres:17`) and read the result; do not assume a query works. Log SQL with `new Sequelize(url, { logging: console.log })`. When unsure about a signature, read the TSDoc in `node_modules/@tormozz48/postgrelize/dist/*.d.ts` or the API reference at <https://tormozz48.github.io/postgrelize/api/>. Full documentation for LLMs: <https://tormozz48.github.io/postgrelize/llms.txt> and <https://tormozz48.github.io/postgrelize/llms-full.txt>.
+Run the code against a real PostgreSQL (`docker run -e POSTGRES_PASSWORD=pw -p 5432:5432 postgres:17`) and read the result; do not assume a query works. Log SQL with `new Sequelize(url, { logging: console.log })`. When unsure about a signature, read the TSDoc in `node_modules/postgrelize/dist/*.d.ts` or the API reference at <https://tormozz48.github.io/postgrelize/api/>. Full documentation for LLMs: <https://tormozz48.github.io/postgrelize/llms.txt> and <https://tormozz48.github.io/postgrelize/llms-full.txt>.

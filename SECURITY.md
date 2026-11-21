@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are released for the latest minor version of `@tormozz48/postgrelize`.
+Security fixes are released for the latest minor version of `postgrelize`.
 
 ## Reporting a vulnerability
 

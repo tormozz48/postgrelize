@@ -4,21 +4,14 @@ postgrelize implements the public API of Sequelize v6 for PostgreSQL. A differen
 
 ## 1. Replace the packages
 
-Remove `sequelize` and `pg-hstore` (postgrelize does not use it), and install postgrelize from GitHub Packages. Add the scope to `.npmrc`:
-
-```ini
-@tormozz48:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Install it under the alias `postgrelize` so the import name stays short:
+Remove `sequelize` and `pg-hstore` (postgrelize does not use it), and install postgrelize from npmjs.com:
 
 ```bash
 npm uninstall sequelize pg-hstore
-npm install postgrelize@npm:@tormozz48/postgrelize pg
+npm install postgrelize pg
 ```
 
-In `package.json` this appears as `"postgrelize": "npm:@tormozz48/postgrelize@^0.6.0"`.
+If you installed the deprecated GitHub Packages name `@tormozz48/postgrelize` (or the alias `postgrelize@npm:@tormozz48/postgrelize`), remove the `.npmrc` scope line, run `npm uninstall @tormozz48/postgrelize` and install `postgrelize` as above.
 
 ## 2. Update imports
 

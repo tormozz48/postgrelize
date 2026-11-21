@@ -10,20 +10,13 @@ postgrelize is an ORM for Node.js that implements the [Sequelize v6](https://seq
 
 ## Install
 
-The package is published to GitHub Packages as `@tormozz48/postgrelize`. Point the `@tormozz48` scope at GitHub Packages in `.npmrc` (a GitHub token with `read:packages` is required):
-
-```ini
-@tormozz48:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Install it under the alias `postgrelize`, together with `pg`:
+Install the package from npmjs.com together with `pg`:
 
 ```bash
-npm install postgrelize@npm:@tormozz48/postgrelize pg
+npm install postgrelize pg
 ```
 
-With the alias, imports read `from 'postgrelize'`, as in every example of this guide.
+Imports read `from 'postgrelize'`, as in every example of this guide. The old GitHub Packages name `@tormozz48/postgrelize` is deprecated.
 
 ## Connect
 

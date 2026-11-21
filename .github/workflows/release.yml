@@ -15,9 +15,47 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
-  publish:
-    name: Publish to GitHub Packages
+  publish-npm:
+    name: Publish postgrelize to npmjs.com
     needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance (and trusted publishing later)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Verify tag matches package.json version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+      - run: npm ci
+      - name: Publish
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            npm publish --provenance --access public --tag next
+          else
+            npm publish --provenance --access public
+          fi
+        env:
+          # Repository secret created by the owner (granular npm token, see
+          # docs/maintainers-npm-setup.md). Once the package exists, the owner can
+          # configure npm trusted publishing (OIDC) for this workflow, then delete
+          # this line and the secret: `id-token: write` above is already enough.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Deprecated mirror under the old name (ADR-028). Delete this job after the
+  # second release that includes it.
+  publish-github-packages:
+    name: Publish deprecated mirror @tormozz48/postgrelize to GitHub Packages
+    needs: publish-npm
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,14 +68,12 @@ jobs:
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: '@tormozz48'
-      - name: Verify tag matches package.json version
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
-            exit 1
-          fi
       - run: npm ci
+      - name: Rewrite package identity for the mirror
+        run: |
+          npm pkg set name=@tormozz48/postgrelize \
+            publishConfig.registry=https://npm.pkg.github.com \
+            "description=DEPRECATED: moved to postgrelize on npmjs.com (npm i postgrelize). This scoped name receives no further releases after the migration window."
       - name: Publish
         run: |
           if [[ "${GITHUB_REF_NAME}" == *-* ]]; then

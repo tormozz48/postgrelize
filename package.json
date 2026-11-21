@@ -1,7 +1,24 @@
 {
-  "name": "@tormozz48/postgrelize",
+  "name": "postgrelize",
   "version": "0.12.0",
   "description": "PostgreSQL-only ORM, drop-in compatible with the Sequelize v6 API. Ships llm/USAGE.md and an Agent Skill for LLMs.",
+  "keywords": [
+    "jsonb",
+    "migrations",
+    "orm",
+    "pg",
+    "postgres",
+    "postgresql",
+    "query-builder",
+    "sequelize",
+    "sequelize-v6",
+    "typescript",
+    "upsert"
+  ],
+  "homepage": "https://tormozz48.github.io/postgrelize/",
+  "bugs": {
+    "url": "https://github.com/tormozz48/postgrelize/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -26,7 +43,8 @@
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "build": "vite build",

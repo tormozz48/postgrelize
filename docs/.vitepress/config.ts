@@ -71,7 +71,7 @@ export default defineConfig({
   ],
   cleanUrls: true,
   lastUpdated: true,
-  srcExclude: ['examples/**', 'llm/**'],
+  srcExclude: ['examples/**', 'llm/**', 'maintainers-npm-setup.md'],
   buildEnd: (siteConfig) => {
     new LlmsWriter(siteConfig.srcDir, siteConfig.outDir).write();
   },
