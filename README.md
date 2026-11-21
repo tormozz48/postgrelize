@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize"><img alt="version" src="https://img.shields.io/github/package-json/v/tormozz48/postgrelize?label=version"></a>
+  <a href="https://www.npmjs.com/package/postgrelize"><img alt="version" src="https://img.shields.io/github/package-json/v/tormozz48/postgrelize?label=version"></a>
   <a href="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/tormozz48/postgrelize/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://tormozz48.github.io/postgrelize/coverage/"><img alt="coverage" src="https://img.shields.io/endpoint?url=https%3A%2F%2Ftormozz48.github.io%2Fpostgrelize%2Fcoverage%2Fbadge.json"></a>
   <img alt="PostgreSQL 16–18" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017%20%7C%2018-336791?logo=postgresql&logoColor=white">
@@ -44,18 +44,11 @@
 
 ## Install
 
-The package is published to GitHub Packages. Add to `.npmrc`:
-
-```
-@tormozz48:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-Install with an alias to keep `import ... from 'postgrelize'`:
-
 ```bash
-npm install postgrelize@npm:@tormozz48/postgrelize pg
+npm install postgrelize pg
 ```
+
+The package is published on npmjs.com as `postgrelize`. The former GitHub Packages name `@tormozz48/postgrelize` is deprecated: switch the dependency and your imports to `postgrelize`.
 
 ### For LLMs and agents
 
@@ -115,7 +108,7 @@ rows.forEach((row) => console.log(row.key, row.wasInserted ? 'inserted' : 'updat
 - [API reference](https://tormozz48.github.io/postgrelize/)
 - [PostgreSQL coverage](https://tormozz48.github.io/postgrelize/postgresql-coverage) — which PostgreSQL 16–18 features are supported, test-backed, planned or out of scope
 - [Coverage report](https://tormozz48.github.io/postgrelize/coverage/)
-- [Package versions](https://github.com/tormozz48/postgrelize/pkgs/npm/postgrelize) · [Tags](https://github.com/tormozz48/postgrelize/tags)
+- [Package versions](https://www.npmjs.com/package/postgrelize) · [Tags](https://github.com/tormozz48/postgrelize/tags)
 
 ## Development
 

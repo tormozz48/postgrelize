@@ -43,6 +43,22 @@ jobs:
           path: dist
           retention-days: 7
 
+  package:
+    name: Package (pack and publish dry run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check package.json fields and tarball content
+        run: node scripts/check-package.mjs
+      - name: Publish dry run (no credentials needed)
+        run: npm publish --dry-run --ignore-scripts
+
   db-tests:
     name: Integration + compat (PostgreSQL ${{ matrix.postgres }})
     runs-on: ubuntu-latest

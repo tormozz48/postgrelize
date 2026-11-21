@@ -186,5 +186,5 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - Tag `v0.12.0` → release.yml, `@tormozz48/postgrelize@0.12.0`. Contents: S13 expression indexes, EXCLUDE, NOT VALID / `validateConstraint`, PG18 NOT ENFORCED / WITHOUT OVERLAPS / PERIOD, partitioning (ADR-027); S15 geometric, multirange, composite types and PostGIS GeoJSON (ADR-026, optional CI job); a runnable example, guide entry and CI check for every beyond-v6 feature. Backlog 4 (S11–S17) is complete.
 
 ## Backlog 5 proposed (2026-11-17)
-- Distribution on npmjs.com (spec `.10x/specs/2026-11-17-backlog-5-roadmap-design.md`): blocked on the owner's decisions (package name, npm account/token, keep GitHub Packages). Both `postgrelize` and `@tormozz48/postgrelize` are free on npmjs.com.
+- Distribution on npmjs.com (spec `.10x/specs/2026-11-17-backlog-5-roadmap-design.md`, ADR-028): S18a done in code (2026-11-21): package renamed `postgrelize`, `release.yml` publishes to npmjs with provenance via `NPM_TOKEN` plus a time-boxed deprecated mirror on GitHub Packages, PR job `package` (pack/publish dry run). Not released. Waiting for the owner: create `NPM_TOKEN` (`docs/maintainers-npm-setup.md`) and approve the first release (S18c). Next: S18b docs polish.
 

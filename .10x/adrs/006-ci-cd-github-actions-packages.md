@@ -1,6 +1,6 @@
 # ADR-006: CI/CD on GitHub Actions, publish to GitHub Packages
 
-**Status:** Accepted
+**Status:** Accepted (publishing to GitHub Packages superseded by ADR-028)
 **Date:** 2026-11-14
 **Feature:** postgrelize-mvp
 **Author:** 10x-Team (Architect + DevOps)

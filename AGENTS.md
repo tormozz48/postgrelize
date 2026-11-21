@@ -4,10 +4,10 @@ Rules for anyone continuing this package, human or AI agent. Read it fully befor
 
 ## What this is
 
-`@tormozz48/postgrelize`: a PostgreSQL-only ORM, a drop-in replacement for the Sequelize v6 public API (reference 6.37.x), written from scratch in TypeScript. PostgreSQL features (ON CONFLICT, MERGE, RETURNING old, CTEs, COPY, LISTEN/NOTIFY, advisory locks, read replicas, …) are added as **new** options and methods. They never change v6 semantics.
+`postgrelize` (npm; formerly `@tormozz48/postgrelize` on GitHub Packages): a PostgreSQL-only ORM, a drop-in replacement for the Sequelize v6 public API (reference 6.37.x), written from scratch in TypeScript. PostgreSQL features (ON CONFLICT, MERGE, RETURNING old, CTEs, COPY, LISTEN/NOTIFY, advisory locks, read replicas, …) are added as **new** options and methods. They never change v6 semantics.
 
 - Docs site: https://tormozz48.github.io/postgrelize/ (VitePress guide + TypeDoc API + coverage report)
-- Package: GitHub Packages, `npm i @tormozz48/postgrelize`
+- Package: npmjs.com, `npm i postgrelize` ([ADR-028](.10x/adrs/028-npmjs-publishing.md)); `@tormozz48/postgrelize` on GitHub Packages is a deprecated, time-boxed mirror
 - Supported: Node ≥ 20, PostgreSQL 16/17/18, `pg` ^8 (peer dependency)
 
 ## Golden rules
@@ -205,7 +205,7 @@ Everything lives in `.10x/`:
 | [003](.10x/adrs/003-on-conflict-extension-api.md)          | `onConflict` option and `Model.insert()`                      | Accepted                                              |
 | [004](.10x/adrs/004-differential-compat-testing.md)        | Differential testing against sequelize@6                      | Accepted                                              |
 | [005](.10x/adrs/005-functional-core-class-shell.md)        | Functional core, thin class shell                             | Superseded by 018                                     |
-| [006](.10x/adrs/006-ci-cd-github-actions-packages.md)      | CI/CD on GitHub Actions, GitHub Packages                      | Accepted                                              |
+| [006](.10x/adrs/006-ci-cd-github-actions-packages.md)      | CI/CD on GitHub Actions, GitHub Packages                      | Accepted (publish part: 028)                          |
 | [007](.10x/adrs/007-typed-public-api-typedoc-pages.md)     | Typed public API, mandatory TSDoc, docs on Pages              | Accepted (site moved to VitePress + TypeDoc markdown) |
 | [008](.10x/adrs/008-model-lifecycle-validation.md)         | Hook pipeline, validator.js + Standard Schema                 | Accepted                                              |
 | [009](.10x/adrs/009-eager-loading-join-strategy.md)        | Eager loading via v6 JOIN strategy                            | Accepted                                              |
@@ -226,6 +226,7 @@ Everything lives in `.10x/`:
 | [025](.10x/adrs/025-ddl-object-names-and-trusted-sql.md)   | DDL object APIs: quoted names, guarded fragments, trusted SQL | Accepted                                              |
 | [027](.10x/adrs/027-constraint-index-partition-options.md) | Constraint, index-expression and partition options            | Accepted                                              |
 | [026](.10x/adrs/026-types-ii-value-mapping.md)             | Value shapes of geometric, multirange, composite, PostGIS     | Accepted                                              |
+| [028](.10x/adrs/028-npmjs-publishing.md)                   | Publish `postgrelize` on npmjs.com, scoped mirror time-boxed  | Accepted                                              |
 
 ## Git, PRs and releases
 
@@ -236,7 +237,7 @@ Everything lives in `.10x/`:
 - **Releases need the maintainer's explicit approval.** Flow:
   1. On a branch `chore/release-X.Y.Z` from up-to-date `main`: `npm version X.Y.Z --no-git-tag-version`, commit `chore(release): X.Y.Z`, open a PR.
   2. Merge the PR after green CI (merge commit).
-  3. Pull `main`, tag the merge commit `vX.Y.Z` and push the tag only. `release.yml` re-runs the checks and publishes to GitHub Packages; read its result.
+  3. Check the secret first: `gh secret list` must show `NPM_TOKEN` (see [docs/maintainers-npm-setup.md](docs/maintainers-npm-setup.md)). Pull `main`, tag the merge commit `vX.Y.Z` and push the tag only. `release.yml` re-runs the checks, publishes `postgrelize` to npmjs.com with provenance, then publishes the deprecated mirror `@tormozz48/postgrelize` to GitHub Packages (ADR-028, until the mirror job is removed); read the result of both jobs.
   4. Record the release in `.10x` (`state(delivery): record X.Y.Z release`) via a PR.
 - Semver while < 1.0: breaking change → minor bump, everything else → patch.
 - `docs.yml` deploys the site from `main` on every push.
