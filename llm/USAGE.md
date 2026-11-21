@@ -398,7 +398,7 @@ const bad = await sequelize
 
 postgrelize fixes v6 bugs on PostgreSQL instead of copying them (JSON `where` keys with special characters, `upsert` on partial unique indexes, `sync({ alter })` sequences, schema-aware `describeTable`, `Op.any` shorthand, unchecked function names and isolation levels, and more). The full list with issue numbers: <https://tormozz48.github.io/postgrelize/sequelize-issues>. Migration notes: <https://tormozz48.github.io/postgrelize/guide/migrating>.
 
-Not available from v6: other dialects, `minifyAliases`, `Model.schema('tenant')` (use the `schema` option or `search_path` via `dialectOptions: { options: '-c search_path=tenant' }`), the `searchPath` option, named/shared `ENUM` types (each `ENUM` column gets `enum_<table>_<column>`), `create({ ignoreDuplicates })`.
+Not available from v6: other dialects, `Model.schema('tenant')` (use the `schema` option or `search_path` via `dialectOptions: { options: '-c search_path=tenant' }`), the `searchPath` option, named/shared `ENUM` types (each `ENUM` column gets `enum_<table>_<column>`), `create({ ignoreDuplicates })`.
 
 ## PostgreSQL features that are NOT supported
 

@@ -1,3 +1,5 @@
+import { AliasMinifier } from '../../associations/alias-minifier.ts';
+import type { SelectNode } from '../../sql/ast.ts';
 import type { IncludeNode, IncludeOption } from '../../associations/include.ts';
 import type { QueryResult } from '../../connection/connection-manager.ts';
 import { Subquery } from '../../expressions/methods.ts';
@@ -26,6 +28,7 @@ type FindCall = Readonly<{
  */
 export class FindOperation extends FindLookups {
   readonly #cursor: FindCursor;
+  readonly #minifier = new AliasMinifier();
 
   /**
    * @param services - Collaborators.
@@ -44,18 +47,32 @@ export class FindOperation extends FindLookups {
    */
   async findAll<M extends AnyModel>(model: ModelStatic<M>, options: FindOptions): Promise<M[]> {
     const { definition, runtime } = this.services.registry.state(model);
-    const { compiler, finds, lifecycle } = this.services;
+    const { finds, lifecycle } = this.services;
     const opts: MutableOptions = { hooks: true, ...this.services.registry.scoped(model, options) };
     await this.#beforeFind(model, opts);
     const call = this.#call(model, opts);
     const threshold = runtime.inAsAnyThreshold;
     const select = finds.build(definition, call.query, call.includes, threshold);
-    const result = await runtime.execute(compiler.compile(select), call.query, finds.route(select));
-    const found = await this.#found(call, result.rows);
+    const rows = await this.#rows(select, call, runtime.minifyAliases === true);
+    const found = await this.#found(call, rows);
     if (opts['hooks'] === true) {
       await lifecycle.runHooks(model, 'afterFind', found, opts);
     }
     return found as M[];
+  }
+
+  async #rows(select: SelectNode, call: FindCall, minify: boolean): Promise<QueryResult['rows']> {
+    const { compiler, finds } = this.services;
+    const { runtime } = this.services.registry.state(call.model);
+    const joined = call.includes.filter((node) => !node.separate);
+    if (!minify || joined.length === 0) {
+      return (await runtime.execute(compiler.compile(select), call.query, finds.route(select)))
+        .rows;
+    }
+    const minified = this.#minifier.minify(select, joined);
+    const query = this.#minifier.rewrite(compiler.compile(minified.select), minified);
+    const result = await runtime.execute(query, call.query, finds.route(select));
+    return this.#minifier.restore(result.rows, minified) as QueryResult['rows'];
   }
 
   async #beforeFind(model: object, opts: MutableOptions): Promise<void> {

@@ -141,6 +141,13 @@ export type SequelizeOptions = Readonly<{
   replication?: ReplicationOptions;
   /** Sequelize-level hooks run for every model (and `beforeConnect`). */
   hooks?: HooksOption;
+  /**
+   * Shorten the aliases of included columns (`Posts.Comments.title` becomes `_0`) and of table aliases
+   * of 64 or more characters, as in Sequelize v6, so deep includes stay within PostgreSQL's 63-byte
+   * identifier limit. Without it PostgreSQL truncates longer aliases and columns can collide.
+   * Default `false`.
+   */
+  minifyAliases?: boolean;
   /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
   inAsAnyThreshold?: number;
   /**

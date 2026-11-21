@@ -168,6 +168,7 @@ export class SequelizeInternals {
         this.managed(parent === undefined || parent === null ? {} : { transaction: parent }, run),
       defaults: options.define ?? {},
       inAsAnyThreshold: options.inAsAnyThreshold,
+      minifyAliases: options.minifyAliases,
     };
   }
 
