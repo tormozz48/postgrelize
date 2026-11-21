@@ -19,7 +19,7 @@ Steps only the package owner can do. Design: ADR-028 (`.10x/adrs/028-npmjs-publi
    gh secret set NPM_TOKEN --repo tormozz48/postgrelize
    ```
    (paste the token at the prompt), or Settings → Secrets and variables → Actions → New repository secret.
-5. **Verify the secret exists** (the value is never shown): `gh secret list --repo tormozz48/postgrelize` must list `NPM_TOKEN`. Do this before every tag.
+5. **Verify the secret exists** (the value is never shown): `gh secret list --repo tormozz48/postgrelize` must list `NPM_TOKEN`. Do this before every tag; `npm run release:preflight -- X.Y.Z` does it for you (full release flow: `.claude/skills/release/SKILL.md`).
 6. The GitHub Packages mirror needs no setup: it uses the workflow's `GITHUB_TOKEN`.
 
 ## After the first publish
