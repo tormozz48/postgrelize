@@ -437,11 +437,6 @@
       "name": "set",
       "category": "other-dialect",
       "note": "sequelize.set only works for MySQL and MariaDB in v6 (throws on other dialects)"
-    },
-    {
-      "name": "truncate",
-      "category": "tracked-in-issue",
-      "note": "S19 item 4: to be implemented"
     }
   ],
   "Model": [
@@ -572,11 +567,6 @@
       "name": "decrement",
       "category": "not-planned",
       "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"
-    },
-    {
-      "name": "deferConstraints",
-      "category": "not-planned",
-      "note": "v6 internals of the transaction lifecycle; postgrelize drives them from sequelize.transaction() and the Transaction methods"
     },
     {
       "name": "delete",

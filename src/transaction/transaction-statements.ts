@@ -1,3 +1,4 @@
+import { SET_CONSTRAINTS_VALUES, type DeferrableValue } from '../ddl/ddl-types.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import { ISOLATION_LEVELS, type IsolationLevel } from './transaction-constants.ts';
 
@@ -22,7 +23,7 @@ export class TransactionStatements {
     options: Readonly<{
       isolationLevel?: IsolationLevel;
       readOnly?: boolean;
-      deferrable?: boolean;
+      deferrable?: boolean | DeferrableValue;
     }>,
   ): string {
     if (this.#savepoint !== undefined) {
@@ -35,7 +36,7 @@ export class TransactionStatements {
     options: Readonly<{
       isolationLevel?: IsolationLevel;
       readOnly?: boolean;
-      deferrable?: boolean;
+      deferrable?: boolean | DeferrableValue;
     }>,
   ): string {
     if (
@@ -52,6 +53,16 @@ export class TransactionStatements {
   }
 
   static #deferrable(deferrable: unknown): string {
+    if (
+      typeof deferrable === 'object' &&
+      deferrable !== null &&
+      SET_CONSTRAINTS_VALUES.has(deferrable)
+    ) {
+      return '';
+    }
+    if (typeof deferrable === 'function' && SET_CONSTRAINTS_VALUES.has(deferrable)) {
+      return '';
+    }
     if (deferrable !== undefined && typeof deferrable !== 'boolean') {
       throw new Error(`Invalid deferrable option: ${String(deferrable)}`);
     }

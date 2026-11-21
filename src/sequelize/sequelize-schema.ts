@@ -17,6 +17,30 @@ const synchronizer = (sequelize: SequelizeBase): SchemaSynchronizer =>
 const definitions = (sequelize: SequelizeBase): ReturnType<ModelRegistry['definition']>[] =>
   Object.values(sequelize.models).map((model) => registry.definition(model));
 
+const CYCLIC_TRUNCATE =
+  'Sequelize#truncate: Some of your models have cyclic references (foreign keys). You need to use the "cascade" option to be able to delete rows from models that have cyclic references.';
+
+type TruncateOptions = QueryOptionsBase &
+  Readonly<{ cascade?: boolean; restartIdentity?: boolean }>;
+
+const truncations = (
+  sequelize: SequelizeBase,
+  ordered: readonly ReturnType<ModelRegistry['definition']>[],
+  options: TruncateOptions,
+): (() => Promise<void>)[] => {
+  const byDefinition = new Map(
+    Object.values(sequelize.models).map((model) => [registry.definition(model), model]),
+  );
+  return ordered.map(
+    (definition) => () =>
+      (
+        byDefinition.get(definition) as unknown as {
+          truncate: (o: TruncateOptions) => Promise<void>;
+        }
+      ).truncate(options),
+  );
+};
+
 const runSync = async (sequelize: SequelizeBase, options: SyncOptions): Promise<void> => {
   const hooks = options.hooks !== false;
   const hookOptions = { ...options, hooks };
@@ -136,5 +160,33 @@ export const SequelizeSchema = <TBase extends SequelizeConstructor>(Base: TBase)
      */
     async drop(options: DropOptions = {}): Promise<void> {
       await synchronizer(this).dropAll(definitions(this), options);
+    }
+
+    /**
+     * Empties the tables of all defined models (`TRUNCATE`), tables that reference others first. With
+     * `cascade` the tables are truncated one after the other, otherwise all at once. Destructive.
+     *
+     * @param options - `cascade`, `restartIdentity` and query options.
+     * @returns Resolves when done.
+     * @throws Error when foreign keys form a cycle and `cascade` is not set.
+     *
+     * @example
+     * ```ts
+     * await sequelize.truncate({ cascade: true });
+     * ```
+     */
+    async truncate(options: TruncateOptions = {}): Promise<void> {
+      const { models, cyclic } = synchronizer(this).truncationOrder(definitions(this));
+      if (cyclic && options.cascade !== true) {
+        throw new Error(CYCLIC_TRUNCATE);
+      }
+      const truncates = truncations(this, models, options);
+      if (options.cascade === true) {
+        for (const truncate of truncates) {
+          await truncate();
+        }
+      } else {
+        await Promise.all(truncates.map((truncate) => truncate()));
+      }
     }
   };

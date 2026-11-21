@@ -74,3 +74,28 @@ describe('catalog lookups and database commands keep inputs in their quoting', (
       expect(created.rowCount).toBe(0);
     }));
 });
+
+describe('Deferrable.SET_DEFERRED keeps constraint names in their quoting', () => {
+  it('quotes the names given to SET_DEFERRED / SET_IMMEDIATE', () =>
+    withCanary(async ({ sequelize, client }) => {
+      const { Deferrable } = await import('../../../src/index.ts');
+      for (const payload of PAYLOADS) {
+        for (const mode of [Deferrable.SET_DEFERRED, Deferrable.SET_IMMEDIATE]) {
+          const result = await settle(
+            sequelize.transaction({ deferrable: mode([payload]) }, async () => undefined),
+          );
+          expect(syntaxError(result), `payload ${payload}`).toBe(false);
+        }
+      }
+      const pwned = await client.query("SELECT 1 FROM pg_class WHERE relname = 'pwned'");
+      expect(pwned.rowCount).toBe(0);
+    }));
+
+  it('rejects a deferrable value that was not made by Deferrable', () =>
+    withCanary(async ({ sequelize }) => {
+      const result = await settle(
+        sequelize.transaction({ deferrable: { sql: 'SELECT 1' } as never }, async () => undefined),
+      );
+      expect(result).toBeInstanceOf(Error);
+    }));
+});

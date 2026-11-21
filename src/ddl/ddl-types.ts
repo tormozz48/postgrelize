@@ -3,6 +3,32 @@ import type { AttributeDefinition } from '../model/model-definition.ts';
 import type { PartitionKey } from './partition-types.ts';
 import type { TableName } from './sql-literal.ts';
 
+/** Values made by `Deferrable.SET_DEFERRED` / `SET_IMMEDIATE`; the only `SET CONSTRAINTS` statements a transaction accepts. */
+export const SET_CONSTRAINTS_VALUES = new WeakSet<object>();
+
+/** `Deferrable.SET_DEFERRED` / `SET_IMMEDIATE`: usable bare (all constraints) or called with constraint names. */
+export type ConstraintModeSetter = DeferrableValue &
+  ((constraints?: readonly string[]) => DeferrableValue);
+
+const setConstraints = (mode: 'DEFERRED' | 'IMMEDIATE'): ConstraintModeSetter => {
+  const value = (sql: string): DeferrableValue => {
+    const made = Object.freeze({ sql });
+    SET_CONSTRAINTS_VALUES.add(made);
+    return made;
+  };
+  const make = (constraints?: readonly string[]): DeferrableValue =>
+    value(
+      `SET CONSTRAINTS ${
+        constraints === undefined
+          ? 'ALL'
+          : constraints.map((name) => `"${String(name).replaceAll('"', '""')}"`).join(', ')
+      } ${mode}`,
+    );
+  const bare = Object.assign(make, { sql: `SET CONSTRAINTS ALL ${mode}` });
+  SET_CONSTRAINTS_VALUES.add(bare);
+  return bare;
+};
+
 /** `Deferrable` setting of a foreign key or transaction (Sequelize v6 `Deferrable`). */
 export type DeferrableValue = Readonly<{
   /** SQL of the mode, e.g. `DEFERRABLE INITIALLY DEFERRED`. */
@@ -27,6 +53,13 @@ export const Deferrable = {
   INITIALLY_DEFERRED: Object.freeze<DeferrableValue>({ sql: 'DEFERRABLE INITIALLY DEFERRED' }),
   /** `NOT DEFERRABLE`. */
   NOT: Object.freeze<DeferrableValue>({ sql: 'NOT DEFERRABLE' }),
+  /**
+   * `SET CONSTRAINTS ... DEFERRED`: for the `deferrable` option of `sequelize.transaction()`, defers the given constraints
+   * (all of them when used bare or called without names) for the rest of the transaction.
+   */
+  SET_DEFERRED: setConstraints('DEFERRED'),
+  /** `SET CONSTRAINTS ... IMMEDIATE`: the counterpart of `SET_DEFERRED`. */
+  SET_IMMEDIATE: setConstraints('IMMEDIATE'),
 } as const;
 
 /** Column definition as used by DDL builders. */

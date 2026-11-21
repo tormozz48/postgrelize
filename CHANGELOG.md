@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
+- `Sequelize#truncate` (empties all model tables, referencing tables first, as in v6), `Deferrable.SET_DEFERRED` / `Deferrable.SET_IMMEDIATE` for the `deferrable` transaction option and `queryInterface.deferConstraints` (S19). With these, every v6 name that postgrelize lacks is on the API-surface allow-list with a reason.
 - Sequelize v6 `QueryInterface` methods: `showIndex`, `showConstraint` (and `QueryTypes.SHOWCONSTRAINTS`), `getForeignKeysForTables`, `assertTableHasColumn`, `databaseVersion`, `createDatabase`, `dropDatabase`, `quoteIdentifier`, `quoteIdentifiers` (S19). The catalog lookups filter by schema and `showConstraint` honours the constraint name (v6 ignores it).
 - Sequelize v6 `Model` members: `describe`, `dropSchema`, `queryInterface`, `findCreateFind`, `getAssociations`, `getAssociationForAlias`, `hasAlias`, `removeAttribute`, `refreshAttributes`, and on instances `equalsOneOf`, `setAttributes`, `where` and `toString` (S19). `findCreateFind` inside a transaction uses a savepoint and returns the row that won a race with `created: false` (v6 returns an unsaved instance).
 - Hook shorthands as in Sequelize v6: `sequelize.beforeCreate(fn)` and the other hooks that run (also `beforeConnect`, `afterConnect`, `beforeBulkSync`, `afterBulkSync`), `sequelize.runHooks()`, `Model.beforeSync()` and `Model.afterSync()` (S19).
