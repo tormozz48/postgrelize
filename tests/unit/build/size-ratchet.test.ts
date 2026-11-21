@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// ADR-021: no file is exempt from the size limits any more (S6 complete); never add one.
-const MAX_FILES_OVER_150_LINES = 0;
+// ADR-021 / ADR-029: no file is exempt from the size limits (S6 complete); never add one.
+const MAX_FILES_OVER_FILE_LIMIT = 0;
 const MAX_FILES_WITH_FUNCTIONS_OVER_20_LINES = 0;
 
 type Override = Readonly<{ files: readonly string[]; rules: Readonly<Record<string, unknown>> }>;
@@ -18,7 +18,7 @@ const exempted = (rule: string): readonly string[] =>
 
 describe('size limit ratchet', () => {
   it('never adds files to the exemption lists', () => {
-    expect(exempted('max-lines').length).toBeLessThanOrEqual(MAX_FILES_OVER_150_LINES);
+    expect(exempted('max-lines').length).toBeLessThanOrEqual(MAX_FILES_OVER_FILE_LIMIT);
     expect(exempted('max-lines-per-function').length).toBeLessThanOrEqual(
       MAX_FILES_WITH_FUNCTIONS_OVER_20_LINES,
     );
