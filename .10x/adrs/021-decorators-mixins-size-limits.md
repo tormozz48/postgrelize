@@ -1,6 +1,6 @@
 # ADR-021: TC39 decorators, mixins and size limits
 
-**Status:** Accepted (refines ADR-018: classes stay the unit of behaviour; adds decorators, mixins and enforced size limits)
+**Status:** Accepted (refines ADR-018: classes stay the unit of behaviour; adds decorators, mixins and enforced size limits); the file-size limit (150 lines) is superseded by ADR-029 (400 lines), the function limit and the rest stay
 **Date:** 2026-11-15
 **Feature:** backlog-3 S6
 **Author:** 10x-Team (Architect + Staff Engineer)

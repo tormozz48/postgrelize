@@ -100,7 +100,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
 - TypeScript `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `verbatimModuleSyntax`. No `any` (use `unknown`); `any` only where v6's own types require it.
 - Exported functions and methods have explicit parameter and return types.
 - Files are `kebab-case.ts`; classes and types `PascalCase`; functions and members `camelCase`. Imports are relative inside `src`, with no barrels except `src/index.ts`.
-- **Size limits** (oxlint, `src/**`, code lines without comments and blank lines): functions ≤ 20 lines, files ≤ 150 lines. Files still above the limits are listed in the `.oxlintrc.json` overrides; the list only shrinks (`tests/unit/build/size-ratchet.test.ts`). When you split a listed file, remove it from the list and lower the numbers in that test. Never add a file to the list.
+- **Size limits** (oxlint, `src/**`, code lines without comments and blank lines): functions ≤ 20 lines, files ≤ 400 lines ([ADR-029](.10x/adrs/029-file-size-limit-400.md); aim for 300 and split a file when it holds more than one responsibility, the limit is a ceiling, not a target). No file is exempt: never add an override that turns a size rule off (`tests/unit/build/size-ratchet.test.ts`).
 - Comments explain _why_, never _what_. TSDoc is for the public API (see [API documentation](#api-documentation)).
 - Match the surrounding style. Do not reformat or refactor unrelated code in a feature PR.
 
@@ -231,6 +231,7 @@ Everything lives in `.10x/`:
 | [027](.10x/adrs/027-constraint-index-partition-options.md) | Constraint, index-expression and partition options            | Accepted                                              |
 | [026](.10x/adrs/026-types-ii-value-mapping.md)             | Value shapes of geometric, multirange, composite, PostGIS     | Accepted                                              |
 | [028](.10x/adrs/028-npmjs-publishing.md)                   | Publish `postgrelize` on npmjs.com, scoped mirror time-boxed  | Accepted                                              |
+| [029](.10x/adrs/029-file-size-limit-400.md)                | File size limit 400 lines (supersedes the 150 of ADR-021)     | Accepted                                              |
 
 ## Git, PRs and releases
 
