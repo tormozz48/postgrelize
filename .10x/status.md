@@ -194,3 +194,4 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 
 ## Release 1.0.0 (2026-11-21, prepared)
 - First release on npmjs.com as `postgrelize` (ADR-028); `@tormozz48/postgrelize@1.0.0` mirror on GitHub Packages (deprecated). Contents: the rename (breaking for installers), npmjs publishing with provenance, `package` CI job, npm badges and migration note, CHANGELOG, hero art. Semver from 1.0.0: breaking → major. Release PR merged; tag `v1.0.0` awaits the owner's approval.
+- CI on Node 24 (2026-11-21): `ci.yml` check job runs Node 20/22/24 (docs build and `dist` artifact stay on 22); DB jobs run PostgreSQL 16/17/18 on Node 22 plus one extra job on Node 24 with PostgreSQL 18. Full suite (lint, format, typecheck, unit, integration, compat, docs, build, test:build, `npm run docs`) passed locally on Node 24.16 with no library changes. The ruleset for `main` has no required status checks, so no check names to update.

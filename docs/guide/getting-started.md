@@ -4,7 +4,7 @@ postgrelize is an ORM for Node.js that implements the [Sequelize v6](https://seq
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 20 or newer (CI tests Node 20, 22 and 24)
 - PostgreSQL 16, 17 or 18 (some features need a newer server; each page says so)
 - the [`pg`](https://node-postgres.com/) driver
 

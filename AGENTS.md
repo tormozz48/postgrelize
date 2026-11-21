@@ -8,7 +8,7 @@ Rules for anyone continuing this package, human or AI agent. Read it fully befor
 
 - Docs site: https://tormozz48.github.io/postgrelize/ (VitePress guide + TypeDoc API + coverage report)
 - Package: npmjs.com, `npm i postgrelize` ([ADR-028](.10x/adrs/028-npmjs-publishing.md)); `@tormozz48/postgrelize` on GitHub Packages is a deprecated, time-boxed mirror
-- Supported: Node ≥ 20, PostgreSQL 16/17/18, `pg` ^8 (peer dependency)
+- Supported: Node ≥ 20 (CI tests 20, 22 and 24), PostgreSQL 16/17/18, `pg` ^8 (peer dependency)
 
 ## Golden rules
 
@@ -234,7 +234,7 @@ Everything lives in `.10x/`:
 - Branch from `main`: `feat/…`, `fix/…`, `refactor/…`, `docs/…`, `test/…`, `chore/…`. `main` is protected: nothing is pushed to it directly, not even the release commit; every change reaches it through a pull request.
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`, plus `!` for breaking changes. State-only commits in `.10x/` use `state(<phase>): …`.
 - One topic per PR. Fill in the PR template checklist.
-- CI (`ci.yml`) runs on every PR: lint, format, typecheck, unit tests, build and package smoke test on Node 20 and 22 (docs build on 22), plus DB tests on PostgreSQL 16, 17 and 18. Merge only when all checks are green (merge commit, `gh pr merge --merge`). Never chain the merge after a CI wait without reading the result.
+- CI (`ci.yml`) runs on every PR: lint, format, typecheck, unit tests, build and package smoke test on Node 20, 22 and 24 (docs build on 22), plus DB tests on PostgreSQL 16, 17 and 18 (Node 22) and on PostgreSQL 18 with Node 24. Merge only when all checks are green (merge commit, `gh pr merge --merge`). Never chain the merge after a CI wait without reading the result.
 - **Releases need the maintainer's explicit approval.** Flow:
   1. On a branch `chore/release-X.Y.Z` from up-to-date `main`: `npm version X.Y.Z --no-git-tag-version`, move `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD` (leave a new empty `[Unreleased]`) and update the compare links at the bottom, commit `chore(release): X.Y.Z`, open a PR.
   2. Merge the PR after green CI (merge commit).
