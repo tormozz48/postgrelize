@@ -671,54 +671,9 @@
       "note": "v6 internal or self reference, not part of the documented API"
     },
     {
-      "name": "describe",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "dropSchema",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "findCreateFind",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "getAssociationForAlias",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "getAssociations",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "hasAlias",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
       "name": "queryGenerator",
       "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "queryInterface",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "refreshAttributes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "removeAttribute",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "note": "v6 query generator object; postgrelize compiles SQL through its own AST"
     },
     {
       "name": "warnOnInvalidOptions",
@@ -729,53 +684,33 @@
   "Model.prototype": [
     {
       "name": "addHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "equalsOneOf",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "hasHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "hasHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "removeHook",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "runHooks",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "setAttributes",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "instance-level hooks are inert in v6; use the Model static of the same name"
     },
     {
       "name": "setValidators",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "toString",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
-    },
-    {
-      "name": "where",
-      "category": "tracked-in-issue",
-      "note": "S19 item 5: to be implemented"
+      "category": "not-planned",
+      "note": "mutates the validators shared by every instance of the model in v6; define validate options on the attribute instead"
     }
   ],
   "Transaction": [

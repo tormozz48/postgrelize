@@ -195,6 +195,32 @@ export class InstanceValues {
   }
 
   /**
+   * Row condition of an instance: primary key (and optionally version) values keyed by column name.
+   *
+   * @param instance - Model instance.
+   * @param checkVersion - Include the version attribute.
+   * @returns Where object, or the `whereCollection` option for models without a primary key.
+   */
+  where(instance: AnyModel, checkVersion: boolean): Values | undefined {
+    const definition = this.#registry.definition(instance.constructor);
+    const names = [
+      ...definition.primaryKeys,
+      ...(checkVersion && definition.version !== undefined ? [definition.version] : []),
+    ];
+    if (definition.primaryKeys.length === 0) {
+      return (definition.options as Readonly<Record<string, unknown>>)['whereCollection'] as
+        | Values
+        | undefined;
+    }
+    return Object.fromEntries(
+      names.map((name) => [
+        definition.attributes.get(name)?.field ?? name,
+        (instance.dataValues as Values)[name],
+      ]),
+    );
+  }
+
+  /**
    * Compares primary keys of two instances of the same model.
    *
    * @param instance - Model instance.

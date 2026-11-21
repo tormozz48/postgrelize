@@ -1,6 +1,6 @@
 import type { IncludeLoader } from '../../associations/include-loader.ts';
 import type { IncludeResolver } from '../../associations/include-resolver.ts';
-import { EmptyResultError } from '../../errors/errors.ts';
+import { EmptyResultError, UniqueConstraintError } from '../../errors/errors.ts';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { Transaction } from '../../transaction/transaction.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
@@ -168,6 +168,53 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
       throw error;
     }
     return [existing, false];
+  }
+
+  /**
+   * `Model.findCreateFind`: finds a row, otherwise creates it; when the insert fails because the
+   * row appeared meanwhile (unique violation), reads the row again.
+   *
+   * @param model - Model class.
+   * @param options - `where` to search, `defaults` to add on creation.
+   * @returns `[instance, created]`.
+   * @throws Error when `where` is missing.
+   */
+  async findCreateFind<M extends AnyModel>(
+    model: ModelStatic<M>,
+    options: FindOrCreateOptions,
+  ): Promise<[M, boolean]> {
+    if (options.where === undefined) {
+      throw new Error('Missing where attribute in the options parameter passed to findCreateFind.');
+    }
+    const found = await model.findOne(options);
+    if (found !== null) {
+      return [found, false];
+    }
+    try {
+      return [await this.#insert(model, options), true];
+    } catch (error) {
+      if (!(error instanceof UniqueConstraintError || error instanceof EmptyResultError)) {
+        throw error;
+      }
+      return [(await model.findOne(options)) as M, false];
+    }
+  }
+
+  #insert<M extends AnyModel>(model: ModelStatic<M>, options: FindOrCreateOptions): Promise<M> {
+    const { registry, values } = this.services;
+    const data = {
+      ...values.fromWhere(options.where),
+      ...options.defaults,
+    } as CreationAttributes<M>;
+    const create = (transaction?: Transaction): Promise<M> =>
+      model.create(data, {
+        ...values.queryOptions(options),
+        ...(transaction === undefined ? {} : { transaction }),
+      });
+    // A savepoint keeps a failed insert from aborting the caller's transaction.
+    return options.transaction === undefined || options.transaction === null
+      ? create()
+      : registry.state(model).runtime.transaction(create, options.transaction);
   }
 
   /**
