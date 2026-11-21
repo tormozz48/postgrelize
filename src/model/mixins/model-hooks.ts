@@ -94,6 +94,12 @@ export const ModelHooks = <TBase extends ModelConstructor>(Base: TBase) => {
     /** Adds a `afterFind` hook: `Model.afterFind(fn)` or `Model.afterFind(name, fn)`. */
     declare static afterFind: NamedHookAdder;
 
+    /** Adds a `beforeSync` hook: runs before `Model.sync()` and before this model's turn in `sequelize.sync()`. */
+    declare static beforeSync: NamedHookAdder;
+
+    /** Adds an `afterSync` hook: runs after `Model.sync()` and after this model's turn in `sequelize.sync()`. */
+    declare static afterSync: NamedHookAdder;
+
     /** Adds a `beforeCount` hook: `Model.beforeCount(fn)` or `Model.beforeCount(name, fn)`. */
     declare static beforeCount: NamedHookAdder;
 

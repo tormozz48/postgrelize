@@ -56,4 +56,6 @@ export const NAMED_HOOKS = [
   'beforeFindAfterOptions',
   'afterFind',
   'beforeCount',
+  'beforeSync',
+  'afterSync',
 ] as const satisfies readonly HookType[];
