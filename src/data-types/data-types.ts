@@ -85,6 +85,13 @@ export const DataTypes = {
     (digits?: number, scale?: number) => new DecimalType(digits, scale),
     new DecimalType(),
   ),
+  /** Alias of `DECIMAL` (v6 `NUMERIC`). */
+  NUMERIC: callable(
+    (digits?: number, scale?: number) => new DecimalType(digits, scale),
+    new DecimalType(),
+  ),
+  /** `DOUBLE PRECISION` (v6 alias of `DOUBLE`). */
+  'DOUBLE PRECISION': new ScalarType('DOUBLE', 'DOUBLE PRECISION'),
   /** `BOOLEAN`. */
   BOOLEAN: new ScalarType('BOOLEAN', 'BOOLEAN'),
   /** `TIMESTAMP WITH TIME ZONE`; values are `Date` objects. */

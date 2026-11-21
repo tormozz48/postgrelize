@@ -1,4 +1,4 @@
-import inflection from 'inflection';
+import { inflector as inflection } from '../model/inflector.ts';
 import type { ModelAttributes } from '../model/model-definition.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';

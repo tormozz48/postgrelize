@@ -1,4 +1,4 @@
-import inflection from 'inflection';
+import { inflector as inflection } from './inflector.ts';
 import { AbstractDataType } from '../data-types/abstract-data-type.ts';
 import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { AttributeDefinition, AttributeOptions } from './attribute-options.ts';
