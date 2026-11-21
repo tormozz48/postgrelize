@@ -82,6 +82,7 @@ export default defineConfig({
       { text: 'PostgreSQL features', link: '/guide/upserts' },
       { text: 'API', link: '/api/' },
       { text: 'Fixed issues', link: '/sequelize-issues' },
+      { text: 'Changelog', link: '/changelog' },
     ],
     sidebar: {
       '/guide/': guide,

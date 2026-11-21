@@ -188,3 +188,6 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 ## Backlog 5 proposed (2026-11-17)
 - Distribution on npmjs.com (spec `.10x/specs/2026-11-17-backlog-5-roadmap-design.md`, ADR-028): S18a done in code (2026-11-21): package renamed `postgrelize`, `release.yml` publishes to npmjs with provenance via `NPM_TOKEN` plus a time-boxed deprecated mirror on GitHub Packages, PR job `package` (pack/publish dry run). Not released. Waiting for the owner: create `NPM_TOKEN` (`docs/maintainers-npm-setup.md`) and approve the first release (S18c). S18b (2026-11-21): npm version and downloads badges, migration note for scoped-name users. Next: S18c first release (owner approval), S18d.
 
+
+## CHANGELOG.md (2026-11-21)
+- `CHANGELOG.md` (Keep a Changelog 1.1.0) covers all 13 tags v0.1.0 … v0.12.0 plus `[Unreleased]`, with a stages-and-releases table; published on the site at `/changelog`, shipped in the npm package, checked by `tests/docs/changelog.test.ts`; `release.yml` creates the GitHub Release from the matching section. Rule in AGENTS.md: every user-visible PR adds a line under `[Unreleased]`; the release PR moves it to the new version.

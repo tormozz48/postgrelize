@@ -15,6 +15,7 @@ See [AGENTS.md → Documentation sync](../AGENTS.md#documentation-sync).
 - [ ] Fixed v6 bug: row in `docs/sequelize-issues.md` + test in `tests/integration/sequelize-issues.test.ts`
 - [ ] New PostgreSQL feature: README feature list updated; row in `docs/coverage/postgresql-features.ts` flipped or added with a `test` reference
 - [ ] Feature beyond Sequelize v6: `beyondV6`, `example` and `guide` set on its matrix row (or `EXTRA_FEATURES`); the example runs in `tests/docs/examples.test.ts` and the guide section describes the feature and includes it
+- [ ] User-visible change: line added under `## [Unreleased]` in `CHANGELOG.md` (PR link, stage / ADR)
 - [ ] Breaking change: `!` in the commit, `docs/guide/migrating.md` updated
 - [ ] Architecture or dependency decision: ADR written; `AGENTS.md` updated if a rule changed
 - [ ] New input reaching SQL: row on `docs/security.md` + tests in `tests/integration/security/` (ADR-020)

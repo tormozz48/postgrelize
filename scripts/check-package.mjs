@@ -34,6 +34,7 @@ for (const required of [
   'package.json',
   'README.md',
   'LICENSE',
+  'CHANGELOG.md',
   'llm/USAGE.md',
   'skills/postgrelize/SKILL.md',
   'dist/index.js',
@@ -42,7 +43,7 @@ for (const required of [
 ]) {
   expect(files.includes(required), `tarball is missing ${required}`);
 }
-const allowed = /^(dist|llm|skills)\/|^(package\.json|README\.md|LICENSE)$/;
+const allowed = /^(dist|llm|skills)\/|^(package\.json|README\.md|LICENSE|CHANGELOG\.md)$/;
 for (const file of files) {
   expect(allowed.test(file), `unexpected file in tarball: ${file}`);
 }
