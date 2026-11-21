@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- The `afterConnect` hook now runs for every new pooled connection after `beforeConnect`, with `(connection, config)` as in Sequelize v6; the hook may run queries on the connection, and an error it throws closes that connection and rejects the query that needed it (v6 parity).
+
 ## [1.0.0] - 2026-11-21
 
 First release on npmjs.com, as `postgrelize` (`npm i postgrelize`). The scoped `@tormozz48/postgrelize` mirror on GitHub Packages continues at the same version and is deprecated (ADR-028). The public API exported from `src/index.ts` is now covered by Semantic Versioning.

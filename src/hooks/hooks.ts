@@ -1,7 +1,7 @@
 /**
- * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect` and the sync hooks
- * (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`) run; the other connection / define hooks are accepted
- * and not run yet.
+ * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect`, `afterConnect` and the sync
+ * hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`) run; the other connection / define hooks are
+ * accepted and not run yet.
  */
 export const HOOK_TYPES = [
   'beforeValidate',

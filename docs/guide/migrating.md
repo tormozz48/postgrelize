@@ -65,7 +65,7 @@ These Sequelize v6 features are not implemented:
 | `create({ ignoreDuplicates })`         | `create(values, { onConflict: { action: 'nothing' } })` or `bulkCreate([...], { ignoreDuplicates })`. |
 | Sequelize v7 (`@sequelize/core`) API   | Not planned.                                                                                          |
 
-Hooks are accepted for every v6 hook name, but model lifecycle hooks, `beforeConnect` and the sync hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`) run; other connection and define hooks (`afterConnect`, `beforeDefine`, ...) are registered and never called. See [Hooks and validation](./hooks-validation).
+Hooks are accepted for every v6 hook name, but model lifecycle hooks, `beforeConnect`, `afterConnect` and the sync hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`) run; other connection and define hooks (`beforeDefine`, ...) are registered and never called. See [Hooks and validation](./hooks-validation).
 
 ## Using the PostgreSQL extensions
 
