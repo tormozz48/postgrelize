@@ -191,3 +191,6 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 
 ## CHANGELOG.md (2026-11-21)
 - `CHANGELOG.md` (Keep a Changelog 1.1.0) covers all 13 tags v0.1.0 … v0.12.0 plus `[Unreleased]`, with a stages-and-releases table; published on the site at `/changelog`, shipped in the npm package, checked by `tests/docs/changelog.test.ts`; `release.yml` creates the GitHub Release from the matching section. Rule in AGENTS.md: every user-visible PR adds a line under `[Unreleased]`; the release PR moves it to the new version.
+
+## Release 1.0.0 (2026-11-21, prepared)
+- First release on npmjs.com as `postgrelize` (ADR-028); `@tormozz48/postgrelize@1.0.0` mirror on GitHub Packages (deprecated). Contents: the rename (breaking for installers), npmjs publishing with provenance, `package` CI job, npm badges and migration note, CHANGELOG, hero art. Semver from 1.0.0: breaking → major. Release PR merged; tag `v1.0.0` awaits the owner's approval.
