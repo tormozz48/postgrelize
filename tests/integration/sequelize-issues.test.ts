@@ -451,4 +451,24 @@ describe('Sequelize issues fixed in postgrelize', () => {
       await sequelize.query('INSERT INTO tagged DEFAULT VALUES');
       expect(await select(sequelize, 'SELECT tag FROM tagged')).toEqual([{ tag: 'from trigger' }]);
     }));
+
+  it('showConstraint honours the constraint name and the schema of the table', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      await sequelize.query('CREATE TABLE things (id SERIAL PRIMARY KEY, code TEXT UNIQUE)');
+      const queryInterface = sequelize.getQueryInterface();
+      const all = (await queryInterface.showConstraint('things')) as { constraintName: string }[];
+      const one = (await queryInterface.showConstraint('things', 'things_pkey')) as {
+        constraintName: string;
+        constraintSchema: string;
+      }[];
+      const other = await queryInterface.showConstraint({ tableName: 'things', schema: 'public' });
+      expect(all.map((row) => row.constraintName)).toEqual(
+        expect.arrayContaining(['things_code_key', 'things_pkey']),
+      );
+      expect(one.map((row) => [row.constraintName, row.constraintSchema])).toEqual([
+        ['things_pkey', schema],
+      ]);
+      expect(other).toEqual([]);
+    }));
 });

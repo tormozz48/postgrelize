@@ -44,7 +44,8 @@ Available methods:
 
 - tables: `createTable`, `dropTable`, `dropAllTables`, `renameTable`, `tableExists`, `showAllTables`, `describeTable`
 - columns: `addColumn`, `removeColumn`, `changeColumn`, `renameColumn`
-- indexes and constraints: `addIndex`, `removeIndex`, `addConstraint`, `removeConstraint`, `getForeignKeyReferencesForTable`
+- indexes and constraints: `addIndex`, `removeIndex`, `showIndex`, `addConstraint`, `removeConstraint`, `showConstraint`, `getForeignKeyReferencesForTable`, `getForeignKeysForTables`
+- databases and helpers: `createDatabase`, `dropDatabase`, `databaseVersion`, `assertTableHasColumn`, `quoteIdentifier`, `quoteIdentifiers`
 - schemas and enums: `createSchema`, `dropSchema`, `showAllSchemas`, `dropEnum`, `dropAllEnums`
 - extensions, sequences, views, row-level security, functions and triggers: `createExtension`, `createSequence`, `nextval`, `createView`, `createMaterializedView`, `refreshMaterializedView`, `createFunction`, `createTrigger`, `createPolicy` and their drop / alter / rename counterparts (see [Schema objects](/guide/schema-objects))
 - data: `bulkInsert`, `bulkUpdate`, `bulkDelete`
@@ -54,6 +55,7 @@ All methods take a `transaction` option, so a migration can run in one transacti
 ## Differences from Sequelize v6
 
 - `describeTable`, `showAllTables` and `tableExists` look in `current_schema()` (the first schema of `search_path`) when no schema is given; v6 always uses `public`.
+- `showIndex`, `showConstraint` and `getForeignKeysForTables` filter by schema like `describeTable` (v6 looks up the table name in every schema, and breaks for `{ tableName, schema }` in `getForeignKeysForTables`). `showConstraint(table, name)` returns only that constraint; v6 ignores the name on PostgreSQL. `quoteIdentifier` doubles embedded `"` where v6 strips them.
 - `describeTable` returns literal defaults unquoted (`it's`, not `'it''s'::text`).
 - `sync({ alter: true })` keeps the sequence of non-key `autoIncrement` columns and does not duplicate foreign keys when tables live in a non-default schema.
 - `sync({ schema })` / `drop({ schema })` only touch that schema, even if tables with the same name exist elsewhere.
