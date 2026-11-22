@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 prepared (S19 v6 parity)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity)
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
@@ -201,5 +201,6 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 - CI on Node 24 (2026-11-21): `ci.yml` check job runs Node 20/22/24 (docs build and `dist` artifact stay on 22); DB jobs run PostgreSQL 16/17/18 on Node 22 plus one extra job on Node 24 with PostgreSQL 18. Full suite (lint, format, typecheck, unit, integration, compat, docs, build, test:build, `npm run docs`) passed locally on Node 24.16 with no library changes. The ruleset for `main` has no required status checks, so no check names to update.
 - Release process (docs release process PR): project skill `.claude/skills/release/SKILL.md` (approval gate, preflight, release PR, tag, verification, failure handling), `npm run release:preflight -- X.Y.Z [--before-bump] [--fast]` (`scripts/release-preflight.ts`, pure parts in `scripts/release-lib.ts` with `tests/unit/scripts/release-lib.test.ts`), AGENTS.md "Git, PRs and releases" rewritten, Release PR section in the PR template. No release was made.
 
-## Release 1.1.0 (2026-11-22, prepared)
-- S19: Sequelize v6 parity found by migrating a production project; additive only, so a minor bump. Release PR `chore/release-1.1.0`; tag and publish only on the maintainer's explicit go.
+## Release 1.1.0 (2026-11-22, released)
+- S19: Sequelize v6 parity found by migrating a production project; additive only, so a minor bump. Release PR `chore/release-1.1.0`; released on the maintainer's go.
+- Released: tag `v1.1.0` on merge commit `2d610c8` (PR #109), `release.yml` run 45005493053. Local preflight failed twice in `tests/integration/security/types.test.ts` under machine load (52–78); the maintainer approved releasing on green GitHub CI. First publish attempt failed `E403 OIDC permission denied` (npm Trusted Publisher config); after the maintainer fixed it, `gh run rerun --failed` published `postgrelize@1.1.0` (`latest`, provenance), mirror and GitHub Release v1.1.0 green. Verified: `npm view`, clean install, ESM and CJS import (153 exports). npm showed 1.0.0 for about a minute after the job went green (processing delay). Bench gate not run (maintainer declined).
