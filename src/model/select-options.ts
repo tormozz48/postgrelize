@@ -1,6 +1,18 @@
 import type { LateralKeys } from './lateral-keys-builder.ts';
 import type { TableSampleOptions } from './source-options.ts';
+import type { Col, Fn, Literal } from '../expressions/methods.ts';
 import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
+
+/**
+ * Aliased attribute `[expression, alias]` in `attributes` (Sequelize v6 `ProjectionAlias`).
+ *
+ * @example
+ * ```ts
+ * const total: ProjectionAlias = [fn('count', col('id')), 'total'];
+ * const rows = await Post.findAll({ attributes: ['authorId', total], group: ['authorId'] });
+ * ```
+ */
+export type ProjectionAlias = readonly [string | Literal | Fn | Col, string];
 
 /**
  * Selected attributes: a list of names or `[expression, alias]` pairs, or an `{ include, exclude }` spec.

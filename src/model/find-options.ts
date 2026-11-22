@@ -2,6 +2,7 @@ import type { IncludeOption } from '../associations/include.ts';
 import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { CteFindOptions } from './cte-builder.ts';
 import type { Values } from './options.ts';
+import type { Replacements } from '../query/raw-query.ts';
 import type { QueryOptionsBase } from './runtime.ts';
 import type { TableSampleOptions } from './source-options.ts';
 import type { SelectOptions } from './select-query-builder.ts';
@@ -63,8 +64,29 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     include?: IncludeOption;
     /** `false` disables the sub-query used for `limit` combined with multi-row includes. */
     subQuery?: boolean;
+    /**
+     * Values for `:name` / `?` placeholders (Sequelize v6 `QueryOptions.replacements`). Declared so
+     * that code typed against v6 compiles; finders do not substitute them yet (only
+     * {@link Sequelize.query} does), so a `literal()` with a placeholder fails in PostgreSQL.
+     */
+    replacements?: Replacements;
   }> &
   CteFindOptions;
+
+/**
+ * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options. The count
+ * query reuses `where`, `include`, `paranoid`, `transaction` and `logging`; `distinct`, `col` and
+ * `group` of v6 are not forwarded to it.
+ *
+ * @see {@link Model.findAndCountAll}
+ *
+ * @example
+ * ```ts
+ * const options: FindAndCountOptions<User> = { where: { active: true }, limit: 10, offset: 20 };
+ * const { count, rows } = await User.findAndCountAll(options);
+ * ```
+ */
+export type FindAndCountOptions<T = Values> = FindOptions<T>;
 
 /**
  * Options of `count`.

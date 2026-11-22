@@ -11,6 +11,7 @@ import type { MakeNullishOptional } from './types.ts';
 export type {
   AggregateOptions,
   CountOptions,
+  FindAndCountOptions,
   FindAndCountResult,
   FindOptions,
   FindOrCreateOptions,
@@ -50,9 +51,13 @@ export type Attributes<M extends AnyModel> = M['_attributes'];
 /** Creation attribute types of model instance type `M`. */
 export type CreationAttributes<M extends AnyModel> = MakeNullishOptional<M['_creationAttributes']>;
 
+/** The static side of a class: its own members without the construct signature (Sequelize v6 `NonConstructor`). */
+export type NonConstructor<T> = { [P in keyof T]: T[P] };
+
 /** A model class whose instances are `M` (Sequelize v6 `ModelStatic`). */
-export type ModelStatic<M extends AnyModel> = Omit<typeof Model, 'prototype'> & {
-  new (values?: Values, options?: BuildOptions): M;
+export type ModelStatic<M extends AnyModel> = NonConstructor<typeof Model> & {
+  // oxlint-disable-next-line typescript/no-explicit-any -- accepts classes whose constructor takes typed values (v6 declares `new (): M`).
+  new (values?: any, options?: BuildOptions): M;
   /** Instance prototype. */
   prototype: M;
 };
@@ -71,6 +76,21 @@ export type QualifiedTableName = Readonly<{
   delimiter: string;
   /** Quoted `"schema"."table"` reference. */
   toString: () => string;
+}>;
+
+/**
+ * Singular and plural forms of a model name (Sequelize v6 `ModelNameOptions`).
+ *
+ * @example
+ * ```ts
+ * const name: ModelNameOptions = { singular: 'person', plural: 'people' };
+ * ```
+ */
+export type ModelNameOptions = Readonly<{
+  /** Singular model name. */
+  singular?: string;
+  /** Plural model name. */
+  plural?: string;
 }>;
 
 /**
@@ -96,6 +116,12 @@ export type QualifiedTableName = Readonly<{
  */
 export type InitOptions = DefinitionOptions &
   Readonly<{
+    /**
+     * Singular and plural model name (Sequelize v6 `ModelOptions.name`). Declared so that code typed
+     * against v6 compiles; association and accessor names still derive from `modelName` and the
+     * inflection rules, not from this option.
+     */
+    name?: ModelNameOptions;
     /** Owning `Sequelize` instance. */
     sequelize: RuntimeOwner;
     /** Lifecycle hooks, by hook name. */

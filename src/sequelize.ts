@@ -25,11 +25,14 @@ import { SequelizeSchema } from './sequelize/sequelize-schema.ts';
 import { SequelizeTransactions } from './sequelize/sequelize-transactions.ts';
 import type { SequelizeOptions } from './connection/options.ts';
 import { Transaction } from './transaction/transaction.ts';
+import { Utils } from './utils-namespace.ts';
 import { transactionScope } from './transaction/transaction-runner.ts';
 
 export { QueryTypes } from './query/query-result-shaper.ts';
 export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';
 export type { DefineOptions } from './sequelize/sequelize-base.ts';
+/** Options of the `Sequelize` constructor (Sequelize v6 `Options`); same as {@link SequelizeOptions}. */
+export type Options = SequelizeOptions;
 
 const packageVersion = new PackageVersion();
 
@@ -73,6 +76,8 @@ export class Sequelize extends SequelizeMembers {
   static readonly where = where;
   /** JSON path builder. */
   static readonly json = json;
+  /** Subset of the v6 `Utils` helpers, see {@link Utils}. */
+  static readonly Utils = Utils;
 
   // Sequelize v6 static aliases of the DataTypes and the error classes.
   /** Alias of `DataTypes.ARRAY`. */

@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "paths": { "@orm": ["../../../node_modules/sequelize/types/index.d.ts"] } }
+}

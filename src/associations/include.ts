@@ -84,12 +84,22 @@ export type IncludeOptions = Readonly<{
   all?: boolean;
 }>;
 
-/** `include` option: a model, an alias, include options, or a list of them. */
-export type IncludeOption =
-  | Model
-  | string
-  | IncludeOptions
-  | readonly (Model | string | IncludeOptions)[];
+/**
+ * One entry of the `include` option (Sequelize v6 `Includeable`): a model, an association (or its
+ * alias), include options, or `{ all: true }` for every association of the model.
+ *
+ * @see {@link IncludeOptions}
+ *
+ * @example
+ * ```ts
+ * const entries: Includeable[] = [Post, 'profile', { model: Tag, required: false }, { all: true }];
+ * const users = await User.findAll({ include: entries });
+ * ```
+ */
+export type Includeable = Model | Association | string | IncludeOptions;
+
+/** `include` option: one entry or a list of entries (Sequelize v6 `Includeable | Includeable[]`). */
+export type IncludeOption = Includeable | readonly Includeable[];
 
 /** Normalized include. */
 export type IncludeNode = Readonly<{
