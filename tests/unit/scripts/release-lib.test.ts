@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   atLeast,
   bumpKind,
+  COVERED,
+  DEFERRED,
   changelogProblems,
+  ciVerdict,
   compareSemver,
   entryCount,
   formatTable,
   parseChangelog,
   parseSemver,
+  planSteps,
   requiredBump,
+  summaryLines,
 } from '../../../scripts/release-lib.ts';
 
 const repo = 'https://github.com/tormozz48/postgrelize';
@@ -154,5 +159,114 @@ describe('formatTable', () => {
         { name: 'bbb', status: 'FAIL', detail: '' },
       ]),
     ).toBe('PASS  a    x\nFAIL  bbb');
+  });
+});
+
+const run = (workflowName: string, status = 'completed', conclusion = 'success') => ({
+  workflowName,
+  status,
+  conclusion,
+  url: `https://github.com/x/actions/runs/${workflowName}`,
+});
+
+describe('CI verdict and step plan', () => {
+  const green = [run('CI'), run('Docs'), run('CodeQL')];
+
+  it('is green with run URLs when every run succeeded', () => {
+    const verdict = ciVerdict(green, true);
+    expect(verdict.state).toBe('green');
+    expect(verdict.ciUrl).toBe('https://github.com/x/actions/runs/CI');
+    expect(verdict.docsUrl).toBe('https://github.com/x/actions/runs/Docs');
+  });
+
+  it('is none on main without runs, deferred on a branch', () => {
+    expect(ciVerdict([], true).state).toBe('none');
+    expect(ciVerdict([], false).state).toBe('deferred');
+  });
+
+  it('is red when any run failed, even on a branch', () => {
+    expect(ciVerdict([run('CI'), run('Docs', 'completed', 'failure')], true).state).toBe('red');
+    expect(ciVerdict([run('CI', 'completed', 'cancelled')], false).state).toBe('red');
+  });
+
+  it('is pending on main and deferred on a branch while a run is unfinished', () => {
+    const running = [run('CI', 'in_progress', '')];
+    expect(ciVerdict(running, true).state).toBe('pending');
+    expect(ciVerdict(running, false).state).toBe('deferred');
+  });
+
+  it('red wins over unfinished', () => {
+    const mixed = [run('CI', 'in_progress', ''), run('Docs', 'completed', 'failure')];
+    expect(ciVerdict(mixed, true).state).toBe('red');
+  });
+
+  it('skips CI-covered steps with the run URL on a green commit', () => {
+    const plan = planSteps(ciVerdict(green, true), false);
+    expect(plan.quality).toBe(`${COVERED}https://github.com/x/actions/runs/CI`);
+    expect(plan.suites).toBe(plan.quality);
+    expect(plan.coverage).toBe(`${COVERED}https://github.com/x/actions/runs/Docs`);
+  });
+
+  it('runs coverage locally when no Docs run is green', () => {
+    const plan = planSteps(ciVerdict([run('CI')], true), false);
+    expect(plan.suites).toContain(COVERED);
+    expect(plan.coverage).toBeUndefined();
+  });
+
+  it('runs everything locally without a green CI run', () => {
+    for (const runs of [[], [run('CI', 'completed', 'failure')], [run('CI', 'queued', '')]]) {
+      expect(planSteps(ciVerdict(runs, true), false)).toEqual({
+        quality: undefined,
+        suites: undefined,
+        coverage: undefined,
+      });
+    }
+  });
+
+  it('defers long steps on a release branch without CI', () => {
+    const plan = planSteps(ciVerdict([], false), false);
+    expect(plan.quality).toContain(DEFERRED);
+    expect(plan.suites).toContain(DEFERRED);
+    expect(plan.coverage).toContain(DEFERRED);
+  });
+
+  it('does not treat a lone Docs run as CI coverage of the suites', () => {
+    const plan = planSteps(ciVerdict([run('Docs')], true), false);
+    expect(plan.suites).toBeUndefined();
+    expect(plan.quality).toBeUndefined();
+  });
+
+  it('--full runs everything even on a green commit', () => {
+    expect(planSteps(ciVerdict(green, true), true)).toEqual({
+      quality: undefined,
+      suites: undefined,
+      coverage: undefined,
+    });
+    expect(planSteps(ciVerdict([], false), true).suites).toBeUndefined();
+  });
+});
+
+describe('summaryLines', () => {
+  const pass = [{ status: 'PASS' }, { status: 'SKIP' }];
+  const ok = ciVerdict(
+    [{ workflowName: 'CI', status: 'completed', conclusion: 'success', url: 'u' }],
+    true,
+  );
+  const deferred = ciVerdict([], false);
+
+  it('says PASS only without failures', () => {
+    expect(summaryLines(pass, ok, false)).toEqual(['PASS: all checks passed']);
+    expect(summaryLines([...pass, { status: 'FAIL' }], ok, false)).toEqual([
+      'FAIL: 1 check(s) failed',
+    ]);
+  });
+
+  it('warns that CI was not checked on a release branch', () => {
+    expect(summaryLines(pass, deferred, false)[1]).toContain('preflight on main');
+    expect(summaryLines([{ status: 'FAIL' }], deferred, false)).toHaveLength(1);
+  });
+
+  it('reminds that --fast is not the real gate', () => {
+    expect(summaryLines(pass, ok, true)[1]).toContain('--fast');
   });
 });

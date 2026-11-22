@@ -6,12 +6,16 @@ import {
   atLeast,
   bumpKind,
   changelogProblems,
+  ciVerdict,
   compareSemver,
   formatTable,
   parseChangelog,
   parseSemver,
+  planSteps,
   requiredBump,
+  summaryLines,
 } from './release-lib.ts';
+import type { CiVerdict, WorkflowRun } from './release-lib.ts';
 
 type Status = 'PASS' | 'FAIL' | 'SKIP' | 'NOTE';
 interface PackInfo {
@@ -28,8 +32,10 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
 const beforeBump = args.includes('--before-bump');
 const fast = args.includes('--fast');
+const full = args.includes('--full');
 const target = args.find((arg) => !arg.startsWith('--')) ?? '';
 const rows: Row[] = [];
+let verdict: CiVerdict = { state: 'none', detail: 'CI not checked' };
 
 function sh(program: string, argv: string[], env?: NodeJS.ProcessEnv) {
   const result = spawnSync(program, argv, { cwd: root, encoding: 'utf8', env, maxBuffer: 1 << 28 });
@@ -62,7 +68,8 @@ function check(name: string, run: () => string | void): void {
   }
 }
 
-function command(name: string, cmd: string, argv: string[], slow = false): void {
+function command(name: string, cmd: string, argv: string[], slow = false, skip?: string): void {
+  if (skip) return record(name, 'SKIP', skip);
   if (slow && fast) return record(name, 'SKIP', '--fast');
   check(name, () => {
     const result = sh(cmd, argv);
@@ -176,27 +183,15 @@ function checkGenerated(): void {
 
 function checkCi(): void {
   check('CI green on release commit', () => {
-    if (git('rev-parse', '--abbrev-ref', 'HEAD') !== 'main')
-      return 'release branch: checked on the PR';
+    const onMain = git('rev-parse', '--abbrev-ref', 'HEAD') === 'main';
     const sha = git('rev-parse', 'HEAD');
-    const runs = gh([
-      'run',
-      'list',
-      '--commit',
-      sha,
-      '--json',
-      'name,status,conclusion',
-      '--limit',
-      '20',
-    ]);
-    if (!runs.ok) throw new Error(runs.out);
-    const list = JSON.parse(runs.stdout) as { name: string; status: string; conclusion: string }[];
-    if (list.length === 0) throw new Error(`no workflow runs for ${sha.slice(0, 7)}`);
-    const bad = list.filter((run) => run.status !== 'completed' || run.conclusion !== 'success');
-    if (bad.length > 0) {
-      throw new Error(bad.map((r) => `${r.name}: ${r.status}/${r.conclusion}`).join('\n'));
-    }
-    return `${list.map((run) => run.name).join(', ')} succeeded`;
+    const fields = 'workflowName,status,conclusion,url';
+    const runs = gh(['run', 'list', '--commit', sha, '--json', fields, '--limit', '20']);
+    if (!runs.ok && onMain) throw new Error(runs.out);
+    const list = runs.ok ? (JSON.parse(runs.stdout) as WorkflowRun[]) : [];
+    verdict = ciVerdict(list, onMain);
+    if (verdict.state === 'green' || verdict.state === 'deferred') return verdict.detail;
+    throw new Error(`${verdict.detail}${verdict.state === 'none' ? ` (${sha.slice(0, 7)})` : ''}`);
   });
 }
 
@@ -290,11 +285,11 @@ function benchReminder(tag: string): void {
 }
 
 async function main(): Promise<void> {
-  if (!parseSemver(target)) {
-    console.error('usage: npm run release:preflight -- X.Y.Z [--before-bump] [--fast]');
+  if (!parseSemver(target) || (fast && full)) {
+    console.error('usage: npm run release:preflight -- X.Y.Z [--before-bump] [--fast | --full]');
     process.exit(2);
   }
-  const mode = `${beforeBump ? 'before bump' : 'after bump'}${fast ? ', fast' : ''}`;
+  const mode = `${beforeBump ? 'before bump' : 'after bump'}${fast ? ', fast' : ''}${full ? ', full' : ''}`;
   console.log(`Release preflight for ${target} (${mode})\n`);
   let tag = '';
   check('latest tag', () => (tag = latestTag()));
@@ -304,23 +299,26 @@ async function main(): Promise<void> {
   checkChangelog(target, previous);
   checkGenerated();
   checkCi();
-  command('lint', 'npm', ['run', 'lint']);
-  command('format:check', 'npm', ['run', 'format:check']);
-  command('typecheck', 'npm', ['run', 'typecheck']);
-  command('docs (TypeDoc + VitePress)', 'npm', ['run', 'docs']);
-  if (!fast) await checkDatabase();
-  else record('PostgreSQL reachable', 'SKIP', '--fast');
-  command('npm test (all projects incl. docs examples)', 'npm', ['test'], true);
+  const plan = planSteps(verdict, full);
+  command('lint', 'npm', ['run', 'lint'], false, plan.quality);
+  command('format:check', 'npm', ['run', 'format:check'], false, plan.quality);
+  command('typecheck', 'npm', ['run', 'typecheck'], false, plan.quality);
+  command('docs (TypeDoc + VitePress)', 'npm', ['run', 'docs'], false, plan.quality);
+  if (fast) record('PostgreSQL reachable', 'SKIP', '--fast');
+  else if (plan.suites && plan.coverage) record('PostgreSQL reachable', 'SKIP', plan.suites);
+  else await checkDatabase();
+  const legacy = ['vitest', 'run', '--project', 'decorators-legacy'];
+  command('tests: decorators-legacy', 'npx', legacy, true, plan.suites);
   command('build', 'npm', ['run', 'build']);
-  command('test:build', 'npm', ['run', 'test:build'], true);
-  command('test:coverage (thresholds)', 'npm', ['run', 'test:coverage'], true);
+  command('test:build', 'npm', ['run', 'test:build'], true, plan.quality);
+  const coverageName = 'tests + coverage: unit, integration, compat, docs examples, thresholds';
+  command(coverageName, 'npm', ['run', 'test:coverage'], true, plan.coverage);
   checkPack();
   if (tag) benchReminder(tag);
   checkNpm(tag);
   console.log(`\n${formatTable(rows)}`);
+  console.log(`\n${summaryLines(rows, verdict, fast).join('\n')}`);
   const failed = rows.filter((row) => row.status === 'FAIL').length;
-  console.log(failed > 0 ? `\nFAIL: ${failed} check(s) failed` : '\nPASS: all checks passed');
-  if (fast) console.log('--fast skipped the long checks; run without it before tagging.');
   process.exit(failed > 0 ? 1 : 0);
 }
 

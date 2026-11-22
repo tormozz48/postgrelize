@@ -17,15 +17,24 @@ Full flow for publishing `postgrelize` to npmjs.com (ADR-028) plus the deprecate
 
 ## 1. Preflight before the bump
 
-On an up-to-date `main` with a clean tree and the database up (`npm run db:up`):
+On an up-to-date `main` with a clean tree:
 
 ```bash
 npm run release:preflight -- X.Y.Z --before-bump
 ```
 
-It checks: branch, clean tree, up to date with origin, tag free, semver greater than the latest tag, `package.json` still on the previous version, a non-empty `[Unreleased]`, bump size against the changelog (breaking ⇒ major/minor), `npm run llm:build` leaves no diff, lint, format, typecheck, `npm run docs` (undocumented exports, example enforcement), `npm test` (all projects, including the docs examples), build + `test:build`, `test:coverage` thresholds, `npm pack` content, the latest CI run on the commit, npm registry state (404 before the first publish, else equal to the previous version), and a bench-gate reminder.
+The preflight does not repeat what CI already ran on the same commit. `CI green on release commit` looks up the GitHub workflow runs for `HEAD` and decides what runs locally:
 
-Exit criteria: final line `PASS`, exit code 0. Read the whole table. Any `FAIL` blocks the release: fix it in its own PR (or tell the maintainer), then rerun. Do not edit the script to make it pass. `NOTE bench gate` means query code changed since the last tag: run the gate from `AGENTS.md` (3 runs + `bench/compare.ts`) on a quiet machine and report the numbers. `--fast` skips the long runs; it is for iterating only, never for the real gate.
+| Situation | Local run |
+| --- | --- |
+| `main`, every run green (CI, Docs, CodeQL) | Skips lint, format, typecheck, `npm run docs`, the test suites, `test:build` as `SKIP covered by CI run <url>` (the `CI` run covers them, the `Docs` run covers `test:coverage`). Runs the checks CI does not make: branch, tree, origin, tag, semver, changelog and bump size, `llm:build` freshness, `build` (needed for the pack check), `npm pack` content, npm registry state, bench-gate reminder |
+| `main`, CI red, still running, or no run found | The check **fails** (the final `PASS` is impossible). All local steps run as before, so you see the failure |
+| release branch, no CI run yet (before the PR) | The check passes as deferred. Skips the long steps as `SKIP not run locally, CI runs it on the release PR` and coverage as `…the Docs run on main checks it after the merge`; runs the cheap ones. The summary says CI was not checked |
+| any, `--full` | Ignores CI and runs everything locally (database up, `npm run db:up`): lint, format, typecheck, docs, `decorators-legacy`, build, `test:build` and one `test:coverage` run (unit, integration, compat, docs examples, thresholds) |
+
+What CI runs (`ci.yml`): lint, format, typecheck, `test:unit` (unit + `decorators-legacy`), build, `test:build` on Node 20/22/24, `npm run docs` on Node 22, the package check, and `test:db` (integration, compat, docs examples) on PostgreSQL 16/17/18. Coverage thresholds run only in `docs.yml`, on pushes to `main`. When the suites run locally, `npm run test:coverage` is the single run (it executes the unit, integration, compat and docs projects), plus the `decorators-legacy` project it does not include.
+
+Exit criteria: final line `PASS`, exit code 0. Read the whole table, including every `SKIP` and its reason. Any `FAIL` blocks the release: fix it in its own PR (or tell the maintainer), then rerun. Do not edit the script to make it pass. `NOTE bench gate` means query code changed since the last tag: run the gate from `AGENTS.md` (3 runs + `bench/compare.ts`) on a quiet machine and report the numbers. `--fast` skips the long runs; it is for iterating only, never for the real gate (`--fast` and `--full` cannot be combined). Use `--full` when CI is unavailable or you distrust it; never loop the full local run on a loaded machine to "pass" a flake, read the CI result instead.
 
 Also check by hand what the script cannot: the `[Unreleased]` lines read well (one plain line each, PR link), user-visible changes of every merged PR since the last tag are present (`git log <lastTag>..HEAD --merges`), README, guide pages and `docs/guide/migrating.md` describe the released behaviour, and nothing describes planned features as if they exist.
 
@@ -38,10 +47,10 @@ npm version X.Y.Z --no-git-tag-version
 
 - `CHANGELOG.md`: rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (today), add a new empty `## [Unreleased]` above it, update the links at the bottom: `[Unreleased]: …/compare/vX.Y.Z...HEAD`, `[X.Y.Z]: …/compare/v<previous>...vX.Y.Z`. `tests/docs/changelog.test.ts` checks the structure. If the release graduates the version scheme (1.0.0), the semver sentence in the changelog intro and in `AGENTS.md` ("Semver while < 1.0") changes in the same PR.
 - `.10x/status.md` and `.10x/handoff.md`: current version and open items.
-- Run `npm run release:preflight -- X.Y.Z` on the branch (default mode, after the bump). Its `branch` check accepts `chore/release-X.Y.Z`. It must pass.
+- Run `npm run release:preflight -- X.Y.Z` on the branch (default mode, after the bump). Its `branch` check accepts `chore/release-X.Y.Z`. It must pass. The branch has no CI yet, so the long suites show as `SKIP not run locally` (the release PR's CI runs them before the merge); it still checks the changelog sections and links, `package.json`, generated files, `build` and the pack content.
 - Commit `chore(release): X.Y.Z`, push the branch, open the PR. Fill the "Release PR" part of the template.
 
-Merge only after CI is green: read the result of every check (`gh pr checks <n>` or `gh run view`), then `gh pr merge <n> --merge` as a separate command. Never chain the merge after a wait without reading the output.
+Merge only after CI is green (this is where the suites run for the release commit): read the result of every check (`gh pr checks <n>` or `gh run view`), then `gh pr merge <n> --merge` as a separate command. Never chain the merge after a wait without reading the output.
 
 ## 3. Tag and publish
 
@@ -50,7 +59,7 @@ git switch main && git pull --ff-only
 npm run release:preflight -- X.Y.Z
 ```
 
-All must pass on the merge commit, including `CI green on release commit`. Then, and only then:
+All must pass on the merge commit, including `CI green on release commit`: it fails while CI or Docs on the merge commit are running or red, so wait for them and the long suites show as `SKIP covered by CI run <url>`. Then, and only then:
 
 ```bash
 git tag vX.Y.Z
