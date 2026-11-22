@@ -107,7 +107,23 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
       await Replicated.findAll({ transaction }); // the writer: transactions never use readers
     });
     // #endregion replication
-    if (queued !== 1 || fresh.length !== 1) {
+    // #region connection-pool
+    const manager = replicated.connectionManager;
+    const { pool } = manager; // live counters: size, available, using, waiting, maxSize
+
+    // A raw connection held outside any query; `type: 'read'` takes a replica.
+    const reader = await manager.getConnection({ type: 'read' });
+    const readerUsing = pool.read?.using; // 1: the replicas' pools, `pool.write?.using` is 0
+    try {
+      await reader.query('SELECT 1');
+      await manager.releaseConnection(reader); // back to the replica pool it came from
+    } catch (error) {
+      await manager.destroyConnection(reader); // a broken connection: closed, never reused
+      throw error;
+    }
+    // pool: { size: 1, available: 1, using: 0, waiting: 0 }
+    // #endregion connection-pool
+    if (queued !== 1 || fresh.length !== 1 || readerUsing !== 1 || pool.using !== 0) {
       throw new Error('sessions example: unexpected replication result');
     }
   } finally {

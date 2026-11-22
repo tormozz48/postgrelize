@@ -1,6 +1,6 @@
 # ADR-030: Public `sequelize.connectionManager` (`getConnection` / `releaseConnection`)
 
-**Status:** Accepted
+**Status:** Accepted (extended by ADR-033: `pool` and `destroyConnection`)
 **Date:** 2026-11-22
 **Feature:** Sequelize v6 parity (connection routing)
 **Author:** 10x-Team (Principal Architect)

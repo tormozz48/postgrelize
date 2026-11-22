@@ -157,7 +157,9 @@ export type {
 export type {
   Connection,
   ConnectionManagerContract,
+  ConnectionPool,
   GetConnectionOptions,
+  PoolCounters,
 } from './connection/connection-types.ts';
 export type { RetryMatch, RetryOptions } from './connection/retry.ts';
 export type {

@@ -5,6 +5,7 @@ import type {
   Client,
   Connection,
   ConnectionManagerContract,
+  ConnectionPool,
   ExecuteOptions,
   GetConnectionOptions,
   QueryResult,
@@ -13,6 +14,7 @@ import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
 import type { PgErrorMapper } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { QueryLogger } from './query-logger.ts';
+import { ManagerPools } from './pool-counters.ts';
 import { ReplicaRouter } from './replica-router.ts';
 import { StatementTimeout } from './statement-timeout.ts';
 import { StatementCache, type StatementClient } from './statement-cache.ts';
@@ -22,8 +24,10 @@ export type {
   Client,
   Connection,
   ConnectionManagerContract,
+  ConnectionPool,
   ExecuteOptions,
   GetConnectionOptions,
+  PoolCounters,
   QueryResult,
 } from './connection-types.ts';
 
@@ -50,6 +54,7 @@ export class ConnectionManager implements ConnectionManagerContract {
   readonly #copies: CopyRunner;
   readonly #statements: StatementCache | undefined;
   readonly #timeouts = new StatementTimeout();
+  #counters: ManagerPools | undefined;
 
   /**
    * @param config - Writer pool configuration.
@@ -77,6 +82,20 @@ export class ConnectionManager implements ConnectionManagerContract {
       ConnectionManager.#pool(config),
       readConfigs.map((readConfig) => ConnectionManager.#pool(readConfig)),
     );
+  }
+
+  /**
+   * Live connection counts of the pools (Sequelize v6 `connectionManager.pool`); see
+   * {@link ConnectionPool}.
+   *
+   * @example
+   * ```ts
+   * const { using, maxSize } = sequelize.connectionManager.pool;
+   * ```
+   */
+  get pool(): ConnectionPool {
+    this.#counters ??= new ManagerPools(this.#router.writer, this.#router.readers);
+    return this.#counters;
   }
 
   /**
@@ -130,7 +149,8 @@ export class ConnectionManager implements ConnectionManagerContract {
    * ```
    */
   getConnection(options: GetConnectionOptions = {}): Promise<Connection> {
-    const read = options.type === 'read' && options.useMaster !== true;
+    const read =
+      (options.type === 'read' || options.type === 'SELECT') && options.useMaster !== true;
     return this.#acquire(this.#router.pool(read ? 'read' : 'write'));
   }
 
@@ -149,6 +169,24 @@ export class ConnectionManager implements ConnectionManagerContract {
    */
   releaseConnection(connection: Connection): void {
     connection.release();
+  }
+
+  /**
+   * Removes a connection from the pool that owns it without returning it (Sequelize v6
+   * `connectionManager.destroyConnection`): the client is closed and the pool opens a replacement
+   * on demand. Destroying a connection that was already released or destroyed is ignored.
+   *
+   * @param connection - Connection obtained from `getConnection`.
+   * @returns Resolves when the connection is removed.
+   *
+   * @example
+   * ```ts
+   * const connection = await sequelize.connectionManager.getConnection();
+   * await sequelize.connectionManager.destroyConnection(connection);
+   * ```
+   */
+  async destroyConnection(connection: Connection): Promise<void> {
+    connection.release(true);
   }
 
   /**
