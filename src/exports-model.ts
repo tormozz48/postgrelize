@@ -127,6 +127,7 @@ export type {
   Optional,
   SqlValue,
   WhereAttributeHash,
+  WhereAttributeHashValue,
   WhereAttributeValue,
   WhereLogic,
   WhereOperators,

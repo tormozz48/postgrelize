@@ -1,6 +1,7 @@
 import type { QueryResult } from '../connection/connection-manager.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
 import type { RetryOptions } from '../connection/retry.ts';
+import type { Replacements } from '../query/raw-query.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
@@ -29,6 +30,13 @@ export type QueryOptionsBase = Readonly<{
   retry?: RetryOptions;
   /** Force the writer even for SELECTs when read replicas are configured. */
   useMaster?: boolean;
+  /**
+   * Values of `?` (array) or `:name` (object) placeholders written in raw SQL inside the options
+   * (`where: literal('"a" = :a')`, `attributes: [[literal(...), 'x']]`), as in Sequelize v6. Every
+   * value is sent as a bound parameter, never concatenated into the SQL text; arrays expand to a
+   * comma separated list of parameters.
+   */
+  replacements?: Replacements;
 }>;
 
 /** Services a `Sequelize` instance provides to its models. */

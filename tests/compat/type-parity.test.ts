@@ -13,8 +13,8 @@ type Exceptions = Readonly<{
 
 const CATEGORIES = new Set(['not-planned', 'other-dialect', 'internal', 'tracked']);
 // Lower these when entries are removed from the allow-list; they must never grow.
-const MAX_TYPE_NAMES = 148;
-const MAX_OPTION_KEYS = 79;
+const MAX_TYPE_NAMES = 147;
+const MAX_OPTION_KEYS = 71;
 
 const here = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
 const exceptions = JSON.parse(

@@ -67,9 +67,9 @@ export type FindOptions<T = Values> = QueryOptionsBase &
   CteFindOptions;
 
 /**
- * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options. The count
- * query reuses `where`, `include`, `paranoid`, `transaction` and `logging`; `distinct`, `col` and
- * `group` of v6 are not forwarded to it.
+ * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options plus the
+ * count options `distinct` and `col`. The count query reuses `where`, `include`, `paranoid`,
+ * `distinct`, `col`, `replacements`, `transaction` and `logging`; `group` of v6 is not forwarded to it.
  *
  * @see {@link Model.findAndCountAll}
  *
@@ -79,7 +79,14 @@ export type FindOptions<T = Values> = QueryOptionsBase &
  * const { count, rows } = await User.findAndCountAll(options);
  * ```
  */
-export type FindAndCountOptions<T = Values> = FindOptions<T>;
+export type FindAndCountOptions<T = Values> = FindOptions<T> &
+  Readonly<{
+    /** Count with `count(DISTINCT ...)`.
+     * @defaultValue false */
+    distinct?: boolean;
+    /** Column to count. Default: `*` (the primary key with `distinct`). */
+    col?: string;
+  }>;
 
 /**
  * Options of `count`.

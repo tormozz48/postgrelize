@@ -34,9 +34,12 @@ Differences to know:
 
 - `HasMany`, `HasOne`, `BelongsTo` and `BelongsToMany` are exported as generic types next to the decorators of the same names; use `Sequelize.HasMany` (and the others) for the class value.
 - `InitOptions.name` is accepted so v6 code compiles, but it is not applied yet: association names come from `modelName` and the inflection rules.
-- `FindOptions.replacements` is not typed: finders do not substitute `:name` placeholders (`sequelize.query` does).
+- `FindOptions.replacements` works as in v6: `:name` and `?` placeholders inside `literal()` (in `where`, `attributes`, `order`, ...) of `findAll`, `findOne`, `findByPk`, `count` and `findAndCountAll` are substituted, and every value is sent as a bound parameter (`$1..$n`) instead of being escaped into the SQL text. Unlike v6, `update` and `destroy` accept `replacements` too (v6 rejects them for `update`). Before 1.3.0 the finders ignored the option.
+- `Model#reload(options)` takes the finder options (`include`, `attributes`, `paranoid`, `lock`, `hooks`, ...) and reads the row through `findOne`, so default scopes and `paranoid` apply as in v6: reloading a soft-deleted row needs `paranoid: false`. Associations the instance was built with are not reloaded unless you pass `include`.
+- `findByPk(id, { rejectOnEmpty: true })` resolves to the model (not `M | null`), as `findOne` does.
 - `sequelize.query` accepts a string or a `literal()`, not the v6 `{ query, values }` object form.
-- Option keys that postgrelize does not implement (`searchPath`, `omitNull`, `findAndCountAll` `distinct`, ...) are not in the option types, so the compiler points at them.
+- Option keys that postgrelize does not implement (`searchPath`, `omitNull`, ...) are not in the option types, so the compiler points at them.
+- `Model.sequelize` and `instance.sequelize` are typed `Sequelize` (not optional, it throws on a model that is not initialized), `WhereAttributeHash` defaults to `any`, attribute `get` / `set` and model-level `validate` functions can be written with a typed `this` and a callback style `next`, and the parameters of hook functions are `any` so an unannotated hook compiles.
 
 ## 3. Check the connection options
 

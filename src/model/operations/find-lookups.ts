@@ -10,6 +10,7 @@ import type { ModelValues } from '../model-values.ts';
 import type {
   AnyModel,
   CreationAttributes,
+  FindAndCountOptions,
   FindOptions,
   FindOrCreateOptions,
   ModelStatic,
@@ -102,13 +103,15 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
    */
   async findAndCountAll<M extends AnyModel>(
     model: ModelStatic<M>,
-    options: FindOptions,
+    options: FindAndCountOptions,
   ): Promise<Readonly<{ count: number; rows: M[] }>> {
     const [count, rows] = await Promise.all([
       model.count({
         ...(options.where === undefined ? {} : { where: options.where }),
         ...(options.include === undefined ? {} : { include: options.include }),
         ...(options.paranoid === undefined ? {} : { paranoid: options.paranoid }),
+        ...(options.distinct === undefined ? {} : { distinct: options.distinct }),
+        ...(options.col === undefined ? {} : { col: options.col }),
         ...this.services.values.queryOptions(options),
       }),
       model.findAll(options),

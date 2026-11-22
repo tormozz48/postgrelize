@@ -3,6 +3,7 @@ import { lifecycle } from './model-services.ts';
 import type {
   AnyModel,
   AttributeAmounts,
+  FindOptions,
   IncrementOptions,
   InstanceDestroyOptions,
   SaveOptions,
@@ -79,17 +80,23 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
 
   /**
    * Re-reads the row from the database and replaces the instance values, discarding unsaved changes.
+   * The row is read with `findOne` by primary key, so `include`, `attributes`, `paranoid`, `lock`,
+   * scopes and the find hooks apply as in Sequelize v6 (a soft-deleted row needs `paranoid: false`).
    *
-   * @param options - Query options.
+   * @param options - Find options; `where` is always the primary key of this instance.
    * @returns This instance.
    * @throws InstanceError when the row no longer exists.
    * @example
    * ```ts
    * await user.reload({ transaction });
+   * await user.reload({ include: [Post], lock: transaction.LOCK.UPDATE });
    * ```
    */
-  reload(options: QueryOptionsBase = {}): Promise<this> {
-    return lifecycle.reload(this as unknown as AnyModel, options) as unknown as Promise<this>;
+  reload(options: FindOptions<TAttributes> = {}): Promise<this> {
+    return lifecycle.reload(
+      this as unknown as AnyModel,
+      options as FindOptions,
+    ) as unknown as Promise<this>;
   }
 
   /**

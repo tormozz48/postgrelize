@@ -11,6 +11,7 @@ import type {
   AnyModel,
   AttributeAmounts,
   BuildOptions,
+  FindOptions,
   IncrementOptions,
   InstanceDestroyOptions,
   ModelStatic,
@@ -136,27 +137,29 @@ export class InstanceLifecycle {
   }
 
   /**
-   * Reloads values from the database.
+   * Reloads values from the database through `findOne`, so scopes, `paranoid`, `include`, `lock`,
+   * `attributes` and find hooks apply as in Sequelize v6.
    *
    * @param instance - Instance.
-   * @param options - Query options.
+   * @param options - Find options; `where` is always the primary key of the instance.
    * @returns The instance.
    * @throws InstanceError when the row no longer exists.
    */
-  async reload<I extends AnyModel>(instance: I, options: QueryOptionsBase): Promise<I> {
-    const { registry, compiler, selects, columns } = this.#services;
-    const { definition, runtime } = registry.state(instance.constructor);
-    const where = columns.primaryKeyWhere(definition, instance.dataValues as Values);
-    const result = await runtime.execute(
-      compiler.compile(selects.build(definition, { where, limit: 1 })),
-      options,
-    );
-    if (result.rows[0] === undefined) {
+  async reload<I extends AnyModel>(instance: I, options: FindOptions): Promise<I> {
+    const model = instance.constructor as ModelStatic<AnyModel>;
+    const { definition } = this.#services.registry.state(model);
+    const where = this.#services.columns.primaryKeyWhere(definition, instance.dataValues as Values);
+    const reloaded = await model.findOne({ ...options, where });
+    if (reloaded === null) {
       throw new InstanceError(
         'Instance could not be reloaded because it does not exist anymore (find call returned null)',
       );
     }
-    return this.refresh(instance, definition, result.rows[0]);
+    instance.set(reloaded.dataValues, { raw: true });
+    instance.isNewRecord = false;
+    instance._previousDataValues = { ...instance.dataValues };
+    InstanceState.of(instance).reset();
+    return instance;
   }
 
   /**

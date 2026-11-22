@@ -59,3 +59,50 @@ describe('prepareRawQuery', () => {
     expect(() => rawQuery.prepare('SELECT $3', { bind: [1] })).toThrow(/Missing bind/);
   });
 });
+
+describe('RawQuery.inject (replacements of a compiled statement)', () => {
+  it('returns the statement unchanged without replacements', () => {
+    const query = { text: 'SELECT $1', values: [1] };
+    expect(rawQuery.inject(query, undefined)).toBe(query);
+  });
+
+  it('keeps the bound values of the statement and binds each replacement after them', () => {
+    expect(
+      rawQuery.inject(
+        {
+          text: 'SELECT * FROM t WHERE a = $1 AND b > :min AND c IN (:ids) AND d = $2',
+          values: ['x', 'y'],
+        },
+        { min: 5, ids: [1, 2] },
+      ),
+    ).toEqual({
+      text: 'SELECT * FROM t WHERE a = $1 AND b > $2 AND c IN ($3, $4) AND d = $5',
+      values: ['x', 5, 1, 2, 'y'],
+    });
+  });
+
+  it('numbers positional replacements in order and reuses a repeated statement value', () => {
+    expect(rawQuery.inject({ text: 'SELECT $1, ?, $1, ?', values: ['v'] }, ['a', 'b'])).toEqual({
+      text: 'SELECT $1, $2, $1, $3',
+      values: ['v', 'a', 'b'],
+    });
+  });
+
+  it('never scans a bound value, whatever it contains', () => {
+    const payload = "x'; DROP TABLE t; -- :name ? $1";
+    expect(
+      rawQuery.inject({ text: 'SELECT $1, :name', values: [payload] }, { name: payload }),
+    ).toEqual({ text: 'SELECT $1, $2', values: [payload, payload] });
+  });
+
+  it('leaves quoted text, comments, casts and unknown $ tokens alone', () => {
+    const text = `SELECT ':a', ":a", $$:a$$, a::int, $name, $9 -- :a`;
+    expect(rawQuery.inject({ text, values: [] }, { a: 1 })).toEqual({ text, values: [] });
+  });
+
+  it('throws for a placeholder without a replacement value', () => {
+    expect(() => rawQuery.inject({ text: 'SELECT :x', values: [] }, { y: 1 })).toThrow(
+      /Missing replacement/,
+    );
+  });
+});

@@ -1,5 +1,5 @@
 import type { QueryResult } from '../connection/connection-manager.ts';
-import type { AnyModel, ModelStatic } from '../model/options.ts';
+import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import type { RowMapper } from '../model/row-mapper.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 import type { ColumnDescription } from '../query-interface/query-interface.ts';
@@ -105,6 +105,8 @@ export type QueryOptions = QueryOptionsBase &
     mapToModel?: boolean;
     /** Return plain rows even with `model`. */
     raw?: boolean;
+    /** Nests `a.b` keys of the rows into objects (`{ a: { b } }`); implies `type: SELECT` unless a type is given. */
+    nest?: boolean;
   }>;
 
 /**
@@ -191,7 +193,9 @@ export class QueryResultShaper {
   type(options: QueryOptions): QueryType | undefined {
     return (
       options.type ??
-      (options.model !== undefined || options.plain === true ? QueryTypes.SELECT : undefined)
+      (options.model !== undefined || options.plain === true || options.nest === true
+        ? QueryTypes.SELECT
+        : undefined)
     );
   }
 
@@ -225,7 +229,9 @@ export class QueryResultShaper {
   #shapeRows(result: QueryResult, options: QueryOptions): readonly unknown[] {
     const model = options.model;
     if (model === undefined || options.raw === true) {
-      return result.rows;
+      return options.nest === true
+        ? result.rows.map((row) => this.#rows.nest(row as Values))
+        : result.rows;
     }
     return result.rows.map((row) =>
       model.build(options.mapToModel === true ? this.#rows.parseModel(model, row) : row, {

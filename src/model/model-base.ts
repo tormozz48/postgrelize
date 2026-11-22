@@ -1,3 +1,4 @@
+import type { Sequelize } from '../sequelize.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import { InstanceState } from './instance-state.ts';
 import type {
@@ -14,7 +15,6 @@ import type {
   QualifiedTableName,
   Values,
 } from './options.ts';
-import type { RuntimeOwner } from './runtime.ts';
 
 /**
  * Core of every model: instance state, model metadata and `init`. Capabilities are added by the
@@ -50,7 +50,7 @@ export class ModelBase {
   }
 
   /** `Sequelize` instance the model belongs to. */
-  get sequelize(): RuntimeOwner {
+  get sequelize(): Sequelize {
     return (this.constructor as typeof ModelBase).sequelize;
   }
 
@@ -85,9 +85,9 @@ export class ModelBase {
   }
 
   /** `Sequelize` instance the model belongs to. */
-  static get sequelize(): RuntimeOwner {
+  static get sequelize(): Sequelize {
     return (
-      registry.sequelizeOf(this) ??
+      (registry.sequelizeOf(this) as unknown as Sequelize | undefined) ??
       (() => {
         throw new Error('Model is not initialized.');
       })()
