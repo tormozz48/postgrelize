@@ -66,8 +66,9 @@
     "api:differences": "node --experimental-strip-types scripts/generate-api-differences.ts",
     "llm:build": "node --experimental-strip-types scripts/generate-llm.ts",
     "release:preflight": "node --experimental-strip-types scripts/release-preflight.ts",
-    "docs": "typedoc && vitepress build docs",
-    "docs:dev": "typedoc && vitepress dev docs",
+    "docs:options": "node --experimental-strip-types scripts/generate-option-reference.ts",
+    "docs": "typedoc && npm run docs:options && vitepress build docs",
+    "docs:dev": "typedoc && npm run docs:options && vitepress dev docs",
     "docs:examples": "vitest run --project docs",
     "bench": "vitest run --project bench"
   },
