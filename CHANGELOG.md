@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-22
+
+Sequelize v6 parity for a production migration, part two: the `retry` option, the public `connectionManager` and the Sequelize v6 type API.
+
 ### Added
 
 - The `retry` option of Sequelize v6 (`max`, `match`, `backoffBase`, `backoffExponent`, `backoffJitter`, `timeout`, `name`, `report`) on the `Sequelize` constructor, on queries and on transactions (merged field by field over the instance option). It repeats a failed query, including the connection acquisition, and the connection acquisition plus `BEGIN` of a transaction, with the matching and backoff rules of `retry-as-promised` (implemented in-house, no new dependency). A statement inside an open transaction, `COMMIT`, COPY and `listen` are not retried; nothing is retried by default or without `max`. The connection error classes carry the v6 names (`SequelizeConnectionRefusedError`, ...), so v6 `match` lists work unchanged. ADR-031
@@ -282,7 +286,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tormozz48/postgrelize/compare/v0.12.0...v1.0.0
 [0.12.0]: https://github.com/tormozz48/postgrelize/compare/v0.11.0...v0.12.0
