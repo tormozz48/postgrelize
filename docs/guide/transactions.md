@@ -76,13 +76,13 @@ Anything that is not a namespace (no `bind` or `run`) throws `Must provide CLS n
 
 `noWait` is a PostgreSQL extension; Sequelize v6 has no way to express `NOWAIT`.
 
-## Read-only transactions
+## Read-only transactions <Ext />
 
 `readOnly: true` makes PostgreSQL reject every write in the transaction. On a [read replica setup](./sessions#read-replicas) the transaction still runs on the writer.
 
 <<< @/examples/transactions.ts#read-only{ts}
 
-## Deferrable read-only transactions
+## Deferrable read-only transactions <Ext />
 
 `deferrable: true` together with `isolationLevel: SERIALIZABLE` and `readOnly: true` starts a `SERIALIZABLE READ ONLY DEFERRABLE` transaction, meant for long reports. PostgreSQL waits for a snapshot that cannot be involved in a serialization failure, then runs the transaction without taking predicate locks and without ever failing with `40001`. The start may be delayed while other serializable transactions finish. For any other transaction PostgreSQL accepts the flag and ignores it; `deferrable` must be a boolean and is ignored for savepoints.
 

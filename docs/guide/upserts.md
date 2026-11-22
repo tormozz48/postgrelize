@@ -1,5 +1,9 @@
 # Upserts and RETURNING
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 Sequelize v6 can upsert only with fixed column lists (`upsert`, `bulkCreate({ updateOnDuplicate })`). postgrelize keeps those and adds the `onConflict` option, which exposes the full `INSERT ... ON CONFLICT` clause of PostgreSQL: any conflict target, expression updates, a `WHERE` condition and `DO NOTHING`. `Model.insert()` returns every written row with a flag telling whether it was inserted or updated.
 
 The examples use this model, with a composite unique key and a partial unique index:
@@ -14,7 +18,7 @@ These work unchanged:
 
 `upsert` picks the conflict target from the unique keys of the given attributes (or the primary key); `conflictFields` sets it explicitly. As in Sequelize v6 on PostgreSQL, the second element of the result is `null`. `bulkCreate` takes `updateOnDuplicate`, `conflictAttributes`, `conflictWhere` (for partial indexes) and `ignoreDuplicates`.
 
-## `onConflict`
+## `onConflict` <Ext />
 
 `onConflict` is accepted by `Model.insert`, `create`, `bulkCreate`, `upsert` and [`insertFrom`](./bulk-writes#insert-select). It has two parts:
 
@@ -25,7 +29,7 @@ onConflict: {
 }
 ```
 
-### Expression updates and `wasInserted`
+### Expression updates and `wasInserted` <Ext />
 
 `Model.insert(rows, options)` inserts one row or an array of rows and returns model instances for every row written. `instance.wasInserted` is `true` for inserted rows and `false` for rows updated on conflict:
 
@@ -33,7 +37,7 @@ onConflict: {
 
 Inside `action.update`, `EXCLUDED` is the proposed row and the model name is the alias of the existing row. Use `excluded('attr')` for a column of the proposed row, `col('Counter.attr')` for the existing one, and `fn` / `literal` for anything else. `updatedAt` is set automatically.
 
-### Conditional updates
+### Conditional updates <Ext />
 
 `action.where` adds `DO UPDATE ... WHERE`. Rows that fail the condition are left alone and are not returned:
 
@@ -41,7 +45,7 @@ Inside `action.update`, `EXCLUDED` is the proposed row and the model name is the
 
 This is the usual pattern for "apply only newer versions" in sync jobs and event consumers.
 
-### Conflict targets
+### Conflict targets <Ext />
 
 | `target`                                           | SQL                                                    |
 | -------------------------------------------------- | ------------------------------------------------------ |
@@ -72,7 +76,7 @@ PostgreSQL returns written rows with `RETURNING`. Besides `create` and `save` (w
 
 <<< @/examples/upserts.ts#returning{ts}
 
-## Old values with `returningOld` (PostgreSQL 18+)
+## Old values with `returningOld` (PostgreSQL 18+) <Ext />
 
 PostgreSQL 18 can return the row as it was before the statement (`RETURNING OLD.*`). With `returningOld: true`, every returned instance gets `oldValues`: the attribute values before the write, or `null` when the row was inserted.
 

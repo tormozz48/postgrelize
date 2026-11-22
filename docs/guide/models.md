@@ -64,17 +64,19 @@ As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precisi
 
 ## PostgreSQL-specific types
 
+Types marked <Ext /> do not exist in Sequelize v6.
+
 <<< @/examples/types.ts#define{ts}
 
 <<< @/examples/types.ts#use{ts}
 
-- `HSTORE` values are objects with string (or `null`) values, like Sequelize v6 with `pg-hstore`; `Op.contains` and `Op.eq` accept objects. Run `CREATE EXTENSION hstore` first. `LTREE` needs `CREATE EXTENSION ltree`; use `literal()` for its operators (`<@`, `@>`, `~`).
-- `TIMESTAMP` is `TIMESTAMP WITHOUT TIME ZONE`. Values are `Date`s whose local wall-clock time is the stored time, so they depend on the process time zone.
-- `MONEY` is read as the server formats it (`lc_monetary`, for example `'$12.50'`). Write a number or a string.
-- `BIT(n)` and `VARBIT(n)` values are strings of `0` and `1`; `BIT` without a length is `BIT(1)`.
-- `XML`, `MACADDR8` and `TSQUERY` values are strings.
+- <Ext /> `HSTORE` operators and `LTREE` are postgrelize additions; `HSTORE` values are objects with string (or `null`) values, like Sequelize v6 with `pg-hstore`; `Op.contains` and `Op.eq` accept objects. Run `CREATE EXTENSION hstore` first. `LTREE` needs `CREATE EXTENSION ltree`; use `literal()` for its operators (`<@`, `@>`, `~`).
+- <Ext /> `TIMESTAMP` is `TIMESTAMP WITHOUT TIME ZONE`. Values are `Date`s whose local wall-clock time is the stored time, so they depend on the process time zone.
+- <Ext /> `MONEY` is read as the server formats it (`lc_monetary`, for example `'$12.50'`). Write a number or a string.
+- <Ext /> `BIT(n)` and `VARBIT(n)` values are strings of `0` and `1`; `BIT` without a length is `BIT(1)`.
+- <Ext /> `XML`, `MACADDR8` and `TSQUERY` values are strings.
 
-### Geometric types
+### Geometric types <Ext />
 
 <<< @/examples/geometry.ts#define{ts}
 
@@ -91,7 +93,7 @@ As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precisi
 
 Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft` and `Op.strictRight` take the column's own shape; an operand of another type (a point against a box column) is a text literal wrapped in `cast('(1,1)', 'point')`. Distance (`<->`), intersection (`?#`) and the geometric functions go through `literal()` or `fn()`. `point` has no `=` operator in PostgreSQL (use `~=`).
 
-### Multirange types
+### Multirange types <Ext />
 
 <<< @/examples/multirange.ts#define{ts}
 
@@ -99,7 +101,7 @@ Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, 
 
 `DataTypes.MULTIRANGE(subtype)` needs PostgreSQL 14+. The subtype is `INTEGER` (`int4multirange`), `BIGINT`, `DECIMAL`, `TIMESTAMP` (`tsmultirange`), `DATE` (`tstzmultirange`) or `DATEONLY`. A value is an array of ranges; each range is a `[lower, upper]` pair as for `RANGE` (plain values or `{ value, inclusive }` bounds); `[]` is the empty multirange. `Op.contains`, `Op.contained`, `Op.overlap`, `Op.strictLeft`, `Op.strictRight`, `Op.adjacent` and the other range operators apply; an element operand (`multirange @> int`) is wrapped in `cast('9', 'int4')`. `range_agg`, `unnest` and the other multirange functions go through `fn()`.
 
-### Composite types
+### Composite types <Ext />
 
 <<< @/examples/composite.ts#define{ts}
 
@@ -107,7 +109,7 @@ Text literals (`'(1,2)'`) are accepted on write. `Op.contains`, `Op.contained`, 
 
 `DataTypes.COMPOSITE(name, fields)` maps a `CREATE TYPE … AS (…)` type to an object keyed by field name; each field is converted by its own data type (`NULL` is `null`; numbers, booleans, `Date`, `Buffer`, JSON and nested composites are supported, array fields are not). The type must exist: `createSql()` returns its `CREATE TYPE` statement (name and field names quoted), which you run once with `sequelize.query()`; `sync()` does not create it. `where` values compare the whole row (`Op.eq`); single fields go through `literal('("home").zip = 12345')`.
 
-### Identity, generated and interval columns {#identity-generated}
+### Identity, generated and interval columns <Ext /> {#identity-generated}
 
 Column kinds that Sequelize v6 cannot create:
 

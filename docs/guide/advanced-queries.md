@@ -1,10 +1,14 @@
 # Advanced queries
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 In Sequelize v6, subqueries, CTEs and window functions need `literal()` SQL strings. postgrelize builds them from the same find options you already use, with bound parameters and quoted identifiers, and returns model instances where that makes sense.
 
 The examples use `User` (`name`), `Post` (`title`, `rank`, `published`, `UserId`; `User.hasMany(Post)`) and `Category` (`name`, `parentId`), a tree.
 
-## Subqueries
+## Subqueries <Ext />
 
 `Model.subquery(findOptions)` builds a `SELECT` that can be embedded in another query instead of running it. It accepts the find options (`attributes`, `where`, `order`, `limit`, `include`, scopes) plus `as` for the table alias, which defaults to the model name. The default scope and the paranoid filter apply.
 
@@ -14,13 +18,13 @@ Use it with `Op.in` / `Op.notIn`, as a scalar value in `attributes`, as a `from`
 
 A subquery can reference the outer query with `col('User.id')` (a correlated subquery). Its parameters are numbered together with the outer statement.
 
-## `EXISTS`
+## `EXISTS` <Ext />
 
 `exists(subquery)` and `notExists(subquery)` produce `EXISTS (...)` conditions. Use them as the `where` value or inside `Op.and` / `Op.or`:
 
 <<< @/examples/advanced-queries.ts#exists{ts}
 
-## `DISTINCT ON`
+## `DISTINCT ON` <Ext />
 
 `distinctOn` keeps the first row of each group, as defined by `order`. It is the idiomatic PostgreSQL way to get "the latest / best row per key":
 
@@ -28,7 +32,7 @@ A subquery can reference the outer query with `col('User.id')` (a correlated sub
 
 As PostgreSQL requires, the `order` must start with the `distinctOn` expressions.
 
-## Window functions
+## Window functions <Ext />
 
 `over(fn, { partitionBy, orderBy })` adds an `OVER (...)` clause to a function call. Use it in `attributes` (and, through a subquery or CTE, in filters):
 
@@ -36,7 +40,7 @@ As PostgreSQL requires, the `order` must start with the `distinctOn` expressions
 
 `orderBy` uses the same format and the same direction allow-list as `order`.
 
-## Row comparison and keyset pagination
+## Row comparison and keyset pagination <Ext />
 
 `tuple(...)` builds a row value `(a, b)`. Combined with `where(left, operator, right)`, it expresses keyset ("seek") pagination, which stays fast on deep pages where `OFFSET` does not:
 
@@ -44,7 +48,7 @@ As PostgreSQL requires, the `order` must start with the `distinctOn` expressions
 
 Back the comparison with an index on the same columns in the same order, e.g. `indexes: [{ fields: ['rank', 'id'] }]`.
 
-## Common table expressions
+## Common table expressions <Ext />
 
 The `with` option adds `WITH` clauses to `findAll`, `findOne`, `count`, aggregates and `copyTo`. Each CTE is a subquery, or `{ query, recursive?, unionAll?, materialized? }`.
 
@@ -60,7 +64,7 @@ CTEs can also be used as filters:
 
 <<< @/examples/advanced-queries.ts#cte{ts}
 
-### `SEARCH` and `CYCLE`
+### `SEARCH` and `CYCLE` <Ext />
 
 A recursive CTE definition accepts `search` and `cycle`:
 
@@ -73,7 +77,7 @@ Both need `recursive`. The added columns are not model attributes: select them w
 
 <<< @/examples/advanced-queries.ts#cte-cycle{ts}
 
-### Data-modifying CTEs
+### Data-modifying CTEs <Ext />
 
 `Model.updateStatement(values, { where, returning })`, `Model.deleteStatement({ where, returning })` and `Model.insertStatement(rows, { returning })` build a statement for the `with` option. The statement runs as part of the finder's query. With `returning: true`, read its rows through `source: '<cte name>'`, or filter with them. No hooks or validation run; `updatedAt` is set (not with `silent: true`), defaults and timestamps are filled for inserts, and `deleteStatement` is a real delete, also for paranoid models.
 
@@ -83,7 +87,7 @@ Both need `recursive`. The added columns are not model attributes: select them w
 - A data-modifying statement cannot be `recursive`, and cannot be the main statement of a finder: only the CTE body is supported (for example, there is no `INSERT … SELECT FROM cte`).
 - All CTEs of one statement see the same snapshot: the main query does not see the changes of a data-modifying CTE in the tables, only in its `RETURNING` rows.
 
-## Set operations
+## Set operations <Ext />
 
 `Subquery` has `union()`, `intersect()` and `except()` (pass `{ all: true }` for the `ALL` forms). The result is another subquery, so it works wherever a subquery does: in `Op.in`, in `with`, as a source of `insertFrom` or `merge`. Both sides must select the same columns.
 
@@ -91,13 +95,13 @@ Both need `recursive`. The added columns are not model attributes: select them w
 
 `source` also accepts a subquery: the finder then reads model rows from `(… UNION …) AS "User"`, and its own `order`, `limit` and `offset` apply to the combined result. Select all attributes in the operands for that (no `attributes` option), because the finder selects every attribute of the model.
 
-## `FETCH FIRST … WITH TIES`
+## `FETCH FIRST … WITH TIES` <Ext />
 
 `withTies: true` with `limit` and `order` returns the first `limit` rows plus every row that ties with the last one on the `order` columns (`FETCH FIRST $1 ROWS WITH TIES`). PostgreSQL rejects it without `ORDER BY`; postgrelize throws `withTies requires a limit` when `limit` is missing.
 
 <<< @/examples/advanced-queries.ts#with-ties{ts}
 
-## Extra relations with `from`
+## Extra relations with `from` <Ext />
 
 `from` on finders adds relations to the `FROM` clause, keyed by alias, without an association. Correlate them in `where`:
 
@@ -111,7 +115,7 @@ const parents = await Category.findAll({
 });
 ```
 
-### VALUES, set-returning functions and `JSON_TABLE`
+### VALUES, set-returning functions and `JSON_TABLE` <Ext />
 
 A `from` entry can also be an object that produces rows. Every value is a bound parameter; names are quoted identifiers.
 
@@ -131,7 +135,7 @@ PostgreSQL cannot always infer the type of a bound parameter in a function call 
 
 <<< @/examples/json-table.ts#json-table{ts}
 
-## `LATERAL` joins and top-N per parent
+## `LATERAL` joins and top-N per parent <Ext />
 
 A `LATERAL` subquery may reference relations that come before it in `FROM`, so it runs once per row. Use it for "latest N per parent" queries. A lateral entry in `from` behaves like an inner join: rows without a match disappear.
 
@@ -139,13 +143,13 @@ For includes, `lateral: true` on a `separate` include with `limit` makes the dat
 
 <<< @/examples/advanced-queries.ts#lateral{ts}
 
-## `TABLESAMPLE`
+## `TABLESAMPLE` <Ext />
 
 `sample: { method, percent, seed? }` on `findAll` and `count` reads a random part of the table: `BERNOULLI` samples row by row, `SYSTEM` block by block (faster, clustered). `percent` is from 0 to 100; the same `seed` gives the same sample while the data is unchanged (`REPEATABLE`). The same option works on a `from` entry: `{ model, sample }`.
 
 <<< @/examples/advanced-queries.ts#tablesample{ts}
 
-## Server-side cursors with `findEach`
+## Server-side cursors with `findEach` <Ext />
 
 `Model.findEach(findOptions, { batchSize })` streams rows with a server-side cursor (`DECLARE ... CURSOR` and `FETCH n`), so a large result is never loaded at once:
 

@@ -1,14 +1,18 @@
 # Schema objects
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 `QueryInterface` creates more than tables: extensions, sequences, views, functions, triggers and row-level security policies. These are PostgreSQL features, so they are additions to Sequelize v6 (except `createFunction` and `createTrigger`, which v6 has too). Object names are always quoted identifiers; the few places that take SQL text are listed in [Security](/security).
 
-## Extensions
+## Extensions <Ext />
 
 <<< @/examples/schema-objects.ts#extension{ts}
 
 `createExtension(name, { ifNotExists, schema, version, cascade })` and `dropExtension(name, { ifExists, cascade })`. The database role needs the privileges PostgreSQL requires for that extension.
 
-## Sequences
+## Sequences <Ext />
 
 <<< @/examples/schema-objects.ts#sequence{ts}
 
@@ -18,7 +22,7 @@
 
 Sequences of `autoIncrement` and identity columns are created by `sync`; use these methods for standalone counters.
 
-## Functions and triggers
+## Functions and triggers <Ext />
 
 `createFunction`, `dropFunction`, `renameFunction`, `createTrigger`, `dropTrigger` and `renameTrigger` have the Sequelize v6 names and argument order, so v6 migrations run unchanged.
 
@@ -31,7 +35,7 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - New options: `dropFunction` / `dropTrigger` accept `ifExists` and `cascade`; `createTrigger` accepts `replace` (`CREATE OR REPLACE TRIGGER`, PostgreSQL 14+).
 - Timing is `'before' | 'after' | 'instead_of' | 'after_constraint'` (a deferrable `CONSTRAINT TRIGGER`); events are `'insert' | 'update' | 'delete' | 'truncate'`.
 
-## Views and materialized views
+## Views and materialized views <Ext />
 
 <<< @/examples/schema-objects.ts#views{ts}
 
@@ -41,7 +45,7 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - A model can read a view like a table (`freezeTableName` or `tableName`, `timestamps: false`).
 - A `temporary` view lives only as long as its database session, which is one pooled connection: create and use it in one transaction (`transaction` option).
 
-## Row-level security
+## Row-level security <Ext />
 
 <<< @/examples/schema-objects.ts#rls{ts}
 
@@ -51,7 +55,7 @@ Sequences of `autoIncrement` and identity columns are created by `sync`; use the
 - **A string condition is SQL you write**: not escaped, never build it from user input. A where object (`{ edits: { [Op.gt]: 0 } }`) compiles like a partial-index condition and its values are escaped as literals. See [Security](/security).
 - Policies usually read a per-request setting. Set it with the `settings` option of a transaction ([Sessions](/guide/sessions)) and refer to it with `current_setting('app.tenant_id')::int`.
 
-## Unlogged and temporary tables
+## Unlogged and temporary tables <Ext />
 
 <<< @/examples/schema-objects.ts#persistence{ts}
 

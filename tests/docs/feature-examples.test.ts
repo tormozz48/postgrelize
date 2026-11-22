@@ -24,6 +24,7 @@ const targets: readonly Target[] = [
 const slugify = (heading: string): string =>
   heading
     .replace(/\{#[^}]+\}\s*$/, '')
+    .replace(/<[^>]+>/g, '')
     .replace(/[\s~`!@#$%^&*()\-_+=[\]{}|;:"'“”‘’<>,.?/…]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase();
@@ -80,6 +81,9 @@ const problems = (target: Target): string[] => {
   const body = section(readFileSync(pageUrl, 'utf8'), anchor);
   if (body === undefined) {
     return [...found, `${target.name}: anchor "${anchor}" not found in ${page}`];
+  }
+  if (!body.includes('<Ext')) {
+    found.push(`${target.name}: section "${anchor}" of ${page} has no <Ext /> badge`);
   }
   return body.includes(`<<< @/examples/${file}#${region}`)
     ? found

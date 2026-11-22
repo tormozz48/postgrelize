@@ -77,7 +77,7 @@ One statement for many rows beats a loop of `create` calls by a wide margin, bec
 
 Read-only traffic can go to replicas ([Sessions and scaling](./sessions)); the pool of each replica has its own limit.
 
-### Prepared statements
+### Prepared statements <Ext />
 
 By default every query is sent as an unnamed statement, so PostgreSQL parses and plans it on each call. The `statementCache` constructor option names repeated statements so each connection parses and plans them once:
 

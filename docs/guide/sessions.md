@@ -1,8 +1,12 @@
 # Sessions and scaling
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 PostgreSQL features that work at the connection or transaction level: `LISTEN` / `NOTIFY`, transaction-local settings (for row-level security and timeouts), advisory locks, and read replicas.
 
-## LISTEN / NOTIFY
+## LISTEN / NOTIFY <Ext />
 
 `sequelize.listen(channel, handler)` subscribes to notifications and resolves to an unsubscribe function. `sequelize.notify(channel, payload)` sends one with `pg_notify`; objects are sent as JSON text:
 
@@ -14,7 +18,7 @@ PostgreSQL features that work at the connection or transaction level: `LISTEN` /
 - PostgreSQL limits a payload to about 8000 bytes; send ids, not documents.
 - `sequelize.close()` closes the listener connection too.
 
-## Transaction settings
+## Transaction settings <Ext />
 
 The `settings` option of `sequelize.transaction()` applies configuration parameters for the duration of the transaction (`set_config(name, value, true)`, the same as `SET LOCAL`). They are reset when the transaction ends, so pooled connections never leak them:
 
@@ -39,7 +43,7 @@ Typical uses:
 
 Names and values are sent as bound parameters. Custom setting names need a dot (`app.user_id`).
 
-## Statement timeout per query
+## Statement timeout per query <Ext />
 
 The `statementTimeout` option (milliseconds, a non-negative integer; `0` disables the limit) applies `statement_timeout` to one query. PostgreSQL cancels a longer statement and the call rejects with a `DatabaseError` (code `57014`). It works on `sequelize.query` and on model finders and writers:
 
@@ -47,7 +51,7 @@ The `statementTimeout` option (milliseconds, a non-negative integer; `0` disable
 
 Outside a transaction the query runs in its own short transaction, so the value never leaks to the pooled connection. Inside a transaction the previous timeout (for example from `settings`) is restored after the query. To limit a whole transaction use the `settings` option above; to limit every query of the pool use `dialectOptions.statement_timeout`.
 
-## Advisory locks
+## Advisory locks <Ext />
 
 Advisory locks are application-defined locks managed by PostgreSQL — for example to make sure only one worker runs a job. postgrelize uses transaction-level locks (`pg_advisory_xact_lock`), which are released automatically on commit or rollback, so a crashed worker cannot leave a lock behind.
 
@@ -63,7 +67,7 @@ Keys are integers (64-bit, `number` or `bigint`) or strings; a string is hashed 
 
 <<< @/examples/sessions.ts#with-advisory-lock{ts}
 
-## Read replicas
+## Read replicas <Ext />
 
 The `replication` option of Sequelize v6 is supported. Reads go to the readers in round-robin order; writes go to the writer:
 
