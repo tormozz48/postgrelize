@@ -49,6 +49,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - `Model#reload(options)` takes the `FindOptions` of v6 (`include`, `attributes`, `paranoid`, `lock`, `hooks`, ...) and reads the row through `findOne`, so default scopes and `paranoid` apply as in v6 (reloading a soft-deleted row needs `paranoid: false`). Breaking only for code that reloaded a soft-deleted row without options.
 - Types now match v6: attribute `get` / `set` take `this` as the model, `WhereAttributeHash<T = any>`, `Model.sequelize` and `instance.sequelize` are `Sequelize`, `ModelValidatorFunction` accepts the callback style, hook function parameters are `any`.
 
+### Fixed
+
+- Four gaps found by running Sequelize v6's own test suite against postgrelize, each with a differential test: `ValidationError#get(path)` returns the items of one attribute; `sequelize.define(name)` works without attributes; `BelongsTo#get(instances)` loads several sources at once and returns an object keyed by foreign key; `references: { model: SomeModel }` accepts a model class (DDL and `sync` ordering use its table name). Stage G3 of the v6 compatibility gate, spec `2026-11-22-v6-compat-gate-design`.
+
 ## [1.2.0] - 2026-11-22
 
 Sequelize v6 parity for a production migration, part two: the `retry` option, the public `connectionManager` and the Sequelize v6 type API.

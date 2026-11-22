@@ -1,3 +1,4 @@
+import { Op } from '../expressions/op.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
@@ -27,13 +28,47 @@ export class BelongsTo<
   }
 
   /**
-   * Loads the associated instance (`getX`).
+   * Loads the associated instance (`getX`); given an array of source instances it loads all of them with one query.
    *
-   * @param instance - Source instance.
+   * @param instance - Source instance, or an array of them.
    * @param options - Find options.
-   * @returns Associated instance, or `null`.
+   * @returns Associated instance, or `null`; for an array, an object keyed by foreign key value (`'null'` for missing keys) with the instance or `null`.
    */
-  get(instance: Instance, options: AccessorOptions = {}): Promise<Instance | null> {
+  get(
+    instances: readonly Instance[],
+    options?: AccessorOptions,
+  ): Promise<Record<string, Instance | null>>;
+  get(instance: Instance, options?: AccessorOptions): Promise<Instance | null>;
+  get(
+    instance: Instance | readonly Instance[],
+    options: AccessorOptions = {},
+  ): Promise<Instance | null | Record<string, Instance | null>> {
+    if (Array.isArray(instance)) {
+      return this.#getMany(instance as readonly Instance[], options);
+    }
+    return this.#getOne(instance as Instance, options);
+  }
+
+  async #getMany(
+    instances: readonly Instance[],
+    options: AccessorOptions,
+  ): Promise<Record<string, Instance | null>> {
+    const keys = instances.map((instance) => instance.get(this.foreignKey));
+    const found = await this.target.findAll({
+      ...options,
+      where: this.andWhere(options.where, this.scope, { [this.targetKey]: { [Op.in]: keys } }),
+    } as never);
+    const result: Record<string, Instance | null> = {};
+    for (const key of keys) {
+      result[String(key)] = null;
+    }
+    for (const row of found as readonly Instance[]) {
+      result[String(row.get(this.targetKey))] = row;
+    }
+    return result;
+  }
+
+  #getOne(instance: Instance, options: AccessorOptions): Promise<Instance | null> {
     const value = instance.get(this.foreignKey);
     return value === null || value === undefined
       ? Promise.resolve(null)
