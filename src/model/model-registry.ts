@@ -1,4 +1,5 @@
-import type { HookFunction, HookType } from '../hooks/hooks.ts';
+import { HookRegistry, type HookFunction, type HookType } from '../hooks/hooks.ts';
+import { DefineHooks } from './define-hooks.ts';
 import type { ModelAttributes, ModelDefinition } from './model-definition.ts';
 import { ModelAccessors } from './model-accessors.ts';
 import { ModelStateFactory, type ModelState } from './model-state.ts';
@@ -15,6 +16,7 @@ const selections = new WeakMap<object, readonly ScopeSelector[]>();
 const owners = new WeakMap<object, RuntimeOwner>();
 const accessors = new ModelAccessors();
 const factory = new ModelStateFactory();
+const defineHooks = new DefineHooks();
 
 /**
  * Per-class state of models: definition, runtime, hooks, scopes, validators and associations of
@@ -36,11 +38,16 @@ export class ModelRegistry {
     attributes: ModelAttributes,
     options: InitOptions,
   ): void {
-    const state = factory.create(model.name, attributes, options);
+    const defined = defineHooks.before(model, attributes, options);
+    if (defined.name !== model.name) {
+      Object.defineProperty(model, 'name', { value: defined.name, configurable: true });
+    }
+    const state = factory.create(defined.name, defined.attributes, defined.options);
     states.set(model, state);
     owners.set(model, options.sequelize);
     this.defineAttributeAccessors(model.prototype, state.definition);
     state.runtime.register(state.definition.name, model);
+    HookRegistry.runAllSync([state.runtime.hooks()], 'afterDefine', options.sequelize, model);
   }
 
   /**

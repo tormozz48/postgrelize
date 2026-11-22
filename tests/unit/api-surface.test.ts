@@ -9,7 +9,7 @@ type Exceptions = Readonly<Record<string, readonly Entry[] | string>>;
 
 const CATEGORIES = new Set(['not-planned', 'other-dialect', 'internal', 'tracked-in-issue']);
 // Lower this when entries are removed from the allow-list; it must never grow.
-const MAX_EXCEPTIONS = 138;
+const MAX_EXCEPTIONS = 86;
 
 const exceptions = JSON.parse(
   readFileSync(new URL('../compat/api-surface-exceptions.json', import.meta.url), 'utf8'),

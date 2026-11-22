@@ -28,6 +28,8 @@ import { RawQuery } from '../query/raw-query.ts';
 import { QueryInterface } from '../query-interface/query-interface.ts';
 import { RowMapper } from '../model/row-mapper.ts';
 import { SequelizeInternals } from './sequelize-internals.ts';
+import { staticHooks } from './static-hook-store.ts';
+import { HookRegistry } from '../hooks/hooks.ts';
 
 const decorators = new ModelDecorators();
 const rawQuery = new RawQuery();
@@ -79,9 +81,27 @@ export class SequelizeBase {
     const connectionConfig = new ConnectionConfig(
       args as ConstructorParameters<typeof ConnectionConfig>[0],
     );
+    SequelizeBase.#beforeInit(this.constructor, connectionConfig);
     this.options = connectionConfig.options;
     this.config = connectionConfig.settings();
     this.internals = new SequelizeInternals(this, connectionConfig);
+    HookRegistry.runAllSync([staticHooks.registry], 'afterInit', this.constructor, this);
+  }
+
+  // `beforeInit(config, options)` hooks change the connection settings before they are used (v6).
+  static #beforeInit(owner: Function, connectionConfig: ConnectionConfig): void {
+    if (!staticHooks.registry.has('beforeInit')) {
+      return;
+    }
+    const before = connectionConfig.settings();
+    const config = { ...before };
+    const { options } = connectionConfig;
+    HookRegistry.runAllSync([staticHooks.registry], 'beforeInit', owner, config, options);
+    for (const [key, value] of Object.entries(config)) {
+      if (value !== undefined && value !== (before as Record<string, unknown>)[key]) {
+        (options as Record<string, unknown>)[key] = value;
+      }
+    }
   }
 
   /**

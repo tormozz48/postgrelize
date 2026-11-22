@@ -32,236 +32,6 @@
       "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
     },
     {
-      "name": "addHook",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterAssociate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterBulkCreate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterBulkDestroy",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterBulkRestore",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterBulkSync",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterBulkUpdate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterConnect",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterCreate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterDefine",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterDestroy",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterDisconnect",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterFind",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterInit",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterPoolAcquire",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterQuery",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterRestore",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterSave",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterSync",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterUpdate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterUpsert",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "afterValidate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeAssociate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeBulkCreate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeBulkDestroy",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeBulkRestore",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeBulkSync",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeBulkUpdate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeConnect",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeCount",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeCreate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeDefine",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeDestroy",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeDisconnect",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeFind",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeFindAfterExpandIncludeAll",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeFindAfterOptions",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeInit",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforePoolAcquire",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeQuery",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeRestore",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeSave",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeSync",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeUpdate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeUpsert",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "beforeValidate",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
       "name": "db2",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -270,16 +40,6 @@
       "name": "default",
       "category": "internal",
       "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
-      "name": "hasHook",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "hasHooks",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     },
     {
       "name": "mariadb",
@@ -297,11 +57,6 @@
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "options",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
       "name": "oracle",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -312,16 +67,6 @@
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "removeHook",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
-      "name": "runHooks",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
-    },
-    {
       "name": "snowflake",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -330,11 +75,6 @@
       "name": "sqlite",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
-    },
-    {
-      "name": "validationFailed",
-      "category": "not-planned",
-      "note": "Class-level hooks only fire beforeInit / afterInit in v6, which postgrelize does not run; use instance hooks (sequelize.addHook)"
     }
   ],
   "Sequelize.prototype": [

@@ -1,7 +1,7 @@
 /**
- * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect`, `afterConnect` and the sync
- * hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`) run; the other connection / define hooks are
- * accepted and not run yet.
+ * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect`, `afterConnect`, the sync
+ * hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`), `beforeDefine` / `afterDefine` and the static
+ * `beforeInit` / `afterInit` run; the other connection hooks and query / association hooks are accepted and not run yet.
  */
 export const HOOK_TYPES = [
   'beforeValidate',
@@ -143,6 +143,28 @@ export class HookRegistry {
       }
     }
     return hooks.length === 0 ? NO_HOOKS_RAN : HookRegistry.#runInOrder(hooks, context, args);
+  }
+
+  /**
+   * Runs the hooks of `type` from each registry synchronously, for the hook types that run while a
+   * model or an instance is being defined (`beforeDefine`, `afterDefine`, `beforeInit`, `afterInit`).
+   *
+   * @param registries - Registries in run order.
+   * @param type - Hook type.
+   * @param context - `this` of the hook functions.
+   * @param args - Hook arguments.
+   */
+  static runAllSync(
+    registries: readonly HookRegistry[],
+    type: HookType,
+    context: unknown,
+    ...args: readonly unknown[]
+  ): void {
+    for (const registry of registries) {
+      for (const hook of registry.#hooks.get(type) ?? []) {
+        (hook.fn as (...callArgs: unknown[]) => unknown).apply(context, args as unknown[]);
+      }
+    }
   }
 
   static async #runInOrder(
