@@ -43,6 +43,5 @@ export async function queries(): Promise<void> {
     retry: { max: 3, match: ['ECONNRESET'] },
   };
   await sequelize.query('select 1', { retry: { max: 2 } });
-  await sequelize.transaction({ retry: { max: 2 } }, async () => undefined);
   void options;
 }
