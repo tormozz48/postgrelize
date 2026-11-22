@@ -80,6 +80,6 @@ describe('finder replacements stay bound values', () => {
       const Item = await defineItem(sequelize);
       await expect(
         Item.findAll({ where: literal('"code" = :missing'), replacements: { other: 1 } }),
-      ).rejects.toThrow(/Missing replacement value for missing/);
+      ).rejects.toThrow(/Named replacement ":missing" has no entry in the replacement map/);
     }));
 });

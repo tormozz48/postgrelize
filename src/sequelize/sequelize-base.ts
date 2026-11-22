@@ -375,11 +375,8 @@ export class SequelizeBase {
    */
   query(sql: string | Literal, options?: QueryOptions): Promise<[unknown[], unknown]>;
   async query(sql: string | Literal, options: QueryOptions = {}): Promise<unknown> {
-    const text = typeof sql === 'string' ? sql : sql.val;
-    const prepared = rawQuery.prepare(text, {
-      ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
-      ...(options.bind === undefined ? {} : { bind: options.bind }),
-    });
+    const { text, ...parameters } = rawQuery.statement(sql, options);
+    const prepared = rawQuery.prepare(text, parameters);
     const kind = resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write';
     return resultShaper.shape(await this.internals.execute(prepared, options, kind), options);
   }

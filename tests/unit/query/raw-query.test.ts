@@ -15,7 +15,7 @@ describe('prepareRawQuery', () => {
         replacements: { a: 1, ids: [2, 3] },
       }),
     ).toEqual({
-      text: 'SELECT * FROM t WHERE a = $1 AND b IN ($2, $3) AND c = $4',
+      text: 'SELECT * FROM t WHERE a = $1::int4 AND b IN ($2::int4, $3::int4) AND c = $4::int4',
       values: [1, 2, 3, 1],
     });
   });
@@ -30,7 +30,7 @@ describe('prepareRawQuery', () => {
   it('skips strings, identifiers, comments, dollar quotes, casts and jsonb ?| ?&', () => {
     const sql = `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , :a`;
     expect(rawQuery.prepare(sql, { replacements: { a: 1 } })).toEqual({
-      text: `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , $1`,
+      text: `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , $1::int4`,
       values: [1],
     });
   });
@@ -54,9 +54,11 @@ describe('prepareRawQuery', () => {
 
   it('throws on missing values', () => {
     expect(() => rawQuery.prepare('SELECT :x', { replacements: {} })).toThrow(
-      /Missing replacement/,
+      /Named replacement ":x" has no entry in the replacement map/,
     );
-    expect(() => rawQuery.prepare('SELECT $3', { bind: [1] })).toThrow(/Missing bind/);
+    expect(() => rawQuery.prepare('SELECT $3', { bind: [1] })).toThrow(
+      /Named bind parameter "\$3" has no value in the given object/,
+    );
   });
 });
 
@@ -76,7 +78,7 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
         { min: 5, ids: [1, 2] },
       ),
     ).toEqual({
-      text: 'SELECT * FROM t WHERE a = $1 AND b > $2 AND c IN ($3, $4) AND d = $5',
+      text: 'SELECT * FROM t WHERE a = $1 AND b > $2::int4 AND c IN ($3::int4, $4::int4) AND d = $5',
       values: ['x', 5, 1, 2, 'y'],
     });
   });
@@ -102,7 +104,18 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
 
   it('throws for a placeholder without a replacement value', () => {
     expect(() => rawQuery.inject({ text: 'SELECT :x', values: [] }, { y: 1 })).toThrow(
-      /Missing replacement/,
+      /Named replacement ":x" has no entry in the replacement map/,
     );
+  });
+
+  it('types integers and booleans like v6 does by writing them into the SQL, and leaves other values alone', () => {
+    expect(
+      rawQuery.prepare('SELECT ?, ?, ?, ?, ?, ?', {
+        replacements: [1, true, 1.5, 3_000_000_000, 'x', null],
+      }),
+    ).toEqual({
+      text: 'SELECT $1::int4, $2::boolean, $3, $4, $5, $6',
+      values: [1, true, 1.5, 3_000_000_000, 'x', null],
+    });
   });
 });
