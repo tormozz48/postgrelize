@@ -2,11 +2,11 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 prepared (2026-11-22, release PR open)
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
-**Docs reference rework:** done, merged to `main` 2026-11-22 (PR #127, merge commit `3e40a1b`), **not released** (CHANGELOG `[Unreleased]`; ships with the next version). Reference hub, generated Extensions page and option reference, errors and connection guide pages, `@postgrelize` TSDoc tag, `<Ext />` badge; spec `.10x/specs/2026-11-22-docs-reference-design.md`, ADR-035; record `.10x/decisions/staff-engineer/docs-reference.md`.
+**Docs reference rework:** done, merged to `main` 2026-11-22 (PR #127, merge commit `3e40a1b`), released in 1.3.0. Reference hub, generated Extensions page and option reference, errors and connection guide pages, `@postgrelize` TSDoc tag, `<Ext />` badge; spec `.10x/specs/2026-11-22-docs-reference-design.md`, ADR-035; record `.10x/decisions/staff-engineer/docs-reference.md`.
 
 **S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
