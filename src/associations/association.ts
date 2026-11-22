@@ -144,12 +144,12 @@ export abstract class Association implements AssociationFields {
    * Query options passed on to the queries an accessor runs.
    *
    * @param options - Accessor options.
-   * @returns `transaction`, `logging` and `benchmark`.
+   * @returns `transaction`, `logging`, `benchmark` and `retry`.
    */
   protected passThrough(options: AccessorOptions): Values {
     return Object.fromEntries(
       Object.entries(options).filter(([key]) =>
-        ['transaction', 'logging', 'benchmark'].includes(key),
+        ['transaction', 'logging', 'benchmark', 'retry'].includes(key),
       ),
     );
   }

@@ -233,6 +233,7 @@ Everything lives in `.10x/`:
 | [028](.10x/adrs/028-npmjs-publishing.md)                   | Publish `postgrelize` on npmjs.com, scoped mirror time-boxed  | Accepted                                              |
 | [029](.10x/adrs/029-file-size-limit-400.md)                | File size limit 400 lines (supersedes the 150 of ADR-021)     | Accepted                                              |
 | [030](.10x/adrs/030-public-connection-manager.md)          | Public `sequelize.connectionManager` get/release contract     | Accepted                                              |
+| [031](.10x/adrs/031-retry-option.md)                       | `retry` option, in-house retry-as-promised semantics          | Accepted                                              |
 
 ## Git, PRs and releases
 

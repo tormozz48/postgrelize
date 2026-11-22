@@ -110,10 +110,27 @@ Rules for a replacement:
 
 `listen` does not go through the manager: it opens a dedicated connection outside the pool, from this instance's own settings, so it is not routed. Hooks such as `beforePoolAcquire` are not run (see [migrating](/guide/migrating)).
 
+## Retrying failed queries
+
+The `retry` option of Sequelize v6 repeats a query or a transaction start that failed. It takes the same fields as v6 (`max`, `match`, `backoffBase`, `backoffExponent`, `backoffJitter`, `timeout`, `name`, `report`) and follows the same rules as `retry-as-promised`:
+
+<<< @/examples/sessions.ts#retry{ts}
+
+- Nothing is retried unless `max` is set (the number of attempts, the first one included) and `retry` is configured. There is no default retry on PostgreSQL.
+- `match` lists the errors worth retrying. An entry is a string equal to `error.message` or to `String(error)`, a regular expression tested against both, an error class (`instanceof`), or an arrow function used as a predicate. An empty or missing `match` retries every error, including constraint violations, so always list the errors you mean.
+- Connection errors carry the v6 names, so `match: [/SequelizeConnectionError/]` style lists keep working: `SequelizeConnectionError`, `SequelizeConnectionRefusedError`, `SequelizeHostNotFoundError`, `SequelizeHostNotReachableError`, `SequelizeInvalidConnectionError`, `SequelizeConnectionTimedOutError` (and `SequelizeConnectionAcquireTimeoutError` for an exhausted pool).
+- The delay before retry _n_ is `backoffBase * backoffExponent ** (n - 1)` milliseconds (defaults 100 and 1.1), plus or minus up to `backoffJitter`. An attempt that runs longer than `timeout` ms fails with a `TimeoutError` and is not retried.
+- A per-query `retry` is merged over the instance option field by field, so `{ max: 2 }` keeps the instance `match`.
+
+What is retried: connection acquisition and execution of `sequelize.query`, finders, writes and the other statements outside a transaction; for a transaction, acquiring the connection and `BEGIN` (the transaction option `retry` is merged the same way, and the callback of a managed transaction runs once, after a successful start). A statement inside an open transaction is never retried: PostgreSQL has aborted the transaction, so run the whole `sequelize.transaction(...)` again in your code when you need that. `COMMIT` / `ROLLBACK`, `copyFrom` / `copyTo` and `listen` are not retried either.
+
+Differences from v6: v6 also retries statements that run inside a transaction (they fail again on the aborted transaction); a timed out attempt is not retried in the background.
+
 ## API reference
 
 - [`Sequelize`](/api/classes/Sequelize) — `listen`, `notify`, `withAdvisoryLock`
 - [`Transaction`](/api/classes/Transaction) — `advisoryLock`, `tryAdvisoryLock`
 - [`TransactionOptions`](/api/type-aliases/TransactionOptions), [`AdvisoryLockKey`](/api/type-aliases/AdvisoryLockKey)
 - [`ConnectionManagerContract`](/api/interfaces/ConnectionManagerContract), [`GetConnectionOptions`](/api/type-aliases/GetConnectionOptions), `Sequelize#connectionManager`
+- [`RetryOptions`](/api/type-aliases/RetryOptions), [`RetryMatch`](/api/type-aliases/RetryMatch)
 - [`ReplicationOptions`](/api/type-aliases/ReplicationOptions), [`NotificationHandler`](/api/type-aliases/NotificationHandler)

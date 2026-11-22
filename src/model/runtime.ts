@@ -1,5 +1,6 @@
 import type { QueryResult } from '../connection/connection-manager.ts';
 import type { LoggingFunction, ModelDefaults } from '../connection/options.ts';
+import type { RetryOptions } from '../connection/retry.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { HookRegistry } from '../hooks/hooks.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
@@ -20,6 +21,12 @@ export type QueryOptionsBase = Readonly<{
    * timeout is restored afterwards. PostgreSQL extension.
    */
   statementTimeout?: number;
+  /**
+   * Retries this query when it fails, merged over the instance `retry` option (Sequelize v6). The
+   * connection acquisition is part of the retried work; a query that runs in a transaction is never
+   * retried.
+   */
+  retry?: RetryOptions;
   /** Force the writer even for SELECTs when read replicas are configured. */
   useMaster?: boolean;
 }>;

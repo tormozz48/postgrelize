@@ -32,4 +32,8 @@ Routing connections (v6 `sequelize.connectionManager`): every query, transaction
 
 Keep acquire/release paired and release a connection to the pool that owns it (it may come from another `Sequelize` instance's manager). `listen` uses its own dedicated connection and is not routed.
 
+Retry (v6 `retry`): `new Sequelize({ retry: { max: 5, match: [/SequelizeConnectionRefusedError/], backoffBase: 100 } })` or per query `{ retry: {...} }` (merged over the instance option) repeats a failed query, and the connection acquisition plus `BEGIN` of a transaction. Nothing is retried without `max`; an empty `match` retries every error; a statement inside an open transaction, `COMMIT`, COPY and `listen` are never retried.
+
+<<< @/examples/sessions.ts#retry{ts}
+
 Read replicas: `new Sequelize({ replication: { read: [...], write } })` routes reads to replicas; see <https://tormozz48.github.io/postgrelize/guide/sessions>.
