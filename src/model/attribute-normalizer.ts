@@ -1,6 +1,7 @@
 import { inflector as inflection } from './inflector.ts';
 import { AbstractDataType } from '../data-types/abstract-data-type.ts';
-import type { DataTypeInput } from '../data-types/data-types.ts';
+import { DataTypes, type DataTypeInput } from '../data-types/data-types.ts';
+import { EnumType } from '../data-types/enum-type.ts';
 import type { AttributeDefinition, AttributeOptions } from './attribute-options.ts';
 
 /**
@@ -28,7 +29,8 @@ export class AttributeNormalizer {
       ...rest,
       fieldName: name,
       field: field ?? this.underscoredIf(name, underscored),
-      type: AbstractDataType.from(type),
+      type:
+        type === DataTypes.ENUM ? new EnumType(options.values ?? []) : AbstractDataType.from(type),
       allowNull: options.allowNull ?? options.primaryKey !== true,
       ...(options.identity === undefined ? {} : { autoIncrement: true }),
     });
