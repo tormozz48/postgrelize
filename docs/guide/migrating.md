@@ -33,7 +33,8 @@ The type API follows the v6 declarations, so code that compiles against `sequeli
 Differences to know:
 
 - `HasMany`, `HasOne`, `BelongsTo` and `BelongsToMany` are exported as generic types next to the decorators of the same names; use `Sequelize.HasMany` (and the others) for the class value.
-- `InitOptions.name` and `FindOptions.replacements` are accepted so v6 code compiles, but they are not applied yet: association names come from `modelName` and the inflection rules, and finders do not substitute `:name` placeholders (`sequelize.query` does).
+- `InitOptions.name` is accepted so v6 code compiles, but it is not applied yet: association names come from `modelName` and the inflection rules.
+- `FindOptions.replacements` is not typed: finders do not substitute `:name` placeholders (`sequelize.query` does).
 - `sequelize.query` accepts a string or a `literal()`, not the v6 `{ query, values }` object form.
 - Option keys that postgrelize does not implement (`searchPath`, `omitNull`, `findAndCountAll` `distinct`, ...) are not in the option types, so the compiler points at them.
 

@@ -625,11 +625,6 @@
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
     },
     {
-      "name": "RetryOptions",
-      "category": "not-planned",
-      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
-    },
-    {
       "name": "SchemaOptions",
       "category": "not-planned",
       "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
@@ -798,11 +793,6 @@
         "note": "finders always map rows to the model (raw: true opts out)"
       },
       {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
-      },
-      {
         "name": "fieldMap",
         "category": "internal",
         "note": "v6 internal column to attribute map"
@@ -811,6 +801,11 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
+      },
+      {
+        "name": "replacements",
+        "category": "tracked",
+        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "NonNullFindOptions": [
@@ -840,11 +835,6 @@
         "note": "finders always map rows to the model (raw: true opts out)"
       },
       {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
-      },
-      {
         "name": "fieldMap",
         "category": "internal",
         "note": "v6 internal column to attribute map"
@@ -853,6 +843,11 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
+      },
+      {
+        "name": "replacements",
+        "category": "tracked",
+        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "CountOptions": [
@@ -899,11 +894,6 @@
         "note": "finders always map rows to the model (raw: true opts out)"
       },
       {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
-      },
-      {
         "name": "fieldMap",
         "category": "internal",
         "note": "v6 internal column to attribute map"
@@ -912,6 +902,11 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
+      },
+      {
+        "name": "replacements",
+        "category": "tracked",
+        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "CreateOptions": [
@@ -958,11 +953,6 @@
         "note": "finders always map rows to the model (raw: true opts out)"
       },
       {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
-      },
-      {
         "name": "fieldMap",
         "category": "internal",
         "note": "v6 internal column to attribute map"
@@ -1001,6 +991,11 @@
         "name": "silent",
         "category": "tracked",
         "note": "findOrCreate options extend the finder options only"
+      },
+      {
+        "name": "replacements",
+        "category": "tracked",
+        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "FindOrBuildOptions": [
@@ -1030,11 +1025,6 @@
         "note": "finders always map rows to the model (raw: true opts out)"
       },
       {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
-      },
-      {
         "name": "fieldMap",
         "category": "internal",
         "note": "v6 internal column to attribute map"
@@ -1048,6 +1038,11 @@
         "name": "isNewRecord",
         "category": "not-planned",
         "note": "not a postgrelize option of this operation"
+      },
+      {
+        "name": "replacements",
+        "category": "tracked",
+        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "UpsertOptions": [
@@ -1171,11 +1166,6 @@
         "name": "instance",
         "category": "internal",
         "note": "v6 internal: instance the query result is merged into"
-      },
-      {
-        "name": "retry",
-        "category": "tracked",
-        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
       },
       {
         "name": "fieldMap",

@@ -37,6 +37,12 @@ export async function queries(): Promise<void> {
   const connection = await sequelize.connectionManager.getConnection({ type: 'read' });
   sequelize.connectionManager.releaseConnection(connection);
   void Utils;
-  const options: Options = { dialect: 'postgres', logging: false };
+  const options: Options = {
+    dialect: 'postgres',
+    logging: false,
+    retry: { max: 3, match: ['ECONNRESET'] },
+  };
+  await sequelize.query('select 1', { retry: { max: 2 } });
+  await sequelize.transaction({ retry: { max: 2 } }, async () => undefined);
   void options;
 }

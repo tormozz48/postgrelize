@@ -14,7 +14,7 @@ The runtime is a drop-in for Sequelize v6, the declarations were not. A producti
 - `Association<S, T>` and the four association classes are generic with v6 defaults. The association class names collide with the public decorators (`HasMany`, `BelongsTo`, `HasOne`, `BelongsToMany`, ADR-022), so the root exports them as generic **types** next to the decorator values (a type and a value may share a name); `instanceof HasMany` keeps being unavailable at the root (`Sequelize.HasMany` is the class).
 - Every `*Mixin` and `*MixinOptions` type of the four v6 association files is exported.
 - `Utils` is exported as a value plus type namespace with the v6 members that have a postgrelize counterpart (`Fn`, `Col`, `Cast`, `Literal`, `Json`, `Where`, `SequelizeMethod`, `useInflection`, `pluralize`, `singularize` and the helper types). The other v6 helpers are internal.
-- Types never claim more than the runtime does where that would hide a defect: v6 option keys that postgrelize does not implement stay out of the option types and are listed, with a reason, in `tests/compat/type-parity/exceptions.json` (shrink-only). Two keys are typed although they are not applied, because v6 code uses them: `InitOptions.name` and `FindOptions.replacements`; both are documented as such in TSDoc.
+- Types never claim more than the runtime does where that would hide a defect: v6 option keys that postgrelize does not implement stay out of the option types and are listed, with a reason, in `tests/compat/type-parity/exceptions.json` (shrink-only). One key is typed although it is not applied, because v6 code uses it: `InitOptions.name` (documented in TSDoc). `FindOptions.replacements` is not typed: finders do not substitute placeholders.
 - Proof is a test, not a review: `tests/compat/type-parity.test.ts` compiles a corpus of the TypeScript a v6 app writes against the v6 declarations **and** against postgrelize, and compares exported type names and the keys of the option types with the v6 declarations through the compiler API.
 
 ## Alternatives Considered
@@ -29,7 +29,7 @@ The runtime is a drop-in for Sequelize v6, the declarations were not. A producti
 - Code valid under the v6 types compiles under postgrelize; a test keeps it that way.
 ### Negative
 - `Model` attributes default to `any` like v6, so an untyped model loses the `Record<string, unknown>` strictness. Typed models (the recommended way) are unaffected.
-- Four option keys are typed but not applied (see the PR and the migrating guide); the allow-list records every other gap.
+- `InitOptions.name` is typed but not applied; the allow-list records every other gap.
 ### Risks
 - A new v6 declaration appears only when `sequelize` is upgraded; the test then lists the new names.
 
