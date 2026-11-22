@@ -232,6 +232,7 @@ Everything lives in `.10x/`:
 | [026](.10x/adrs/026-types-ii-value-mapping.md)             | Value shapes of geometric, multirange, composite, PostGIS     | Accepted                                              |
 | [028](.10x/adrs/028-npmjs-publishing.md)                   | Publish `postgrelize` on npmjs.com, scoped mirror time-boxed  | Accepted                                              |
 | [029](.10x/adrs/029-file-size-limit-400.md)                | File size limit 400 lines (supersedes the 150 of ADR-021)     | Accepted                                              |
+| [030](.10x/adrs/030-public-connection-manager.md)          | Public `sequelize.connectionManager` get/release contract     | Accepted                                              |
 
 ## Git, PRs and releases
 

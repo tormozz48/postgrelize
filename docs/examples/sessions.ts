@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { DataTypes, QueryTypes, Sequelize } from 'postgrelize';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -113,15 +114,70 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     await replicated.close();
   }
 
+  // The second "database" is the same server under another application_name, so the example can
+  // tell the two connections apart.
+  const shard = new Sequelize({
+    database,
+    username,
+    password,
+    host,
+    port,
+    logging: false,
+    dialectOptions: { ...sequelize.options.dialectOptions, application_name: 'shard-b' },
+  });
+  let routed: string[] = [];
+  try {
+    // #region connection-routing
+    const shardOfRequest = new AsyncLocalStorage<string>();
+    const shards: Record<string, Sequelize> = { b: shard };
+    const manager = sequelize.connectionManager;
+    const defaultGet = manager.getConnection.bind(manager);
+    const defaultRelease = manager.releaseConnection.bind(manager);
+    const owners = new WeakMap<object, Sequelize>();
+
+    manager.getConnection = async (options) => {
+      const target = shards[shardOfRequest.getStore() ?? ''];
+      if (target === undefined) {
+        return defaultGet(options);
+      }
+      const connection = await target.connectionManager.getConnection(options);
+      owners.set(connection, target); // remember which pool the connection must go back to
+      return connection;
+    };
+    manager.releaseConnection = (connection) => {
+      const owner = owners.get(connection);
+      return owner === undefined
+        ? defaultRelease(connection)
+        : owner.connectionManager.releaseConnection(connection);
+    };
+
+    const applicationName = async (): Promise<string> => {
+      const rows = (await sequelize.query('SHOW application_name', {
+        type: QueryTypes.SELECT,
+      })) as { application_name: string }[];
+      return rows[0]?.application_name ?? '';
+    };
+    routed = [
+      await applicationName(), // no routing value: the instance's own pool
+      await shardOfRequest.run('b', applicationName), // routed to the other instance's pool
+      await shardOfRequest.run('b', () => sequelize.transaction(() => applicationName())),
+    ];
+    // routed: ['', 'shard-b', 'shard-b']
+    // #endregion connection-routing
+  } finally {
+    await shard.close();
+  }
+
   if (
     JSON.stringify(received) !== '["jobs: {\\"id\\":1}","jobs: export queued"]' ||
     JSON.stringify(user) !== '{"id":"42"}' ||
     busy ||
     !free ||
-    order.join(',') !== 'first start,first end,second'
+    order.join(',') !== 'first start,first end,second' ||
+    routed.join(',') !== ',shard-b,shard-b'
   ) {
     throw new Error(
-      `sessions example: unexpected result ${JSON.stringify([received, user, order])}`,
+      `sessions example: unexpected result ${JSON.stringify([received, user, order, routed])}`,
     );
   }
 };

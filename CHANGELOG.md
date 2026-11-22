@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `sequelize.connectionManager` with `getConnection(options?)` and `releaseConnection(connection)`, as in Sequelize v6. Every query, finder, write, transaction, `findEach`, `copyFrom` / `copyTo`, advisory lock and `sync` acquires and releases its pooled connection through these two methods, looked up at call time, so apps can reassign them on the instance to route connections (for example per request to one of several databases). A connection from another `Sequelize` instance's manager works on this instance and is released to its own pool; releasing a connection twice is ignored. New types `Connection`, `GetConnectionOptions`, `ConnectionManagerContract`. ADR-030
+
 ## [1.1.0] - 2026-11-22
 
 Sequelize v6 parity for a production migration (S19): `minifyAliases`, `afterConnect`, `useCLS(namespace)` with cls-hooked namespaces, the static aliases, hook shorthands and the missing `Model` / `QueryInterface` methods, backed by a test that compares the public API with `sequelize@6`.

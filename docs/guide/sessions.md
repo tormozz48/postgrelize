@@ -91,9 +91,29 @@ Routing rules:
 
 Replicas lag behind the primary. To read your own writes immediately, pass `useMaster: true` or read inside the writing transaction. There is no automatic failover: a failing reader surfaces as a `ConnectionError`, as in v6.
 
+## Routing connections
+
+`sequelize.connectionManager` is the Sequelize v6 object that hands out pooled connections. Its two methods are the whole contract:
+
+- `getConnection(options?: { type?: 'read' | 'write'; useMaster?: boolean; uuid?: string })` returns a connection (the pooled `pg` client). `type: 'read'` selects a read replica when one is configured and `useMaster` is not set. `uuid` is the id of the transaction the connection is for.
+- `releaseConnection(connection)` gives a connection back to the pool it came from.
+
+Every query, finder, write, managed or unmanaged transaction, `findEach`, `copyFrom` / `copyTo`, advisory lock and `sync` acquires through `getConnection` and releases through `releaseConnection`, looked up on the manager at call time. A transaction takes one connection when it starts and releases it on commit or rollback. As in v6, you can reassign both methods on the instance to route connections, for example each request to one of several databases chosen from an `AsyncLocalStorage` value:
+
+<<< @/examples/sessions.ts#connection-routing{ts}
+
+Rules for a replacement:
+
+- Keep acquire and release paired: whatever `getConnection` returns must reach `releaseConnection` exactly once per use. Releasing the same connection twice is ignored.
+- Release a connection to the pool that owns it. A connection from another `Sequelize` instance's manager works on this instance's queries and transactions, but only that instance's `releaseConnection` returns it to its pool; remember the owner (a `WeakMap` keyed by the connection, as above).
+- Wrap the original methods (`manager.getConnection.bind(manager)`) to fall back to the default pool.
+
+`listen` does not go through the manager: it opens a dedicated connection outside the pool, from this instance's own settings, so it is not routed. Hooks such as `beforePoolAcquire` are not run (see [migrating](/guide/migrating)).
+
 ## API reference
 
 - [`Sequelize`](/api/classes/Sequelize) — `listen`, `notify`, `withAdvisoryLock`
 - [`Transaction`](/api/classes/Transaction) — `advisoryLock`, `tryAdvisoryLock`
 - [`TransactionOptions`](/api/type-aliases/TransactionOptions), [`AdvisoryLockKey`](/api/type-aliases/AdvisoryLockKey)
+- [`ConnectionManagerContract`](/api/interfaces/ConnectionManagerContract), [`GetConnectionOptions`](/api/type-aliases/GetConnectionOptions), `Sequelize#connectionManager`
 - [`ReplicationOptions`](/api/type-aliases/ReplicationOptions), [`NotificationHandler`](/api/type-aliases/NotificationHandler)

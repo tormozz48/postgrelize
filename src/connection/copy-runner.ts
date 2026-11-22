@@ -9,16 +9,24 @@ type Submit<T> = Readonly<{ query: (submittable: T) => unknown }>;
 /** Runs `COPY ... FROM STDIN` and `COPY ... TO STDOUT` on a writer connection. */
 export class CopyRunner {
   readonly #acquire: () => Promise<Client>;
+  readonly #release: (client: Client) => Promise<void> | void;
   readonly #logger: QueryLogger;
   readonly #errors: PgErrorMapper;
 
   /**
    * @param acquire - Acquires a writer connection.
+   * @param release - Releases a connection obtained from `acquire`.
    * @param logger - Logger of executed statements.
    * @param errors - Driver error mapper.
    */
-  constructor(acquire: () => Promise<Client>, logger: QueryLogger, errors: PgErrorMapper) {
+  constructor(
+    acquire: () => Promise<Client>,
+    release: (client: Client) => Promise<void> | void,
+    logger: QueryLogger,
+    errors: PgErrorMapper,
+  ) {
     this.#acquire = acquire;
+    this.#release = release;
     this.#logger = logger;
     this.#errors = errors;
   }
@@ -37,7 +45,7 @@ export class CopyRunner {
       return await this.#copyIn(client, text, lines, options);
     } finally {
       if (options.client === undefined) {
-        client.release();
+        await this.#release(client);
       }
     }
   }
@@ -57,7 +65,7 @@ export class CopyRunner {
       throw this.#errors.mapQueryError(error, { sql: text, parameters: [] });
     } finally {
       if (options.client === undefined) {
-        client.release();
+        await this.#release(client);
       }
     }
   }
