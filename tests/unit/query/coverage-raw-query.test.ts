@@ -14,7 +14,7 @@ describe('raw query replacements with column expressions', () => {
 
   it('expands arrays that mix values and expressions', () => {
     expect(rawQuery.prepare('SELECT :list', { replacements: { list: [col('a'), 2] } })).toEqual({
-      text: 'SELECT "a", $1',
+      text: 'SELECT "a", $1::int4',
       values: [2],
     });
   });

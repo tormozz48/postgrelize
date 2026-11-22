@@ -103,7 +103,7 @@ await Person.scope('adults', 'young').findAll(); // 18 <= age < 30
 
 `sequelize.query` returns `Promise<unknown>`; cast the result to the row type you expect. The result follows the query `type` like v6: `SELECT` rows, `INSERT` / `UPDATE` `[rows, rowCount]`, `DELETE` the statement rows (`[]` without `RETURNING`), `BULKUPDATE` / `BULKDELETE` the row count, `UPSERT` `[undefined, null]`. Other v6 options are supported: `plain`, `raw`, `nest` (nests `a.b` column names into objects), `model` / `mapToModel`, `transaction`, `logging`.
 
-The finders take `replacements` as well, for placeholders inside `literal()`: `await User.findAll({ where: literal('"age" > :min AND "role" IN (:roles)'), replacements: { min: 18, roles: ['admin', 'editor'] } })`. Arrays expand to a list, `?` placeholders take an array, and every value is sent as a bound parameter, never concatenated into the SQL. A placeholder without a value throws.
+The finders take `replacements` as well, for placeholders inside `literal()`: `await User.findAll({ where: literal('"age" > :min AND "role" IN (:roles)'), replacements: { min: 18, roles: ['admin', 'editor'] } })`. Arrays expand to a list, `?` placeholders take an array, and every value is sent as a bound parameter, never concatenated into the SQL. A placeholder without a value throws. An integer (up to 32 bits) or a boolean replacement is sent as a parameter with a cast (`$1::int4`, `$2::boolean`), so `select :n as n` returns the number 1 as in v6, where the value is written into the SQL; other values are plain parameters.
 
 ## Locking
 

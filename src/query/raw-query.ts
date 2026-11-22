@@ -11,6 +11,16 @@ export type BindParameters = readonly unknown[] | Readonly<Record<string, unknow
 const TOKEN =
   /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\/|\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$|::|:([A-Za-z_]\w*)|\?(?![|&])|\$([A-Za-z_]\w*|\d+)/g;
 
+// A statement given as an object: `{ query, values }` or `{ query, bind }`, also a class instance with these properties.
+type TaggedStatement = Readonly<{
+  val?: string;
+  query?: string;
+  values?: Replacements;
+  bind?: BindParameters;
+}>;
+
+const INT4_MAX = 2_147_483_647;
+
 const noContext = new WhereCompiler({ resolve: () => undefined });
 
 const compiler = new SqlCompiler();
@@ -31,6 +41,83 @@ type TokenContext = Readonly<{
  * @internal
  */
 export class RawQuery {
+  /**
+   * Reads the SQL and the parameters of a `sequelize.query` call, which may be a string, a literal or a
+   * "tagged" object (`{ query, values }` / `{ query, bind }`, also a class instance with these properties).
+   *
+   * @param sql - SQL text, literal or tagged statement.
+   * @param options - Options of the call.
+   * @returns The SQL text with the single `replacements` / `bind` that apply.
+   * @throws Error when both replacements and bind are given, or `replacements` is neither an array nor a plain object.
+   */
+  statement(
+    sql: string | Readonly<{ val: string }> | Readonly<Record<string, unknown>>,
+    options: Readonly<{ replacements?: Replacements; bind?: BindParameters }>,
+  ): Readonly<{ text: string; replacements?: Replacements; bind?: BindParameters }> {
+    if (typeof sql === 'string') {
+      return RawQuery.#checked(sql, options.replacements, options.bind);
+    }
+    const tagged = sql as TaggedStatement;
+    if (tagged.val !== undefined || tagged.query === undefined) {
+      return RawQuery.#checked(tagged.val as string, options.replacements, options.bind);
+    }
+    return RawQuery.#fromTagged(tagged.query, tagged, options);
+  }
+
+  static #fromTagged(
+    query: string,
+    tagged: TaggedStatement,
+    options: Readonly<{ replacements?: Replacements; bind?: BindParameters }>,
+  ): Readonly<{ text: string; replacements?: Replacements; bind?: BindParameters }> {
+    RawQuery.#exclusive(tagged.values, options.replacements, 'sql.values', 'options.replacements');
+    RawQuery.#exclusive(tagged.bind, options.bind, 'sql.bind', 'options.bind');
+    return RawQuery.#checked(
+      query,
+      tagged.values ?? options.replacements,
+      tagged.bind ?? options.bind,
+    );
+  }
+
+  static #exclusive(first: unknown, second: unknown, a: string, b: string): void {
+    if (first !== undefined && second !== undefined) {
+      throw new Error(`Both \`${a}\` and \`${b}\` cannot be set at the same time`);
+    }
+  }
+
+  static #checked(
+    text: string,
+    replacements: Replacements | undefined,
+    bind: BindParameters | undefined,
+  ): Readonly<{ text: string; replacements?: Replacements; bind?: BindParameters }> {
+    if (replacements !== undefined && bind !== undefined) {
+      throw new Error('Both `replacements` and `bind` cannot be set at the same time');
+    }
+    RawQuery.#assertReplacements(replacements);
+    return {
+      text: text.trim(),
+      ...(replacements === undefined ? {} : { replacements }),
+      ...(bind === undefined ? {} : { bind }),
+    };
+  }
+
+  static #assertReplacements(replacements: unknown): void {
+    if (
+      replacements !== undefined &&
+      !Array.isArray(replacements) &&
+      !RawQuery.#isPlain(replacements)
+    ) {
+      throw new Error(
+        `"replacements" must be an array or a plain object, but received ${JSON.stringify(replacements)} instead.`,
+      );
+    }
+  }
+
+  static #isPlain(value: unknown): boolean {
+    const prototype =
+      typeof value === 'object' && value !== null ? Object.getPrototypeOf(value) : undefined;
+    return prototype === Object.prototype || prototype === null;
+  }
+
   /**
    * Prepares raw SQL for execution.
    *
@@ -109,7 +196,16 @@ export class RawQuery {
         index === 0 ? this.#valueChunks(item) : [', ', ...this.#valueChunks(item)],
       );
     }
-    return [{ param: value }];
+    return RawQuery.#typed(value);
+  }
+
+  // v6 writes a number or a boolean into the SQL, where PostgreSQL types it (`select 1 as n` is an
+  // integer); a bare parameter would be typed `text`. The value stays bound, only the cast is added.
+  static #typed(value: unknown): Chunks {
+    if (typeof value === 'number' && Number.isInteger(value) && Math.abs(value) <= INT4_MAX) {
+      return [{ param: value }, '::int4'];
+    }
+    return typeof value === 'boolean' ? [{ param: value }, '::boolean'] : [{ param: value }];
   }
 
   #lookup(source: Replacements | BindParameters, key: string | number, kind: string): unknown {
@@ -120,7 +216,11 @@ export class RawQuery {
       value === undefined &&
       !(Array.isArray(source) ? Number(key) < source.length : key in source)
     ) {
-      throw new Error(`Missing ${kind} value for ${String(key)}`);
+      throw new Error(
+        kind === 'replacement' && typeof key === 'string'
+          ? `Named replacement ":${key}" has no entry in the replacement map.`
+          : `Missing ${kind} value for ${String(key)}`,
+      );
     }
     return value;
   }
@@ -144,21 +244,24 @@ export class RawQuery {
     bind: BindParameters,
     ctx: TokenContext,
   ): Chunks {
-    const chunk = ctx.bindParams.get(Array.isArray(bind) ? String(Number(bindName) - 1) : bindName);
+    const chunk = ctx.bindParams.get(bindName);
     if (chunk !== undefined) {
       return [chunk];
     }
     if (ctx.lenient) {
       return [token];
     }
-    throw new Error(`Missing bind parameter $${bindName}`);
+    throw new Error(`Named bind parameter "$${bindName}" has no value in the given object.`);
   }
 
   #bindChunks(bind: BindParameters | undefined): ReadonlyMap<string, Readonly<{ param: unknown }>> {
     return new Map(
       bind === undefined
         ? []
-        : Object.entries(bind).map(([key, value]) => [key, { param: value }] as const),
+        : Object.entries(bind).map(
+            ([key, value]) =>
+              [Array.isArray(bind) ? String(Number(key) + 1) : key, { param: value }] as const,
+          ),
     );
   }
 }

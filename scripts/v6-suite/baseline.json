@@ -71,9 +71,12 @@
       ]
     },
     "test/integration/associations/scope.test.js": {
+      "unstable": true,
+      "pass": 5,
       "failing": [
         "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values",
         "[POSTGRES] associations scope 1:M should create, find and include associations with scope values",
+        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values",
         "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
       ]
     },
@@ -489,6 +492,8 @@
       ]
     },
     "test/integration/model/schema.test.js": {
+      "unstable": true,
+      "pass": 5,
       "failing": [
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"",
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
@@ -525,11 +530,10 @@
       ]
     },
     "test/integration/model/scope/merge.test.js": {
-      "unstable": true,
-      "pass": 0,
       "failing": [
-        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"",
         "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
+        "[POSTGRES] Model scope complex merge should merge complex scopes with findAll options correctly regardless of their order",
+        "[POSTGRES] Model scope complex merge should merge complex scopes with findOne options correctly regardless of their order",
         "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
       ]
     },
@@ -670,42 +674,14 @@
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
         "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
         "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
-        "[POSTGRES] Sequelize query it allows to pass custom class instances",
         "[POSTGRES] Sequelize query keeps field names that are mapped to the same name",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query properly adds and escapes replacement value",
-        "[POSTGRES] Sequelize query rejections reject if `options.bind` and `sql.replacements` are both passed",
-        "[POSTGRES] Sequelize query rejections reject if `options.replacements` and `options.bind` are both passed",
-        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `options.bind` are both passed",
-        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `options.replacements`` are both passed",
-        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `sql.values` are both passed",
-        "[POSTGRES] Sequelize query rejections reject if `values` and `options.replacements` are both passed",
-        "[POSTGRES] Sequelize query rejections reject when bind key is $0 with the passed array",
-        "[POSTGRES] Sequelize query rejections reject when bind key is $01 with the passed array",
-        "[POSTGRES] Sequelize query rejections reject when bind key is missing in the passed array",
-        "[POSTGRES] Sequelize query rejections reject when bind key is missing in the passed object",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
-        "[POSTGRES] Sequelize query rejections reject when key is missing in the passed object",
-        "[POSTGRES] Sequelize query rejections reject with the passed date",
-        "[POSTGRES] Sequelize query rejections reject with the passed date for bind",
-        "[POSTGRES] Sequelize query rejections reject with the passed empty object",
-        "[POSTGRES] Sequelize query rejections reject with the passed empty object for bind",
-        "[POSTGRES] Sequelize query rejections reject with the passed number",
-        "[POSTGRES] Sequelize query rejections reject with the passed number for bind",
-        "[POSTGRES] Sequelize query rejections reject with the passed string",
-        "[POSTGRES] Sequelize query rejections reject with the passed string for bind",
-        "[POSTGRES] Sequelize query replaces named parameters with the passed object",
-        "[POSTGRES] Sequelize query replaces named parameters with the passed object and ignore those which does not qualify",
-        "[POSTGRES] Sequelize query replaces named parameters with the passed object and ignores casts",
-        "[POSTGRES] Sequelize query replaces named parameters with the passed object having a null property",
-        "[POSTGRES] Sequelize query replaces named parameters with the passed object using the same key twice",
-        "[POSTGRES] Sequelize query replaces token with the passed array",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
-        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged",
-        "[POSTGRES] Sequelize query uses properties `query` and `values` if query is tagged"
+        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\""
       ]
     },
     "test/integration/transaction.test.js": {
