@@ -1,0 +1,49 @@
+name: v6 suite
+
+# Sequelize v6's own mocha tests against postgrelize (.10x/specs/2026-11-22-v6-compat-gate-design.md).
+# Not a required check: it runs nightly and on demand and fails only on regressions against
+# scripts/v6-suite/baseline.json.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v6-suite:
+    name: v6 ${{ matrix.kind }} tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [unit, integration]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54399:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run v6:suite -- ${{ matrix.kind }}
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: v6-suite-${{ matrix.kind }}
+          path: .v6-suite/results
+          if-no-files-found: ignore

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "sequelize": ["../../../node_modules/sequelize/types/index.d.ts"],
+      "sequelize/lib/*": ["../../../node_modules/sequelize/types/*"],
+      "sequelize/types/*": ["../../../node_modules/sequelize/types/*"],
+      "expect-type": ["../../../node_modules/expect-type-v6"]
+    }
+  }
+}

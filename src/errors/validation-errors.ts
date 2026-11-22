@@ -172,6 +172,27 @@ export class ValidationError extends BaseError {
     this.name = 'SequelizeValidationError';
     this.errors = errors;
   }
+
+  /**
+   * Returns the validation items reported for one attribute.
+   *
+   * @param path - Attribute name, compared with each item's `path`.
+   * @returns Items whose `path` equals `path`; an empty array when there are none.
+   *
+   * @example
+   * ```ts
+   * try {
+   *   await User.create({});
+   * } catch (e) {
+   *   if (e instanceof ValidationError) {
+   *     console.error(e.get('email').map((item) => item.message));
+   *   }
+   * }
+   * ```
+   */
+  get(path: string): ValidationErrorItem[] {
+    return this.errors.filter((item) => item.path === path);
+  }
 }
 
 /**

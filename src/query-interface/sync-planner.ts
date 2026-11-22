@@ -78,13 +78,15 @@ export class SyncPlanner {
   }
 
   #referencedTable(references: AttributeDefinition['references']): string | undefined {
-    return references === undefined
-      ? undefined
-      : typeof references === 'string'
-        ? references
-        : typeof references.model === 'string'
-          ? references.model
-          : references.model.tableName;
+    if (references === undefined || typeof references === 'string') {
+      return references;
+    }
+    const model = references.model;
+    if (typeof model === 'string') {
+      return model;
+    }
+    const table = 'getTableName' in model ? model.getTableName() : model;
+    return typeof table === 'string' ? table : table.tableName;
   }
 
   #referencedTables(definition: ModelDefinition): readonly string[] {
