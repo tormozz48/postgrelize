@@ -27,6 +27,7 @@ import {
 import { RawQuery } from '../query/raw-query.ts';
 import { QueryInterface } from '../query-interface/query-interface.ts';
 import { RowMapper } from '../model/row-mapper.ts';
+import { ModelManager } from './model-manager.ts';
 import { SequelizeInternals } from './sequelize-internals.ts';
 import { staticHooks } from './static-hook-store.ts';
 import { HookRegistry } from '../hooks/hooks.ts';
@@ -59,6 +60,8 @@ export class SequelizeBase {
   readonly config: ConnectionSettings;
   /** Models registered with `define` / `Model.init`, by model name. */
   readonly models: Record<string, ModelStatic<AnyModel>> = {};
+  /** Registry of the defined models (a view on {@link Sequelize.models}). */
+  readonly modelManager = new ModelManager(this.models);
   /** Raw SQL fragment builder. */
   readonly literal = literal;
   /** SQL function call builder. */
@@ -85,6 +88,7 @@ export class SequelizeBase {
     this.options = connectionConfig.options;
     this.config = connectionConfig.settings();
     this.internals = new SequelizeInternals(this, connectionConfig);
+    this.internals.watchOptionHooks(this.options);
     HookRegistry.runAllSync([staticHooks.registry], 'afterInit', this.constructor, this);
   }
 

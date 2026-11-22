@@ -13,7 +13,7 @@ type Exceptions = Readonly<{
 const CATEGORIES = new Set(['not-planned', 'other-dialect', 'internal', 'tracked']);
 const KINDS = ['member', 'generic', 'arity', 'kind'] as const;
 // Lower this when entries leave the allow-list; it must never grow.
-const MAX_DIFFERENCES = 337;
+const MAX_DIFFERENCES = 336;
 
 const exceptions = JSON.parse(
   readFileSync(fileURLToPath(new URL('type-diff/exceptions.json', import.meta.url)), 'utf8'),

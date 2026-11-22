@@ -361,7 +361,6 @@
       "Sequelize.afterInit": "hooks",
       "Sequelize.beforeDefine": "hooks",
       "Sequelize.beforeInit": "hooks",
-      "Sequelize.modelManager": "sequelize-members",
       "Sequelize.Sequelize": "sequelize-members",
       "Sequelize.set": "sequelize-members",
       "SyncOptions.searchPath": "search-path",

@@ -149,11 +149,6 @@
       "note": "v6 dialect object; use sequelize.getDialect()"
     },
     {
-      "name": "modelManager",
-      "category": "internal",
-      "note": "v6 model registry object; use sequelize.models and sequelize.model(name)"
-    },
-    {
       "name": "normalizeAttribute",
       "category": "internal",
       "note": "v6 internal or self reference, not part of the documented API"

@@ -59,7 +59,7 @@ export class InstanceLifecycle {
   }
 
   /**
-   * Runs a hook for each instance, one after another (individual hooks of bulk operations).
+   * Runs a hook for each instance, all at once like v6 (individual hooks of bulk operations).
    *
    * @param model - Model class.
    * @param type - Hook type.
@@ -73,10 +73,8 @@ export class InstanceLifecycle {
     instances: readonly object[],
     ...args: readonly unknown[]
   ): Promise<void> {
-    for (const instance of instances) {
-      // oxlint-disable-next-line no-await-in-loop -- hooks of one bulk call run in order, as in v6.
-      await this.runHooks(model, type, instance, ...args);
-    }
+    // like v6 (`Promise.all`): the hook runs for every row at once, the first rejection ends the call
+    await Promise.all(instances.map((instance) => this.runHooks(model, type, instance, ...args)));
   }
 
   /**

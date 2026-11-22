@@ -76,7 +76,11 @@ export class InstanceSaver {
   }
 
   #changed({ state, definition }: SaveContext): readonly string[] {
-    return [...state.changed].filter((name) => definition.attributes.has(name));
+    // virtual attributes have no column to write
+    return [...state.changed].filter((name) => {
+      const attribute = definition.attributes.get(name);
+      return attribute !== undefined && attribute.type.isVirtual !== true;
+    });
   }
 
   #hook(

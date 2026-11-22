@@ -50,6 +50,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- Hook semantics of Sequelize v6: `individualHooks` of `update`, `destroy` and `restore` run the hook for every row at once (`Promise.all`; the first rejection ends the call) instead of one row after the other; a `beforeDestroy` hook that sets a VIRTUAL attribute no longer breaks the soft delete (virtual attributes are never written by `save`); `sequelize.options.hooks = {}` replaces the global hooks of the instance; `sequelize.modelManager` (`models`, `getModel`, `addModel`, `removeModel`). Differential tests.
 - `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
 - `findAndCountAll({ group })` forwards `group` to the count query, so `count` is the per-group array as in v6 instead of the total number of rows ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
 
