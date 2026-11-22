@@ -28,7 +28,7 @@ export type QueryOptionsBase = Readonly<{
    * retried.
    */
   retry?: RetryOptions;
-  /** Force the writer even for SELECTs when read replicas are configured. */
+  /** Force the writer even for SELECTs when read replicas are configured. postgrelize extension. */
   useMaster?: boolean;
   /**
    * Values of `?` (array) or `:name` (object) placeholders written in raw SQL inside the options

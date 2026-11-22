@@ -20,7 +20,7 @@ export type TableSampleOptions = Readonly<{
 }>;
 
 /**
- * One column of a {@link JsonTableOptions}.
+ * One column of a {@link JsonTableOptions}. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -45,7 +45,7 @@ export type JsonTableColumnOptions = Readonly<{
 }>;
 
 /**
- * `JSON_TABLE` source: turns a JSON document into rows. Needs PostgreSQL 17.
+ * `JSON_TABLE` source: turns a JSON document into rows. PostgreSQL extension. Needs PostgreSQL 17.
  *
  * @example
  * ```ts

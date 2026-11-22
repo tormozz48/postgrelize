@@ -2,7 +2,7 @@ import type { ModifyingNode, QueryNode, SetOperator } from '../sql/ast.ts';
 import { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 
 /**
- * Options of {@link Subquery.union}, {@link Subquery.intersect} and {@link Subquery.except}.
+ * Options of {@link Subquery.union}, {@link Subquery.intersect} and {@link Subquery.except}. PostgreSQL extension.
  *
  * @example
  * ```ts

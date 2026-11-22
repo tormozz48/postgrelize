@@ -43,7 +43,7 @@ export type CopyToFormatOptions = Readonly<{
 }>;
 
 /**
- * Options of `Model.copyTo`: a finder query that selects the exported rows plus the output format.
+ * Options of `Model.copyTo`: a finder query that selects the exported rows plus the output format. PostgreSQL extension.
  *
  * @see {@link Model.copyTo}
  *

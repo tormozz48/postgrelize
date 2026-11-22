@@ -61,9 +61,9 @@ export type DefinitionOptions = ModelDefaults &
     indexes?: readonly IndexOptions[];
     /** Table comment. */
     comment?: string;
-    /** `CREATE UNLOGGED TABLE` on `sync`: faster writes, no WAL, emptied after a crash, not replicated. */
+    /** `CREATE UNLOGGED TABLE` on `sync`: faster writes, no WAL, emptied after a crash, not replicated. PostgreSQL extension. */
     unlogged?: boolean;
-    /** `CREATE TEMPORARY TABLE` on `sync`: lives as long as the database session; cannot have a `schema`. See {@link QueryInterface.createTable}. */
+    /** `CREATE TEMPORARY TABLE` on `sync`: lives as long as the database session; cannot have a `schema`. See {@link QueryInterface.createTable}. PostgreSQL extension. */
     temporary?: boolean;
   }>;
 

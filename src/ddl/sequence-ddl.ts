@@ -20,7 +20,7 @@ export type SequenceOwner = Readonly<{
 }>;
 
 /**
- * Options of `createSequence`.
+ * Options of `createSequence`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -50,7 +50,7 @@ export type CreateSequenceOptions = Readonly<{
 }>;
 
 /**
- * Options of `alterSequence`.
+ * Options of `alterSequence`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -70,7 +70,7 @@ export type AlterSequenceOptions = Omit<
   }>;
 
 /**
- * Options of `dropSequence`.
+ * Options of `dropSequence`. PostgreSQL extension.
  *
  * @example
  * ```ts

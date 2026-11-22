@@ -96,7 +96,7 @@ export type UpdateOptions<T = Values> = QueryOptionsBase &
     silent?: boolean;
     /** Return updated rows as the second element of the result. */
     returning?: boolean;
-    /** With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL 18+. */
+    /** With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+. */
     returningOld?: boolean;
     /** Validate the new values.
      * @defaultValue true */

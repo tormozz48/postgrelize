@@ -24,7 +24,7 @@ export type WriteStatementOptions<T = Values> = Readonly<{
 }>;
 
 /**
- * Options of `Model.updateStatement()`.
+ * Options of `Model.updateStatement()`. PostgreSQL extension.
  *
  * @example
  * ```ts

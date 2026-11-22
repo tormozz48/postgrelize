@@ -17,7 +17,7 @@ const sqlLiteral = new SqlLiteral();
 const STRATEGIES: ReadonlySet<string> = new Set<PartitionStrategy>(['range', 'list', 'hash']);
 
 /**
- * Options of `createPartition`.
+ * Options of `createPartition`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -37,7 +37,7 @@ export type CreatePartitionOptions = Readonly<{
 }>;
 
 /**
- * Options of `detachPartition`.
+ * Options of `detachPartition`. PostgreSQL extension.
  *
  * @example
  * ```ts

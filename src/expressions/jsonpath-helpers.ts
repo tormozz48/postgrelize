@@ -12,7 +12,7 @@ const KINDS: ReadonlyMap<string, string> = new Map([
 export type JsonbPathKind = 'exists' | 'match' | 'query' | 'queryFirst' | 'queryArray';
 
 /**
- * Options of {@link jsonbPath}.
+ * Options of {@link jsonbPath}. PostgreSQL extension.
  *
  * @example
  * ```ts

@@ -30,7 +30,7 @@ const ROLE_KEYWORDS: Readonly<Record<string, string>> = {
 export type PolicyCondition = string | Readonly<Record<string | symbol, unknown>>;
 
 /**
- * Options of `enableRowLevelSecurity`.
+ * Options of `enableRowLevelSecurity`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -44,7 +44,7 @@ export type EnableRowLevelSecurityOptions = Readonly<{
 }>;
 
 /**
- * Options of `disableRowLevelSecurity`.
+ * Options of `disableRowLevelSecurity`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -58,7 +58,7 @@ export type DisableRowLevelSecurityOptions = Readonly<{
 }>;
 
 /**
- * Options of `createPolicy`.
+ * Options of `createPolicy`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -84,7 +84,7 @@ export type CreatePolicyOptions = Readonly<{
 }>;
 
 /**
- * Options of `alterPolicy`.
+ * Options of `alterPolicy`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -100,7 +100,7 @@ export type AlterPolicyOptions = Readonly<
 >;
 
 /**
- * Options of `dropPolicy`.
+ * Options of `dropPolicy`. PostgreSQL extension.
  *
  * @example
  * ```ts

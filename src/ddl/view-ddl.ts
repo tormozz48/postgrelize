@@ -9,7 +9,7 @@ const sqlLiteral = new SqlLiteral();
 const CHECK_OPTIONS: Readonly<Record<string, string>> = { local: 'LOCAL', cascaded: 'CASCADED' };
 
 /**
- * Options of `createView`.
+ * Options of `createView`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -35,7 +35,7 @@ export type CreateViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `createMaterializedView`.
+ * Options of `createMaterializedView`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -55,7 +55,7 @@ export type CreateMaterializedViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `refreshMaterializedView`.
+ * Options of `refreshMaterializedView`. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -71,7 +71,7 @@ export type RefreshMaterializedViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `dropView` and `dropMaterializedView`.
+ * Options of `dropView` and `dropMaterializedView`. PostgreSQL extension.
  *
  * @example
  * ```ts

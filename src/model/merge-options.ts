@@ -42,7 +42,7 @@ export interface MergeInsertAction<T> {
 }
 
 /**
- * Options of `Model.merge`, which runs a `MERGE` statement. PostgreSQL 15+ (RETURNING: 17+).
+ * Options of `Model.merge`, which runs a `MERGE` statement. PostgreSQL extension. PostgreSQL 15+ (RETURNING: 17+).
  *
  * Rows of the model table are the target; `source` rows or a subquery are the source.
  *

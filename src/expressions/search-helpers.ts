@@ -6,7 +6,7 @@ const WEIGHTS: ReadonlySet<string> = new Set(['A', 'B', 'C', 'D']);
 const MAX_NORMALIZATION = 63;
 
 /**
- * Options of {@link tsRank}.
+ * Options of {@link tsRank}. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -23,7 +23,7 @@ export type TsRankOptions = Readonly<{
 }>;
 
 /**
- * Options of {@link tsHeadline}.
+ * Options of {@link tsHeadline}. PostgreSQL extension.
  *
  * @example
  * ```ts

@@ -115,7 +115,7 @@ export type InsertOptions<T = Values> = QueryOptionsBase &
     validate?: boolean;
     /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
     overriding?: 'system' | 'user';
-    /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL 18+. */
+    /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+. */
     returningOld?: boolean;
   }>;
 

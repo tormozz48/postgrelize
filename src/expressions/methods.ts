@@ -173,7 +173,7 @@ export const exists = (subquery: Subquery): Exists => new Exists(subquery, false
 export const notExists = (subquery: Subquery): Exists => new Exists(subquery, true);
 
 /**
- * Window definition of {@link over}.
+ * Window definition of {@link over}. PostgreSQL extension.
  *
  * @example
  * ```ts

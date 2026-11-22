@@ -30,7 +30,7 @@ export type PoolOptions = Readonly<{
 }>;
 
 /**
- * Named prepared statement cache settings, given as the `statementCache` option of {@link SequelizeOptions}.
+ * Named prepared statement cache settings, given as the `statementCache` option of {@link SequelizeOptions}. PostgreSQL extension.
  *
  * @example
  * ```ts

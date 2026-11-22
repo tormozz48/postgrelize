@@ -31,7 +31,7 @@ export type CteDefinition = Readonly<{
 }>;
 
 /**
- * `search` of a recursive CTE definition.
+ * `search` of a recursive CTE definition. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -49,7 +49,7 @@ export type CteSearchOptions = Readonly<{
 }>;
 
 /**
- * `cycle` of a recursive CTE definition.
+ * `cycle` of a recursive CTE definition. PostgreSQL extension.
  *
  * @example
  * ```ts
@@ -82,15 +82,15 @@ export type WithOption = Readonly<Record<string, Subquery | WriteStatement | Cte
  * ```
  */
 export type CteFindOptions = Readonly<{
-  /** Common table expressions (`WITH [RECURSIVE] ...`). */
+  /** Common table expressions (`WITH [RECURSIVE] ...`). PostgreSQL extension. */
   with?: WithOption;
   /**
    * Read model rows from this relation instead of the model table: a CTE or table name, or a
    * subquery such as a set operation (`a.union(b)`), aliased with the model name. Columns are
-   * named like the attributes.
+   * named like the attributes. PostgreSQL extension.
    */
   source?: string | Subquery;
-  /** Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. */
+  /** Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. PostgreSQL extension. */
   from?: JoinSources;
 }>;
 
