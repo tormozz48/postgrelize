@@ -57,6 +57,7 @@ Sequelize v6 parity part three: `findByPk` and `replacements`, the default expor
 
 ### Fixed
 
+- An include given only a model (`include: [{ model: Tag }]`) resolves, when the source has several associations to that model, to the one without an explicit alias, as in Sequelize v6; it used to throw `EagerLoadingError: ... associated multiple times`. It still throws when every association to the model has an alias. Found by the v6 suite harness; differential test.
 - Four gaps found by running Sequelize v6's own test suite against postgrelize, each with a differential test: `ValidationError#get(path)` returns the items of one attribute; `sequelize.define(name)` works without attributes; `BelongsTo#get(instances)` loads several sources at once and returns an object keyed by foreign key; `references: { model: SomeModel }` accepts a model class (DDL and `sync` ordering use its table name). Stage G3 of the v6 compatibility gate, spec `2026-11-22-v6-compat-gate-design`.
 
 ## [1.2.0] - 2026-11-22

@@ -95,11 +95,13 @@ export class AssociationLookup {
     if (candidates.length === 0) {
       throw new EagerLoadingError(`${targetName} is not associated to ${this.#nameOf(source)}!`);
     }
-    if (candidates.length > 1) {
+    // Like v6: among several associations to the same model, the one without an explicit alias wins.
+    const unaliased = candidates.find((association) => !association.isAliased);
+    if (candidates.length > 1 && unaliased === undefined) {
       throw new EagerLoadingError(
         `${targetName} is associated to ${this.#nameOf(source)} multiple times. To identify the correct association, you must use the 'as' keyword to specify the alias of the association you want to include.`,
       );
     }
-    return candidates[0] as Association;
+    return (unaliased ?? candidates[0]) as Association;
   }
 }
