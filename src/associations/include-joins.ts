@@ -40,10 +40,18 @@ export class IncludeJoins {
       {
         type: this.#type(node),
         table: attributeColumns.table(node.definition, node.alias),
-        on: ast.and([this.#onClause(parent, parentAlias, node), ...this.#extra(node)]),
+        on: ast.and([this.#joinKeys(parent, parentAlias, node), ...this.#extra(node)]),
       },
       ...this.#childJoins(node),
     ];
+  }
+
+  #joinKeys(parent: ModelDefinition, parentAlias: string, node: IncludeNode): ExprNode {
+    const custom = attributeColumns.where(
+      node.on,
+      attributeColumns.whereCompiler(node.definition, node.alias),
+    );
+    return custom ?? this.#onClause(parent, parentAlias, node);
   }
 
   #viaJunction(

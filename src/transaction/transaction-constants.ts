@@ -28,6 +28,9 @@ export const LOCK = {
 /** One of {@link LOCK}. */
 export type LockStrength = (typeof LOCK)[keyof typeof LOCK];
 
+/** Row lock strength, as a type (Sequelize v6 `LOCK` is both an enum value and a type). Same as {@link LockStrength}. */
+export type LOCK = LockStrength;
+
 /** Transaction types; accepted for Sequelize v6 compatibility and ignored by PostgreSQL. */
 export const TRANSACTION_TYPES = {
   /** SQLite-only, ignored. */

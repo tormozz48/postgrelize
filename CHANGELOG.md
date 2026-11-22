@@ -38,6 +38,20 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `IncludeOptions.on` (custom `ON` condition of an include join, as in v6), `AssociationOptions.hooks` (accepted for v6 typing; the cascade runs in PostgreSQL), `QueryInterface#queryGenerator` (typed `unknown` like v6), the `LOCK` type next to the `LOCK` value, `GroupedCountResultItem`, `instance.update(key, value)`, and `fn` / `col` / `literal` values for `Model.update`, `Model.updateStatement` and `instance.update`. Part of the Sequelize v6 type-parity work ([#133](https://github.com/tormozz48/postgrelize/pull/133), ADR-032).
+- `Model#get(key: string)` overload and `get<K extends keyof this>(key)` like v6, so included associations and model getters type-check.
+
+### Changed
+
+- `findAndCountAll` has the v6 overloads: `count` is a number, or an array of `GroupedCountResultItem` when `group` is given. `ConstraintErrorOptions.parent` is optional, and `LoggingFunction` is `(sql: string, timing?: number) => void` as in v6.
+
+### Fixed
+
+- `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
+- `findAndCountAll({ group })` forwards `group` to the count query, so `count` is the per-group array as in v6 instead of the total number of rows ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
+
 ## [1.3.0] - 2026-11-22
 
 Sequelize v6 parity part three: `findByPk` and `replacements`, the default export and constructable CommonJS entry, four runtime gaps found by Sequelize's own test suite, and a docs site rebuilt for finding any feature fast.

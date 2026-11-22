@@ -22,6 +22,7 @@ import type {
   UpsertOptions,
   Values,
 } from '../options.ts';
+import type { UpdateValues } from '../types.ts';
 import type { ModelConstructor } from './model-constructor.ts';
 
 /**
@@ -169,7 +170,7 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static update<M extends AnyModel>(
       this: ModelStatic<M>,
-      values: Partial<Attributes<M>>,
+      values: UpdateValues<Attributes<M>>,
       options: UpdateOptions<Attributes<M>>,
     ): Promise<[affectedCount: number, affectedRows?: M[]]> {
       return updater.update(this, values as Values, options as UpdateOptions);

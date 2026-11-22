@@ -1,4 +1,5 @@
-import type { SqlExpression } from '../expressions/methods.ts';
+import type { Col, Fn } from '../expressions/call-expressions.ts';
+import type { Literal, SqlExpression } from '../expressions/methods.ts';
 
 export type {
   AnyAll,
@@ -11,6 +12,9 @@ export type {
   WhereOperators,
   WhereOptions,
 } from './where-options.ts';
+
+/** New attribute values of an `update`: each attribute takes its own type or a `fn` / `col` / `literal` expression. */
+export type UpdateValues<A> = { [K in keyof A]?: A[K] | Fn | Col | Literal };
 
 declare const CreationAttributeBrand: unique symbol;
 declare const NonAttributeBrand: unique symbol;

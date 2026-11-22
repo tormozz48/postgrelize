@@ -16,6 +16,8 @@ Notes on the example:
 
 `sync()` creates the foreign key constraints with the v6 defaults: `ON DELETE SET NULL` for nullable foreign keys (`NO ACTION` for `allowNull: false`), `ON DELETE CASCADE` for junction tables, and `ON UPDATE CASCADE`. Override them with `onDelete` / `onUpdate`, or skip constraints with `constraints: false`.
 
+Default aliases and foreign keys come from the model's `name` init option when it is set (`name: { singular: 'user', plural: 'users' }`, as in v6), otherwise from the inflected `modelName`. An `include` entry takes a custom join condition with `on`; it replaces the key condition of `belongsTo`, `hasOne` and `hasMany` includes (not of `belongsToMany`).
+
 ## Nested creation
 
 `create`, `build` and `bulkCreate` accept nested values for associations listed in `include`. postgrelize inserts the parent, then the children with the foreign keys set:

@@ -35,6 +35,12 @@ export type {
  * @see [Schema guide](/guide/schema)
  */
 export class QueryInterface extends QueryInterfaceCatalog {
+  /**
+   * Sequelize v6 `queryGenerator` property, typed `unknown` like v6. Declared so that v6-typed code
+   * compiles; postgrelize has no separate query generator object, so the value is `undefined`.
+   */
+  declare queryGenerator: unknown;
+
   readonly #columns: ColumnCommands;
   readonly #indexes: IndexCommands;
   readonly #enums: EnumCommands;

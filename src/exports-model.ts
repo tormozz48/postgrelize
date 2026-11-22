@@ -64,6 +64,7 @@ export type {
   DestroyOptions,
   FindAndCountOptions,
   FindAndCountResult,
+  GroupedCountResultItem,
   FindOptions,
   FindOrCreateOptions,
   IncrementOptions,

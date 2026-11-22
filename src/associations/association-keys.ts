@@ -37,8 +37,12 @@ export class AssociationKeys {
    * @returns Name forms.
    */
   modelName(model: Model): AssociationName {
-    const name = registry.state(model).definition.name;
-    return { singular: inflection.singularize(name), plural: inflection.pluralize(name) };
+    const definition = registry.state(model).definition;
+    const forms = definition.options.name;
+    return {
+      singular: forms?.singular ?? inflection.singularize(definition.name),
+      plural: forms?.plural ?? inflection.pluralize(definition.name),
+    };
   }
 
   /**
