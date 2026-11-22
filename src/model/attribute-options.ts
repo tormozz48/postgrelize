@@ -48,8 +48,8 @@ export type ReferencedTable = Readonly<{
  * ```
  */
 export type ReferenceOptions = Readonly<{
-  /** Referenced model name, or an object with the referenced table name. */
-  model: string | ReferencedTable;
+  /** Referenced table name, an object with the table name and schema, or the referenced model class (its table name is read when the DDL is built). */
+  model: string | ReferencedTable | Readonly<{ getTableName(): string | ReferencedTable }>;
   /** Referenced column. Default: primary key. */
   key?: string;
   /** Deferrable mode of the foreign key constraint. */
