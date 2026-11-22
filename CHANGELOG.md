@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-22
+
+Sequelize v6 parity part three: `findByPk` and `replacements`, the default export and constructable CommonJS entry, four runtime gaps found by Sequelize's own test suite, and a docs site rebuilt for finding any feature fast.
+
 ### Added
 
 - `findByPk(id, { rejectOnEmpty })` overload that resolves to the model (Sequelize v6 `NonNullFindOptions`); `findOne` takes the same `NonNullFindOptions`.
@@ -303,7 +307,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/tormozz48/postgrelize/compare/v0.12.0...v1.0.0
