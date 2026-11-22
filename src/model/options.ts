@@ -20,6 +20,7 @@ export type {
   AttributeAmounts,
   CreateOptions,
   IncrementOptions,
+  InstanceUpdateOptions,
   InsertFromOptions,
   InsertOptions,
   SaveOptions,

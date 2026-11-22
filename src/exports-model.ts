@@ -1,5 +1,13 @@
 export { Sequelize, QueryTypes } from './sequelize.ts';
-export type { QueryOptions, QueryType, DefineOptions, Options } from './sequelize.ts';
+export type {
+  QueryOptions,
+  QueryOptionsWithModel,
+  QueryOptionsWithType,
+  QueryType,
+  TypedQueryResults,
+  DefineOptions,
+  Options,
+} from './sequelize.ts';
 export { Model } from './model/model.ts';
 export type { NamedHookAdder } from './model/model.ts';
 export type { MergeActionName, MergeResult } from './model/operations/merge-operation.ts';
@@ -63,6 +71,7 @@ export type {
   InsertOptions,
   InstanceDestroyOptions,
   InitOptions,
+  InstanceUpdateOptions,
   ModelNameOptions,
   ModelStatic,
   QualifiedTableName,
@@ -123,3 +132,14 @@ export type {
   WhereOperators,
   WhereOptions,
 } from './model/types.ts';
+export type {
+  BindOrReplacements,
+  ColumnsDescription,
+  FindOrBuildOptions,
+  GroupOption,
+  Identifier,
+  ModelCtor,
+  ModelDefined,
+  ModelType,
+  NonNullFindOptions,
+} from './model/v6-aliases.ts';

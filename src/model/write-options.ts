@@ -174,3 +174,14 @@ export type AttributeAmounts<T> =
   | (keyof T & string)
   | readonly (keyof T & string)[]
   | Partial<Record<keyof T & string, number>>;
+
+/**
+ * Options of the instance updates that association accessors run (Sequelize v6 `InstanceUpdateOptions`): the {@link SaveOptions}.
+ *
+ * @example
+ * ```ts
+ * const options: InstanceUpdateOptions<User> = { fields: ['name'], transaction };
+ * await user.update({ name: 'Ann' }, options);
+ * ```
+ */
+export type InstanceUpdateOptions<T = Values> = SaveOptions<T>;

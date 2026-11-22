@@ -22,7 +22,6 @@ export async function queries(): Promise<void> {
   const id: string | undefined = one?.id;
   void id;
 
-  await sequelize.query({ query: 'select $1', values: [1] }, { type: QueryTypes.SELECT });
   const [results, metadata] = await sequelize.query('select 1');
   void results;
   void metadata;

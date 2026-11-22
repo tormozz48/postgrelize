@@ -22,15 +22,25 @@ import { inflector, useInflection } from './model/inflector.ts';
  * ```
  */
 export const Utils = Object.freeze({
+  /** Class of `fn()` results. */
   Fn,
+  /** Class of `col()` results. */
   Col,
+  /** Class of `cast()` results. */
   Cast,
+  /** Class of `literal()` results. */
   Literal,
+  /** Class of `json()` results. */
   Json,
+  /** Class of `where()` results. */
   Where,
+  /** Base class of all expressions. */
   SequelizeMethod: SqlExpression,
+  /** Replaces the inflection library, see {@link useInflection}. */
   useInflection,
+  /** Plural form of a word. */
   pluralize: (word: string): string => inflector.pluralize(word),
+  /** Singular form of a word. */
   singularize: (word: string): string => inflector.singularize(word),
 });
 

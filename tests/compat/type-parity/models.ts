@@ -81,7 +81,6 @@ export async function queries(): Promise<void> {
     attributes: ['id', projection],
     lock: transaction.LOCK.UPDATE,
     paranoid: false,
-    replacements: { limit: 3 },
     transaction,
     order: [['id', 'DESC']],
     limit: 10,

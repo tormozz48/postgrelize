@@ -29,9 +29,23 @@ import { Utils } from './utils-namespace.ts';
 import { transactionScope } from './transaction/transaction-runner.ts';
 
 export { QueryTypes } from './query/query-result-shaper.ts';
-export type { QueryOptions, QueryType } from './query/query-result-shaper.ts';
+export type {
+  QueryOptions,
+  QueryOptionsWithModel,
+  QueryOptionsWithType,
+  QueryType,
+  TypedQueryResults,
+} from './query/query-result-shaper.ts';
 export type { DefineOptions } from './sequelize/sequelize-base.ts';
-/** Options of the `Sequelize` constructor (Sequelize v6 `Options`); same as {@link SequelizeOptions}. */
+/**
+ * Options of the `Sequelize` constructor (Sequelize v6 `Options`); same as {@link SequelizeOptions}.
+ *
+ * @example
+ * ```ts
+ * const options: Options = { dialect: 'postgres', logging: false };
+ * const sequelize = new Sequelize('postgres://localhost/app', options);
+ * ```
+ */
 export type Options = SequelizeOptions;
 
 const packageVersion = new PackageVersion();

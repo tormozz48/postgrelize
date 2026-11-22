@@ -87,7 +87,9 @@ describe('Sequelize instance', () => {
   it('uses UTC session time zone by default', () =>
     withSchema(async ({ schema }) => {
       const sequelize = connect(schema);
-      const [rows] = (await sequelize.query('SHOW TimeZone')) as [Array<{ TimeZone: string }>];
+      const [rows] = (await sequelize.query('SHOW TimeZone')) as unknown as [
+        Array<{ TimeZone: string }>,
+      ];
       expect(rows[0]?.TimeZone).toMatch(/^(UTC|<\+00>-00|\+00:00)$/);
     }));
 

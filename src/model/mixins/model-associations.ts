@@ -2,11 +2,8 @@ import { BelongsTo } from '../../associations/belongs-to.ts';
 import { BelongsToMany } from '../../associations/belongs-to-many.ts';
 import { HasMany } from '../../associations/has-many.ts';
 import { HasOne } from '../../associations/has-one.ts';
-import type {
-  Association,
-  AssociationOptions,
-  BelongsToManyOptions,
-} from '../../associations/types.ts';
+import type { Association } from '../../associations/association.ts';
+import type { AssociationOptions, BelongsToManyOptions } from '../../associations/types.ts';
 import { registry } from '../model-services.ts';
 import type { AnyModel, ModelStatic } from '../options.ts';
 import type { ModelConstructor } from './model-constructor.ts';
@@ -98,7 +95,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       this: ModelStatic<M>,
       target: ModelStatic<T>,
       options?: AssociationOptions,
-    ): Association {
+    ): BelongsTo<M, T> {
       return new BelongsTo(this, target, options);
     }
 
@@ -119,7 +116,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       this: ModelStatic<M>,
       target: ModelStatic<T>,
       options?: AssociationOptions,
-    ): Association {
+    ): HasOne<M, T> {
       return new HasOne(this, target, options);
     }
 
@@ -140,7 +137,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       this: ModelStatic<M>,
       target: ModelStatic<T>,
       options?: AssociationOptions,
-    ): Association {
+    ): HasMany<M, T> {
       return new HasMany(this, target, options);
     }
 
@@ -160,7 +157,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       this: ModelStatic<M>,
       target: ModelStatic<T>,
       options: BelongsToManyOptions,
-    ): Association {
+    ): BelongsToMany<M, T> {
       return new BelongsToMany(this, target, options);
     }
   };

@@ -1,0 +1,1209 @@
+{
+  "$comment": "v6 type names and option keys that postgrelize lacks. May only shrink (see tests/compat/type-parity.test.ts). Categories: not-planned, other-dialect, internal, tracked.",
+  "optionPairs": {
+    "FindOptions": "FindOptions",
+    "NonNullFindOptions": "NonNullFindOptions",
+    "CountOptions": "CountOptions",
+    "FindAndCountOptions": "FindAndCountOptions",
+    "CreateOptions": "CreateOptions",
+    "FindOrCreateOptions": "FindOrCreateOptions",
+    "FindOrBuildOptions": "FindOrBuildOptions",
+    "UpsertOptions": "UpsertOptions",
+    "BulkCreateOptions": "BulkCreateOptions",
+    "DestroyOptions": "DestroyOptions",
+    "RestoreOptions": "RestoreOptions",
+    "UpdateOptions": "UpdateOptions",
+    "InstanceDestroyOptions": "InstanceDestroyOptions",
+    "SaveOptions": "SaveOptions",
+    "BuildOptions": "BuildOptions",
+    "InitOptions": "InitOptions",
+    "IncrementDecrementOptions": "IncrementOptions",
+    "IncludeOptions": "IncludeOptions",
+    "QueryOptions": "QueryOptions",
+    "TruncateOptions": "DestroyOptions",
+    "InstanceUpdateOptions": "InstanceUpdateOptions"
+  },
+  "typeNames": [
+    {
+      "name": "ABSTRACT",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "AbstractDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "AbstractDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "AddCheckConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "AddConstraintOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AddDefaultConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "AddForeignKeyConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "AddPrimaryKeyConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "AddScopeOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AddUniqueConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "AllOperator",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AllowReadonlyArray",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AndOperator",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AnyOperator",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ArrayDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "ArrayDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "ArrayDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "AssociationScope",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "AsyncQueueError",
+      "category": "internal",
+      "note": "v6 internal"
+    },
+    {
+      "name": "AttributeType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BaseConstraintOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "BelongsToOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "BigIntDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BigIntDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BlobDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BlobDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BlobDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "BlobSize",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "CharDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "CharDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "CharDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "CollateCharsetOptions",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "ColumnOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ColumnReference",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Config",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "ConnectionOptions",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "CountWithOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "CreateDatabaseOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "DataTypeAbstract",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DateDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DateDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DateDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DateOnlyDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DateOnlyDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DecimalDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DecimalDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DecimalDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DefaultSetOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "Dialect",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "DoubleDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DoubleDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "DoubleDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "EnumDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "EnumDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "EnumDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "FieldMap",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "Filterable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "FloatDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "FloatDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "FloatDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeographyDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeographyDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeographyDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeometryDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeometryDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GeometryDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "GroupedCountResultItem",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "HasManyOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "HasOneOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Hookable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "IncrementDecrementOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "IncrementDecrementOptionsWithBy",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "IndexHint",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "IndexHintable",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "IndexHints",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "IndexMethod",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "IndexType",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "IndexesOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "InstanceRestoreOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "IntegerDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "IntegerDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "Logging",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "LogicType",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ManyToManyOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "MediumIntegerDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "MediumIntegerDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "ModelAttributeColumnOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelAttributeColumnReferencesOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelGetterOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelIndexesOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "ModelOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelScopeOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelSetterOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "ModelValidateOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "MultiAssociationAccessors",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "NumberDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "NumberDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "NumberDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "OperatorsAliases",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "OrOperator",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Paranoid",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Poolable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Projectable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "QueryInterfaceCreateTableOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryInterfaceDropAllTablesOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryInterfaceDropTableOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryInterfaceIndexOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryInterfaceOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryOptionsTransactionRequired",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryOptionsWithForce",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "QueryOptionsWithWhere",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "Rangable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Range",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "RangeDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RangeDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RangeDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RangeableDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RealDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RealDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RealDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "RetryOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "SchemaOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "SearchPathable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "SetOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "Silent",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "SingleAssociationAccessors",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "SmallIntegerDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "SmallIntegerDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "StringDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "StringDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "StringDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "SyncAlterOptions",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "TableHints",
+      "category": "other-dialect",
+      "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
+    },
+    {
+      "name": "TableNameWithSchema",
+      "category": "not-planned",
+      "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
+    },
+    {
+      "name": "TextDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "TextDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "TextDataTypeOptions",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "TextLength",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "TinyIntegerDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "TinyIntegerDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "Transactionable",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "TruncateOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "UUIDV1",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "VirtualDataType",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "VirtualDataTypeConstructor",
+      "category": "not-planned",
+      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
+    },
+    {
+      "name": "WhereAttributeHashValue",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "WhereGeometryOptions",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "WhereLeftOperand",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    },
+    {
+      "name": "WhereValue",
+      "category": "tracked",
+      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
+    }
+  ],
+  "optionKeys": {
+    "FindOptions": [
+      {
+        "name": "groupedLimit",
+        "category": "internal",
+        "note": "undocumented v6 option of the include machinery"
+      },
+      {
+        "name": "type",
+        "category": "not-planned",
+        "note": "finders do not take a query type; use sequelize.query"
+      },
+      {
+        "name": "bind",
+        "category": "not-planned",
+        "note": "finders bind values themselves; use sequelize.query for $1 placeholders"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "mapToModel",
+        "category": "not-planned",
+        "note": "finders always map rows to the model (raw: true opts out)"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      },
+      {
+        "name": "indexHints",
+        "category": "other-dialect",
+        "note": "MySQL index hints"
+      }
+    ],
+    "NonNullFindOptions": [
+      {
+        "name": "groupedLimit",
+        "category": "internal",
+        "note": "undocumented v6 option of the include machinery"
+      },
+      {
+        "name": "type",
+        "category": "not-planned",
+        "note": "finders do not take a query type; use sequelize.query"
+      },
+      {
+        "name": "bind",
+        "category": "not-planned",
+        "note": "finders bind values themselves; use sequelize.query for $1 placeholders"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "mapToModel",
+        "category": "not-planned",
+        "note": "finders always map rows to the model (raw: true opts out)"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      },
+      {
+        "name": "indexHints",
+        "category": "other-dialect",
+        "note": "MySQL index hints"
+      }
+    ],
+    "CountOptions": [
+      {
+        "name": "attributes",
+        "category": "not-planned",
+        "note": "count ignores attributes in v6 as well"
+      }
+    ],
+    "FindAndCountOptions": [
+      {
+        "name": "distinct",
+        "category": "tracked",
+        "note": "findAndCountAll does not forward distinct to its count query (v6 does)"
+      },
+      {
+        "name": "col",
+        "category": "tracked",
+        "note": "findAndCountAll does not forward col to its count query (v6 does)"
+      },
+      {
+        "name": "groupedLimit",
+        "category": "internal",
+        "note": "undocumented v6 option of the include machinery"
+      },
+      {
+        "name": "type",
+        "category": "not-planned",
+        "note": "finders do not take a query type; use sequelize.query"
+      },
+      {
+        "name": "bind",
+        "category": "not-planned",
+        "note": "finders bind values themselves; use sequelize.query for $1 placeholders"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "mapToModel",
+        "category": "not-planned",
+        "note": "finders always map rows to the model (raw: true opts out)"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      },
+      {
+        "name": "indexHints",
+        "category": "other-dialect",
+        "note": "MySQL index hints"
+      }
+    ],
+    "CreateOptions": [
+      {
+        "name": "ignoreDuplicates",
+        "category": "not-planned",
+        "note": "create() takes no ignoreDuplicates; use onConflict: { action: 'nothing' } (migrating guide)"
+      },
+      {
+        "name": "raw",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      },
+      {
+        "name": "isNewRecord",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      }
+    ],
+    "FindOrCreateOptions": [
+      {
+        "name": "groupedLimit",
+        "category": "internal",
+        "note": "undocumented v6 option of the include machinery"
+      },
+      {
+        "name": "type",
+        "category": "not-planned",
+        "note": "finders do not take a query type; use sequelize.query"
+      },
+      {
+        "name": "bind",
+        "category": "not-planned",
+        "note": "finders bind values themselves; use sequelize.query for $1 placeholders"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "mapToModel",
+        "category": "not-planned",
+        "note": "finders always map rows to the model (raw: true opts out)"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      },
+      {
+        "name": "indexHints",
+        "category": "other-dialect",
+        "note": "MySQL index hints"
+      },
+      {
+        "name": "fields",
+        "category": "tracked",
+        "note": "findOrCreate options extend the finder options only"
+      },
+      {
+        "name": "ignoreDuplicates",
+        "category": "not-planned",
+        "note": "create() takes no ignoreDuplicates; use onConflict: { action: 'nothing' } (migrating guide)"
+      },
+      {
+        "name": "returning",
+        "category": "tracked",
+        "note": "findOrCreate options extend the finder options only"
+      },
+      {
+        "name": "validate",
+        "category": "tracked",
+        "note": "findOrCreate options extend the finder options only"
+      },
+      {
+        "name": "isNewRecord",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      },
+      {
+        "name": "silent",
+        "category": "tracked",
+        "note": "findOrCreate options extend the finder options only"
+      }
+    ],
+    "FindOrBuildOptions": [
+      {
+        "name": "groupedLimit",
+        "category": "internal",
+        "note": "undocumented v6 option of the include machinery"
+      },
+      {
+        "name": "type",
+        "category": "not-planned",
+        "note": "finders do not take a query type; use sequelize.query"
+      },
+      {
+        "name": "bind",
+        "category": "not-planned",
+        "note": "finders bind values themselves; use sequelize.query for $1 placeholders"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "mapToModel",
+        "category": "not-planned",
+        "note": "finders always map rows to the model (raw: true opts out)"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      },
+      {
+        "name": "indexHints",
+        "category": "other-dialect",
+        "note": "MySQL index hints"
+      },
+      {
+        "name": "isNewRecord",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      }
+    ],
+    "UpsertOptions": [
+      {
+        "name": "conflictWhere",
+        "category": "tracked",
+        "note": "upsert expresses conflict predicates through onConflict"
+      },
+      {
+        "name": "searchPath",
+        "category": "not-planned",
+        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
+      }
+    ],
+    "BulkCreateOptions": [
+      {
+        "name": "searchPath",
+        "category": "not-planned",
+        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
+      }
+    ],
+    "RestoreOptions": [
+      {
+        "name": "limit",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      }
+    ],
+    "UpdateOptions": [
+      {
+        "name": "sideEffects",
+        "category": "internal",
+        "note": "v6 internal flag of update"
+      },
+      {
+        "name": "limit",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      }
+    ],
+    "SaveOptions": [
+      {
+        "name": "omitNull",
+        "category": "not-planned",
+        "note": "omitNull is not supported"
+      }
+    ],
+    "InitOptions": [
+      {
+        "name": "omitNull",
+        "category": "not-planned",
+        "note": "omitNull is not supported"
+      },
+      {
+        "name": "hasTrigger",
+        "category": "other-dialect",
+        "note": "MSSQL only"
+      },
+      {
+        "name": "engine",
+        "category": "other-dialect",
+        "note": "MySQL only"
+      },
+      {
+        "name": "charset",
+        "category": "other-dialect",
+        "note": "MySQL only"
+      },
+      {
+        "name": "collate",
+        "category": "other-dialect",
+        "note": "MySQL only"
+      },
+      {
+        "name": "initialAutoIncrement",
+        "category": "other-dialect",
+        "note": "MySQL only"
+      },
+      {
+        "name": "setterMethods",
+        "category": "not-planned",
+        "note": "v6 deprecated setterMethods are not supported (use class setters)"
+      },
+      {
+        "name": "getterMethods",
+        "category": "not-planned",
+        "note": "v6 deprecated getterMethods are not supported (use class getters)"
+      }
+    ],
+    "IncrementDecrementOptions": [
+      {
+        "name": "searchPath",
+        "category": "not-planned",
+        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
+      }
+    ],
+    "IncludeOptions": [
+      {
+        "name": "duplicating",
+        "category": "internal",
+        "note": "v6 internal include flag"
+      },
+      {
+        "name": "on",
+        "category": "not-planned",
+        "note": "custom include ON clauses are not supported"
+      },
+      {
+        "name": "subQuery",
+        "category": "tracked",
+        "note": "per-include subQuery is not supported (the find-level option is)"
+      }
+    ],
+    "QueryOptions": [
+      {
+        "name": "nest",
+        "category": "not-planned",
+        "note": "nest is a find option in postgrelize; sequelize.query does not nest"
+      },
+      {
+        "name": "instance",
+        "category": "internal",
+        "note": "v6 internal: instance the query result is merged into"
+      },
+      {
+        "name": "retry",
+        "category": "tracked",
+        "note": "retry option is not on main: PR 112 was merged into the connection-manager branch after that branch had landed"
+      },
+      {
+        "name": "fieldMap",
+        "category": "internal",
+        "note": "v6 internal column to attribute map"
+      }
+    ],
+    "InstanceUpdateOptions": [
+      {
+        "name": "omitNull",
+        "category": "not-planned",
+        "note": "omitNull is not supported"
+      },
+      {
+        "name": "raw",
+        "category": "not-planned",
+        "note": "not a postgrelize option of this operation"
+      },
+      {
+        "name": "reset",
+        "category": "not-planned",
+        "note": "set() option reset is not supported"
+      },
+      {
+        "name": "where",
+        "category": "not-planned",
+        "note": "instance updates take no where"
+      }
+    ]
+  }
+}

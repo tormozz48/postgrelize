@@ -5,14 +5,16 @@ import { AssociationKeys } from './association-keys.ts';
 import { OwnerKeys } from './owner-keys.ts';
 import type { AssociationOptions } from './types.ts';
 
-type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
 const keys = new AssociationKeys();
 const ownerKeys = new OwnerKeys(keys);
 
 /** `source.hasMany(target)` (Sequelize v6 `HasMany`): the foreign key lives on the target. */
-export class HasMany extends Association {
+export class HasMany<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> extends Association<S, T> {
   readonly #targetPk: string;
 
   /**
@@ -22,7 +24,7 @@ export class HasMany extends Association {
    * @param target - Associated model.
    * @param options - Association options.
    */
-  constructor(source: Model, target: Model, options: AssociationOptions = {}) {
+  constructor(source: ModelStatic<S>, target: ModelStatic<T>, options: AssociationOptions = {}) {
     const resolved = ownerKeys.hasOneOrMany(true, source, target, options);
     super('HasMany', source, target, options, resolved.name, resolved.keys);
     this.#targetPk = keys.primaryKey(target);
