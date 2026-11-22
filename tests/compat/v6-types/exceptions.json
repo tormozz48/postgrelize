@@ -1,0 +1,624 @@
+{
+  "causes": {
+    "datatypes-namespace": {
+      "category": "tracked",
+      "note": "DataTypes is a value only: the type namespace (DataTypes.StringDataType, ...) is missing and DataTypes.X(...) / new DataTypes.X(...) forms are not callable or constructable in types. MySQL-only forms (TINYINT, ZEROFILL) are other-dialect; the rest is real for TypeScript users."
+    },
+    "static-hooks": {
+      "category": "tracked",
+      "note": "Static hook methods on Sequelize (addHook, beforeConnect, afterConnect, beforePoolAcquire, afterFind, afterSave, ...) are missing; runtime allow-list says not-planned, but TypeScript users hit them."
+    },
+    "missing-export": {
+      "category": "tracked",
+      "note": "Type exported by v6 and missing here (Config, AndOperator, OrOperator)."
+    },
+    "index-hints": {
+      "category": "other-dialect",
+      "note": "MySQL index hints (IndexHints export, indexHints option)."
+    },
+    "expect-type-mismatch": {
+      "category": "tracked",
+      "note": "A toEqualTypeOf / toMatchTypeOf assertion fails: the inferred type differs from v6 (hook callback arguments, finder and update results, previous(), toJSON, ...). Needs per-assertion triage."
+    },
+    "logging-true": {
+      "category": "tracked",
+      "note": "logging: true is accepted by v6 options, rejected here."
+    },
+    "returning-array": {
+      "category": "tracked",
+      "note": "returning: string[] is accepted by v6 options, rejected here."
+    },
+    "option-keys": {
+      "category": "tracked",
+      "note": "Option key declared by v6 and missing here (fields, isNewRecord, paranoid, duplicating, getterMethods, as, delimiter, length, type, searchPath)."
+    },
+    "option-keys-other-dialect": {
+      "category": "other-dialect",
+      "note": "Option key used only by other dialects (ignoreDuplicates, charset)."
+    },
+    "conflict-where": {
+      "category": "not-planned",
+      "note": "conflictWhere is replaced by onConflict (ADR-003)."
+    },
+    "query-interface-methods": {
+      "category": "tracked",
+      "note": "QueryInterface members missing: select, insert, upsert, delete, quoteTable; transaction on RuntimeOwner."
+    },
+    "query-interface-arity": {
+      "category": "tracked",
+      "note": "QueryInterface method called with more arguments than ours accepts (bulkInsert attributes argument)."
+    },
+    "branded-expression": {
+      "category": "tracked",
+      "note": "Fn, Literal and Col are not assignable to string-branded attributes and IndexField."
+    },
+    "permissive-where": {
+      "category": "tracked",
+      "note": "Unknown keys in where are accepted here but rejected by v6 on typed models (an @ts-expect-error in the corpus is unused)."
+    },
+    "datatype-string-input": {
+      "category": "tracked",
+      "note": "A plain string is accepted as an attribute type by v6, rejected here."
+    },
+    "deep-import": {
+      "category": "internal",
+      "note": "sequelize/lib/* deep type imports."
+    },
+    "define-untyped": {
+      "category": "tracked",
+      "note": "sequelize.define<M>(name) without attributes, and the model types it yields."
+    },
+    "model-typing-misc": {
+      "category": "tracked",
+      "note": "Cascades and smaller typing differences in model.ts, models/User.ts, connection.ts, sequelize.ts not yet split by cause."
+    }
+  },
+  "errors": [
+    {
+      "file": "bulk-create.ts",
+      "code": "TS2322",
+      "message": "Type 'true' is not assignable to type 'false | LoggingFunction | undefined'.",
+      "count": 2,
+      "cause": "logging-true"
+    },
+    {
+      "file": "connection.ts",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
+      "count": 1,
+      "cause": "expect-type-mismatch"
+    },
+    {
+      "file": "connection.ts",
+      "code": "TS2769",
+      "message": "No overload matches this call.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "create.ts",
+      "code": "TS2322",
+      "message": "Type 'string[]' is not assignable to type 'boolean | undefined'.",
+      "count": 1,
+      "cause": "returning-array"
+    },
+    {
+      "file": "create.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'ignoreDuplicates' does not exist in type 'CreateOptions<InferAttr",
+      "count": 5,
+      "cause": "option-keys-other-dialect"
+    },
+    {
+      "file": "create.ts",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
+      "count": 1,
+      "cause": "expect-type-mismatch"
+    },
+    {
+      "file": "data-types.ts",
+      "code": "TS2349",
+      "message": "This expression is not callable.",
+      "count": 12,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "data-types.ts",
+      "code": "TS2351",
+      "message": "This expression is not constructable.",
+      "count": 17,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "data-types.ts",
+      "code": "TS2503",
+      "message": "Cannot find namespace 'DataTypes'.",
+      "count": 34,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "data-types.ts",
+      "code": "TS6234",
+      "message": "This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?",
+      "count": 5,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "define.ts",
+      "code": "TS2339",
+      "message": "Property 'firstName' does not exist on type 'Model<any, any>'.",
+      "count": 1,
+      "cause": "define-untyped"
+    },
+    {
+      "file": "define.ts",
+      "code": "TS2352",
+      "message": "Conversion of type 'ModelStatic<UntypedUserModel>' to type 'UntypedUserModelStatic' may be a mistake because neither typ",
+      "count": 1,
+      "cause": "define-untyped"
+    },
+    {
+      "file": "define.ts",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
+      "count": 1,
+      "cause": "define-untyped"
+    },
+    {
+      "file": "e2e/docs-example.ts",
+      "code": "TS2307",
+      "message": "Cannot find module 'sequelize/lib/associations' or its corresponding type declarations.",
+      "count": 1,
+      "cause": "deep-import"
+    },
+    {
+      "file": "e2e/docs-example.ts",
+      "code": "TS2339",
+      "message": "Property 'id' does not exist on type 'Model<any, any>'.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "e2e/docs-example.ts",
+      "code": "TS7009",
+      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
+      "count": 4,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "findOne.ts",
+      "code": "TS2578",
+      "message": "Unused '@ts-expect-error' directive.",
+      "count": 1,
+      "cause": "permissive-where"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2305",
+      "message": "Module '\"sequelize\"' has no exported member 'Config'.",
+      "count": 1,
+      "cause": "missing-export"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
+      "count": 3,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'afterFind' does not exist on type 'typeof Sequelize'.",
+      "count": 2,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'afterPoolAcquire' does not exist on type 'typeof Sequelize'.",
+      "count": 2,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'afterSave' does not exist on type 'typeof Sequelize'.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'beforeConnect' does not exist on type 'typeof Sequelize'.",
+      "count": 2,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'beforePoolAcquire' does not exist on type 'typeof Sequelize'.",
+      "count": 2,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2339",
+      "message": "Property 'beforeSave' does not exist on type 'typeof Sequelize'.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
+      "count": 13,
+      "cause": "expect-type-mismatch"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS7006",
+      "message": "Parameter 'config' implicitly has an 'any' type.",
+      "count": 2,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "hooks.ts",
+      "code": "TS7019",
+      "message": "Rest parameter 'args' implicitly has an 'any[]' type.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "include.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'duplicating' does not exist in type 'Readonly<{ associationType: ",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "index-hints.ts",
+      "code": "TS2305",
+      "message": "Module '\"sequelize\"' has no exported member 'IndexHints'.",
+      "count": 1,
+      "cause": "index-hints"
+    },
+    {
+      "file": "index-hints.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'indexHints' does not exist in type 'FindOptions<InferAttributes<U",
+      "count": 1,
+      "cause": "index-hints"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2339",
+      "message": "Property 'num' does not exist on type '{ multiply: () => any; }'.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'fields' does not exist in type 'FindOrCreateOptions<InferAttribut",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'getterMethods' does not exist in type 'InitOptions'.",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'isNewRecord' does not exist in type 'FindOrCreateOptions<InferAtt",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'paranoid' does not exist in type 'ModelStatic<AnyModel> | Readonl",
+      "count": 2,
+      "cause": "option-keys"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'searchPath' does not exist in type 'BulkCreateOptions<any>'.",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
+      "count": 17,
+      "cause": "expect-type-mismatch"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2554",
+      "message": "Expected 2 arguments, but got 1.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2558",
+      "message": "Expected 0 type arguments, but got 1.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS2769",
+      "message": "No overload matches this call.",
+      "count": 2,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS7009",
+      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
+      "count": 1,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS7023",
+      "message": "'multiply' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "model.ts",
+      "code": "TS7053",
+      "message": "Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'Number'.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "models/User.ts",
+      "code": "TS2339",
+      "message": "Property 'username' does not exist on type '{ b(val: string): void; }'.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "models/User.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'getterMethods' does not exist in type 'InitOptions'.",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2322",
+      "message": "Type 'Fn' is not assignable to type 'IndexField'.",
+      "count": 1,
+      "cause": "branded-expression"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2322",
+      "message": "Type 'Literal' is not assignable to type 'IndexField'.",
+      "count": 1,
+      "cause": "branded-expression"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'delete' does not exist on type 'QueryInterface'.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'insert' does not exist on type 'QueryInterface'.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'quoteTable' does not exist on type 'QueryInterface'.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'select' does not exist on type 'QueryInterface'.",
+      "count": 2,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'transaction' does not exist on type 'RuntimeOwner'.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2339",
+      "message": "Property 'upsert' does not exist on type 'QueryInterface'.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'as' does not exist in type 'Readonly<{ tableName: string; schema?",
+      "count": 2,
+      "cause": "option-keys"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'charset' does not exist in type 'CreateTableOptions'.",
+      "count": 1,
+      "cause": "option-keys-other-dialect"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'delimiter' does not exist in type 'Readonly<{ tableName: string; ",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'length' does not exist in type 'Readonly<{ order?: \"ASC\" | \"DESC\"",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'type' does not exist in type 'Readonly<{ fields?: readonly IndexF",
+      "count": 1,
+      "cause": "option-keys"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS2554",
+      "message": "Expected 2-3 arguments, but got 4.",
+      "count": 1,
+      "cause": "query-interface-arity"
+    },
+    {
+      "file": "query-interface.ts",
+      "code": "TS7006",
+      "message": "Parameter 'trx' implicitly has an 'any' type.",
+      "count": 1,
+      "cause": "query-interface-methods"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2305",
+      "message": "Module '\"sequelize\"' has no exported member 'Config'.",
+      "count": 1,
+      "cause": "missing-export"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2339",
+      "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2339",
+      "message": "Property 'afterConnect' does not exist on type 'typeof Sequelize'.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2339",
+      "message": "Property 'beforeConnect' does not exist on type 'typeof Sequelize'.",
+      "count": 1,
+      "cause": "static-hooks"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2769",
+      "message": "No overload matches this call.",
+      "count": 1,
+      "cause": "model-typing-misc"
+    },
+    {
+      "file": "typescriptDocs/ModelInit.ts",
+      "code": "TS7009",
+      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
+      "count": 6,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "typescriptDocs/ModelInitNoAttributes.ts",
+      "code": "TS7009",
+      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
+      "count": 2,
+      "cause": "datatypes-namespace"
+    },
+    {
+      "file": "update.ts",
+      "code": "TS2322",
+      "message": "Type 'Col' is not assignable to type 'string'.",
+      "count": 2,
+      "cause": "branded-expression"
+    },
+    {
+      "file": "update.ts",
+      "code": "TS2322",
+      "message": "Type 'Fn' is not assignable to type 'string & CreationOptionalBrand'.",
+      "count": 2,
+      "cause": "branded-expression"
+    },
+    {
+      "file": "update.ts",
+      "code": "TS2322",
+      "message": "Type 'Literal' is not assignable to type 'string & CreationOptionalBrand'.",
+      "count": 2,
+      "cause": "branded-expression"
+    },
+    {
+      "file": "update.ts",
+      "code": "TS2322",
+      "message": "Type 'string[]' is not assignable to type 'boolean | undefined'.",
+      "count": 2,
+      "cause": "returning-array"
+    },
+    {
+      "file": "upsert.ts",
+      "code": "TS2322",
+      "message": "Type 'string' is not assignable to type 'DataTypeInput | Readonly<{ type: DataTypeInput; allowNull?: boolean | undefined",
+      "count": 2,
+      "cause": "datatype-string-input"
+    },
+    {
+      "file": "upsert.ts",
+      "code": "TS2322",
+      "message": "Type 'string[]' is not assignable to type 'boolean | undefined'.",
+      "count": 1,
+      "cause": "returning-array"
+    },
+    {
+      "file": "upsert.ts",
+      "code": "TS2322",
+      "message": "Type 'true' is not assignable to type 'false | LoggingFunction | undefined'.",
+      "count": 3,
+      "cause": "logging-true"
+    },
+    {
+      "file": "upsert.ts",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'conflictWhere' does not exist in type 'UpsertOptions<{ foo: strin",
+      "count": 1,
+      "cause": "conflict-where"
+    },
+    {
+      "file": "where.ts",
+      "code": "TS2305",
+      "message": "Module '\"sequelize\"' has no exported member 'AndOperator'.",
+      "count": 1,
+      "cause": "missing-export"
+    },
+    {
+      "file": "where.ts",
+      "code": "TS2305",
+      "message": "Module '\"sequelize\"' has no exported member 'OrOperator'.",
+      "count": 1,
+      "cause": "missing-export"
+    }
+  ]
+}

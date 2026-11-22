@@ -111,6 +111,8 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
   - Anything v6 also does goes to `tests/compat` (differential) ([ADR-004](.10x/adrs/004-differential-compat-testing.md)). Compatibility is claimed only for covered scenarios.
   - PostgreSQL-only features and fixed v6 bugs go to `tests/integration`. Fixed v6 bugs go to `tests/integration/sequelize-issues.test.ts`.
 - **Type parity** (`tests/compat/type-parity.test.ts`): the corpus in `tests/compat/type-parity/` must compile against the `sequelize@6` declarations and against postgrelize. A public type or option that v6 also has keeps its v6 name, generics and defaults; `tests/compat/type-parity/exceptions.json` lists the v6 type names and option keys still missing and may only shrink ([ADR-032](.10x/adrs/032-v6-type-api-parity.md)).
+- **Declaration diff** (`tests/compat/type-diff.test.ts`): members, arity, generics and kind of every class and interface that v6 and postgrelize both export, compared with the compiler API. Differences are allow-listed in `tests/compat/type-diff/exceptions.json`, which only shrinks ([README](tests/compat/type-diff/README.md)).
+- **Sequelize's own type tests** (`tests/compat/v6-types.test.ts`): `test/types` of sequelize@6.37.8 is vendored in `tests/compat/v6-types/corpus/` and must compile against the v6 declarations (0 errors) and against postgrelize with exactly the errors listed in `tests/compat/v6-types/exceptions.json`. The list only shrinks: fix the gap and delete its entries, never add one for a gap you can fix ([README](tests/compat/v6-types/README.md)).
 - A differential test never encodes a v6 bug as the expected result. If v6 is wrong, narrow the scenario or move it to the integration suite ([ADR-016](.10x/adrs/016-v6-bug-divergence.md)).
 - **Isolation:**
   - Each DB test runs in its own schema via `withSchema` / `runScenario`.
@@ -237,6 +239,7 @@ Everything lives in `.10x/`:
 | [031](.10x/adrs/031-retry-option.md)                       | `retry` option, in-house retry-as-promised semantics          | Accepted                                              |
 | [032](.10x/adrs/032-v6-type-api-parity.md)                 | Type-level parity with the Sequelize v6 declarations          | Accepted                                              |
 | [033](.10x/adrs/033-connection-manager-pool-destroy.md)    | `connectionManager.pool` counters and `destroyConnection`     | Accepted (extends 030)                                |
+| [034](.10x/adrs/034-cjs-default-export.md)                 | Constructable CommonJS entry and default export               | Accepted                                              |
 
 ## Git, PRs and releases
 
