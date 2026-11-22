@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "sequelize": ["../../../src/index.ts"],
+      "sequelize/lib/*": ["../../../src/*"],
+      "sequelize/types/utils": ["../../../node_modules/sequelize/types/utils.d.ts"],
+      "expect-type": ["../../../node_modules/expect-type-v6"]
+    },
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false
+  }
+}

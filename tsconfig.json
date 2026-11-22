@@ -32,5 +32,10 @@
     "build",
     "*.config.ts"
   ],
-  "exclude": ["tests/build/fixtures", "tests/compat/type-parity", "tests/compat/type-parity-cross"]
+  "exclude": [
+    "tests/build/fixtures",
+    "tests/compat/type-parity",
+    "tests/compat/type-parity-cross",
+    "tests/compat/v6-types/corpus"
+  ]
 }
