@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
+- Cascade hooks, as in Sequelize v6: an association with `onDelete: 'CASCADE'` and `hooks: true` loads its rows and destroys each with its own `beforeDestroy` / `afterDestroy` hooks when the owner instance is destroyed (a real delete, not the soft delete of a paranoid model); an error in a hook stops the destroy. This replaces the documented limitation that `hooks` was accepted and ignored. `association.options` is public, as in v6. Found by the v6 suite harness; differential tests.
 - `IncludeOptions.on` (custom `ON` condition of an include join, as in v6), `AssociationOptions.hooks` (accepted for v6 typing; the cascade runs in PostgreSQL), `QueryInterface#queryGenerator` (typed `unknown` like v6), the `LOCK` type next to the `LOCK` value, `GroupedCountResultItem`, `instance.update(key, value)`, and `fn` / `col` / `literal` values for `Model.update`, `Model.updateStatement` and `instance.update`. Part of the Sequelize v6 type-parity work ([#133](https://github.com/tormozz48/postgrelize/pull/133), ADR-032).
 - `Model#get(key: string)` overload and `get<K extends keyof this>(key)` like v6, so included associations and model getters type-check.
 
@@ -49,6 +50,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- Hook semantics of Sequelize v6: `individualHooks` of `update`, `destroy` and `restore` run the hook for every row at once (`Promise.all`; the first rejection ends the call) instead of one row after the other; a `beforeDestroy` hook that sets a VIRTUAL attribute no longer breaks the soft delete (virtual attributes are never written by `save`); `sequelize.options.hooks = {}` replaces the global hooks of the instance; `sequelize.modelManager` (`models`, `getModel`, `addModel`, `removeModel`). Differential tests.
 - `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
 - `findAndCountAll({ group })` forwards `group` to the count query, so `count` is the per-group array as in v6 instead of the total number of rows ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
 
@@ -58,6 +60,8 @@ Sequelize v6 parity part three: `findByPk` and `replacements`, the default expor
 
 ### Added
 
+- Static hooks of `Sequelize`, as in v6: `Sequelize.addHook`, `removeHook`, `hasHook`, `hasHooks`, `runHooks` and the shorthand for every hook type (`Sequelize.beforeInit(fn)`, `Sequelize.afterConnect(name, fn)`, ...). `beforeInit(config, options)` and `afterInit(sequelize)` run for every instance created afterwards (changes to `config` and `options` are used for the connection); other static hook types are stored. `Sequelize.options.hooks = {}` removes all static hooks.
+- `beforeDefine(attributes, options)` and `afterDefine(model)` hooks of a `Sequelize` instance run when a model is defined (`define` or `Model.init`): they can change `options.modelName`, `options.name`, the attributes and the options. Found by the v6 suite harness; differential tests.
 - `findByPk(id, { rejectOnEmpty })` overload that resolves to the model (Sequelize v6 `NonNullFindOptions`); `findOne` takes the same `NonNullFindOptions`.
 - `FindOptions.replacements` works as in v6: `:name` and `?` placeholders inside `literal()` of `findAll`, `findOne`, `findByPk`, `count`, `findAndCountAll` (and the other model queries) are substituted, every value as a bound parameter, arrays expanding to a list. This reverses the 1.2.0 deviation that finders ignored the option. New row on the Security page, payload and property tests, and a differential test against Sequelize v6.
 - Default export and constructable CommonJS entry, as in Sequelize v6: `import Sequelize from 'postgrelize'` works, and `require('postgrelize')` is the `Sequelize` class with every named export as a property (so `new (require('postgrelize'))(url)` and `require('postgrelize').Sequelize` both work). In CommonJS `HasOne`, `HasMany`, `BelongsTo` and `BelongsToMany` stay the decorators. ADR-034
@@ -71,6 +75,8 @@ Sequelize v6 parity part three: `findByPk` and `replacements`, the default expor
 
 ### Fixed
 
+- `Model.update` with `individualHooks: true`, as in Sequelize v6: it returns `[affectedCount, instances]` even without `returning`, and the changes `beforeUpdate` hooks make to the instances are written (as one UPDATE when every row got the same changes, else row by row with `hooks: false`). It used to ignore them. Found by the v6 suite harness; differential tests.
+- `afterFind` hooks of `findOne` and `findByPk` receive the instance (or `null`), not an array, so a hook that changes the instance changes what `findOne` returns, as in v6. Code that read an array in an `afterFind` hook of `findOne` must read the instance. `findAll` is unchanged.
 - `{ type: DataTypes.ENUM, values: ['a', 'b'] }` (the bare `ENUM` type with a `values` attribute option, as in Sequelize v6) defines the enum column; the type used to be undefined and `sync()` failed with `type "undefined" does not exist`. New attribute option `values`. Found by the v6 suite harness; differential test.
 - An include given only a model (`include: [{ model: Tag }]`) resolves, when the source has several associations to that model, to the one without an explicit alias, as in Sequelize v6; it used to throw `EagerLoadingError: ... associated multiple times`. It still throws when every association to the model has an alias. Found by the v6 suite harness; differential test.
 - Four gaps found by running Sequelize v6's own test suite against postgrelize, each with a differential test: `ValidationError#get(path)` returns the items of one attribute; `sequelize.define(name)` works without attributes; `BelongsTo#get(instances)` loads several sources at once and returns an object keyed by foreign key; `references: { model: SomeModel }` accepts a model class (DDL and `sync` ordering use its table name). Stage G3 of the v6 compatibility gate, spec `2026-11-22-v6-compat-gate-design`.

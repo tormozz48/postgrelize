@@ -18,6 +18,7 @@ import type { RuntimeOwner } from './model/runtime.ts';
 import { QueryTypes } from './query/query-result-shaper.ts';
 import { SequelizeBase } from './sequelize/sequelize-base.ts';
 import type { InstanceHookAdders } from './sequelize/instance-hook-adders.ts';
+import { SequelizeStaticHooks } from './sequelize/sequelize-static-hooks.ts';
 import { SequelizeHooks } from './sequelize/sequelize-hooks.ts';
 import { SequelizeNotifications } from './sequelize/sequelize-notifications.ts';
 import { SequelizeHelpers } from './sequelize/sequelize-helpers.ts';
@@ -51,7 +52,9 @@ export type Options = SequelizeOptions;
 const packageVersion = new PackageVersion();
 
 const SequelizeMembers = SequelizeNotifications(
-  SequelizeTransactions(SequelizeSchema(SequelizeHelpers(SequelizeHooks(SequelizeBase)))),
+  SequelizeTransactions(
+    SequelizeSchema(SequelizeHelpers(SequelizeStaticHooks(SequelizeHooks(SequelizeBase)))),
+  ),
 );
 
 // Declaration files cannot name the symbol key of a class member, so `RuntimeOwner` is merged in as an interface.

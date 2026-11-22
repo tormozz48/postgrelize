@@ -4,10 +4,6 @@
       "category": "tracked",
       "note": "DataTypes is a value only: the type namespace (DataTypes.StringDataType, ...) is missing and DataTypes.X(...) / new DataTypes.X(...) forms are not callable or constructable in types. MySQL-only forms (TINYINT, ZEROFILL) are other-dialect; the rest is real for TypeScript users."
     },
-    "static-hooks": {
-      "category": "tracked",
-      "note": "Static hook methods on Sequelize (addHook, beforeConnect, afterConnect, beforePoolAcquire, afterFind, afterSave, ...) are missing; runtime allow-list says not-planned, but TypeScript users hit them."
-    },
     "missing-export": {
       "category": "tracked",
       "note": "Type exported by v6 and missing here (Config, AndOperator, OrOperator)."
@@ -195,55 +191,6 @@
     },
     {
       "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
-      "count": 3,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'afterFind' does not exist on type 'typeof Sequelize'.",
-      "count": 2,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'afterPoolAcquire' does not exist on type 'typeof Sequelize'.",
-      "count": 2,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'afterSave' does not exist on type 'typeof Sequelize'.",
-      "count": 1,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'beforeConnect' does not exist on type 'typeof Sequelize'.",
-      "count": 2,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'beforePoolAcquire' does not exist on type 'typeof Sequelize'.",
-      "count": 2,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS2339",
-      "message": "Property 'beforeSave' does not exist on type 'typeof Sequelize'.",
-      "count": 1,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
       "code": "TS2554",
       "message": "Expected 1 arguments, but got 0.",
       "count": 13,
@@ -255,20 +202,6 @@
       "message": "Module '\"sequelize\"' has no exported member 'Config'. Did you mean to use 'import Config from \"sequelize\"' instead?",
       "count": 1,
       "cause": "missing-export"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS7006",
-      "message": "Parameter 'config' implicitly has an 'any' type.",
-      "count": 2,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "hooks.ts",
-      "code": "TS7019",
-      "message": "Rest parameter 'args' implicitly has an 'any[]' type.",
-      "count": 1,
-      "cause": "static-hooks"
     },
     {
       "file": "include.ts",
@@ -500,27 +433,6 @@
       "message": "Parameter 'trx' implicitly has an 'any' type.",
       "count": 1,
       "cause": "query-interface-methods"
-    },
-    {
-      "file": "sequelize.ts",
-      "code": "TS2339",
-      "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
-      "count": 1,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "sequelize.ts",
-      "code": "TS2339",
-      "message": "Property 'afterConnect' does not exist on type 'typeof Sequelize'.",
-      "count": 1,
-      "cause": "static-hooks"
-    },
-    {
-      "file": "sequelize.ts",
-      "code": "TS2339",
-      "message": "Property 'beforeConnect' does not exist on type 'typeof Sequelize'.",
-      "count": 1,
-      "cause": "static-hooks"
     },
     {
       "file": "sequelize.ts",

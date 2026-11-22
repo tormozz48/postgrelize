@@ -4,6 +4,11 @@ import type { ModelState } from './model-registry.ts';
 import type { AnyModel, InstanceDestroyOptions, MutableOptions, Values } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
 
+type CascadeAssociation = Readonly<{
+  options: Readonly<{ onDelete?: string; hooks?: boolean }>;
+  get(instance: AnyModel, options: object): Promise<AnyModel | AnyModel[] | null>;
+}>;
+
 /**
  * Instance `destroy` (DELETE, or soft delete of paranoid models), `restore` and `isSoftDeleted`.
  *
@@ -99,12 +104,27 @@ export class InstanceDestroyer {
     await instance.save({ ...this.#services.values.queryOptions(options), hooks: false });
   }
 
+  // `onDelete: 'CASCADE'` with `hooks: true`: destroy the associated rows one by one, with their hooks (v6).
+  async #cascade(instance: AnyModel, options: InstanceDestroyOptions): Promise<void> {
+    const { associations } = this.#services.registry.state(instance.constructor);
+    for (const association of associations.values() as Iterable<CascadeAssociation>) {
+      const { onDelete, hooks } = association.options;
+      if (hooks === true && onDelete?.toLowerCase() === 'cascade') {
+        // oxlint-disable-next-line no-await-in-loop -- one association after another, as in v6.
+        const found = await association.get(instance, options);
+        // oxlint-disable-next-line no-await-in-loop -- each row is destroyed with its hooks, one by one.
+        for (const row of found === null ? [] : [found].flat()) await row.destroy(options);
+      }
+    }
+  }
+
   async #deleteRow(
     instance: AnyModel,
     { definition, runtime }: ModelState,
     options: InstanceDestroyOptions,
   ): Promise<void> {
     const { compiler, deletes, columns } = this.#services;
+    await this.#cascade(instance, options);
     await runtime.execute(
       compiler.compile(
         deletes.build(

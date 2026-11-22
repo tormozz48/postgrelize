@@ -66,6 +66,24 @@ export class SequelizeInternals {
   }
 
   /**
+   * Makes `sequelize.options.hooks = {...}` replace the global hooks, as in v6 (tests and apps reset them that way).
+   *
+   * @param options - The `options` object of the instance.
+   */
+  watchOptionHooks(options: SequelizeOptions): void {
+    let current = options.hooks;
+    Object.defineProperty(options, 'hooks', {
+      configurable: true,
+      enumerable: true,
+      get: () => current,
+      set: (value: SequelizeOptions['hooks']) => {
+        current = value;
+        this.hooks = HookRegistry.fromOption(value);
+      },
+    });
+  }
+
+  /**
    * Runs a compiled query on the pool or transaction the options select.
    *
    * @param query - Query text and values.

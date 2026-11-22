@@ -65,9 +65,10 @@ export type AssociationOptions = Readonly<{
   /** `ON UPDATE` action of the foreign key constraint, e.g. `'CASCADE'`. */
   onUpdate?: string;
   /**
-   * Sequelize v6 `hooks` flag (run the target's hooks when `onDelete: 'CASCADE'` removes rows).
-   * Accepted so that v6-typed code compiles; the cascade itself is executed by PostgreSQL, so no
-   * per-row hooks of the target run.
+   * Sequelize v6 `hooks` flag. With `onDelete: 'CASCADE'` and `hooks: true`, destroying an instance first
+   * loads its associated rows and destroys each of them with its own hooks (`beforeDestroy`, `afterDestroy`),
+   * then deletes the instance; without the flag PostgreSQL cascades the delete and no hooks of the target run.
+   * Only a real delete cascades this way, not the soft delete of a paranoid model.
    */
   hooks?: boolean;
 }>;
@@ -151,4 +152,6 @@ export type Association = Readonly<{
   isMultiAssociation: boolean;
   /** Names of the instance methods added to the source model. */
   accessors: Readonly<Record<string, string>>;
+  /** Options the association was defined with. */
+  options: AssociationOptions;
 }>;

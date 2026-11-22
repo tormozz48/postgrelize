@@ -60,6 +60,8 @@ export abstract class Association<
   declare readonly isMultiAssociation: boolean;
   /** Names of the instance methods added to the source model. */
   declare readonly accessors: Readonly<Record<string, string>>;
+  /** Options the association was defined with. */
+  declare readonly options: AssociationOptions;
   /** Foreign key attribute (on the source for belongsTo, on the target for hasOne/hasMany, on the junction for belongsToMany). */
   declare readonly foreignKey: string;
   /** Column of the foreign key. */

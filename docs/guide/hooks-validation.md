@@ -21,7 +21,7 @@ Hooks may be async; postgrelize awaits them in registration order. `before*` hoo
 | finders                                | `beforeFind`, `beforeFindAfterExpandIncludeAll`, `beforeFindAfterOptions`, `afterFind`; `beforeCount` for `count`          |
 | connecting                             | `beforeConnect` (on the `Sequelize` instance; may change the connection config)                                            |
 
-As in v6, `beforeSave` / `afterSave` hooks are registered as both create and update hooks, so they run in registration order together with `beforeCreate` / `beforeUpdate`. Bulk operations run per-row hooks only with `individualHooks: true`. Pass `hooks: false` to skip hooks for one call.
+As in v6, `beforeSave` / `afterSave` hooks are registered as both create and update hooks, so they run in registration order together with `beforeCreate` / `beforeUpdate`. Bulk operations run per-row hooks only with `individualHooks: true`. Pass `hooks: false` to skip hooks for one call. An association defined with `onDelete: 'CASCADE'` and `hooks: true` destroys its associated rows one by one, with their `beforeDestroy` / `afterDestroy` hooks, when the owner instance is destroyed (as in v6); without `hooks: true` PostgreSQL cascades the delete and no hooks of the target run.
 
 ### Sequelize-level hooks
 
@@ -36,7 +36,7 @@ sequelize.addHook('beforeConnect', async (config) => {
 });
 ```
 
-On the `Sequelize` instance every hook that runs also has a shorthand as in v6 (`sequelize.beforeCreate(fn)`, `sequelize.afterConnect('name', fn)`, `sequelize.beforeBulkSync(fn)`, ...) next to `addHook`, `removeHook`, `hasHook(s)` and `runHooks`; models have `Model.beforeSync(fn)` / `Model.afterSync(fn)` besides the lifecycle shorthands. Hooks postgrelize never runs (`beforeDefine`, `beforeQuery`, `beforeAssociate`, ...) have no shorthand, and the class-level `Sequelize.addHook` is not provided (in v6 it only fires `beforeInit` / `afterInit`).
+On the `Sequelize` instance every hook that runs also has a shorthand as in v6 (`sequelize.beforeCreate(fn)`, `sequelize.afterConnect('name', fn)`, `sequelize.beforeBulkSync(fn)`, ...) next to `addHook`, `removeHook`, `hasHook(s)` and `runHooks`; models have `Model.beforeSync(fn)` / `Model.afterSync(fn)` besides the lifecycle shorthands. Hooks postgrelize never runs (`beforeQuery`, `beforeAssociate`, ...) have no shorthand. The class-level `Sequelize.addHook`, `removeHook`, `hasHook(s)`, `runHooks` and the shorthands (`Sequelize.beforeInit(fn)`, ...) exist as in v6; `beforeInit(config, options)` and `afterInit(sequelize)` run for every instance created afterwards (`config` and `options` may be changed before they are used), the other static hooks are only stored. `sequelize.addHook('beforeDefine', (attributes, options) => ...)` runs when a model is defined and may change the model name (`options.modelName`), `options.name`, the attributes and the options; `afterDefine` receives the model.
 
 `afterConnect` runs once for every new pooled connection, after `beforeConnect`, with `(connection, config)` as in v6; `connection` is the `pg` client, so the hook can run session setup on it. If the hook throws, the connection is closed and the query that needed it rejects with that error.
 
@@ -46,7 +46,7 @@ sequelize.addHook('afterConnect', async (connection) => {
 });
 ```
 
-All v6 hook names are accepted, but connection and define hooks other than `beforeConnect` and `afterConnect` (`beforeDefine`, `beforeQuery`, ...) are not run yet. `beforeBulkSync` / `afterBulkSync` run around `sequelize.sync()` and `beforeSync` / `afterSync` around each model's sync (also `Model.sync()`); `hooks: false` skips them.
+All v6 hook names are accepted, but connection hooks other than `beforeConnect` and `afterConnect` and `beforeQuery` / `afterQuery`, `beforeAssociate` / `afterAssociate` are not run yet. `beforeBulkSync` / `afterBulkSync` run around `sequelize.sync()` and `beforeSync` / `afterSync` around each model's sync (also `Model.sync()`); `hooks: false` skips them.
 
 ### Transactions in hooks
 

@@ -56,7 +56,13 @@ export class FindOperation extends FindLookups {
     const rows = await this.#rows(select, call, runtime.minifyAliases === true);
     const found = await this.#found(call, rows);
     if (opts['hooks'] === true) {
-      await lifecycle.runHooks(model, 'afterFind', found, opts);
+      // like v6, `findOne` (`plain`) hands the instance, not an array, to the hooks
+      await lifecycle.runHooks(
+        model,
+        'afterFind',
+        opts['plain'] === true ? (found[0] ?? null) : found,
+        opts,
+      );
     }
     return found as M[];
   }
