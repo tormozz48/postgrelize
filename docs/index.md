@@ -14,8 +14,11 @@ hero:
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: PostgreSQL features
-      link: /guide/upserts
+      text: Reference
+      link: /reference/
+    - theme: alt
+      text: Extensions
+      link: /extensions/
     - theme: alt
       text: PostgreSQL coverage
       link: /postgresql-coverage
