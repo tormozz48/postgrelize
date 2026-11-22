@@ -49,6 +49,7 @@ export const SequelizeStaticHooks = <TBase extends SequelizeConstructor>(Base: T
     /**
      * Registers a static hook.
      *
+     * @param this - The Sequelize class.
      * @param type - Hook type, e.g. `'beforeInit'`.
      * @param nameOrFn - Hook name (to remove it later) or the hook function.
      * @param fn - Hook function when a name is given.
@@ -74,6 +75,7 @@ export const SequelizeStaticHooks = <TBase extends SequelizeConstructor>(Base: T
     /**
      * Unregisters static hooks by name or by function reference.
      *
+     * @param this - The Sequelize class.
      * @param type - Hook type.
      * @param nameOrFn - Hook name or function; all hooks of the type when omitted.
      * @returns The class.
