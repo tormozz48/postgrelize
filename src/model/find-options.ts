@@ -7,10 +7,18 @@ import type { TableSampleOptions } from './source-options.ts';
 import type { SelectOptions } from './select-query-builder.ts';
 import type { WhereOptions } from './types.ts';
 
-/** Result of `findAndCountAll`: one page of rows plus the total count. */
-export type FindAndCountResult<M> = {
-  /** Total number of matching rows, ignoring `limit` / `offset`. */
+/** One group of a grouped count (Sequelize v6 `GroupedCountResultItem`): the grouped attributes plus the group's row count. */
+export type GroupedCountResultItem = {
+  /** Value of each grouped / projected attribute. */
+  [key: string]: unknown;
+  /** Number of rows in the group. */
   count: number;
+};
+
+/** Result of `findAndCountAll`: one page of rows plus the total count (an array of {@link GroupedCountResultItem} with `group`). */
+export type FindAndCountResult<M, C = number> = {
+  /** Total number of matching rows, ignoring `limit` / `offset`. */
+  count: C;
   /** Rows of the current page. */
   rows: M[];
 };
@@ -69,7 +77,7 @@ export type FindOptions<T = Values> = QueryOptionsBase &
 /**
  * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options plus the
  * count options `distinct` and `col`. The count query reuses `where`, `include`, `paranoid`,
- * `distinct`, `col`, `replacements`, `transaction` and `logging`; `group` of v6 is not forwarded to it.
+ * `distinct`, `col`, `group`, `replacements`, `transaction` and `logging`. With `group`, `count` is an array of {@link GroupedCountResultItem} like in v6.
  *
  * @see {@link Model.findAndCountAll}
  *

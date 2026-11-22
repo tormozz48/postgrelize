@@ -63,6 +63,7 @@ export class IncludeResolver {
       lateral: node.lateral,
       paranoid: node.paranoid,
       ...(node.where === undefined ? {} : { where: node.where }),
+      ...(node.on === undefined ? {} : { on: node.on }),
       ...(node.attributes === undefined ? {} : { attributes: node.attributes }),
       ...(node.children.length === 0
         ? {}
@@ -92,6 +93,7 @@ export class IncludeResolver {
       definition: registry.state(association.target).definition,
       as: association.as,
       where: item.where,
+      on: item.on,
       required: item.required ?? item.where !== undefined,
       right: item.right === true,
       attributes: item.attributes,

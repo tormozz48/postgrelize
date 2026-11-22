@@ -2,6 +2,8 @@ import { instanceValues, valueCloner } from './model-services.ts';
 import type { Model } from './model.ts';
 import type { AnyModel, Values } from './options.ts';
 
+type GetOptions = Readonly<{ plain?: boolean; raw?: boolean; clone?: boolean }>;
+
 /**
  * Value access of model instances: `get`, `set`, `getDataValue`, `setDataValue`, `changed`, `previous`, `equals`, `toJSON`.
  *
@@ -21,7 +23,7 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * const values = user.get({ plain: true });
    * ```
    */
-  get(options?: Readonly<{ plain?: boolean; raw?: boolean; clone?: boolean }>): TAttributes;
+  get(options?: GetOptions): TAttributes;
 
   /**
    * Returns one attribute value, applying its custom getter unless `raw` is set.
@@ -34,9 +36,23 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * const email = user.get('email');
    * ```
    */
-  get<K extends keyof TAttributes>(key: K, options?: Readonly<{ raw?: boolean }>): TAttributes[K];
+  get<K extends keyof this>(key: K, options?: GetOptions): this[K];
+
+  /**
+   * Returns the value of an attribute or association that is addressed by a plain string, for
+   * example an included association or a dynamic key.
+   *
+   * @param key - Attribute or association name.
+   * @param options - `raw: true` skips the custom getter.
+   * @returns The value, untyped.
+   * @example
+   * ```ts
+   * const posts = user.get('Posts');
+   * ```
+   */
+  get(key: string, options?: GetOptions): unknown;
   get(
-    keyOrOptions?: string | number | symbol | Readonly<{ plain?: boolean; raw?: boolean }>,
+    keyOrOptions?: string | number | symbol | GetOptions,
     options: Readonly<{ raw?: boolean }> = {},
   ): unknown {
     return instanceValues.get(this as unknown as AnyModel, keyOrOptions, options);

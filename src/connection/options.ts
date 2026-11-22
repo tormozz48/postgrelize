@@ -2,8 +2,12 @@ import type { PoolConfig } from 'pg';
 import type { HooksOption } from '../hooks/hooks.ts';
 import type { RetryOptions } from './retry.ts';
 
-/** Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms. */
-export type LoggingFunction = (sql: string, timingOrOptions?: unknown) => void;
+/**
+ * Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms;
+ * otherwise it is the query options object (as in Sequelize v6, whose typings declare the parameter
+ * as `timing?: number`).
+ */
+export type LoggingFunction = (sql: string, timing?: number) => void;
 
 /**
  * Connection pool settings (Sequelize v6 `PoolOptions`), given as the `pool` option of {@link SequelizeOptions}.

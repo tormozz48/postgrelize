@@ -64,6 +64,12 @@ export type AssociationOptions = Readonly<{
   onDelete?: string;
   /** `ON UPDATE` action of the foreign key constraint, e.g. `'CASCADE'`. */
   onUpdate?: string;
+  /**
+   * Sequelize v6 `hooks` flag (run the target's hooks when `onDelete: 'CASCADE'` removes rows).
+   * Accepted so that v6-typed code compiles; the cascade itself is executed by PostgreSQL, so no
+   * per-row hooks of the target run.
+   */
+  hooks?: boolean;
 }>;
 
 /**

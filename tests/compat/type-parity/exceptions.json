@@ -355,11 +355,6 @@
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
     },
     {
-      "name": "GroupedCountResultItem",
-      "category": "tracked",
-      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
-    },
-    {
       "name": "HasManyOptions",
       "category": "tracked",
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
@@ -1104,11 +1099,6 @@
         "name": "duplicating",
         "category": "internal",
         "note": "v6 internal include flag"
-      },
-      {
-        "name": "on",
-        "category": "not-planned",
-        "note": "custom include ON clauses are not supported"
       },
       {
         "name": "subQuery",

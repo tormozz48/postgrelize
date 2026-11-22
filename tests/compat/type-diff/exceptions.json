@@ -19,7 +19,7 @@
     },
     "model-arity": {
       "category": "tracked",
-      "note": "Model.update / setAttributes accept fewer arguments than v6."
+      "note": "Model.setAttributes accepts fewer arguments than v6."
     },
     "option-keys": {
       "category": "tracked",
@@ -80,7 +80,6 @@
       "Association.inspect": "association-members",
       "Association.isSelfAssociation": "association-members",
       "AssociationOptions.foreignKeyConstraint": "option-keys",
-      "AssociationOptions.hooks": "option-keys",
       "BelongsTo.identifier": "association-members",
       "BelongsTo.inspect": "association-members",
       "BelongsTo.isSelfAssociation": "association-members",
@@ -143,7 +142,6 @@
       "BelongsToManyHasAssociationsMixinOptions.mapToModel": "option-keys",
       "BelongsToManyHasAssociationsMixinOptions.type": "option-keys",
       "BelongsToManyOptions.foreignKeyConstraint": "option-keys",
-      "BelongsToManyOptions.hooks": "option-keys",
       "BelongsToManyOptions.timestamps": "option-keys",
       "BelongsToManyOptions.uniqueKey": "option-keys",
       "BelongsToManySetAssociationsMixinOptions.bind": "option-keys",
@@ -282,7 +280,6 @@
       "HasOneSetAssociationMixinOptions.omitNull": "option-keys",
       "HasOneSetAssociationMixinOptions.type": "option-keys",
       "IncludeOptions.duplicating": "option-keys",
-      "IncludeOptions.on": "option-keys",
       "IncludeOptions.subQuery": "option-keys",
       "IncludeThroughOptions.as": "option-keys",
       "IncludeThroughOptions.paranoid": "option-keys",
@@ -342,7 +339,6 @@
       "QueryInterface.increment": "query-interface-members",
       "QueryInterface.insert": "query-interface-members",
       "QueryInterface.nameIndexes": "query-interface-members",
-      "QueryInterface.queryGenerator": "query-interface-members",
       "QueryInterface.quoteTable": "query-interface-members",
       "QueryInterface.rawSelect": "query-interface-members",
       "QueryInterface.rollbackTransaction": "query-interface-members",
@@ -395,7 +391,6 @@
     },
     "arity": {
       "Model.setAttributes: max 3 -> 1": "model-arity",
-      "Model.update: max 3 -> 2": "model-arity",
       "QueryInterface.addConstraint: min 1 -> 2": "query-interface-arity",
       "QueryInterface.addIndex: max 4 -> 3": "query-interface-arity",
       "QueryInterface.bulkDelete: max 4 -> 3": "query-interface-arity",
@@ -412,6 +407,7 @@
       "Deferrable: namespace -> variable": "namespace-as-value",
       "HasMany: class -> type": "class-as-type",
       "HasOne: class -> type": "class-as-type",
+      "LOCK: enum -> type": "enum-as-type",
       "QueryTypes: enum -> type": "enum-as-type",
       "Utils: namespace -> variable": "namespace-as-value",
       "ValidationErrorItemOrigin: enum -> type": "enum-as-type"

@@ -3,6 +3,8 @@ import type { HooksOption } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
 import type { DefinitionOptions } from './model-definition.ts';
+
+export type { ModelNameOptions } from './model-definition.ts';
 import type { ScopeDefinition, ScopeOptions, WhereMergeStrategy } from './scope-registry.ts';
 import type { Model } from './model.ts';
 import type { RuntimeOwner } from './runtime.ts';
@@ -13,6 +15,7 @@ export type {
   CountOptions,
   FindAndCountOptions,
   FindAndCountResult,
+  GroupedCountResultItem,
   FindOptions,
   FindOrCreateOptions,
 } from './find-options.ts';
@@ -80,21 +83,6 @@ export type QualifiedTableName = Readonly<{
 }>;
 
 /**
- * Singular and plural forms of a model name (Sequelize v6 `ModelNameOptions`).
- *
- * @example
- * ```ts
- * const name: ModelNameOptions = { singular: 'person', plural: 'people' };
- * ```
- */
-export type ModelNameOptions = Readonly<{
-  /** Singular model name. */
-  singular?: string;
-  /** Plural model name. */
-  plural?: string;
-}>;
-
-/**
  * Options of `Model.init`: table-level options plus hooks, scopes and validation.
  *
  * Extends {@link DefinitionOptions}.
@@ -117,12 +105,6 @@ export type ModelNameOptions = Readonly<{
  */
 export type InitOptions = DefinitionOptions &
   Readonly<{
-    /**
-     * Singular and plural model name (Sequelize v6 `ModelOptions.name`). Declared so that code typed
-     * against v6 compiles; association and accessor names still derive from `modelName` and the
-     * inflection rules, not from this option.
-     */
-    name?: ModelNameOptions;
     /** Owning `Sequelize` instance. */
     sequelize: RuntimeOwner;
     /** Lifecycle hooks, by hook name. */

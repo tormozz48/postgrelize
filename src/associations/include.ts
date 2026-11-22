@@ -50,6 +50,11 @@ export type IncludeOptions = Readonly<{
   association?: Association | string;
   /** Filter on the included rows; makes the include required unless `required: false`. See {@link WhereOptions}. */
   where?: unknown;
+  /**
+   * Custom `ON` condition of the join; replaces the condition derived from the association keys.
+   * Not used by belongsToMany includes (the junction joins keep their key conditions). See {@link WhereOptions}.
+   */
+  on?: unknown;
   /** `INNER JOIN` (true) or `LEFT OUTER JOIN` (false). */
   required?: boolean;
   /** Use `RIGHT OUTER JOIN`.
@@ -111,6 +116,7 @@ export type IncludeNode = Readonly<{
   alias: string;
   path: string;
   where: unknown;
+  on: unknown;
   required: boolean;
   right: boolean;
   attributes: FindAttributeOptions | undefined;

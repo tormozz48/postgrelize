@@ -4,6 +4,7 @@ import type {
   Attributes,
   CountOptions,
   FindAndCountResult,
+  GroupedCountResultItem,
   FindAndCountOptions,
   FindOptions,
   FindOrCreateOptions,
@@ -157,8 +158,30 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static findAndCountAll<M extends AnyModel>(
       this: ModelStatic<M>,
+      options?: Omit<FindAndCountOptions<Attributes<M>>, 'group'>,
+    ): Promise<FindAndCountResult<M>>;
+
+    /**
+     * With `group`, `count` is an array with one item per group (the grouped attributes and the row
+     * count of the group) instead of a number.
+     *
+     * @param this - The model class (or a scoped model class from {@link Model.scope}).
+     * @param options - Query options including `group`.
+     * @returns Per-group counts and the current page of rows.
+     * @example
+     * ```ts
+     * const { count, rows } = await Post.findAndCountAll({ group: ['status'] });
+     * ```
+     */
+    static findAndCountAll<M extends AnyModel>(
+      this: ModelStatic<M>,
+      options: Omit<FindAndCountOptions<Attributes<M>>, 'group'> &
+        Required<Pick<FindAndCountOptions<Attributes<M>>, 'group'>>,
+    ): Promise<FindAndCountResult<M, GroupedCountResultItem[]>>;
+    static findAndCountAll<M extends AnyModel>(
+      this: ModelStatic<M>,
       options: FindAndCountOptions<Attributes<M>> = {},
-    ): Promise<FindAndCountResult<M>> {
+    ): Promise<FindAndCountResult<M, number | GroupedCountResultItem[]>> {
       return finder.findAndCountAll(this, options as FindAndCountOptions);
     }
 
