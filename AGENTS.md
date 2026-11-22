@@ -237,6 +237,7 @@ Everything lives in `.10x/`:
 | [031](.10x/adrs/031-retry-option.md)                       | `retry` option, in-house retry-as-promised semantics          | Accepted                                              |
 | [032](.10x/adrs/032-v6-type-api-parity.md)                 | Type-level parity with the Sequelize v6 declarations          | Accepted                                              |
 | [033](.10x/adrs/033-connection-manager-pool-destroy.md)    | `connectionManager.pool` counters and `destroyConnection`     | Accepted (extends 030)                                |
+| [034](.10x/adrs/034-cjs-default-export.md)                 | Constructable CommonJS entry and default export               | Accepted                                              |
 
 ## Git, PRs and releases
 
