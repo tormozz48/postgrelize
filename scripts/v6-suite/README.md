@@ -38,3 +38,26 @@ add failures to hide a regression. A failure that is a deliberate difference (AD
 the baseline does not yet separate causes, see the design's staged plan (G5).
 
 CI: `.github/workflows/v6-suite.yml`, nightly and on demand, not a required check.
+
+## Triage of the baseline (G5)
+
+State at v6.37.8, PostgreSQL 17, postgrelize with the include-alias fix: unit 260 pass / 309 fail (72 of 101 files load), integration
+1067 pass / 435 fail (125 of 135 load). `.v6-suite/last-run-<kind>.json` keeps the first error line of every failing test; the heuristic
+buckets below come from it (counts are tests, unless noted):
+
+| Bucket                                                                                     | Unit | Integration | Meaning                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------ | ---- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| v6 query generator internals (`queryGenerator` is undefined in the adapter)                | 74   | 2           | Tests of v6's SQL builders. Not a public API; `internal`.                                                                                                                                                                                              |
+| v6 `Model` internals (`_injectScope`, `_validateIncludedElements`, `beforeAssociate`, ...) | 51   | 0           | `internal`.                                                                                                                                                                                                                                            |
+| Files that do not load (unmapped `sequelize/lib/*` deep imports, other dialects)           | 29   | 10          | Mostly `internal` / `other-dialect`.                                                                                                                                                                                                                   |
+| Return shapes of v6 internals (`expected undefined ...`)                                   | 34   | 27          | Mostly `internal`; look at the integration ones.                                                                                                                                                                                                       |
+| Other dialects (`mysql:` URIs)                                                             | 8    | 0           | `other-dialect`.                                                                                                                                                                                                                                       |
+| Stubs of v6 internals (`sinon.stub(Sequelize, 'Query')`)                                   | 10   | 5           | `internal`.                                                                                                                                                                                                                                            |
+| `type "undefined" does not exist` (a `DataTypes` lookup in DDL)                            | 0    | 19          | Probably a real gap; next family to fix.                                                                                                                                                                                                               |
+| PostGIS types (`geometry`, `geography`)                                                    | 0    | 12          | The suite container has no PostGIS; run it on a PostGIS image to see the real result.                                                                                                                                                                  |
+| Named bind parameter error wording                                                         | 0    | 8           | Message text differs; `wording`.                                                                                                                                                                                                                       |
+| Not bucketed                                                                               | 132  | 362         | Assertion differences. Largest files: `sequelize/query` 43, `model` 29, `model/findAll` 19, `cls` 18, `sequelize` 16, `associations/has-many` 16, `model/scope/associations` 13, `associations/belongs-to-many` 13, `dialects/postgres/data-types` 12. |
+
+Fixed by this triage: an include by model with several associations to the target now picks the one without an explicit alias, as v6
+does (about 20 integration tests); the worker databases get the `hstore` extension.
+Next: the `type "undefined"` family, then `sequelize/query` and the association files, one family per PR; the baseline shrinks with each.
