@@ -47,7 +47,7 @@
     },
     "error-members": {
       "category": "tracked",
-      "note": "Error class members missing: AggregateError.toString, ValidationError.get, UniqueConstraintError.get, ForeignKeyConstraintError.value / reltype, ValidationErrorItem helpers and statics."
+      "note": "Error class members missing: AggregateError.toString, ForeignKeyConstraintError.value / reltype, ValidationErrorItem helpers and statics."
     },
     "generic-params": {
       "category": "tracked",
@@ -411,12 +411,10 @@
       "ThroughOptions.unique": "option-keys",
       "TransactionOptions.autocommit": "option-keys",
       "TransactionOptions.benchmark": "option-keys",
-      "UniqueConstraintError.get": "error-members",
       "UpdateOptions.limit": "option-keys",
       "UpdateOptions.sideEffects": "option-keys",
       "UpsertOptions.conflictWhere": "option-keys",
       "UpsertOptions.searchPath": "search-path",
-      "ValidationError.get": "error-members",
       "ValidationErrorItem.getValidatorKey": "error-members",
       "ValidationErrorItem.isValidationErrorItemOrigin": "error-members",
       "ValidationErrorItem.normalizeString": "error-members",

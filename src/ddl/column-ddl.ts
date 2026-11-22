@@ -207,10 +207,13 @@ export class ColumnDdl {
   }
 
   #referencedTable(references: NonNullable<ColumnDefinition['references']>): TableName {
-    return typeof references === 'string'
-      ? references
-      : typeof references.model === 'string'
-        ? references.model
-        : (references.model as Readonly<{ tableName: string; schema?: string }>);
+    if (typeof references === 'string') {
+      return references;
+    }
+    const model = references.model;
+    if (typeof model === 'string') {
+      return model;
+    }
+    return 'getTableName' in model ? model.getTableName() : model;
   }
 }

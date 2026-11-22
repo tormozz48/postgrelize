@@ -103,7 +103,7 @@ export class SequelizeBase {
    * The model is registered in `sequelize.models`.
    *
    * @param modelName - Model name.
-   * @param attributes - Attribute definitions keyed by attribute name.
+   * @param attributes - Attribute definitions keyed by attribute name; defaults to none (only the primary key and timestamps).
    * @param options - Model options (`sequelize` is set for you).
    * @returns The model class.
    * @see {@link Model.init}
@@ -119,7 +119,7 @@ export class SequelizeBase {
    */
   define<M extends AnyModel = Model>(
     modelName: string,
-    attributes: ModelAttributes,
+    attributes: ModelAttributes = {},
     options: DefineOptions = {},
   ): ModelStatic<M> {
     const DefinedModel = { [modelName]: class extends Model {} }[

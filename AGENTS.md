@@ -32,6 +32,7 @@ npm test               # unit + integration + compat (vs sequelize@6) + docs exa
 npm run build && npm run test:build
 npm run release:preflight -- X.Y.Z [--before-bump] [--fast | --full]   # release gate; skips what CI already ran on the commit, see Git, PRs and releases
 npm run llm:build      # regenerate llm/USAGE.md and skills/ (a docs test fails when stale)
+npm run v6:db && npm run v6:suite -- unit|integration   # Sequelize v6's own mocha tests against dist/ (own container on :54399), see scripts/v6-suite/README.md
 npm run docs           # TypeDoc + VitePress build + llms.txt / llms-full.txt; fails on undocumented public exports
 npm run docs:dev       # preview the site
 npm run test:coverage  # coverage + badge
