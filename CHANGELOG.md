@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `IncludeOptions.on` (custom `ON` condition of an include join, as in v6), `AssociationOptions.hooks` (accepted for v6 typing; the cascade runs in PostgreSQL), `QueryInterface#queryGenerator` (typed `unknown` like v6), the `LOCK` type next to the `LOCK` value, `GroupedCountResultItem`, `instance.update(key, value)`, and `fn` / `col` / `literal` values for `Model.update`, `Model.updateStatement` and `instance.update`. Part of the Sequelize v6 type-parity work (#PR, ADR-032).
+- `IncludeOptions.on` (custom `ON` condition of an include join, as in v6), `AssociationOptions.hooks` (accepted for v6 typing; the cascade runs in PostgreSQL), `QueryInterface#queryGenerator` (typed `unknown` like v6), the `LOCK` type next to the `LOCK` value, `GroupedCountResultItem`, `instance.update(key, value)`, and `fn` / `col` / `literal` values for `Model.update`, `Model.updateStatement` and `instance.update`. Part of the Sequelize v6 type-parity work ([#133](https://github.com/tormozz48/postgrelize/pull/133), ADR-032).
 - `Model#get(key: string)` overload and `get<K extends keyof this>(key)` like v6, so included associations and model getters type-check.
 
 ### Changed
@@ -49,8 +49,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
-- `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` (#PR).
-- `findAndCountAll({ group })` forwards `group` to the count query, so `count` is the per-group array as in v6 instead of the total number of rows (#PR).
+- `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
+- `findAndCountAll({ group })` forwards `group` to the count query, so `count` is the per-group array as in v6 instead of the total number of rows ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
 
 ## [1.3.0] - 2026-11-22
 
