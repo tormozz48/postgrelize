@@ -42,6 +42,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 - `findByPk(id, { rejectOnEmpty })` overload that resolves to the model (Sequelize v6 `NonNullFindOptions`); `findOne` takes the same `NonNullFindOptions`.
 - `FindOptions.replacements` works as in v6: `:name` and `?` placeholders inside `literal()` of `findAll`, `findOne`, `findByPk`, `count`, `findAndCountAll` (and the other model queries) are substituted, every value as a bound parameter, arrays expanding to a list. This reverses the 1.2.0 deviation that finders ignored the option. New row on the Security page, payload and property tests, and a differential test against Sequelize v6.
+- Default export and constructable CommonJS entry, as in Sequelize v6: `import Sequelize from 'postgrelize'` works, and `require('postgrelize')` is the `Sequelize` class with every named export as a property (so `new (require('postgrelize'))(url)` and `require('postgrelize').Sequelize` both work). In CommonJS `HasOne`, `HasMany`, `BelongsTo` and `BelongsToMany` stay the decorators. ADR-034
 - `nest: true` for `sequelize.query` (nests `a.b` column names; implies `SELECT`), `distinct` and `col` for `findAndCountAll` (forwarded to its count query), `WhereAttributeHashValue` export.
 
 ### Changed

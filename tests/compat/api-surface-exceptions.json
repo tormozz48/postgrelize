@@ -706,11 +706,6 @@
       "name": "UUIDV1",
       "category": "not-planned",
       "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
-    },
-    {
-      "name": "default",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
     }
   ]
 }

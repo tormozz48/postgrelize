@@ -6,6 +6,7 @@ import {
   type InferCreationAttributes,
   type CreationOptional,
 } from '../../../dist/index.js';
+import DefaultSequelize from '../../../dist/index.js';
 class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<number>;
   declare name: string;
@@ -26,3 +27,4 @@ export const run = async (): Promise<string> => {
   await User.merge({ source: [{ name: 'x' }], on: {}, whenNotMatched: { insert: true } });
   return users[0]?.get('name') ?? user.name;
 };
+export const sameClass: typeof Sequelize = DefaultSequelize;

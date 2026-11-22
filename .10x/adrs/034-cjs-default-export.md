@@ -15,7 +15,7 @@ Plain-JavaScript and default-import code is common in v6 applications, and these
 
 ## Decision
 - **ESM:** `src/index.ts` adds `export { Sequelize as default }`. The named exports are unchanged. `import Sequelize from 'postgrelize'` and `import { Sequelize } from 'postgrelize'` both work and are the same class. The declarations get the same default export.
-- **CommonJS:** `dist/index.cjs` exports the `Sequelize` class itself, with every named export copied onto it as a static property, `Sequelize.Sequelize` and `Sequelize.default` pointing to the class, like v6. `require('postgrelize')` is constructable; `require('postgrelize').Sequelize`, `.DataTypes`, `.Op`, ... keep working, so existing consumers do not break. The Vite build still emits the namespace bundle (as `dist/index.cjs`'s private input, `dist/index.core.cjs`) and a small build step writes the `index.cjs` wrapper; copied names never replace a static that the class already defines, and the copies are plain data properties (no getters).
+- **CommonJS:** `dist/index.cjs` exports the `Sequelize` class itself, with every named export copied onto it as a static property, `Sequelize.Sequelize` and `Sequelize.default` pointing to the class, like v6. `require('postgrelize')` is constructable; `require('postgrelize').Sequelize`, `.DataTypes`, `.Op`, ... keep working, so existing consumers do not break. The Vite build still emits the namespace bundle (as `dist/index.cjs`'s private input, `dist/index.core.cjs`) and a small build step writes the `index.cjs` wrapper; the copies are plain data properties (no getters). A named export replaces a static of the same name that the class already has, so that `require('postgrelize').X` keeps meaning what it meant before this ADR. This changes four statics in CommonJS only: `Sequelize.HasOne`, `HasMany`, `BelongsTo` and `BelongsToMany` are the association classes (v6 names) in ESM and in the class, but the public decorators of ADR-022 in `require('postgrelize')`. A build test lists these four names, so a new clash cannot appear unnoticed.
 - No `export =` in the declarations: it would break `import { Sequelize }` under ESM resolution. TypeScript consumers use the default export, which exists in the ESM and CJS builds (`exports.default`).
 - `tests/build/package-entry.test.ts` and `tests/build/declarations.test.ts` assert both forms in both module systems and in a strict consumer. The `default` entries leave `api-surface-exceptions.json`. `docs/guide/migrating.md` shows the three import forms.
 - Release: minor version. The change is additive: `require('postgrelize')` changes from an object to a function that carries the same properties, and a `default` export appears; nothing a previous consumer could rely on is removed. Code that tested `typeof require('postgrelize') === 'object'` is the only break and is not a supported use.
@@ -35,11 +35,11 @@ Plain-JavaScript and default-import code is common in v6 applications, and these
 - The differential gate can run v6 code that imports through either form.
 ### Negative
 - A post-build step and a second CJS file; `tests/build` must keep passing on Node 20, 22 and 24.
-- The `Sequelize` class carries about 150 extra static properties in CJS, as in v6. Names already used by the class win; a clash is a build-time test failure, not a silent overwrite.
+- The `Sequelize` class carries about 150 extra static properties in CJS, as in v6. In CommonJS the four association statics (`HasOne`, `HasMany`, `BelongsTo`, `BelongsToMany`) are the decorators, not the association classes, which differs from v6 code that reads `Sequelize.HasMany` from a `require`d class; the association classes stay reachable through `sequelize.constructor` in ESM and through `Model.associations[name]` instances.
 - Bundlers that statically analyse `require` see a function export; tree-shaking of the CJS build is not a goal.
 ### Risks
 - Two default-import conventions exist for CJS consumers compiled with `esModuleInterop`. Both `Sequelize` and `Sequelize.default` resolve to the class, so they agree.
-- A future named export that collides with a `Sequelize` static needs a decision at that time; the build test names the clash.
+- A future named export that collides with a `Sequelize` static needs a decision at that time; the build test names the clash and fails until the new name is listed.
 
 ## Dependencies
 ADR-001 (v6 drop-in), ADR-004 (differential testing), ADR-016, ADR-032 (type parity).
