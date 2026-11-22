@@ -1,6 +1,7 @@
 import { builtinModules } from 'node:module';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import { commonJsEntryPlugin } from './build/commonjs-entry-plugin.ts';
 import { decoratorsPlugin } from './build/decorators-plugin.ts';
 import pkg from './package.json' with { type: 'json' };
 
@@ -19,11 +20,15 @@ export default defineConfig({
     lib: {
       entry: { index: 'src/index.ts' },
       formats: ['es', 'cjs'],
-      fileName: (format, name) => `${name}.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (format, name) => `${name}.${format === 'es' ? 'js' : 'core.cjs'}`,
     },
     rolldownOptions: {
       external,
     },
   },
-  plugins: [decoratorsPlugin(), dts({ tsconfigPath: './tsconfig.build.json' })],
+  plugins: [
+    decoratorsPlugin(),
+    dts({ tsconfigPath: './tsconfig.build.json' }),
+    commonJsEntryPlugin(),
+  ],
 });
