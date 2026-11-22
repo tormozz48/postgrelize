@@ -116,6 +116,8 @@ export type AttributeOptions = Readonly<{
   unique?: boolean | string | UniqueOptions;
   /** Column comment (`COMMENT ON COLUMN`) written by `sync()`. */
   comment?: string;
+  /** Allowed values of an `ENUM` column declared with the bare type, `{ type: DataTypes.ENUM, values: ['a', 'b'] }` (Sequelize v6). Ignored for other types. */
+  values?: readonly string[];
   /** Foreign key reference. */
   references?: string | ReferenceOptions;
   /** `ON DELETE` action of the foreign key, e.g. `'CASCADE'`; needs `references`. */
