@@ -67,6 +67,21 @@ export type FindOptions<T = Values> = QueryOptionsBase &
   CteFindOptions;
 
 /**
+ * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options. The count
+ * query reuses `where`, `include`, `paranoid`, `transaction` and `logging`; `distinct`, `col` and
+ * `group` of v6 are not forwarded to it.
+ *
+ * @see {@link Model.findAndCountAll}
+ *
+ * @example
+ * ```ts
+ * const options: FindAndCountOptions<User> = { where: { active: true }, limit: 10, offset: 20 };
+ * const { count, rows } = await User.findAndCountAll(options);
+ * ```
+ */
+export type FindAndCountOptions<T = Values> = FindOptions<T>;
+
+/**
  * Options of `count`.
  *
  * Includes joins and CTE options; `count` fires `beforeCount` hooks.

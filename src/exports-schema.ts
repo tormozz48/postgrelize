@@ -8,6 +8,7 @@ export type {
   ThroughOptions,
 } from './associations/types.ts';
 export type {
+  Includeable,
   IncludeOption,
   IncludeOptions,
   IncludeThroughOptions,

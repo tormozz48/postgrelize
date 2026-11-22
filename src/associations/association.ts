@@ -17,7 +17,6 @@ const registry = new ModelRegistry();
 const shape = new AssociationShape();
 const accessors = new AssociationAccessors();
 
-type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
 /** Query options accepted by the accessor methods (`getPosts(options)`, ...). */
@@ -28,14 +27,25 @@ export type AccessorOptions = Values &
  * Association between two models (Sequelize v6 `Association`). Subclasses resolve the keys,
  * add the foreign key attributes and implement the accessor methods that are installed on the
  * source prototype (`getX`, `setX`, `createX`, ...).
+ *
+ * @typeParam S - Instance type of the source model.
+ * @typeParam T - Instance type of the target model.
+ * @example
+ * ```ts
+ * const association: Association<Post, User> = Post.belongsTo(User);
+ * association.associationType; // 'BelongsTo'
+ * ```
  */
-export abstract class Association implements AssociationFields {
+export abstract class Association<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> implements AssociationFields {
   /** Kind of association. */
   declare readonly associationType: AssociationType;
   /** Model the association is defined on. */
-  declare readonly source: Model;
+  declare readonly source: ModelStatic<S>;
   /** Associated model. */
-  declare readonly target: Model;
+  declare readonly target: ModelStatic<T>;
   /** Alias used in `include` and as the instance property. */
   declare readonly as: string;
   /** Singular and plural alias forms. */
@@ -64,6 +74,8 @@ export abstract class Association implements AssociationFields {
   declare readonly through: AssociationThrough | undefined;
 
   /**
+   * Creates the association description; subclasses call `install()` afterwards.
+   *
    * @param type - Kind of association.
    * @param source - Model the association is defined on.
    * @param target - Associated model.
@@ -73,8 +85,8 @@ export abstract class Association implements AssociationFields {
    */
   protected constructor(
     type: AssociationType,
-    source: Model,
-    target: Model,
+    source: ModelStatic<S>,
+    target: ModelStatic<T>,
     options: AssociationOptions,
     name: AssociationName,
     keys: AssociationKeyFields,
@@ -87,6 +99,7 @@ export abstract class Association implements AssociationFields {
    * instance properties of the alias (and of the junction model on the target).
    *
    * @throws AssociationError when the alias is already used on the source.
+   * @internal
    */
   protected install(): void {
     registry.update(this.source, (state) => {
@@ -112,9 +125,10 @@ export abstract class Association implements AssociationFields {
    *
    * @param value - One value, a list, `null` or `undefined`.
    * @returns List of values.
+   * @internal
    */
-  protected toArray<T>(value: T | readonly T[] | null | undefined): readonly T[] {
-    return value === null || value === undefined ? [] : Array.isArray(value) ? value : [value as T];
+  protected toArray<V>(value: V | readonly V[] | null | undefined): readonly V[] {
+    return value === null || value === undefined ? [] : Array.isArray(value) ? value : [value as V];
   }
 
   /**
@@ -123,6 +137,7 @@ export abstract class Association implements AssociationFields {
    * @param item - Instance or key value.
    * @param key - Attribute name.
    * @returns Key value.
+   * @internal
    */
   protected keyOf(item: unknown, key: string): unknown {
     return typeof item === 'object' && item !== null && 'get' in item
@@ -135,6 +150,7 @@ export abstract class Association implements AssociationFields {
    *
    * @param parts - Conditions.
    * @returns Where condition.
+   * @internal
    */
   protected andWhere(...parts: readonly unknown[]): Values {
     return { [Op.and]: parts.filter((part) => part !== undefined && part !== null) };
@@ -145,6 +161,7 @@ export abstract class Association implements AssociationFields {
    *
    * @param options - Accessor options.
    * @returns `transaction`, `logging`, `benchmark` and `retry`.
+   * @internal
    */
   protected passThrough(options: AccessorOptions): Values {
     return Object.fromEntries(

@@ -110,6 +110,7 @@ Feature-specific designs: eager loading [ADR-009](.10x/adrs/009-eager-loading-jo
   - Pure logic goes to `tests/unit`.
   - Anything v6 also does goes to `tests/compat` (differential) ([ADR-004](.10x/adrs/004-differential-compat-testing.md)). Compatibility is claimed only for covered scenarios.
   - PostgreSQL-only features and fixed v6 bugs go to `tests/integration`. Fixed v6 bugs go to `tests/integration/sequelize-issues.test.ts`.
+- **Type parity** (`tests/compat/type-parity.test.ts`): the corpus in `tests/compat/type-parity/` must compile against the `sequelize@6` declarations and against postgrelize. A public type or option that v6 also has keeps its v6 name, generics and defaults; `tests/compat/type-parity/exceptions.json` lists the v6 type names and option keys still missing and may only shrink ([ADR-032](.10x/adrs/032-v6-type-api-parity.md)).
 - A differential test never encodes a v6 bug as the expected result. If v6 is wrong, narrow the scenario or move it to the integration suite ([ADR-016](.10x/adrs/016-v6-bug-divergence.md)).
 - **Isolation:**
   - Each DB test runs in its own schema via `withSchema` / `runScenario`.
@@ -234,6 +235,7 @@ Everything lives in `.10x/`:
 | [029](.10x/adrs/029-file-size-limit-400.md)                | File size limit 400 lines (supersedes the 150 of ADR-021)     | Accepted                                              |
 | [030](.10x/adrs/030-public-connection-manager.md)          | Public `sequelize.connectionManager` get/release contract     | Accepted                                              |
 | [031](.10x/adrs/031-retry-option.md)                       | `retry` option, in-house retry-as-promised semantics          | Accepted                                              |
+| [032](.10x/adrs/032-v6-type-api-parity.md)                 | Type-level parity with the Sequelize v6 declarations          | Accepted                                              |
 
 ## Git, PRs and releases
 

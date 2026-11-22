@@ -16,7 +16,14 @@ import {
   type QueryOptionsBase,
   type RuntimeOwner,
 } from '../model/runtime.ts';
-import { QueryResultShaper, QueryTypes, type QueryOptions } from '../query/query-result-shaper.ts';
+import {
+  QueryResultShaper,
+  QueryTypes,
+  type QueryOptions,
+  type QueryOptionsWithModel,
+  type QueryOptionsWithType,
+  type TypedQueryResults,
+} from '../query/query-result-shaper.ts';
 import { RawQuery } from '../query/raw-query.ts';
 import { QueryInterface } from '../query-interface/query-interface.ts';
 import { RowMapper } from '../model/row-mapper.ts';
@@ -223,20 +230,124 @@ export class SequelizeBase {
    * The SQL text itself is sent as is: never build it from user input — pass user values through
    * `replacements` or `bind`.
    *
+   * Overloads follow Sequelize v6: with a `type` the result type is known (`SELECT` gives `T[]`, or
+   * `T | null` with `plain: true`), with a `model` the rows are instances of it, otherwise the result
+   * is `[rows, metadata]`.
+   *
+   * @typeParam T - Row type of a `SELECT` query.
    * @param sql - SQL text, or a literal.
-   * @param options - Query options.
-   * @returns Shaped according to `options.type`, like Sequelize v6.
+   * @param options - Query options with `type: QueryTypes.SELECT` and `plain: true`.
+   * @returns The first row, or `null`.
    * @throws DatabaseError subclasses mapped from the PostgreSQL error (unique violation, foreign key violation, ...).
    * @see {@link QueryTypes}
    *
    * @example
    * ```ts
-   * const rows = await sequelize.query('SELECT id, name FROM users WHERE name = :name', {
+   * const row = await sequelize.query<{ id: number }>('SELECT id FROM users LIMIT 1', {
    *   type: QueryTypes.SELECT,
-   *   replacements: { name: 'Ada' },
+   *   plain: true,
    * });
    * ```
    */
+  query<T extends object>(
+    sql: string | Literal,
+    options: QueryOptionsWithType<QueryTypes.SELECT> & Readonly<{ plain: true }>,
+  ): Promise<T | null>;
+  /**
+   * Runs a `SELECT` statement and returns its rows.
+   *
+   * @typeParam T - Row type.
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options with `type: QueryTypes.SELECT`.
+   * @returns The rows.
+   * @example
+   * ```ts
+   * const rows = await sequelize.query<{ id: number; name: string }>(
+   *   'SELECT id, name FROM users WHERE name = :name',
+   *   { type: QueryTypes.SELECT, replacements: { name: 'Ada' } },
+   * );
+   * ```
+   */
+  query<T extends object>(
+    sql: string | Literal,
+    options: QueryOptionsWithType<QueryTypes.SELECT>,
+  ): Promise<T[]>;
+  /**
+   * Runs a statement and returns the first row as an instance of `options.model`.
+   *
+   * @typeParam M - Model instance type.
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options with `model` and `plain: true`.
+   * @returns The instance, or `null`.
+   * @example
+   * ```ts
+   * const user = await sequelize.query('SELECT * FROM users LIMIT 1', { model: User, plain: true });
+   * ```
+   */
+  query<M extends AnyModel>(
+    sql: string | Literal,
+    options: QueryOptionsWithModel<M> & Readonly<{ plain: true }>,
+  ): Promise<M | null>;
+  /**
+   * Runs a statement and returns its rows as instances of `options.model`.
+   *
+   * @typeParam M - Model instance type.
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options with `model`.
+   * @returns The instances.
+   * @example
+   * ```ts
+   * const users = await sequelize.query('SELECT * FROM users', { model: User, mapToModel: true });
+   * ```
+   */
+  query<M extends AnyModel>(sql: string | Literal, options: QueryOptionsWithModel<M>): Promise<M[]>;
+  /**
+   * Runs a statement of a known non-`SELECT` query type; the result type follows the v6 typings
+   * (`UPDATE`: `[undefined, number]`, `INSERT`: `[number, number]`, `BULKUPDATE` / `BULKDELETE` /
+   * `UPSERT`: the affected row count, `DELETE`: nothing, `SHOWTABLES`: table names, `DESCRIBE`: columns).
+   *
+   * @typeParam T - The query type.
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options with a `type`.
+   * @returns The result shaped by the type.
+   * @example
+   * ```ts
+   * const [, affected] = await sequelize.query('UPDATE users SET active = true', {
+   *   type: QueryTypes.UPDATE,
+   * });
+   * ```
+   */
+  query<T extends keyof TypedQueryResults>(
+    sql: string | Literal,
+    options: QueryOptionsWithType<T>,
+  ): Promise<TypedQueryResults[T]>;
+  /**
+   * Runs a raw statement and returns the first row.
+   *
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options with `plain: true`.
+   * @returns The first row, or `null`.
+   * @example
+   * ```ts
+   * const row = await sequelize.query('SELECT 1 AS one', { plain: true });
+   * ```
+   */
+  query(
+    sql: string | Literal,
+    options: QueryOptions & Readonly<{ plain: true }>,
+  ): Promise<Record<string, unknown> | null>;
+  /**
+   * Runs a raw statement and returns `[rows, metadata]`.
+   *
+   * @param sql - SQL text, or a literal.
+   * @param options - Query options.
+   * @returns Rows and driver metadata.
+   * @example
+   * ```ts
+   * const [rows, metadata] = await sequelize.query('SELECT id FROM users');
+   * ```
+   */
+  query(sql: string | Literal, options?: QueryOptions): Promise<[unknown[], unknown]>;
   async query(sql: string | Literal, options: QueryOptions = {}): Promise<unknown> {
     const text = typeof sql === 'string' ? sql : sql.val;
     const prepared = rawQuery.prepare(text, {

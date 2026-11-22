@@ -15,6 +15,7 @@ export type {
   LockTarget,
   Order,
   OrderItem,
+  ProjectionAlias,
   SelectOptions,
 } from './select-options.ts';
 

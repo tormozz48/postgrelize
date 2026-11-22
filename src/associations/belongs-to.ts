@@ -4,13 +4,15 @@ import { AssociationKeys } from './association-keys.ts';
 import { OwnerKeys } from './owner-keys.ts';
 import type { AssociationOptions } from './types.ts';
 
-type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
 
 const ownerKeys = new OwnerKeys(new AssociationKeys());
 
 /** `source.belongsTo(target)` (Sequelize v6 `BelongsTo`): the foreign key lives on the source. */
-export class BelongsTo extends Association {
+export class BelongsTo<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> extends Association<S, T> {
   /**
    * Adds the foreign key attribute to the source and registers the association.
    *
@@ -18,7 +20,7 @@ export class BelongsTo extends Association {
    * @param target - Associated model.
    * @param options - Association options.
    */
-  constructor(source: Model, target: Model, options: AssociationOptions = {}) {
+  constructor(source: ModelStatic<S>, target: ModelStatic<T>, options: AssociationOptions = {}) {
     const resolved = ownerKeys.belongsTo(source, target, options);
     super('BelongsTo', source, target, options, resolved.name, resolved.keys);
     this.install();

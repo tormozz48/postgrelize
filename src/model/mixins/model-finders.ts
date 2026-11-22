@@ -4,6 +4,7 @@ import type {
   Attributes,
   CountOptions,
   FindAndCountResult,
+  FindAndCountOptions,
   FindOptions,
   FindOrCreateOptions,
   ModelStatic,
@@ -131,7 +132,7 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static findAndCountAll<M extends AnyModel>(
       this: ModelStatic<M>,
-      options: FindOptions<Attributes<M>> = {},
+      options: FindAndCountOptions<Attributes<M>> = {},
     ): Promise<FindAndCountResult<M>> {
       return finder.findAndCountAll(this, options as FindOptions);
     }

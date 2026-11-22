@@ -171,3 +171,4 @@ export type {
   SequelizeOptions,
 } from './connection/options.ts';
 export type { Replacements, BindParameters } from './query/raw-query.ts';
+export { Utils } from './utils-namespace.ts';

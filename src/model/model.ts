@@ -28,9 +28,10 @@ const ModelStatics = ModelPostgres(
 // merged interface below and copied onto the prototype at the end of this file.
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- intentional merge.
 export interface Model<
-  TAttributes extends object = Values,
+  // oxlint-disable-next-line typescript/no-explicit-any -- Sequelize v6 compat: the `any` default lets interface-typed models (no index signature) and untyped `Model` work.
+  TAttributes extends {} = any,
   // oxlint-disable-next-line no-unused-vars -- merged declarations need identical type parameters.
-  TCreationAttributes extends object = TAttributes,
+  TCreationAttributes extends {} = TAttributes,
 >
   extends ModelInstanceValues<TAttributes>, ModelInstancePersistence<TAttributes> {}
 
@@ -50,8 +51,9 @@ export interface Model<
  */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- see the interface above.
 export class Model<
-  TAttributes extends object = Values,
-  TCreationAttributes extends object = TAttributes,
+  // oxlint-disable-next-line typescript/no-explicit-any -- Sequelize v6 compat, see the interface above.
+  TAttributes extends {} = any,
+  TCreationAttributes extends {} = TAttributes,
 > extends ModelStatics {
   /** Phantom type of attributes; not set at runtime. */
   declare _attributes: TAttributes;

@@ -23,7 +23,7 @@
 
 ## Why postgrelize
 
-- **Drop-in for Sequelize v6.** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like v6. A differential test suite runs every scenario on both libraries and compares results.
+- **Drop-in for Sequelize v6.** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like v6. A differential test suite runs every scenario on both libraries and compares results. The TypeScript types follow the v6 declarations too (`Model`, `ModelStatic`, `query<T>`, association mixins), checked by a type-level parity test.
 - **PostgreSQL first.** One dialect, so every feature can use PostgreSQL fully instead of the lowest common denominator.
 - **Safe by default.** Values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
 - **Typed and documented.** Strict TypeScript, TSDoc on every export, [API reference](https://tormozz48.github.io/postgrelize/).

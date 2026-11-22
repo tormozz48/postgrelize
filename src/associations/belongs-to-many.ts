@@ -18,7 +18,10 @@ const junctionKeys = new JunctionKeys(new AssociationKeys());
  * `source.belongsToMany(target, { through })` (Sequelize v6 `BelongsToMany`): both foreign keys
  * live on a junction model, which is created when given by name.
  */
-export class BelongsToMany extends Association {
+export class BelongsToMany<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> extends Association<S, T> {
   readonly #junction: Model;
   readonly #junctionName: string;
   readonly #otherKey: string;
@@ -30,7 +33,7 @@ export class BelongsToMany extends Association {
    * @param target - Associated model.
    * @param options - Association options with `through`.
    */
-  constructor(source: Model, target: Model, options: BelongsToManyOptions) {
+  constructor(source: ModelStatic<S>, target: ModelStatic<T>, options: BelongsToManyOptions) {
     const resolved = junctionKeys.resolve(source, target, options);
     const model = (resolved.keys.through as AssociationThrough).model;
     super('BelongsToMany', source, target, options, resolved.name, resolved.keys);

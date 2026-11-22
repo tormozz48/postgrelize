@@ -1,9 +1,38 @@
+import type { BelongsTo as BelongsToAssociation } from '../associations/belongs-to.ts';
+import type { BelongsToMany as BelongsToManyAssociation } from '../associations/belongs-to-many.ts';
+import type { HasMany as HasManyAssociation } from '../associations/has-many.ts';
+import type { HasOne as HasOneAssociation } from '../associations/has-one.ts';
 import type { AssociationOptions, BelongsToManyOptions } from '../associations/types.ts';
+import type { AnyModel } from '../model/options.ts';
 import { decorate } from './decorator-factory.ts';
 import type { ModelPropertyDecorator } from './decorator-types.ts';
 import type { AssociationSpec, ModelGetter } from './model-metadata.ts';
 
 type Kind = AssociationSpec['kind'];
+
+// The v6 association classes share their names with these decorators, so the root exports the class
+// types under the same names: `HasMany<S, T>` in a type position is the association, `@HasMany(...)` the decorator.
+
+/** The association created by `Model.hasOne` (Sequelize v6 `HasOne` class type); the `@HasOne` decorator has the same name as a value. */
+export type HasOne<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> = HasOneAssociation<S, T>;
+/** The association created by `Model.hasMany` (Sequelize v6 `HasMany` class type); the `@HasMany` decorator has the same name as a value. */
+export type HasMany<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> = HasManyAssociation<S, T>;
+/** The association created by `Model.belongsTo` (Sequelize v6 `BelongsTo` class type); the `@BelongsTo` decorator has the same name as a value. */
+export type BelongsTo<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> = BelongsToAssociation<S, T>;
+/** The association created by `Model.belongsToMany` (Sequelize v6 `BelongsToMany` class type); the `@BelongsToMany` decorator has the same name as a value. */
+export type BelongsToMany<
+  S extends AnyModel = AnyModel,
+  T extends AnyModel = AnyModel,
+> = BelongsToManyAssociation<S, T>;
 
 const association = (
   kind: Kind,
