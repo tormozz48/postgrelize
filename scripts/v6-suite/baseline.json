@@ -1,0 +1,1369 @@
+{
+  "version": "6.37.8",
+  "files": {
+    "test/unit/associations/association.test.js": {
+      "failing": [
+        "[POSTGRES] belongsTo should throw an AssociationError when two associations have the same alias"
+      ]
+    },
+    "test/unit/associations/belongs-to-many.test.js": {
+      "loadError": true
+    },
+    "test/unit/associations/belongs-to.test.js": {
+      "failing": [
+        "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should not trigger association hooks",
+        "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should trigger",
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should not trigger association hooks",
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger",
+        "[POSTGRES] belongsTo should not override custom methods with association mixin",
+        "[POSTGRES] belongsTo throws when invalid model is passed",
+        "[POSTGRES] belongsTo warn on invalid options"
+      ]
+    },
+    "test/unit/associations/has-many.test.js": {
+      "loadError": true
+    },
+    "test/unit/associations/has-one.test.js": {
+      "failing": [
+        "[POSTGRES] hasOne association hooks afterHasOneAssociate should not trigger association hooks",
+        "[POSTGRES] hasOne association hooks afterHasOneAssociate should trigger",
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should not trigger association hooks",
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger",
+        "[POSTGRES] hasOne should not override custom methods with association mixin",
+        "[POSTGRES] hasOne throws when invalid model is passed",
+        "[POSTGRES] hasOne warn on invalid options"
+      ]
+    },
+    "test/unit/configuration.test.js": {
+      "failing": [
+        "Sequelize Instantiation with a URL string should accept username, password, host, port, and database",
+        "Sequelize Instantiation with a URL string should correctly set the username, the password and the database through options",
+        "Sequelize Instantiation with a URL string should handle JSON options",
+        "Sequelize Instantiation with a URL string should merge query string parameters to options",
+        "Sequelize Instantiation with a URL string should pass query string parameters to dialectOptions",
+        "Sequelize Instantiation with a URL string should use query string host if specified",
+        "Sequelize Instantiation with a URL string should work with no authentication options",
+        "Sequelize Instantiation with a URL string should work with no authentication options and passing additional options",
+        "Sequelize Instantiation with arguments should accept four parameters (database, username, password, options)",
+        "Sequelize dialect is required throw error when no dialect is supplied",
+        "Sequelize dialect is required works when dialect explicitly supplied",
+        "Sequelize should throw error if pool:false"
+      ]
+    },
+    "test/unit/connection-manager.test.js": {
+      "loadError": true
+    },
+    "test/unit/deep-exports.test.js": {
+      "failing": ["exports exposes lib files"]
+    },
+    "test/unit/dialect-module-configuration.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize dialectModule options options.dialectModule",
+        "[POSTGRES] Sequelize dialectModule options options.dialectModulePath fails for invalid path"
+      ]
+    },
+    "test/unit/dialects/abstract/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/abstract/query.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/db2/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mariadb/errors.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mariadb/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mssql/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mssql/query.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mysql/errors.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mysql/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/mysql/query.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/postgres/data-types.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/postgres/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/snowflake/errors.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/snowflake/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/snowflake/query.test.js": {
+      "loadError": true
+    },
+    "test/unit/dialects/sqlite/query-generator.test.js": {
+      "loadError": true
+    },
+    "test/unit/errors.test.js": {
+      "failing": [
+        "errors AggregateError get .message works",
+        "errors should maintain stack trace without message"
+      ]
+    },
+    "test/unit/esm-named-exports.test.js": {
+      "failing": ["ESM module exposes the same named exports as the CJS module"]
+    },
+    "test/unit/hooks.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"does not expose non-model hooks\""]
+    },
+    "test/unit/increment.test.js": {
+      "failing": [
+        "[POSTGRES] Model increment options tests should reject if options are missing",
+        "[POSTGRES] Model increment options tests should reject if options.where are missing"
+      ]
+    },
+    "test/unit/instance-validator.test.js": {
+      "loadError": true
+    },
+    "test/unit/instance/build.test.js": {
+      "failing": [
+        "[POSTGRES] Instance build should populate explicitly undefined UUID primary keys",
+        "[POSTGRES] Instance build should populate undefined columns with default value"
+      ]
+    },
+    "test/unit/instance/changed.test.js": {
+      "failing": [
+        "[POSTGRES] Instance changed should return true for JSON dot.separated key with changed values",
+        "[POSTGRES] Instance changed should return true for JSON dot.separated key with object"
+      ]
+    },
+    "test/unit/instance/save.test.js": {
+      "failing": [
+        "[POSTGRES] Instance save should disallow saves if no primary key values is present"
+      ]
+    },
+    "test/unit/instance/set.test.js": {
+      "failing": [
+        "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"",
+        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"",
+        "[POSTGRES] Instance set sets nested keys in JSON objects",
+        "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field"
+      ]
+    },
+    "test/unit/model/bulk-create.test.js": {
+      "failing": [
+        "[POSTGRES] Model bulkCreate \"after all\" hook in \"bulkCreate\"",
+        "[POSTGRES] Model bulkCreate \"before all\" hook in \"bulkCreate\""
+      ]
+    },
+    "test/unit/model/count.test.js": {
+      "failing": [
+        "[POSTGRES] Model method count should pass the same options to model.aggregate as findAndCountAll attributes should be stripped in case of findAndCountAll",
+        "[POSTGRES] Model method count should pass the same options to model.aggregate as findAndCountAll with includes"
+      ]
+    },
+    "test/unit/model/define.test.js": {
+      "failing": [
+        "[POSTGRES] Model define datatype warnings warn for unsupported INTEGER options",
+        "[POSTGRES] Model define should allow custom timestamps with underscored: true",
+        "[POSTGRES] Model define should defend against null or undefined \"unique\" attributes",
+        "[POSTGRES] Model define should throw for notNull validator without allowNull",
+        "[POSTGRES] Model define should throw for unknown data type"
+      ]
+    },
+    "test/unit/model/find-all.test.js": {
+      "loadError": true
+    },
+    "test/unit/model/find-create-find.test.js": {
+      "failing": [
+        "[POSTGRES] Model findCreateFind should do a second find if create failed due to an error of type UniqueConstraintError"
+      ]
+    },
+    "test/unit/model/find-one.test.js": {
+      "failing": [
+        "[POSTGRES] Model method findOne should add limit when using multi-column unique key",
+        "[POSTGRES] Model method findOne should add limit when using { $ gt on the primary key",
+        "[POSTGRES] Model method findOne should not add limit when querying on a primary key with blob primary key",
+        "[POSTGRES] Model method findOne should not add limit when querying on a primary key with custom primary key",
+        "[POSTGRES] Model method findOne should not add limit when querying on a primary key with id primary key",
+        "[POSTGRES] Model method findOne should not add limit when querying on an unique key with blob unique key",
+        "[POSTGRES] Model method findOne should not add limit when querying on an unique key with custom unique key"
+      ]
+    },
+    "test/unit/model/find-or-create.test.js": {
+      "failing": [
+        "[POSTGRES] Model method findOrCreate \"after each\" hook for \"should use transaction from cls if available\"",
+        "[POSTGRES] Model method findOrCreate \"before each\" hook for \"should use transaction from cls if available\""
+      ]
+    },
+    "test/unit/model/get-attributes.test.js": {
+      "failing": [
+        "[POSTGRES] Model getAttributes should return attributes with getAttributes()",
+        "[POSTGRES] Model getAttributes will contain timestamps if enabled",
+        "[POSTGRES] Model getAttributes will contain timestamps if enabled"
+      ]
+    },
+    "test/unit/model/helpers.test.js": {
+      "failing": [
+        "[POSTGRES] Model hasAlias \"before each\" hook for \"returns true if a model has an association with the specified alias\""
+      ]
+    },
+    "test/unit/model/include.test.js": {
+      "loadError": true
+    },
+    "test/unit/model/indexes.test.js": {
+      "failing": [
+        "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes",
+        "[POSTGRES] Model indexes should set the unique property when type is unique"
+      ]
+    },
+    "test/unit/model/overwriting-builtins.test.js": {
+      "failing": [
+        "[POSTGRES] Model not breaking built-ins it should not break instance.set by defining a model set attribute"
+      ]
+    },
+    "test/unit/model/remove-attribute.test.js": {
+      "failing": ["[POSTGRES] Model removeAttribute should support removing the primary key"]
+    },
+    "test/unit/model/schema.test.js": {
+      "loadError": true
+    },
+    "test/unit/model/scope.test.js": {
+      "loadError": true
+    },
+    "test/unit/model/underscored.test.js": {
+      "failing": [
+        "[POSTGRES] Model options.underscored belongsTo does not override already defined field",
+        "[POSTGRES] Model options.underscored hasMany does not override already defined field",
+        "[POSTGRES] Model options.underscored hasOne does not override already defined field",
+        "[POSTGRES] Model options.underscored hasOne/belongsTo does not override already defined field"
+      ]
+    },
+    "test/unit/model/update.test.js": {
+      "failing": [
+        "[POSTGRES] Model Update with multiple models to the same table updates model1 using model1 model",
+        "[POSTGRES] Model Update with multiple models to the same table updates model2 using model2 model",
+        "[POSTGRES] Model method update properly clones input values when using fields option",
+        "[POSTGRES] Model method update properly clones input values with default options"
+      ]
+    },
+    "test/unit/model/upsert.test.js": {
+      "failing": [
+        "[POSTGRES] Model method upsert \"after each\" hook for \"skip validations for missing fields\"",
+        "[POSTGRES] Model method upsert \"before each\" hook for \"skip validations for missing fields\""
+      ]
+    },
+    "test/unit/model/validation.test.js": {
+      "failing": [
+        "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to false should call validator and not throw on create",
+        "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to false should call validator and not throw on update",
+        "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to true should call validator and not throw on create",
+        "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to true should call validator and not throw on update",
+        "[POSTGRES] InstanceValidator custom validation functions returning promises should not throw create custom model validation functions are successful",
+        "[POSTGRES] InstanceValidator custom validation functions returning promises should not throw update custom model validation functions are successful",
+        "[POSTGRES] InstanceValidator custom validation functions should not throw create custom validation functions are successful",
+        "[POSTGRES] InstanceValidator custom validation functions should not throw update custom validation functions are successful",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow 0/1 as a boolean",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow 0/1 string as a boolean",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow dates as a string",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow decimal as a string",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow decimal as scientific notation",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow decimal big numbers as a string",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow number as a string",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow string as a number",
+        "[POSTGRES] InstanceValidator datatype validations should not throw create should allow true/false string as a boolean",
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $in",
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid",
+        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing decimal",
+        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing string",
+        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing decimal",
+        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing string",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"       \" for the validation \"notEmpty\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"0\" for the validation \"is\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"0\" for the validation \"isNull\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"0\" for the validation \"regex\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"012\" for the validation \"isAlpha\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"0bla23\" for the validation \"notContains\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"1\" for the validation \"len\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"1\" for the validation \"len\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"1111:2222:3333::5555:\" for the validation \"isIPv6\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"12345\" for the validation \"len\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"12345\" for the validation \"len\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"2011-11-04\" for the validation \"isAfter\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"2011-11-06\" for the validation \"isBefore\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"22\" for the validation \"min\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"22\" for the validation \"min\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"24\" for the validation \"max\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"24\" for the validation \"max\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"401288888888188f\" for the validation \"isCreditCard\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"9.2\" for the validation \"isInt\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"AB\" for the validation \"isLowercase\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"_abc019\" for the validation \"isAlphanumeric\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"a\" for the validation \"isDecimal\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"a\" for the validation \"isEmail\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"a\" for the validation \"isFloat\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"a\" for the validation \"not\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"a\" for the validation \"notRegex\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"ab\" for the validation \"isUppercase\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"abc\" for the validation \"isIP\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"abc\" for the validation \"isIPv4\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"abc\" for the validation \"isNumeric\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"abc\" for the validation \"isUrl\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"bla\" for the validation \"equals\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"f47ac10b-58cc-3372-a567-0e02b2c3d479\" for the validation \"isUUID\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"ghij\" for the validation \"notIn\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"ghik\" for the validation \"isIn\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"la\" for the validation \"contains\"",
+        "[POSTGRES] InstanceValidator validations correctly specifies an instance as invalid using a value of \"not a date\" for the validation \"isDate\""
+      ]
+    },
+    "test/unit/query-interface/bulk-delete.test.js": {
+      "failing": ["QueryInterface#bulkDelete does not parse replacements outside of raw sql"]
+    },
+    "test/unit/query-interface/bulk-insert.test.js": {
+      "failing": ["QueryInterface#bulkInsert does not parse replacements outside of raw sql"]
+    },
+    "test/unit/query-interface/decrement.test.js": {
+      "failing": ["QueryInterface#decrement does not parse replacements outside of raw sql"]
+    },
+    "test/unit/query-interface/delete.test.js": {
+      "failing": ["QueryInterface#delete does not parse replacements outside of raw sql"]
+    },
+    "test/unit/query-interface/increment.test.js": {
+      "failing": ["QueryInterface#increment does not parse replacements outside of raw sql"]
+    },
+    "test/unit/query-interface/raw-select.test.js": {
+      "failing": ["QueryInterface#rawSelect does not parse user-provided data as replacements"]
+    },
+    "test/unit/query-interface/select.test.js": {
+      "failing": ["QueryInterface#select does not parse user-provided data as replacements"]
+    },
+    "test/unit/sql/add-column.test.js": {
+      "failing": [
+        "[POSTGRES] SQL addColumn DEFAULT VALUE FOR BOOLEAN",
+        "[POSTGRES] SQL addColumn DEFAULT VALUE FOR ENUM",
+        "[POSTGRES] SQL addColumn defaults the schema to the one set in the Sequelize options"
+      ]
+    },
+    "test/unit/sql/add-constraint.test.js": {
+      "failing": [
+        "[POSTGRES] SQL addConstraint check naming",
+        "[POSTGRES] SQL addConstraint check where",
+        "[POSTGRES] SQL addConstraint foreign key errors if references object is not passed",
+        "[POSTGRES] SQL addConstraint foreign key naming",
+        "[POSTGRES] SQL addConstraint foreign key supports composite keys",
+        "[POSTGRES] SQL addConstraint foreign key uses onDelete, onUpdate",
+        "[POSTGRES] SQL addConstraint foreign key uses onDelete: 'no action'",
+        "[POSTGRES] SQL addConstraint primary key naming",
+        "[POSTGRES] SQL addConstraint primary key should create constraint name if not passed",
+        "[POSTGRES] SQL addConstraint primary key should work with multiple columns",
+        "[POSTGRES] SQL addConstraint unique naming",
+        "[POSTGRES] SQL addConstraint unique should create constraint name if not passed",
+        "[POSTGRES] SQL addConstraint unique should work with multiple columns",
+        "[POSTGRES] SQL addConstraint validation calls getConstraintSnippet function",
+        "[POSTGRES] SQL addConstraint validation should throw error if default constraints are used in other dialects",
+        "[POSTGRES] SQL addConstraint validation throw error on invalid type"
+      ]
+    },
+    "test/unit/sql/change-column.test.js": {
+      "failing": [
+        "[POSTGRES] SQL changeColumn properly generate alter queries",
+        "[POSTGRES] SQL changeColumn properly generate alter queries for foreign keys"
+      ]
+    },
+    "test/unit/sql/create-schema.test.js": {
+      "failing": [
+        "[POSTGRES] SQL createSchema 9.2.0 or above",
+        "[POSTGRES] SQL createSchema below 9.2.0",
+        "[POSTGRES] SQL dropSchema IF EXISTS"
+      ]
+    },
+    "test/unit/sql/create-table.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/data-types.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/delete.test.js": {
+      "failing": [
+        "[POSTGRES] SQL delete delete when the primary key has a different field name {\n  table: 'test_user',\n  where: { test_user_id: 100 },\n  type: 'BULKDELETE'\n}",
+        "[POSTGRES] SQL delete delete with limit and without model {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  where: { name: \"foo';DROP TABLE mySchema.myTable;\" },\n  limit: 10,\n  type: 'BULKDELETE'\n}",
+        "[POSTGRES] SQL delete delete with limit {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  where: { name: \"foo';DROP TABLE mySchema.myTable;\" },\n  limit: 10,\n  type: 'BULKDELETE'\n}",
+        "[POSTGRES] SQL delete delete with undefined parameter in where {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  type: 'BULKDELETE',\n  where: { name: undefined },\n  limit: null\n}",
+        "[POSTGRES] SQL delete delete without limit {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  where: { name: 'foo' },\n  limit: null,\n  type: 'BULKDELETE'\n}",
+        "[POSTGRES] SQL delete truncate #4306 {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  where: {},\n  truncate: true,\n  cascade: true,\n  limit: 10,\n  type: 'BULKDELETE'\n}",
+        "[POSTGRES] SQL delete truncate with cascade and restartIdentity {\n  table: {\n    tableName: 'test_users',\n    table: 'test_users',\n    name: 'test_user',\n    schema: 'public',\n    delimiter: '.',\n    toString: [Function: toString]\n  },\n  where: {},\n  truncate: true,\n  cascade: true,\n  restartIdentity: true,\n  limit: 10,\n  type: 'BULKDELETE'\n}"
+      ]
+    },
+    "test/unit/sql/enum.test.js": {
+      "failing": [
+        "[POSTGRES] SQL enum pgEnum does add schema when public",
+        "[POSTGRES] SQL enum pgEnum uses schema #3171",
+        "[POSTGRES] SQL enum pgEnumAdd creates alter type with exists on 9.4",
+        "[POSTGRES] SQL enum pgEnumAdd creates alter type without exists on 9.2 ",
+        "[POSTGRES] SQL enum pgEnumName does not add schema when options: { schema: false }",
+        "[POSTGRES] SQL enum pgEnumName properly quotes both the schema and the enum name",
+        "[POSTGRES] SQL enum pgListEnums uses the default schema if no options given",
+        "[POSTGRES] SQL enum pgListEnums works with schema #3563"
+      ]
+    },
+    "test/unit/sql/generateJoin.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/get-constraint-snippet.test.js": {
+      "failing": [
+        "[POSTGRES] SQL getConstraintSnippet check naming",
+        "[POSTGRES] SQL getConstraintSnippet check where",
+        "[POSTGRES] SQL getConstraintSnippet foreign key errors if references object is not passed",
+        "[POSTGRES] SQL getConstraintSnippet foreign key naming",
+        "[POSTGRES] SQL getConstraintSnippet foreign key uses onDelete, onUpdate",
+        "[POSTGRES] SQL getConstraintSnippet primary key naming",
+        "[POSTGRES] SQL getConstraintSnippet primary key should create constraint name if not passed",
+        "[POSTGRES] SQL getConstraintSnippet primary key should work with multiple columns",
+        "[POSTGRES] SQL getConstraintSnippet unique naming",
+        "[POSTGRES] SQL getConstraintSnippet unique should create constraint name if not passed",
+        "[POSTGRES] SQL getConstraintSnippet unique should work with multiple columns",
+        "[POSTGRES] SQL getConstraintSnippet validation throw error on invalid type"
+      ]
+    },
+    "test/unit/sql/get-where-conditions.test.js": {
+      "failing": [
+        "QueryGenerator#getWhereConditions ignores null",
+        "QueryGenerator#getWhereConditions ignores undefined",
+        "QueryGenerator#getWhereConditions throws if called with invalid arguments"
+      ]
+    },
+    "test/unit/sql/group.test.js": {
+      "failing": [
+        "[POSTGRES] SQL group { model: [class User extends Model], group: [ 'name' ] }",
+        "[POSTGRES] SQL group { model: [class User extends Model], group: [] }"
+      ]
+    },
+    "test/unit/sql/index.test.js": {
+      "failing": [
+        "[POSTGRES] SQL addIndex POJO field",
+        "[POSTGRES] SQL addIndex USING",
+        "[POSTGRES] SQL addIndex WHERE",
+        "[POSTGRES] SQL addIndex function",
+        "[POSTGRES] SQL addIndex naming",
+        "[POSTGRES] SQL addIndex operator",
+        "[POSTGRES] SQL addIndex operator in fields",
+        "[POSTGRES] SQL addIndex operator in fields with order",
+        "[POSTGRES] SQL addIndex operator in multiple fields #1",
+        "[POSTGRES] SQL addIndex operator in multiple fields #2",
+        "[POSTGRES] SQL addIndex operator with multiple fields",
+        "[POSTGRES] SQL addIndex show indexes",
+        "[POSTGRES] SQL addIndex type and using",
+        "[POSTGRES] SQL removeIndex naming"
+      ]
+    },
+    "test/unit/sql/insert.test.js": {
+      "failing": [
+        "[POSTGRES] SQL adds conflictWhere clause to generated queries",
+        "[POSTGRES] SQL bulkCreate allow bulk insert primary key with 0",
+        "[POSTGRES] SQL bulkCreate bulk create with onDuplicateKeyUpdate",
+        "[POSTGRES] SQL bulkCreate correctly generates SQL for conflictWhere",
+        "[POSTGRES] SQL dates formats date correctly when sub-second precision is explicitly specified",
+        "[POSTGRES] SQL dates formats the date correctly when inserting",
+        "[POSTGRES] SQL insert allow insert primary key with 0",
+        "[POSTGRES] SQL insert with temp table for trigger",
+        "[POSTGRES] SQL strings formats null characters correctly when inserting"
+      ]
+    },
+    "test/unit/sql/json.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/offset-limit.test.js": {
+      "failing": [
+        "[POSTGRES] SQL offset/limit {\n  limit: 10,\n  offset: \"';DELETE FROM user\",\n  order: [ [ 'email', 'DESC' ] ]\n}",
+        "[POSTGRES] SQL offset/limit {\n  limit: 10,\n  order: [],\n  model: { primaryKeyField: 'id', name: 'tableRef' }\n}",
+        "[POSTGRES] SQL offset/limit { limit: \"';DELETE FROM user\", order: [ [ 'email', 'DESC' ] ] }",
+        "[POSTGRES] SQL offset/limit { limit: 10, model: { primaryKeyField: 'id', name: 'tableRef' } }",
+        "[POSTGRES] SQL offset/limit { limit: 10, offset: 20, order: [ [ 'email', 'DESC' ] ] }",
+        "[POSTGRES] SQL offset/limit { limit: 10, order: [ [ 'email', 'DESC' ] ] }"
+      ]
+    },
+    "test/unit/sql/order.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/remove-column.test.js": {
+      "failing": [
+        "[POSTGRES] SQL removeColumn defaults the schema to the one set in the Sequelize options",
+        "[POSTGRES] SQL removeColumn schema"
+      ]
+    },
+    "test/unit/sql/remove-constraint.test.js": {
+      "failing": [
+        "[POSTGRES] SQL removeConstraint naming",
+        "[POSTGRES] SQL removeConstraint schema"
+      ]
+    },
+    "test/unit/sql/select.test.js": {
+      "loadError": true
+    },
+    "test/unit/sql/show-constraints.test.js": {
+      "failing": [
+        "[POSTGRES] SQL showConstraint naming",
+        "[POSTGRES] SQL showConstraint should add constraint_name to where clause if passed in case of mysql"
+      ]
+    },
+    "test/unit/sql/update.test.js": {
+      "failing": [
+        "[POSTGRES] SQL update supports returning false",
+        "[POSTGRES] SQL update with temp table for trigger",
+        "[POSTGRES] SQL update works with limit"
+      ]
+    },
+    "test/unit/sql/where.test.js": {
+      "loadError": true
+    },
+    "test/unit/transaction.test.js": {
+      "failing": [
+        "Transaction should run auto commit query only when needed",
+        "Transaction should set isolation level correctly"
+      ]
+    },
+    "test/unit/utils.test.js": {
+      "loadError": true
+    },
+    "test/unit/utils/sql.test.js": {
+      "loadError": true
+    },
+    "test/integration/associations/alias.test.js": {
+      "failing": [
+        "[POSTGRES] Alias should allow me to define plural and singular forms on the model"
+      ]
+    },
+    "test/integration/associations/belongs-to-many.test.js": {
+      "unstable": true,
+      "pass": 28,
+      "failing": [
+        "\"after each\" hook for \"supports transactions when updating a through model\"",
+        "[POSTGRES] BelongsToMany addAssociations supports transactions when updating a through model",
+        "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
+        "[POSTGRES] BelongsToMany getAssociations supports a where not in",
+        "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key",
+        "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys",
+        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)",
+        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
+        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)",
+        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)",
+        "[POSTGRES] BelongsToMany getAssociations supports primary key attributes with different field and attribute names",
+        "[POSTGRES] BelongsToMany hasAssociations \"before each\" hook for \"supports transactions\"",
+        "[POSTGRES] BelongsToMany hasAssociations with binary key \"before each\" hook for \"answers true for labels that have been assigned\""
+      ]
+    },
+    "test/integration/associations/belongs-to.test.js": {
+      "failing": [
+        "[POSTGRES] BelongsTo Eager loading should load with an alias",
+        "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type",
+        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
+        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
+        "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys",
+        "[POSTGRES] BelongsTo association options should throw an error if an association clashes with the name of an already define attribute",
+        "[POSTGRES] BelongsTo association options should throw an error if foreignKey and as result in a name clash",
+        "[POSTGRES] BelongsTo foreign key constraints can cascade updates",
+        "[POSTGRES] BelongsTo foreign key constraints can restrict updates",
+        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table",
+        "[POSTGRES] BelongsTo get multiple should fetch associations for multiple instances",
+        "[POSTGRES] BelongsTo getAssociation supports schemas when defining custom foreign key attribute #9029",
+        "[POSTGRES] BelongsTo setAssociation should not clobber atributes",
+        "[POSTGRES] BelongsTo setAssociation supports setting same association twice"
+      ]
+    },
+    "test/integration/associations/has-many.test.js": {
+      "failing": [
+        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
+        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
+        "[POSTGRES] HasMany Association options can specify data type for auto-generated relational keys",
+        "[POSTGRES] HasMany Association options infers the keyType if none provided",
+        "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query",
+        "[POSTGRES] HasMany Association options should throw an error if foreignKey and as result in a name clash",
+        "[POSTGRES] HasMany count should not fail due to ambiguous field",
+        "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
+        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
+        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false",
+        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances",
+        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order",
+        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation",
+        "[POSTGRES] HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true",
+        "[POSTGRES] HasMany get multiple supports schemas",
+        "[POSTGRES] HasMany sourceKey with where clause in include should use the specified sourceKey instead of the primary key"
+      ]
+    },
+    "test/integration/associations/has-one.test.js": {
+      "failing": [
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
+        "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys",
+        "[POSTGRES] HasOne Association options should throw an error if an association clashes with the name of an already define attribute",
+        "[POSTGRES] HasOne Eager loading should load with an alias",
+        "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type",
+        "[POSTGRES] HasOne foreign key constraints can cascade updates",
+        "[POSTGRES] HasOne foreign key constraints can restrict updates",
+        "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false",
+        "[POSTGRES] HasOne get multiple should fetch associations for multiple instances",
+        "[POSTGRES] HasOne setAssociation supports setting same association twice"
+      ]
+    },
+    "test/integration/associations/scope.test.js": {
+      "failing": [
+        "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values",
+        "[POSTGRES] associations scope 1:M should create, find and include associations with scope values",
+        "[POSTGRES] associations scope 1:M should created included association with scope values",
+        "[POSTGRES] associations scope 1:M should make the same query if called multiple time (#4470)",
+        "[POSTGRES] associations scope N:M on the target \"before each\" hook for \"[Flaky] should create, find and include associations with scope values\"",
+        "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
+      ]
+    },
+    "test/integration/associations/self.test.js": {
+      "failing": [
+        "[POSTGRES] Self can handle n:m associations",
+        "[POSTGRES] Self can handle n:m associations with pre-defined through table"
+      ]
+    },
+    "test/integration/cls.test.js": {
+      "failing": [
+        "[POSTGRES] CLS (Async hooks) CLS namespace is stored in Sequelize._cls",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeBulkRestore,afterBulkRestore} when calling Model.restore",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeRestore,afterRestore} when calling Model#restore",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeRestore,afterRestore} when calling Model.restore with individualHooks",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {afterFind} when calling Model.findAll",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkCreate,beforeCreate,afterCreate,afterBulkCreate} when calling Model.bulkCreate",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkDestroy,afterBulkDestroy} when calling Model.destroy",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkUpdate,afterBulkUpdate} when calling Model.update",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeCount} when calling Model.count",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeCreate,afterCreate} when calling Model#save (isNewRecord)",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeDestroy,beforeDestroy} when calling Model#destroy",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeDestroy,beforeDestroy} when calling Model.destroy with individualHooks",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeFind,beforeFindAfterExpandIncludeAll,beforeFindAfterOptions} when calling Model.findAll",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpdate,afterUpdate} when calling Model#save (!isNewRecord)",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpdate,afterUpdate} when calling Model.update with individualHooks",
+        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpsert,afterUpsert} when calling Model.upsert",
+        "[POSTGRES] CLS (Async hooks) context does not leak outside findOrCreate",
+        "[POSTGRES] CLS (Async hooks) context does not use continuation storage on manually managed transactions"
+      ]
+    },
+    "test/integration/configuration.test.js": {
+      "failing": [
+        "[POSTGRES] Configuration Connections problems should fail with a nice message when we don't have a valid dialect.",
+        "[POSTGRES] Configuration Connections problems should fail with a nice message when we don't have the correct login information"
+      ]
+    },
+    "test/integration/data-types.test.js": {
+      "failing": [
+        "[POSTGRES] DataTypes \"after each\" hook for \"allows me to return values from a custom parse function\"",
+        "[POSTGRES] DataTypes allows me to return values from a custom parse function"
+      ]
+    },
+    "test/integration/dialects/abstract/connection-manager.test.js": {
+      "loadError": true
+    },
+    "test/integration/dialects/mssql/query-queue.test.js": {
+      "loadError": true
+    },
+    "test/integration/dialects/postgres/associations.test.js": {
+      "failing": [
+        "[POSTGRES Specific] associations many-to-many when join table name is specified should not use a combined name",
+        "[POSTGRES Specific] associations many-to-many when join table name is specified should use the specified name",
+        "[POSTGRES Specific] associations many-to-many where tables have the same prefix should create a table wp_table1wp_table2s"
+      ]
+    },
+    "test/integration/dialects/postgres/connection-manager.test.js": {
+      "failing": [
+        "Dynamic OIDs should fetch enum dynamic oids and create parsers",
+        "Dynamic OIDs should fetch range dynamic oids and create parsers",
+        "Dynamic OIDs should fetch regular dynamic oids and create parsers",
+        "[POSTGRES] Sequelize should allow overriding client_min_messages",
+        "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)",
+        "[POSTGRES] Sequelize should allow overriding session variables through the `options` param",
+        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is false (deprecated in v7)",
+        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is ignore",
+        "[POSTGRES] Sequelize should set client_min_messages to warning by default"
+      ]
+    },
+    "test/integration/dialects/postgres/dao.test.js": {
+      "failing": [
+        "[POSTGRES Specific] DAO \"before each\" hook for \"should be able to search within an array\""
+      ]
+    },
+    "test/integration/dialects/postgres/data-types.test.js": {
+      "failing": [
+        "[POSTGRES Specific] Data Types DATE SQL should be able to create and update records with Infinity/-Infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize \"Infinity\"/\"-Infinity\" as Infinity/-Infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize Infinity/-Infinity as Infinity/-Infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize a Date as normal",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATEONLY should sanitize \"Infinity\"/\"-Infinity\" as Infinity/-Infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATEONLY should sanitize Infinity/-Infinity as Infinity/-Infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATEONLY should sanitize a Date as normal",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should stringify Infinity/-Infinity to infinity/-infinity",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate Infinity/-Infinity as true",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate a Date as normal",
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity",
+        "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity"
+      ]
+    },
+    "test/integration/dialects/postgres/error.test.js": {
+      "failing": [
+        "[POSTGRES Specific] ExclusionConstraintError \"before each\" hook for \"should contain error specific properties\""
+      ]
+    },
+    "test/integration/dialects/postgres/hstore.test.js": {
+      "loadError": true
+    },
+    "test/integration/dialects/postgres/query-interface.test.js": {
+      "loadError": true
+    },
+    "test/integration/dialects/postgres/query.test.js": {
+      "loadError": true
+    },
+    "test/integration/dialects/postgres/range.test.js": {
+      "loadError": true
+    },
+    "test/integration/error.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize Errors API Surface SequelizeDatabaseError should keep the original sql and the parameters",
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationError should find errors by path",
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.Origins is valid",
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should throw if namespace separator is invalid (only if NS is used & available)"
+      ]
+    },
+    "test/integration/hooks/associations.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"on success\""]
+    },
+    "test/integration/hooks/bulkOperation.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should run hooks\""]
+    },
+    "test/integration/hooks/count.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"hook runs\""]
+    },
+    "test/integration/hooks/create.test.js": {
+      "failing": [
+        "[POSTGRES] Hooks \"before each\" hook for \"should not trigger hooks on parent when using N:M association setters\""
+      ]
+    },
+    "test/integration/hooks/destroy.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should run hooks\""]
+    },
+    "test/integration/hooks/find.test.js": {
+      "failing": [
+        "[POSTGRES] Hooks \"before each\" hook for \"allow changing attributes via beforeFind #5675\""
+      ]
+    },
+    "test/integration/hooks/hooks.test.js": {
+      "failing": [
+        "[POSTGRES] Hooks \"before each\" hook for \"beforeDefine hook can change model name\"",
+        "[POSTGRES] Hooks #define \"after all\" hook for \"afterDefine hook can alter options\""
+      ]
+    },
+    "test/integration/hooks/restore.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should run hooks\""]
+    },
+    "test/integration/hooks/updateAttributes.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should run hooks\""]
+    },
+    "test/integration/hooks/upsert.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should run hooks\""]
+    },
+    "test/integration/hooks/validate.test.js": {
+      "failing": ["[POSTGRES] Hooks \"before each\" hook for \"should return the user\""]
+    },
+    "test/integration/include.test.js": {
+      "failing": [
+        "[POSTGRES] Include find should support Sequelize.literal and renaming of attributes in included model attributes",
+        "[POSTGRES] Include find should support an include with multiple different association types",
+        "[POSTGRES] Include find should support including date fields, with the correct timeszone",
+        "[POSTGRES] Include find should support to use associations with Sequelize.col",
+        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is not given (implicitly false)",
+        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is set to false"
+      ]
+    },
+    "test/integration/include/findAll.test.js": {
+      "failing": [
+        "[POSTGRES] Include findAll should allow through model to be paranoid",
+        "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit",
+        "[POSTGRES] Include findAll should be possible to extend the on clause with a where option on nested includes",
+        "[POSTGRES] Include findAll should be possible to select on columns inside a through table",
+        "[POSTGRES] Include findAll should be possible to select on columns inside a through table and a limit",
+        "[POSTGRES] Include findAll should be possible to turn off the attributes for the through table",
+        "[POSTGRES] Include findAll should be possible to use limit and a where on a hasMany with a through model with additional includes",
+        "[POSTGRES] Include findAll should be possible to use limit and a where on a hasMany with additional includes",
+        "[POSTGRES] Include findAll should be possible use limit, attributes and a where on a belongsTo with additional hasMany includes",
+        "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)",
+        "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)",
+        "[POSTGRES] Include findAll should support an include with multiple different association types",
+        "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
+      ]
+    },
+    "test/integration/include/findOne.test.js": {
+      "failing": [
+        "[POSTGRES] Include findOne should include a model with a where clause when the PK field name and attribute name are different",
+        "[POSTGRES] Include findOne should work with combinding a where and a scope"
+      ]
+    },
+    "test/integration/include/schema.test.js": {
+      "failing": [
+        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes",
+        "[POSTGRES] Includes with schemas findAll should be possible to use limit and a where on a hasMany with a through model with additional includes",
+        "[POSTGRES] Includes with schemas findAll should be possible to use limit and a where on a hasMany with additional includes",
+        "[POSTGRES] Includes with schemas findAll should be possible use limit, attributes and a where on a belongsTo with additional hasMany includes",
+        "[POSTGRES] Includes with schemas findAll should support an include with multiple different association types",
+        "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone",
+        "[POSTGRES] Includes with schemas findOne should work with schemas"
+      ]
+    },
+    "test/integration/include/separate.test.js": {
+      "failing": [
+        "[POSTGRES] Include separate should run a hasMany association in a separate query",
+        "[POSTGRES] Include separate should run a hasMany association with limit in a separate query",
+        "[POSTGRES] Include separate should run a nested (from a non-separate include) hasMany association in a separate query",
+        "[POSTGRES] Include separate should run two nested hasMany association in a separate queries",
+        "[POSTGRES] Include separate should work even if include does not specify foreign key attribute with custom sourceKey",
+        "[POSTGRES] Include separate should work even if the id was not included",
+        "[POSTGRES] Include separate should work having a separate include between a parent and child include",
+        "[POSTGRES] Include separate should work with two schema models in a hasMany association"
+      ]
+    },
+    "test/integration/instance.test.js": {
+      "failing": [
+        "[POSTGRES] Instance default values uuid should store a string in uuidv1 and uuidv4",
+        "[POSTGRES] Instance default values uuid should store a string of length 36 in uuidv1 and uuidv4",
+        "[POSTGRES] Instance default values uuid should store a valid uuid if the multiple primary key fields used",
+        "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications",
+        "[POSTGRES] Instance restore supports custom default value",
+        "[POSTGRES] Instance restore supports custom deletedAt field",
+        "[POSTGRES] Instance restore supports custom deletedAt field and database column",
+        "[POSTGRES] Instance restore supports custom deletedAt field name"
+      ]
+    },
+    "test/integration/instance.validations.test.js": {
+      "failing": [
+        "[POSTGRES] InstanceValidator #create explicitly validating primary/auto incremented columns primaryKey with the name as id with arguments for it's validatio should emit an error when we try to .save()",
+        "[POSTGRES] InstanceValidator #create explicitly validating primary/auto incremented columns primaryKey with the name as id with arguments for it's validatio should emit an error when we try to enter in a string for an auto increment key through .build().validate()",
+        "[POSTGRES] InstanceValidator #create explicitly validating primary/auto incremented columns primaryKey with the name as id with arguments for it's validatio should emit an error when we try to enter in a string for the id key with validation arguments",
+        "[POSTGRES] InstanceValidator #create explicitly validating primary/auto incremented columns should emit an error when we try to enter in a string for an auto increment key (not named id)",
+        "[POSTGRES] InstanceValidator #create explicitly validating primary/auto incremented columns should emit an error when we try to enter in a string for the id key without validation arguments",
+        "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message",
+        "[POSTGRES] InstanceValidator #update should be able to emit an error upon updating when a validation has failed from an instance",
+        "[POSTGRES] InstanceValidator #update should be able to emit an error upon updating when a validation has failed from the factory",
+        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly",
+        "[POSTGRES] InstanceValidator allows me to add custom validation functions to validator.js",
+        "[POSTGRES] InstanceValidator correctly validates using custom validation methods",
+        "[POSTGRES] InstanceValidator raises an error if saving a different value into an immutable field",
+        "[POSTGRES] InstanceValidator skips other validations if allowNull is true and the value is null",
+        "[POSTGRES] InstanceValidator supports promises with custom validation methods",
+        "[POSTGRES] InstanceValidator validates VIRTUAL fields",
+        "[POSTGRES] InstanceValidator validates a model with custom model-wide validation methods",
+        "[POSTGRES] InstanceValidator validates enums"
+      ]
+    },
+    "test/integration/instance/decrement.test.js": {
+      "failing": ["[POSTGRES] Instance decrement supports returning"]
+    },
+    "test/integration/instance/destroy.test.js": {
+      "failing": [
+        "[POSTGRES] Instance destroy allows updating soft deleted instance",
+        "[POSTGRES] Instance destroy converts Infinity in where clause to a timestamp",
+        "[POSTGRES] Instance destroy delete a record of multiple primary keys table",
+        "[POSTGRES] Instance destroy does not set the deletedAt date in subsequent destroys if dao is paranoid",
+        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys",
+        "[POSTGRES] Instance destroy persists other model changes when soft deleting",
+        "[POSTGRES] Instance destroy should not call save hooks when soft deleting",
+        "[POSTGRES] Instance destroy supports custom deletedAt database column",
+        "[POSTGRES] Instance destroy supports custom deletedAt field",
+        "[POSTGRES] Instance destroy supports custom deletedAt field and database column"
+      ]
+    },
+    "test/integration/instance/increment.test.js": {
+      "failing": [
+        "[POSTGRES] Instance increment supports returning",
+        "[POSTGRES] Instance increment supports where conditions"
+      ]
+    },
+    "test/integration/instance/reload.test.js": {
+      "failing": [
+        "[POSTGRES] Instance reload should set an association to empty after all deletion, 1-N",
+        "[POSTGRES] Instance reload should set an association to null after deletion, 1-1",
+        "[POSTGRES] Instance reload should update internal options of the instance",
+        "[POSTGRES] Instance reload should update the associations after one element deleted",
+        "[POSTGRES] Instance reload should update the associations as well"
+      ]
+    },
+    "test/integration/instance/save.test.js": {
+      "failing": [
+        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used",
+        "[POSTGRES] Instance save should fail a validation upon building",
+        "[POSTGRES] Instance save should fail a validation upon creating",
+        "[POSTGRES] Instance save should fail a validation upon creating with hooks false",
+        "[POSTGRES] Instance save should fail a validation when updating",
+        "[POSTGRES] Instance save when nothing changed should not throw ER_EMPTY_QUERY if changed only virtual fields",
+        "[POSTGRES] Instance save with custom timestamp options works with `allowNull: false` on createdAt and updatedAt columns"
+      ]
+    },
+    "test/integration/instance/to-json.test.js": {
+      "failing": [
+        "[POSTGRES] Instance toJSON build returns a response that can be stringified",
+        "[POSTGRES] Instance toJSON create returns a response that can be stringified"
+      ]
+    },
+    "test/integration/instance/update.test.js": {
+      "failing": [
+        "[POSTGRES] Instance update doesn't update primary keys or timestamps",
+        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
+        "[POSTGRES] Instance update should only save passed attributes",
+        "[POSTGRES] Instance update should save attributes affected by setters",
+        "[POSTGRES] Instance update should update timestamps with milliseconds"
+      ]
+    },
+    "test/integration/instance/values.test.js": {
+      "failing": [
+        "[POSTGRES] DAO Values changed should be available to a afterUpdate hook",
+        "[POSTGRES] DAO Values get can pass parameters to getters",
+        "[POSTGRES] DAO Values get should custom virtual getters in get(key)",
+        "[POSTGRES] DAO Values get should use custom getters in toJSON",
+        "[POSTGRES] DAO Values set doesn't overwrite defined primary keys",
+        "[POSTGRES] DAO Values set doesn't overwrite generated primary keys",
+        "[POSTGRES] DAO Values set doesn't set timestamps",
+        "[POSTGRES] DAO Values set doesn't set value if not a dynamic setter or a model attribute",
+        "[POSTGRES] DAO Values set includes should support basic includes",
+        "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)"
+      ]
+    },
+    "test/integration/json.test.js": {
+      "failing": [
+        "model json \"before each\" hook for \"should tell me that a column is json\"",
+        "model json cast type SQL injection should reject UNION-based cross-table data exfiltration via JSON cast type",
+        "model json cast type SQL injection should reject WHERE bypass via OR 1=1 injection in JSON cast type",
+        "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation",
+        "model jsonb \"before each\" hook for \"should be able retrieve json value with nested include\""
+      ]
+    },
+    "test/integration/model.test.js": {
+      "failing": [
+        "[POSTGRES] Model build attaches getter and setter methods from options",
+        "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
+        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
+        "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
+        "[POSTGRES] Model constructor should allow me to set a function as default value",
+        "[POSTGRES] Model constructor should allow the user to specify indexes in options",
+        "[POSTGRES] Model constructor should throw `TypeError` when value for updatedAt, createdAt, or deletedAt is neither string nor boolean",
+        "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
+        "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field",
+        "[POSTGRES] Model constructor throws an error if a custom model-wide validation is not a function",
+        "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define",
+        "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
+        "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
+        "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
+        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
+        "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
+        "[POSTGRES] Model destroy throws an error if no where clause is given",
+        "[POSTGRES] Model destroy throws an error if where has a key with undefined value",
+        "[POSTGRES] Model paranoid is true and where is an array should fail when array contains strings",
+        "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
+        "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
+        "[POSTGRES] Model references uses an existing dao factory and references the author table",
+        "[POSTGRES] Model references works with comments",
+        "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
+        "[POSTGRES] Model update does not update virtual attributes",
+        "[POSTGRES] Model update doesn't update attributes that are altered by virtual setters when option is enabled",
+        "[POSTGRES] Model update should properly set data when individualHooks are true",
+        "[POSTGRES] Model update throws an error if no where clause is given",
+        "[POSTGRES] Model update throws an error if where has a key with undefined value",
+        "[POSTGRES] Model update updates attributes that are altered by virtual setters",
+        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
+      ]
+    },
+    "test/integration/model/attributes.test.js": {
+      "failing": [
+        "[POSTGRES] Model attributes set should only be called once when used on a join model called with an association getter"
+      ]
+    },
+    "test/integration/model/attributes/field.test.js": {
+      "failing": [
+        "[POSTGRES] Model attributes field decrement should work",
+        "[POSTGRES] Model attributes field field and attribute name is the same save should work",
+        "[POSTGRES] Model attributes field field names that are the same as property names should create, update, and read correctly",
+        "[POSTGRES] Model attributes field increment should work",
+        "[POSTGRES] Model attributes field should support renaming of sequelize method fields",
+        "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
+        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`",
+        "[POSTGRES] Model attributes field should work with where on includes for find",
+        "[POSTGRES] Model attributes field should work with where on includes for findAll",
+        "[POSTGRES] Model attributes field sum should work"
+      ]
+    },
+    "test/integration/model/attributes/types.test.js": {
+      "failing": [
+        "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values",
+        "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes",
+        "[POSTGRES] Model attributes types VIRTUAL should be able to include model with virtual attributes"
+      ]
+    },
+    "test/integration/model/bulk-create.test.js": {
+      "loadError": true
+    },
+    "test/integration/model/bulk-create/include.test.js": {
+      "failing": [
+        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsTo relations",
+        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsToMany relations",
+        "[POSTGRES] Model bulkCreate include should bulkCreate data for HasMany relations",
+        "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations"
+      ]
+    },
+    "test/integration/model/count.test.js": {
+      "failing": ["[POSTGRES] Model count should count groups correctly and return attributes"]
+    },
+    "test/integration/model/create.test.js": {
+      "unstable": true,
+      "pass": 10,
+      "failing": [
+        "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"",
+        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction",
+        "[POSTGRES] Model should return default value set by the database (create)"
+      ]
+    },
+    "test/integration/model/create/include.test.js": {
+      "failing": [
+        "[POSTGRES] Model create include should create data for BelongsTo relations",
+        "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK",
+        "[POSTGRES] Model create include should create data for BelongsToMany relations",
+        "[POSTGRES] Model create include should create data for HasMany relations",
+        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
+      ]
+    },
+    "test/integration/model/findAll.test.js": {
+      "failing": [
+        "[POSTGRES] Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object",
+        "[POSTGRES] Model findAll eager loading hasMany supports sorting DESC on renamed sub-query attribute",
+        "[POSTGRES] Model findAll eager loading hasMany supports sorting on multiple renamed sub-query attributes",
+        "[POSTGRES] Model findAll eager loading hasMany supports sorting on renamed sub-query attribute",
+        "[POSTGRES] Model findAll eager loading include all includes all nested associations",
+        "[POSTGRES] Model findAll eager loading include all includes specific type of association",
+        "[POSTGRES] Model findAll eager loading include all is over-ruled by specified include",
+        "[POSTGRES] Model findAll eager loading include all utilises specified attributes",
+        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
+        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
+        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL",
+        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL in include",
+        "[POSTGRES] Model findAll normal findAll should throw for undefined where parameters",
+        "[POSTGRES] Model findAll order by eager loaded tables HasMany sorts by 2nd degree association",
+        "[POSTGRES] Model findAll order by eager loaded tables HasMany sorts by 2nd degree association with alias",
+        "[POSTGRES] Model findAll order by eager loaded tables HasMany sorts by 2nd degree association with alias while using limit",
+        "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute",
+        "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
+        "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
+        "[POSTGRES] Model findAndCountAll handles offset with includes",
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized",
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance",
+        "[POSTGRES] Model rejectOnEmpty mode works from model options"
+      ]
+    },
+    "test/integration/model/findAll/groupedLimit.test.js": {
+      "failing": [
+        "[POSTGRES] Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\""
+      ]
+    },
+    "test/integration/model/findAll/order.test.js": {
+      "failing": ["[POSTGRES] Model findAll order injections should not throw on a literal"]
+    },
+    "test/integration/model/findOne.test.js": {
+      "loadError": true
+    },
+    "test/integration/model/geography.test.js": {
+      "failing": [
+        "[POSTGRES] Model GEOGRAPHY \"before each\" hook for \"works with aliases fields\"",
+        "[POSTGRES] Model GEOGRAPHY(LINESTRING) \"before each\" hook for \"should create a geography object\"",
+        "[POSTGRES] Model GEOGRAPHY(POINT) \"before each\" hook for \"should create a geography object\"",
+        "[POSTGRES] Model GEOGRAPHY(POLYGON) \"before each\" hook for \"should create a geography object\"",
+        "[POSTGRES] Model GEOGRAPHY(POLYGON, SRID) \"before each\" hook for \"should create a geography object\"",
+        "[POSTGRES] Model sql injection attacks \"before each\" hook for \"should properly escape the single quotes\""
+      ]
+    },
+    "test/integration/model/geometry.test.js": {
+      "failing": [
+        "[POSTGRES] Model GEOMETRY \"before each\" hook for \"works with aliases fields\"",
+        "[POSTGRES] Model GEOMETRY(LINESTRING) \"before each\" hook for \"should create a geometry object\"",
+        "[POSTGRES] Model GEOMETRY(POINT) \"before each\" hook for \"should create a geometry object\"",
+        "[POSTGRES] Model GEOMETRY(POLYGON) \"before each\" hook for \"should create a geometry object\"",
+        "[POSTGRES] Model sql injection attacks \"before each\" hook for \"should properly escape the single quotes\""
+      ]
+    },
+    "test/integration/model/increment.test.js": {
+      "failing": [
+        "[POSTGRES] Model decrement should work with scopes",
+        "[POSTGRES] Model increment should work with scopes"
+      ]
+    },
+    "test/integration/model/json.test.js": {
+      "failing": [
+        "[POSTGRES] Model JSON find should be possible to query dates with array operators",
+        "[POSTGRES] Model JSON sql injection attacks should query an instance with JSONB data and order while trying to inject"
+      ]
+    },
+    "test/integration/model/optimistic_locking.test.js": {
+      "failing": [
+        "[POSTGRES] Model optimistic locking decrement() also increments the version",
+        "[POSTGRES] Model optimistic locking increment() also increments the version"
+      ]
+    },
+    "test/integration/model/schema.test.js": {
+      "failing": [
+        "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"",
+        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
+        "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one",
+        "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two",
+        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276",
+        "[POSTGRES] Model schemas regressions should be able to sync model with schema"
+      ]
+    },
+    "test/integration/model/scope/aggregate.test.js": {
+      "failing": ["[POSTGRES] Model scope aggregate should be able to use where on include"]
+    },
+    "test/integration/model/scope/associations.test.js": {
+      "failing": [
+        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsTo",
+        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsToMany",
+        "[POSTGRES] Model scope associations get it should be able to apply another scope hasMany",
+        "[POSTGRES] Model scope associations get it should be able to apply another scope hasOne",
+        "[POSTGRES] Model scope associations get it should be able to unscope belongsTo",
+        "[POSTGRES] Model scope associations get it should be able to unscope belongsToMany",
+        "[POSTGRES] Model scope associations get it should be able to unscope hasMany",
+        "[POSTGRES] Model scope associations get it should be able to unscope hasOne",
+        "[POSTGRES] Model scope associations include should be able to include a scoped model",
+        "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
+        "[POSTGRES] Model scope associations scope with includes should scope columns properly",
+        "[POSTGRES] Model scope associations scope with includes with different format should not throw error",
+        "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly",
+        "[POSTGRES] Model scope associations scope with options should not throw error",
+        "[POSTGRES] Model scope associations scope with options should return correct object included foreign_key",
+        "[POSTGRES] Model scope associations scope with options should return correct object included foreign_key with defaultScope"
+      ]
+    },
+    "test/integration/model/scope/count.test.js": {
+      "failing": [
+        "[POSTGRES] Model scope count should be able to use include with function scope",
+        "[POSTGRES] Model scope count should be able to use include with function scope and string association"
+      ]
+    },
+    "test/integration/model/scope/merge.test.js": {
+      "unstable": true,
+      "pass": 0,
+      "failing": [
+        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"",
+        "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
+        "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
+      ]
+    },
+    "test/integration/model/scope/update.test.js": {
+      "failing": ["[POSTGRES] Model scope update should work with empty where"]
+    },
+    "test/integration/model/searchPath.test.js": {
+      "failing": [
+        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.count and model.find should be able to insert data into both schemas using instance.save count it and retrieve it via findAll with where",
+        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.findAll should be able to insert data into both schemas using instance.save and retrieve it via findAll",
+        "[POSTGRES] Model SEARCH PATH Edit data via instance.update, retrieve updated instance via model.findAll should be able to update data via instance update in both schemas, and retrieve it via findAll with where",
+        "[POSTGRES] Model SEARCH PATH concurency tests should build and persist instances to 2 schemas concurrently in any order"
+      ]
+    },
+    "test/integration/model/sum.test.js": {
+      "failing": ["[POSTGRES] Model \"before each\" hook for \"should sum without rows\""]
+    },
+    "test/integration/model/sync.test.js": {
+      "failing": [
+        "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key"
+      ]
+    },
+    "test/integration/model/update.test.js": {
+      "failing": [
+        "[POSTGRES] Model update should ignore undefined values without throwing not null validation",
+        "[POSTGRES] Model update skips update query if no data to update",
+        "[POSTGRES] Model update skips update query skips when timestamps disabled"
+      ]
+    },
+    "test/integration/model/upsert.test.js": {
+      "unstable": true,
+      "pass": 20,
+      "failing": [
+        "[POSTGRES] Model upsert returns values should return default value set by the database (upsert)",
+        "[POSTGRES] Model upsert works when composite indexes are created via indexes array",
+        "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key"
+      ]
+    },
+    "test/integration/operators.test.js": {
+      "failing": [
+        "[POSTGRES] Operators REGEXP case insensitive should properly escape regular expressions",
+        "[POSTGRES] Operators REGEXP case insensitive should work with a case-insensitive not regexp where",
+        "[POSTGRES] Operators REGEXP case sensitive should properly escape regular expressions"
+      ]
+    },
+    "test/integration/pool.test.js": {
+      "failing": [
+        "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection",
+        "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection for transaction",
+        "[POSTGRES] Pooling idle [MSSQL Flaky] should get new connection beyond idle range",
+        "[POSTGRES] Pooling idle should maintain connection within idle range",
+        "[POSTGRES] Pooling network / connection errors should obtain new connection when old connection is abruptly closed",
+        "[POSTGRES] Pooling network / connection errors should obtain new connection when released connection dies inside pool"
+      ]
+    },
+    "test/integration/query-interface.test.js": {
+      "failing": [
+        "[POSTGRES] QueryInterface addColumn addColumn expected error",
+        "[POSTGRES] QueryInterface addColumn should work with enums (2)",
+        "[POSTGRES] QueryInterface constraints check addconstraint missing type",
+        "[POSTGRES] QueryInterface constraints foreign key should add, read & remove foreign key constraint",
+        "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
+        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table",
+        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
+        "[POSTGRES] QueryInterface indexes works with schemas",
+        "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
+      ]
+    },
+    "test/integration/query-interface/changeColumn.test.js": {
+      "failing": [
+        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column property without affecting other properties",
+        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column to foreign key",
+        "[POSTGRES] QueryInterface changeColumn should work with enums (case 2)"
+      ]
+    },
+    "test/integration/query-interface/createTable.test.js": {
+      "failing": [
+        "[POSTGRES] QueryInterface createTable enums should work with enums (2)",
+        "[POSTGRES] QueryInterface createTable enums should work with enums (3)",
+        "[POSTGRES] QueryInterface createTable enums should work with enums (4)",
+        "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys"
+      ]
+    },
+    "test/integration/query-interface/describeTable.test.js": {
+      "failing": [
+        "[POSTGRES] QueryInterface describeTable reads the metadata of the table with schema",
+        "[POSTGRES] QueryInterface describeTable rejects when no data is available",
+        "[POSTGRES] QueryInterface describeTable should correctly determine the primary key columns"
+      ]
+    },
+    "test/integration/query-interface/dropEnum.test.js": {
+      "failing": ["[POSTGRES] QueryInterface dropEnum should be able to drop the specified enum"]
+    },
+    "test/integration/query-interface/getForeignKeyReferencesForTable.test.js": {
+      "loadError": true
+    },
+    "test/integration/replication.test.js": {
+      "failing": [
+        "[POSTGRES] Replication \"before each\" hook for \"should be able to make a write\""
+      ]
+    },
+    "test/integration/sequelize.test.js": {
+      "unstable": true,
+      "pass": 45,
+      "failing": [
+        "\"after each\" hook for \"correctly handles multiple transactions\"",
+        "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
+        "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)",
+        "[POSTGRES] Sequelize define adds a new dao to the dao manager",
+        "[POSTGRES] Sequelize define enum \"before each\" hook for \"raises an error if no values are defined\"",
+        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
+        "[POSTGRES] Sequelize define enum raises an error if no values are defined",
+        "[POSTGRES] Sequelize define raises an error if no values are defined",
+        "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
+        "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
+        "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
+        "[POSTGRES] Sequelize define transaction correctly handles multiple transactions",
+        "[POSTGRES] Sequelize modelManager allows to find a model using a callback",
+        "[POSTGRES] Sequelize set should be configurable with global functions",
+        "[POSTGRES] Sequelize sync fails for incorrect connection even when no models are defined",
+        "[POSTGRES] Sequelize validate is an alias for .authenticate()"
+      ]
+    },
+    "test/integration/sequelize.transaction.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize#transaction Transaction#commit does not pollute the pool with broken connections if commit fails",
+        "[POSTGRES] Sequelize#transaction Transaction#rollback does not pollute the pool with broken connections if the rollback fails"
+      ]
+    },
+    "test/integration/sequelize/drop.test.js": {
+      "failing": [
+        "Sequelize#drop supports dropping cyclic associations",
+        "Sequelize#drop with schemas supports schemas when dropping foreign keys for a table"
+      ]
+    },
+    "test/integration/sequelize/log.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize log with default logging options called with more than two arguments passes the arguments to the logger",
+        "[POSTGRES] Sequelize log with default logging options called with no arguments calls the log method",
+        "[POSTGRES] Sequelize log with default logging options called with no arguments logs an empty string as info event",
+        "[POSTGRES] Sequelize log with default logging options called with one argument logs the passed string as info event"
+      ]
+    },
+    "test/integration/sequelize/query.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize query arbitrarily map the field names",
+        "[POSTGRES] Sequelize query binds named parameters array handles escaped $$",
+        "[POSTGRES] Sequelize query binds named parameters object handles escaped $$",
+        "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest",
+        "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
+        "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
+        "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
+        "[POSTGRES] Sequelize query it allows to pass custom class instances",
+        "[POSTGRES] Sequelize query keeps field names that are mapped to the same name",
+        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
+        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
+        "[POSTGRES] Sequelize query properly adds and escapes replacement value",
+        "[POSTGRES] Sequelize query rejections reject if `options.bind` and `sql.replacements` are both passed",
+        "[POSTGRES] Sequelize query rejections reject if `options.replacements` and `options.bind` are both passed",
+        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `options.bind` are both passed",
+        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `options.replacements`` are both passed",
+        "[POSTGRES] Sequelize query rejections reject if `sql.bind` and `sql.values` are both passed",
+        "[POSTGRES] Sequelize query rejections reject if `values` and `options.replacements` are both passed",
+        "[POSTGRES] Sequelize query rejections reject when bind key is $0 with the passed array",
+        "[POSTGRES] Sequelize query rejections reject when bind key is $01 with the passed array",
+        "[POSTGRES] Sequelize query rejections reject when bind key is missing in the passed array",
+        "[POSTGRES] Sequelize query rejections reject when bind key is missing in the passed object",
+        "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
+        "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
+        "[POSTGRES] Sequelize query rejections reject when key is missing in the passed object",
+        "[POSTGRES] Sequelize query rejections reject with the passed date",
+        "[POSTGRES] Sequelize query rejections reject with the passed date for bind",
+        "[POSTGRES] Sequelize query rejections reject with the passed empty object",
+        "[POSTGRES] Sequelize query rejections reject with the passed empty object for bind",
+        "[POSTGRES] Sequelize query rejections reject with the passed number",
+        "[POSTGRES] Sequelize query rejections reject with the passed number for bind",
+        "[POSTGRES] Sequelize query rejections reject with the passed string",
+        "[POSTGRES] Sequelize query rejections reject with the passed string for bind",
+        "[POSTGRES] Sequelize query replaces named parameters with the passed object",
+        "[POSTGRES] Sequelize query replaces named parameters with the passed object and ignore those which does not qualify",
+        "[POSTGRES] Sequelize query replaces named parameters with the passed object and ignores casts",
+        "[POSTGRES] Sequelize query replaces named parameters with the passed object having a null property",
+        "[POSTGRES] Sequelize query replaces named parameters with the passed object using the same key twice",
+        "[POSTGRES] Sequelize query replaces token with the passed array",
+        "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
+        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"",
+        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged",
+        "[POSTGRES] Sequelize query uses properties `query` and `values` if query is tagged"
+      ]
+    },
+    "test/integration/transaction.test.js": {
+      "failing": [
+        "[POSTGRES] Transaction does not allow queries after commit",
+        "[POSTGRES] Transaction does not allow queries immediately after commit call",
+        "[POSTGRES] Transaction does not allow queries immediately after rollback call",
+        "[POSTGRES] Transaction should not rollback if connection was not acquired",
+        "[POSTGRES] Transaction should throw an error if an object is passed to afterCommit",
+        "[POSTGRES] Transaction should throw an error if null is passed to afterCommit",
+        "[POSTGRES] Transaction should throw an error if undefined is passed to afterCommit",
+        "[POSTGRES] Transaction works even if a transaction: null option is passed",
+        "[POSTGRES] Transaction works even if a transaction: undefined option is passed"
+      ]
+    },
+    "test/integration/utils.test.js": {
+      "loadError": true
+    }
+  }
+}
