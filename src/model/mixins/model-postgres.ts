@@ -17,6 +17,7 @@ import type {
   Values,
 } from '../options.ts';
 import type { QueryOptionsBase } from '../runtime.ts';
+import type { UpdateValues } from '../types.ts';
 import type { ModelConstructor } from './model-constructor.ts';
 
 /**
@@ -153,7 +154,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static updateStatement<M extends AnyModel>(
       this: ModelStatic<M>,
-      values: Partial<Attributes<M>>,
+      values: UpdateValues<Attributes<M>>,
       options: UpdateStatementOptions<Attributes<M>> = {},
     ): WriteStatement {
       return statements.update(this, values as Values, options as UpdateStatementOptions);

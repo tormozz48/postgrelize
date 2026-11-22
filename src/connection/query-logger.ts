@@ -62,7 +62,8 @@ export class QueryLogger {
     if (options.benchmark ?? this.#defaults.benchmark) {
       logging(sql.replace('Executing', 'Executed'), elapsed);
     } else {
-      logging(sql, { bind: query.values });
+      // v6 passes the query options here although its typings declare `timing?: number`.
+      (logging as (sql: string, options: unknown) => void)(sql, { bind: query.values });
     }
   }
 }

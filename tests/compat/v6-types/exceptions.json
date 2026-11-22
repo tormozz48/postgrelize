@@ -337,7 +337,7 @@
       "file": "model.ts",
       "code": "TS2554",
       "message": "Expected 1 arguments, but got 0.",
-      "count": 17,
+      "count": 15,
       "cause": "expect-type-mismatch"
     },
     {
@@ -549,27 +549,6 @@
       "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
       "count": 2,
       "cause": "datatypes-namespace"
-    },
-    {
-      "file": "update.ts",
-      "code": "TS2322",
-      "message": "Type 'Col' is not assignable to type 'string'.",
-      "count": 2,
-      "cause": "branded-expression"
-    },
-    {
-      "file": "update.ts",
-      "code": "TS2322",
-      "message": "Type 'Fn' is not assignable to type 'string & CreationOptionalBrand'.",
-      "count": 2,
-      "cause": "branded-expression"
-    },
-    {
-      "file": "update.ts",
-      "code": "TS2322",
-      "message": "Type 'Literal' is not assignable to type 'string & CreationOptionalBrand'.",
-      "count": 2,
-      "cause": "branded-expression"
     },
     {
       "file": "update.ts",

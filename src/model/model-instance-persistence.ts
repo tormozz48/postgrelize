@@ -10,6 +10,9 @@ import type {
   Values,
 } from './options.ts';
 import type { QueryOptionsBase } from './runtime.ts';
+import type { UpdateValues } from './types.ts';
+import type { Col, Fn } from '../expressions/call-expressions.ts';
+import type { Literal } from '../expressions/methods.ts';
 
 /**
  * Persistence of model instances: `save`, `validate`, `update`, `reload`, `destroy`, `restore`, `isSoftDeleted`, `increment`, `decrement`.
@@ -59,6 +62,24 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   }
 
   /**
+   * Sets one attribute and saves the instance.
+   *
+   * @param key - Attribute name.
+   * @param value - New value, or a `fn` / `col` / `literal` expression.
+   * @param options - Save options.
+   * @returns This instance.
+   * @throws ValidationError when validation fails.
+   * @example
+   * ```ts
+   * await user.update('email', 'ada@example.com');
+   * ```
+   */
+  update<K extends keyof TAttributes>(
+    key: K,
+    value: TAttributes[K] | Fn | Col | Literal,
+    options?: SaveOptions<TAttributes>,
+  ): Promise<this>;
+  /**
    * Sets values and saves the instance, same as {@link Model.set} followed by {@link Model.save}.
    *
    * @param values - New values.
@@ -70,12 +91,17 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    * await user.update({ email: 'ada@example.com' });
    * ```
    */
+  update(values: UpdateValues<TAttributes>, options?: SaveOptions<TAttributes>): Promise<this>;
+
   async update(
-    values: Partial<TAttributes>,
-    options: SaveOptions<TAttributes> = {},
+    keyOrValues: PropertyKey | UpdateValues<TAttributes>,
+    valueOrOptions?: unknown,
+    maybeOptions?: SaveOptions<TAttributes>,
   ): Promise<this> {
-    (this as unknown as AnyModel).set(values);
-    return this.save(options);
+    const single = typeof keyOrValues === 'string';
+    const instance = this as unknown as AnyModel;
+    instance.set(single ? { [keyOrValues]: valueOrOptions } : (keyOrValues as Values));
+    return this.save(single ? maybeOptions : (valueOrOptions as SaveOptions<TAttributes>));
   }
 
   /**

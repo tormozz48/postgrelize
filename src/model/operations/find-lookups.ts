@@ -1,3 +1,4 @@
+import type { GroupedCountResultItem } from '../find-options.ts';
 import type { IncludeLoader } from '../../associations/include-loader.ts';
 import type { IncludeResolver } from '../../associations/include-resolver.ts';
 import { EmptyResultError, UniqueConstraintError } from '../../errors/errors.ts';
@@ -104,7 +105,7 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
   async findAndCountAll<M extends AnyModel>(
     model: ModelStatic<M>,
     options: FindAndCountOptions,
-  ): Promise<Readonly<{ count: number; rows: M[] }>> {
+  ): Promise<Readonly<{ count: number | GroupedCountResultItem[]; rows: M[] }>> {
     const [count, rows] = await Promise.all([
       model.count({
         ...(options.where === undefined ? {} : { where: options.where }),
@@ -112,11 +113,14 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
         ...(options.paranoid === undefined ? {} : { paranoid: options.paranoid }),
         ...(options.distinct === undefined ? {} : { distinct: options.distinct }),
         ...(options.col === undefined ? {} : { col: options.col }),
+        ...(options.group === undefined
+          ? {}
+          : { group: options.group as string | readonly string[] }),
         ...this.services.values.queryOptions(options),
       }),
       model.findAll(options),
     ]);
-    return { count, rows };
+    return { count: count as number | GroupedCountResultItem[], rows };
   }
 
   /**

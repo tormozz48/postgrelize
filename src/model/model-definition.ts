@@ -22,6 +22,21 @@ export type {
 const attributeNormalizer = new AttributeNormalizer();
 
 /**
+ * Singular and plural forms of a model name (Sequelize v6 `ModelNameOptions`).
+ *
+ * @example
+ * ```ts
+ * const name: ModelNameOptions = { singular: 'person', plural: 'people' };
+ * ```
+ */
+export type ModelNameOptions = Readonly<{
+  /** Singular model name. */
+  singular?: string;
+  /** Plural model name. */
+  plural?: string;
+}>;
+
+/**
  * Table-level model options shared by `Model.init` and `sequelize.define`.
  *
  * Extends the model defaults (`paranoid`, `timestamps`, `schema`, ...).
@@ -42,6 +57,12 @@ export type DefinitionOptions = ModelDefaults &
   Readonly<{
     /** Model name. Defaults to the class name. */
     modelName?: string;
+    /**
+     * Singular and plural model name (Sequelize v6 `ModelOptions.name`). Drives the default alias
+     * and foreign key of `belongsTo` / `hasOne` / `hasMany` / `belongsToMany` and the accessor names.
+     * A missing form falls back to the inflection of `modelName`.
+     */
+    name?: ModelNameOptions;
     /** Table name. Defaults to the pluralized model name. */
     tableName?: string;
     /** Separator between schema and table that `getTableName` reports (PostgreSQL always uses `.` in SQL). */

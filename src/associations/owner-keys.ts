@@ -82,7 +82,7 @@ export class OwnerKeys {
   }
 
   #sourcePrefix(multi: boolean, source: Model, options: AssociationOptions): string {
-    const own = this.#keys.modelName(source).singular;
-    return multi ? own : inflection.singularize(typeof options.as === 'string' ? options.as : own);
+    if (multi) return this.#keys.modelName(source).singular;
+    return inflection.singularize(typeof options.as === 'string' ? options.as : source.modelName);
   }
 }

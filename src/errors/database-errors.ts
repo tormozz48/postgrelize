@@ -37,14 +37,15 @@ export class DatabaseError extends BaseError {
   /**
    * Wraps a driver error together with the statement that failed.
    *
-   * @param parent - Original driver error.
+   * @param parent - Original driver error; an empty one is substituted when omitted.
    * @param context - Executed SQL and parameters; `sql` defaults to `''` and `parameters` to `[]`.
    */
-  constructor(parent: DriverError, context: QueryErrorContext = {}) {
-    super(parent.message, { cause: parent });
+  constructor(parent: DriverError | undefined, context: QueryErrorContext = {}) {
+    const driverError = parent ?? Object.assign(new Error(''), { sql: '' });
+    super(driverError.message, { cause: driverError });
     this.name = 'SequelizeDatabaseError';
-    this.parent = parent;
-    this.original = parent;
+    this.parent = driverError;
+    this.original = driverError;
     this.sql = context.sql ?? '';
     this.parameters = context.parameters ?? [];
   }
@@ -86,7 +87,7 @@ export class UnknownConstraintError extends DatabaseError {
       parent?: DriverError;
     }> = {},
   ) {
-    super(options.parent ?? Object.assign(new Error(''), { sql: '' }));
+    super(options.parent);
     this.name = 'SequelizeUnknownConstraintError';
     this.message = options.message ?? 'The specified constraint does not exist';
     this.constraint = options.constraint;
@@ -140,8 +141,8 @@ export class TimeoutError extends DatabaseError {
  */
 export type ConstraintErrorOptions = QueryErrorContext &
   Readonly<{
-    /** Original driver error. */
-    parent: DriverError;
+    /** Original driver error; an empty one is substituted when omitted. */
+    parent?: DriverError;
     /** Constraint columns mapped to offending values. */
     fields?: Readonly<Record<string, string>> | readonly string[];
     /** Table name. */

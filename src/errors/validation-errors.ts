@@ -235,8 +235,9 @@ export class UniqueConstraintError extends ValidationError {
   ) {
     super(options.message ?? 'Validation error', options.errors);
     this.name = 'SequelizeUniqueConstraintError';
-    this.parent = options.parent;
-    this.original = options.parent;
+    const parent = options.parent ?? Object.assign(new Error(''), { sql: '' });
+    this.parent = parent;
+    this.original = parent;
     this.sql = options.sql ?? '';
     this.fields = options.fields ?? {};
   }
