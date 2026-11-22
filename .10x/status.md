@@ -6,6 +6,8 @@
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
+**Docs reference rework:** done, merged to `main` 2026-11-22 (PR #127, merge commit `3e40a1b`), **not released** (CHANGELOG `[Unreleased]`; ships with the next version). Reference hub, generated Extensions page and option reference, errors and connection guide pages, `@postgrelize` TSDoc tag, `<Ext />` badge; spec `.10x/specs/2026-11-22-docs-reference-design.md`, ADR-035; record `.10x/decisions/staff-engineer/docs-reference.md`.
+
 **S11 (DDL objects):** in progress — PR1 extensions and sequences (#70), PR2 functions and triggers (#72), PR3 views (#73), PR4 row-level security (#74), PR5 UNLOGGED/TEMP tables (#75) done (all six matrix rows `supported`); spec `.10x/specs/2026-11-16-s11-ddl-objects-design.md`, ADR-025.
 
 **S17 (Operator helpers):** done — `Op.similarTo` / `notSimilarTo`, `jsonPathExists`, `containedOrEqual` / `containsOrEqual`, `pg_trgm` `Op`s; helpers `jsonbPath`, `toTsVector` / `*ToTsQuery`, `tsRank`, `tsHeadline`, `setWeight`, `trigramSimilarity` / `trigramWordSimilarity` / `trigramDistance`; 5 `literal` rows promoted; spec `.10x/specs/2026-11-16-s17-operator-helpers-design.md`.
