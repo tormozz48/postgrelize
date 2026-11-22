@@ -30,18 +30,17 @@
 
 ### What you get on top of Sequelize v6
 
-| Area            | postgrelize                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Sequelize v6                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| Upserts         | `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted` per row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `upsert` / `updateOnDuplicate` with fixed column lists |
-| Bulk writes     | `bulkCreate({ unnest: true })` past the 65535-parameter limit, `MERGE` (`Model.merge`), `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT` (`Model.insertFrom`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | —                                                      |
-| Old values      | `returningOld` → `instance.oldValues` (PostgreSQL 18 `RETURNING OLD`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | —                                                      |
-| Import / export | `COPY FROM STDIN` / `COPY TO STDOUT` streaming (`Model.copyFrom`, `Model.copyTo`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | —                                                      |
-| Queries         | CTEs incl. `WITH RECURSIVE`, set operations (`union()`, `intersect()`, `except()`), `FETCH … WITH TIES`, `LATERAL` (incl. top-N per parent includes), `VALUES` / set-returning functions / `JSON_TABLE` in `FROM`, `TABLESAMPLE`, data-modifying CTEs (`Model.deleteStatement()` …), CTE `SEARCH` / `CYCLE`, subqueries (`Model.subquery`, `exists()`), operator and search helpers (`Op.similarTo`, `Op.jsonPathExists`, subnet and `pg_trgm` operators, `jsonbPath()`, full-text `websearchToTsQuery()` / `tsRank()` / `tsHeadline()`), `DISTINCT ON`, window functions (`over()`), row comparison (`tuple()`), server-side cursors (`Model.findEach`), `= ANY($1)` for large `IN` lists | literals only                                          |
-| Sessions        | `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks, `DEFERRABLE` transactions, per-query `statementTimeout`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | —                                                      |
-| Scaling         | read replicas with round-robin readers (`replication`, `useMaster`); opt-in named prepared statements (`statementCache`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | read replicas                                          |
-| Models          | optional decorators (`@Table`, `@Column`, `@HasMany`, hook decorators, …) and `sequelize.addModels`, in both TC39 and legacy decorator modes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `Model.init` / `define` only                           |
-| Schema objects  | `QueryInterface` extensions, sequences, views and materialized views, row-level security policies, `UNLOGGED` / `TEMPORARY` tables, expression indexes, `EXCLUDE`, `NOT VALID`, `NOT ENFORCED` and temporal (`WITHOUT OVERLAPS`, `PERIOD`) constraints, declarative partitioning, functions and triggers (`createExtension`, `createSequence`, `createView`, `refreshMaterializedView`, `createFunction`, `createTrigger`)                                                                                                                                                                                                                                                                 | —                                                      |
-| Schema          | identity and generated columns, `INTERVAL`, `HSTORE` objects, `LTREE`, `TIMESTAMP`, `MONEY`, `BIT` / `VARBIT`, `XML`, `MACADDR8`, `TSQUERY`, geometric types (`POINT`, `LSEG`, `BOX`, `PATH`, `POLYGON`, `CIRCLE`), multiranges, composite types, PostGIS `GEOMETRY` / `GEOGRAPHY` as GeoJSON, `UNIQUE NULLS NOT DISTINCT`, Standard Schema (zod / valibot / arktype) validation                                                                                                                                                                                                                                                                                                           | —                                                      |
+Everything below is new in postgrelize; Sequelize v6 behaviour never changes. Each area links to its guide page and a runnable example. The full list, with PostgreSQL versions, is on the [extensions page](https://tormozz48.github.io/postgrelize/extensions/).
+
+- **Upserts and RETURNING**: `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted`; `returningOld` (PostgreSQL 18). [Guide](https://tormozz48.github.io/postgrelize/guide/upserts) · [upserts](docs/examples/upserts.ts) · [returning-old](docs/examples/returning-old.ts)
+- **Bulk writes and COPY**: `bulkCreate({ unnest: true })`, `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM` / `COPY TO` streaming. [Guide](https://tormozz48.github.io/postgrelize/guide/bulk-writes) · [bulk-writes](docs/examples/bulk-writes.ts) · [merge-returning](docs/examples/merge-returning.ts) · [copy](docs/examples/copy.ts)
+- **Advanced queries**: CTEs and `WITH RECURSIVE`, set operations, `LATERAL`, subqueries, `DISTINCT ON`, window functions, keyset pagination, `TABLESAMPLE`, `JSON_TABLE`, operator and full-text search helpers, server-side cursors. [Guide](https://tormozz48.github.io/postgrelize/guide/advanced-queries) · [advanced-queries](docs/examples/advanced-queries.ts) · [operator-helpers](docs/examples/operator-helpers.ts) · [json-table](docs/examples/json-table.ts)
+- **Sessions and scaling**: `LISTEN/NOTIFY`, `SET LOCAL` for RLS, advisory locks, `DEFERRABLE` transactions, `statementTimeout`, read replicas, named prepared statements. [Guide](https://tormozz48.github.io/postgrelize/guide/sessions) · [sessions](docs/examples/sessions.ts) · [connection](docs/examples/connection.ts)
+- **Decorators**: `@Table`, `@Column`, associations and hook decorators with `sequelize.addModels`, in TC39 and legacy modes. [Guide](https://tormozz48.github.io/postgrelize/guide/decorators) · [decorators](docs/examples/decorators.ts)
+- **Schema objects, constraints and indexes**: sequences, views, materialized views, RLS policies, functions, triggers, partitioning, expression indexes, `EXCLUDE`, temporal constraints. [Schema objects](https://tormozz48.github.io/postgrelize/guide/schema-objects) · [Constraints and indexes](https://tormozz48.github.io/postgrelize/guide/constraints-indexes) · [schema-objects](docs/examples/schema-objects.ts) · [constraints-indexes](docs/examples/constraints-indexes.ts)
+- **Data types**: identity and generated columns, `INTERVAL`, `HSTORE`, `LTREE`, geometric types, multiranges, composite types, PostGIS as GeoJSON, Standard Schema validation. [Guide](https://tormozz48.github.io/postgrelize/guide/models) · [types](docs/examples/types.ts) · [geometry](docs/examples/geometry.ts) · [multirange](docs/examples/multirange.ts) · [composite](docs/examples/composite.ts) · [postgis](docs/examples/postgis.ts)
+
+Looking for one option or method? Use the [option reference](https://tormozz48.github.io/postgrelize/reference/options/) and the [API reference](https://tormozz48.github.io/postgrelize/api/).
 
 ## Install
 
@@ -57,46 +56,11 @@ The package ships `llm/USAGE.md` (a compact, tested usage guide) and an Agent Sk
 
 ## Quick start
 
-```ts
-import { DataTypes, Model, Op, Sequelize, excluded, literal } from 'postgrelize';
-import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'postgrelize';
+Define a model, sync it and run a first query: [Getting started](https://tormozz48.github.io/postgrelize/guide/getting-started) (runnable: [getting-started.ts](docs/examples/getting-started.ts)). Coming from Sequelize? Read [Migrating from Sequelize](https://tormozz48.github.io/postgrelize/guide/migrating).
 
-const sequelize = new Sequelize(process.env.DATABASE_URL!, { logging: false });
+Guides for the Sequelize v6 API: [models and data types](https://tormozz48.github.io/postgrelize/guide/models) · [associations](https://tormozz48.github.io/postgrelize/guide/associations) · [querying](https://tormozz48.github.io/postgrelize/guide/querying) · [transactions](https://tormozz48.github.io/postgrelize/guide/transactions) · [hooks and validation](https://tormozz48.github.io/postgrelize/guide/hooks-validation) · [errors](https://tormozz48.github.io/postgrelize/guide/errors) · [connection](https://tormozz48.github.io/postgrelize/guide/connection) · [schema and sync](https://tormozz48.github.io/postgrelize/guide/schema).
 
-class Counter extends Model<InferAttributes<Counter>, InferCreationAttributes<Counter>> {
-  declare id: CreationOptional<number>;
-  declare key: string;
-  declare hits: number;
-  declare version: CreationOptional<number>;
-}
-
-Counter.init(
-  {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    key: { type: DataTypes.TEXT, allowNull: false, unique: true },
-    hits: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
-    version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
-  },
-  { sequelize },
-);
-
-await sequelize.sync();
-
-// Sequelize v6 API works as before
-await Counter.findAll({ where: { hits: { [Op.gte]: 10 } }, order: [['hits', 'DESC']] });
-
-// PostgreSQL extension: expression-based upsert with a condition
-const rows = await Counter.insert([{ key: 'home', hits: 1, version: 2 }], {
-  onConflict: {
-    target: ['key'],
-    action: {
-      update: { hits: literal('"Counter"."hits" + EXCLUDED."hits"'), version: excluded('version') },
-      where: { version: { [Op.lt]: excluded('version') } },
-    },
-  },
-});
-rows.forEach((row) => console.log(row.key, row.wasInserted ? 'inserted' : 'updated'));
-```
+All examples live in [docs/examples](docs/examples); each one runs in CI.
 
 ## Compatibility
 
