@@ -1,0 +1,33 @@
+{
+  "repository": "https://github.com/sequelize/sequelize.git",
+  "tag": "v6.37.8",
+  "commit": "cb7f99ad05de56137672ab95586359ff6ceba004",
+  "dependencies": {
+    "mocha": "7.2.0",
+    "chai": "4.3.7",
+    "chai-as-promised": "7.1.1",
+    "chai-datetime": "1.8.0",
+    "sinon": "12.0.1",
+    "sinon-chai": "3.7.0",
+    "cls-hooked": "4.2.2",
+    "delay": "5.0.0",
+    "expect-type": "0.12.0",
+    "fs-jetpack": "4.3.0",
+    "js-combinatorics": "0.6.1",
+    "lodash": "4.17.21",
+    "moment": "2.29.4",
+    "p-map": "4.0.0",
+    "p-props": "4.0.0",
+    "p-settle": "4.1.1",
+    "p-timeout": "4.0.0",
+    "pg": "8.7.1",
+    "pg-hstore": "2.3.4",
+    "semver": "7.3.5",
+    "source-map-support": "0.5.21",
+    "uuid": "8.3.2",
+    "validator": "13.7.0"
+  },
+  "workers": 4,
+  "fileTimeoutMs": 300000,
+  "mochaTimeoutMs": 30000
+}
