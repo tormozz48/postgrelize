@@ -1,6 +1,7 @@
 import type { DataType, DataTypeInput } from '../data-types/data-types.ts';
 import type { DeferrableValue } from '../ddl/ddl-generator.ts';
 import type { AttributeValidateOptions } from '../validation/types.ts';
+import type { AnyModel } from './options.ts';
 
 /** Definition of a generated column. */
 export type GeneratedColumn = Readonly<{
@@ -105,9 +106,9 @@ export type AttributeOptions = Readonly<{
   /** Validators run before INSERT / UPDATE. */
   validate?: AttributeValidateOptions;
   /** Custom getter, called with the model instance as `this`. */
-  get?: (this: never) => unknown;
+  get?(this: AnyModel): unknown;
   /** Custom setter, called with the model instance as `this`. */
-  set?: (this: never, value: never) => void;
+  set?(this: AnyModel, value: unknown): void;
 }>;
 
 /** Attributes passed to `Model.init` / `sequelize.define`: a type or full column options per attribute. */

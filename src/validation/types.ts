@@ -39,5 +39,17 @@ export type AttributeValidateOptions = Readonly<
   }
 >;
 
-/** Model-level validator (`validate` model option); throw to fail. Called with the instance as `this`. */
-export type ModelValidatorFunction = () => unknown;
+/**
+ * Model-level validator (`validate` model option); throw (or reject) to fail. Called with the instance as `this`.
+ * As in Sequelize v6, a validator that declares a parameter is callback style: it receives `next` and
+ * calls `next(error)` to fail or `next()` to pass.
+ *
+ * @example
+ * ```ts
+ * const sync: ModelValidatorFunction = () => {
+ *   throw new Error('invalid');
+ * };
+ * const callback: ModelValidatorFunction = (next) => next('invalid');
+ * ```
+ */
+export type ModelValidatorFunction = (next: (error?: unknown) => void) => unknown;

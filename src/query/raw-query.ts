@@ -19,6 +19,8 @@ type TokenContext = Readonly<{
   replacements: Replacements | undefined;
   bind: BindParameters | undefined;
   bindParams: ReadonlyMap<string, Readonly<{ param: unknown }>>;
+  /** Leave `$name` and unknown `$n` tokens alone (text that is already parameterized). */
+  lenient: boolean;
 }>;
 
 /**
@@ -44,10 +46,35 @@ export class RawQuery {
     if (options.replacements === undefined && options.bind === undefined) {
       return { text: sql, values: [] };
     }
+    return this.#substitute(sql, options, false);
+  }
+
+  /**
+   * Substitutes `replacements` into an already compiled statement (a finder's `where: literal(...)`).
+   * Values of the statement stay bound and are never scanned; each replacement value becomes a
+   * further parameter, so nothing is concatenated into the SQL text.
+   *
+   * @param query - Compiled statement with `$n` placeholders.
+   * @param replacements - `?` or `:name` values; the statement is returned unchanged without them.
+   * @returns Statement with the replacements bound.
+   * @throws Error for a placeholder without a replacement value.
+   */
+  inject(query: CompiledQuery, replacements: Replacements | undefined): CompiledQuery {
+    return replacements === undefined
+      ? query
+      : this.#substitute(query.text, { replacements, bind: query.values }, true);
+  }
+
+  #substitute(
+    sql: string,
+    options: Readonly<{ replacements?: Replacements; bind?: BindParameters }>,
+    lenient: boolean,
+  ): CompiledQuery {
     const ctx: TokenContext = {
       replacements: options.replacements,
       bind: options.bind,
       bindParams: this.#bindChunks(options.bind),
+      lenient,
     };
     const matches = [...sql.matchAll(TOKEN)];
     return compiler.finalize([
@@ -106,15 +133,25 @@ export class RawQuery {
     if (token === '?' && Array.isArray(ctx.replacements)) {
       return this.#valueChunks(this.#lookup(ctx.replacements, questionIndex, 'replacement'));
     }
-    if (bindName !== undefined && ctx.bind !== undefined) {
-      const key = Array.isArray(ctx.bind) ? String(Number(bindName) - 1) : bindName;
-      const chunk = ctx.bindParams.get(key);
-      if (chunk === undefined) {
-        throw new Error(`Missing bind parameter $${bindName}`);
-      }
+    return bindName !== undefined && ctx.bind !== undefined
+      ? this.#bindTokenChunks(token, bindName, ctx.bind, ctx)
+      : [token];
+  }
+
+  #bindTokenChunks(
+    token: string,
+    bindName: string,
+    bind: BindParameters,
+    ctx: TokenContext,
+  ): Chunks {
+    const chunk = ctx.bindParams.get(Array.isArray(bind) ? String(Number(bindName) - 1) : bindName);
+    if (chunk !== undefined) {
       return [chunk];
     }
-    return [token];
+    if (ctx.lenient) {
+      return [token];
+    }
+    throw new Error(`Missing bind parameter $${bindName}`);
   }
 
   #bindChunks(bind: BindParameters | undefined): ReadonlyMap<string, Readonly<{ param: unknown }>> {

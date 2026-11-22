@@ -14,11 +14,14 @@ import { HookRegistry } from '../hooks/hooks.ts';
 import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
+import { RawQuery } from '../query/raw-query.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { Transaction, TransactionOptions } from '../transaction/transaction.ts';
 import { transactionScope } from '../transaction/transaction-runner.ts';
 import { TransactionStarter } from '../transaction/transaction-starter.ts';
+
+const rawQuery = new RawQuery();
 
 /** What the internals need from the owning `Sequelize` instance. */
 export type InternalsOwner = Readonly<{
@@ -181,7 +184,8 @@ export class SequelizeInternals {
 
   #queryRuntime(): Pick<ModelRuntime, 'execute' | 'copyFrom' | 'copyTo' | 'serverVersion'> {
     return {
-      execute: (query, options, kind) => this.execute(query, options, kind),
+      execute: (query, options, kind) =>
+        this.execute(rawQuery.inject(query, options.replacements), options, kind),
       copyFrom: (text, lines, options) =>
         this.connections.copyFrom(text, lines, this.executeOptions(options)),
       copyTo: (text, options, kind) =>

@@ -161,8 +161,29 @@ export type WhereLogic<T> = {
   [Op.not]?: WhereOptions<T>;
 };
 
-/** Where object keyed by attribute names, nested JSON paths (`'meta.a'`), casts (`'id::text'`) or included columns (`'$posts.title$'`). */
-export type WhereAttributeHash<T> = { [K in keyof T]?: WhereAttributeValue<T[K]> } & {
+/**
+ * Condition for one attribute in a where object (Sequelize v6 `WhereAttributeHashValue`); the same type as {@link WhereAttributeValue}.
+ *
+ * @example
+ * ```ts
+ * const name: WhereAttributeHashValue<string> = { [Op.iLike]: 'a%' };
+ * const ids: WhereAttributeHashValue<number> = [1, 2, 3];
+ * ```
+ */
+export type WhereAttributeHashValue<V> = WhereAttributeValue<V>;
+
+/**
+ * Where object keyed by attribute names, nested JSON paths (`'meta.a'`), casts (`'id::text'`) or included columns (`'$posts.title$'`).
+ * Without a type argument every key is accepted, as in Sequelize v6.
+ *
+ * @example
+ * ```ts
+ * const any: WhereAttributeHash = { id: 1, 'meta.key': 'a' };
+ * const typed: WhereAttributeHash<{ id: number }> = { id: 1 };
+ * ```
+ */
+// oxlint-disable-next-line typescript/no-explicit-any -- v6 declares the default this way.
+export type WhereAttributeHash<T = any> = { [K in keyof T]?: WhereAttributeValue<T[K]> } & {
   [key: `$${string}$` | `${string}.${string}` | `${string}::${string}`]: unknown;
 } & WhereLogic<T>;
 

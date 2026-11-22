@@ -55,8 +55,12 @@ export const HOOK_TYPES = [
 /** One of {@link HOOK_TYPES}. */
 export type HookType = (typeof HOOK_TYPES)[number];
 
-/** Hook function. May be async; its return value is ignored. Receives the model class as `this`. */
-export type HookFunction = (...args: never[]) => unknown;
+/**
+ * Hook function. May be async; its return value is ignored. Receives the model class as `this`.
+ * Its parameters are `any`, so an unannotated callback (`Model.beforeFind((options) => ...)`) compiles as it does against the Sequelize v6 typings; annotate them for type checking.
+ */
+// oxlint-disable-next-line typescript/no-explicit-any -- `never[]` would type the parameters of unannotated callbacks as `never`.
+export type HookFunction = (...args: any[]) => unknown;
 
 /** Registered hook: a function, optionally named so it can be removed by name. */
 export type Hook = Readonly<{

@@ -5,6 +5,7 @@ export type {
   SqlValue,
   ValuesList,
   WhereAttributeHash,
+  WhereAttributeHashValue,
   WhereAttributeValue,
   WhereLogic,
   WhereOperators,

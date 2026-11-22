@@ -38,6 +38,17 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `findByPk(id, { rejectOnEmpty })` overload that resolves to the model (Sequelize v6 `NonNullFindOptions`); `findOne` takes the same `NonNullFindOptions`.
+- `FindOptions.replacements` works as in v6: `:name` and `?` placeholders inside `literal()` of `findAll`, `findOne`, `findByPk`, `count`, `findAndCountAll` (and the other model queries) are substituted, every value as a bound parameter, arrays expanding to a list. This reverses the 1.2.0 deviation that finders ignored the option. New row on the Security page, payload and property tests, and a differential test against Sequelize v6.
+- `nest: true` for `sequelize.query` (nests `a.b` column names; implies `SELECT`), `distinct` and `col` for `findAndCountAll` (forwarded to its count query), `WhereAttributeHashValue` export.
+
+### Changed
+
+- `Model#reload(options)` takes the `FindOptions` of v6 (`include`, `attributes`, `paranoid`, `lock`, `hooks`, ...) and reads the row through `findOne`, so default scopes and `paranoid` apply as in v6 (reloading a soft-deleted row needs `paranoid: false`). Breaking only for code that reloaded a soft-deleted row without options.
+- Types now match v6: attribute `get` / `set` take `this` as the model, `WhereAttributeHash<T = any>`, `Model.sequelize` and `instance.sequelize` are `Sequelize`, `ModelValidatorFunction` accepts the callback style, hook function parameters are `any`.
+
 ## [1.2.0] - 2026-11-22
 
 Sequelize v6 parity for a production migration, part two: the `retry` option, the public `connectionManager` and the Sequelize v6 type API.

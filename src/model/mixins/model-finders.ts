@@ -9,6 +9,7 @@ import type {
   FindOrCreateOptions,
   ModelStatic,
 } from '../options.ts';
+import type { NonNullFindOptions } from '../v6-aliases.ts';
 import type { ModelConstructor } from './model-constructor.ts';
 
 /**
@@ -58,7 +59,7 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static findOne<M extends AnyModel>(
       this: ModelStatic<M>,
-      options: FindOptions<Attributes<M>> & Readonly<{ rejectOnEmpty: true | Error }>,
+      options: NonNullFindOptions<Attributes<M>>,
     ): Promise<M>;
 
     /**
@@ -80,6 +81,25 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
+     * Selects the row with the given primary key and rejects when none is found.
+     *
+     * @param this - The model class (or a scoped model class from {@link Model.scope}).
+     * @param key - Primary key value.
+     * @param options - Query options other than `where`, with `rejectOnEmpty`.
+     * @returns Instance.
+     * @throws EmptyResultError (or the given error) when nothing is found.
+     * @example
+     * ```ts
+     * const user = await User.findByPk(42, { rejectOnEmpty: true });
+     * ```
+     */
+    static findByPk<M extends AnyModel>(
+      this: ModelStatic<M>,
+      key: unknown,
+      options: Omit<NonNullFindOptions<Attributes<M>>, 'where'>,
+    ): Promise<M>;
+
+    /**
      * Selects the row with the given primary key.
      *
      * @param this - The model class (or a scoped model class from {@link Model.scope}).
@@ -93,7 +113,12 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static findByPk<M extends AnyModel>(
       this: ModelStatic<M>,
-      key: unknown,
+      key?: unknown,
+      options?: Omit<FindOptions<Attributes<M>>, 'where'>,
+    ): Promise<M | null>;
+    static findByPk<M extends AnyModel>(
+      this: ModelStatic<M>,
+      key?: unknown,
       options: Omit<FindOptions<Attributes<M>>, 'where'> = {},
     ): Promise<M | null> {
       return finder.findByPk(this, key, options as Omit<FindOptions, 'where'>);
@@ -134,7 +159,7 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
       this: ModelStatic<M>,
       options: FindAndCountOptions<Attributes<M>> = {},
     ): Promise<FindAndCountResult<M>> {
-      return finder.findAndCountAll(this, options as FindOptions);
+      return finder.findAndCountAll(this, options as FindAndCountOptions);
     }
 
     /**

@@ -745,11 +745,6 @@
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
     },
     {
-      "name": "WhereAttributeHashValue",
-      "category": "tracked",
-      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
-    },
-    {
       "name": "WhereGeometryOptions",
       "category": "tracked",
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
@@ -801,11 +796,6 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
-      },
-      {
-        "name": "replacements",
-        "category": "tracked",
-        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "NonNullFindOptions": [
@@ -843,11 +833,6 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
-      },
-      {
-        "name": "replacements",
-        "category": "tracked",
-        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "CountOptions": [
@@ -858,16 +843,6 @@
       }
     ],
     "FindAndCountOptions": [
-      {
-        "name": "distinct",
-        "category": "tracked",
-        "note": "findAndCountAll does not forward distinct to its count query (v6 does)"
-      },
-      {
-        "name": "col",
-        "category": "tracked",
-        "note": "findAndCountAll does not forward col to its count query (v6 does)"
-      },
       {
         "name": "groupedLimit",
         "category": "internal",
@@ -902,11 +877,6 @@
         "name": "indexHints",
         "category": "other-dialect",
         "note": "MySQL index hints"
-      },
-      {
-        "name": "replacements",
-        "category": "tracked",
-        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "CreateOptions": [
@@ -991,11 +961,6 @@
         "name": "silent",
         "category": "tracked",
         "note": "findOrCreate options extend the finder options only"
-      },
-      {
-        "name": "replacements",
-        "category": "tracked",
-        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "FindOrBuildOptions": [
@@ -1038,11 +1003,6 @@
         "name": "isNewRecord",
         "category": "not-planned",
         "note": "not a postgrelize option of this operation"
-      },
-      {
-        "name": "replacements",
-        "category": "tracked",
-        "note": "finders do not substitute :name placeholders (only sequelize.query does); typing it would hide a runtime failure"
       }
     ],
     "UpsertOptions": [
@@ -1157,11 +1117,6 @@
       }
     ],
     "QueryOptions": [
-      {
-        "name": "nest",
-        "category": "not-planned",
-        "note": "nest is a find option in postgrelize; sequelize.query does not nest"
-      },
       {
         "name": "instance",
         "category": "internal",

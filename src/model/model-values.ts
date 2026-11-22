@@ -133,6 +133,7 @@ export class ModelValues {
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
       ...(options.retry === undefined ? {} : { retry: options.retry }),
+      ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
     };
   }
 
