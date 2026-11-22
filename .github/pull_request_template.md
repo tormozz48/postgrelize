@@ -11,6 +11,7 @@ See [AGENTS.md → Documentation sync](../AGENTS.md#documentation-sync).
 - [ ] Public API: TSDoc updated for every changed class, method, field, type, interface and constant (`@param`, `@returns`, `@throws`, `@defaultValue`, `@example`) — every `@example` is type-checked by `tests/docs/tsdoc-examples.test.ts`; see AGENTS.md → API documentation
 - [ ] Guide page and `docs/examples` region updated (new guide code comes from an example)
 - [ ] Public API or behaviour change: `docs/examples/llm-usage.ts` region updated and `npm run llm:build` run (regenerates `llm/USAGE.md` and `skills/postgrelize/**`)
+- [ ] New or changed option: TSDoc description (and "postgrelize extension" when v6 lacks it); new `*Options` type listed in `scripts/option-groups.ts`; new extension method listed in `docs/coverage/extension-members.ts`; extension sections of guide pages carry the `<Ext />` badge
 - [ ] New guide page added to the sidebar in `docs/.vitepress/config.ts`
 - [ ] Fixed v6 bug: row in `docs/sequelize-issues.md` + test in `tests/integration/sequelize-issues.test.ts`
 - [ ] New PostgreSQL feature: README feature list updated; row in `docs/coverage/postgresql-features.ts` flipped or added with a `test` reference
