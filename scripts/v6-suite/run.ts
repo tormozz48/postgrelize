@@ -84,7 +84,12 @@ const runFile = (
       clearTimeout(timer);
       if (existsSync(out)) {
         const result = JSON.parse(readFileSync(out, 'utf8')) as FileResult;
-        done({ pass: result.pass, pending: result.pending, failing: result.failing });
+        done({
+          pass: result.pass,
+          pending: result.pending,
+          failing: result.failing,
+          messages: result.messages,
+        });
         return;
       }
       const line = stderr.split('\n').find((text) => /Error/.test(text)) ?? stderr.slice(0, 120);
@@ -109,10 +114,14 @@ const runAll = async (
   for (const name of databases) {
     await admin.query(`DROP DATABASE IF EXISTS ${name}`);
     await admin.query(`CREATE DATABASE ${name}`);
+    // tests of the hstore type expect the extension (contrib, shipped with the postgres image)
+    const database = new Client({ connectionString: new URL(`/${name}`, url).href });
+    await database.connect();
+    await database.query('CREATE EXTENSION IF NOT EXISTS hstore');
+    await database.end();
   }
   const results: Record<string, FileResult> = {};
   const outDir = join(WORK, 'results');
-  rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
   let next = 0;
   await Promise.all(
@@ -140,6 +149,7 @@ const main = async (): Promise<number> => {
   const filter = flags.find((flag) => flag.startsWith('--filter='))?.slice('--filter='.length);
   const url = databaseUrl();
   const work = prepare();
+  rmSync(join(WORK, 'results'), { recursive: true, force: true });
   const files = walk(join(work, 'test', kind))
     .filter(
       (file) =>
@@ -190,6 +200,8 @@ const main = async (): Promise<number> => {
     results = { ...results, ...again };
     comparison = compareWithBaseline(scoped, results);
   }
+  // every result with its messages, for triage (`.v6-suite/last-run-<kind>.json`)
+  writeFileSync(join(WORK, `last-run-${kind}.json`), JSON.stringify(results));
   console.log(
     JSON.stringify({
       kind,

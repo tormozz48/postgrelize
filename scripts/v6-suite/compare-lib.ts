@@ -3,6 +3,8 @@ export type FileResult = Readonly<{
   pass: number;
   pending: number;
   failing: readonly string[];
+  /** First line of the error of each failing test, by title (diagnostics only). */
+  messages?: Readonly<Record<string, string>>;
   loadError?: string;
 }>;
 
