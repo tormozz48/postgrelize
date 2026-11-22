@@ -44,6 +44,7 @@ export class AssociationShape {
       isSingleAssociation: !multi,
       isMultiAssociation: multi,
       accessors: this.#accessors.namesFor(init.type, init.name),
+      options: init.options,
     };
   }
 }

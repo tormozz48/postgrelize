@@ -21,7 +21,7 @@ Hooks may be async; postgrelize awaits them in registration order. `before*` hoo
 | finders                                | `beforeFind`, `beforeFindAfterExpandIncludeAll`, `beforeFindAfterOptions`, `afterFind`; `beforeCount` for `count`          |
 | connecting                             | `beforeConnect` (on the `Sequelize` instance; may change the connection config)                                            |
 
-As in v6, `beforeSave` / `afterSave` hooks are registered as both create and update hooks, so they run in registration order together with `beforeCreate` / `beforeUpdate`. Bulk operations run per-row hooks only with `individualHooks: true`. Pass `hooks: false` to skip hooks for one call.
+As in v6, `beforeSave` / `afterSave` hooks are registered as both create and update hooks, so they run in registration order together with `beforeCreate` / `beforeUpdate`. Bulk operations run per-row hooks only with `individualHooks: true`. Pass `hooks: false` to skip hooks for one call. An association defined with `onDelete: 'CASCADE'` and `hooks: true` destroys its associated rows one by one, with their `beforeDestroy` / `afterDestroy` hooks, when the owner instance is destroyed (as in v6); without `hooks: true` PostgreSQL cascades the delete and no hooks of the target run.
 
 ### Sequelize-level hooks
 

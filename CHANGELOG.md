@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
+- Cascade hooks, as in Sequelize v6: an association with `onDelete: 'CASCADE'` and `hooks: true` loads its rows and destroys each with its own `beforeDestroy` / `afterDestroy` hooks when the owner instance is destroyed (a real delete, not the soft delete of a paranoid model); an error in a hook stops the destroy. This replaces the documented limitation that `hooks` was accepted and ignored. `association.options` is public, as in v6. Found by the v6 suite harness; differential tests.
 - `IncludeOptions.on` (custom `ON` condition of an include join, as in v6), `AssociationOptions.hooks` (accepted for v6 typing; the cascade runs in PostgreSQL), `QueryInterface#queryGenerator` (typed `unknown` like v6), the `LOCK` type next to the `LOCK` value, `GroupedCountResultItem`, `instance.update(key, value)`, and `fn` / `col` / `literal` values for `Model.update`, `Model.updateStatement` and `instance.update`. Part of the Sequelize v6 type-parity work ([#133](https://github.com/tormozz48/postgrelize/pull/133), ADR-032).
 - `Model#get(key: string)` overload and `get<K extends keyof this>(key)` like v6, so included associations and model getters type-check.
 
