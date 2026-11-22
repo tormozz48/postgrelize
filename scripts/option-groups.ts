@@ -158,3 +158,48 @@ export const V6_RUNTIME_OPTIONS: readonly string[] = [
   'all',
   'model',
 ];
+
+/**
+ * Members of `Model`, `Sequelize`, `Transaction` and `QueryInterface` that Sequelize v6 has at runtime but not in
+ * its typings. They are not extensions; every other member missing from the v6 typings must be tagged `@postgrelize`.
+ */
+export const V6_RUNTIME_MEMBERS: readonly string[] = [
+  'Model.validationFailed',
+  'Model.beforeRestore',
+  'Model.afterRestore',
+  'Model.beforeUpsert',
+  'Model.afterUpsert',
+  'Model.beforeBulkRestore',
+  'Model.afterBulkRestore',
+  'Model.runHooks',
+  'Model.queryInterface',
+  'Model.dropSchema',
+  'Model.refreshAttributes',
+  'Model.getAssociations',
+  'Model.getAssociationForAlias',
+  'Model.hasAlias',
+  'Model.modelName',
+  'Model.toString',
+  'Sequelize.useInflection',
+  'Sequelize.version',
+  'Sequelize.options',
+  'Sequelize.queryInterface',
+  'Sequelize.refreshTypes',
+  'Sequelize.log',
+  'Sequelize.runHooks',
+  'Sequelize.validationFailed',
+  'Sequelize.beforeRestore',
+  'Sequelize.afterRestore',
+  'Sequelize.beforeUpsert',
+  'Sequelize.afterUpsert',
+  'Sequelize.beforeBulkRestore',
+  'Sequelize.afterBulkRestore',
+  'Sequelize.beforeCount',
+  'Transaction.id',
+  'Transaction.options',
+  'Transaction.parent',
+  'Transaction.finished',
+  'QueryInterface.dropEnum',
+  'QueryInterface.showConstraint',
+  'QueryInterface.assertTableHasColumn',
+];

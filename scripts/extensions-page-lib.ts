@@ -4,30 +4,35 @@ import {
   POSTGRESQL_FEATURES,
   type FeatureRow,
 } from '../docs/coverage/postgresql-features.ts';
-import { EXTENSION_MEMBERS } from '../docs/coverage/extension-members.ts';
-import type { ExtensionOptions, ExtensionValue } from './option-reference-lib.ts';
+import type { ExtensionItem, ExtensionOptions } from './option-reference-lib.ts';
 import type { OptionGroup } from './option-reference-lib.ts';
 
 const guideLink = (guide: string): string => `[guide](/guide/${guide})`;
 const exampleLink = (example: string): string =>
   `[example](https://github.com/tormozz48/postgrelize/blob/main/docs/examples/${example.split('#')[0]})`;
-const firstSentence = (text: string): string => /^.*?[.!?](?=\s|$)/s.exec(text)?.[0] ?? text;
 const cell = (text: string): string => text.replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' ');
 
 /** Renders the "Extensions" page: everything postgrelize adds to the Sequelize v6 API, from the code and the matrix. */
 export class ExtensionsPageBuilder {
   readonly #groups: readonly OptionGroup[];
   readonly #options: readonly ExtensionOptions[];
-  readonly #values: readonly ExtensionValue[];
+  readonly #members: readonly ExtensionItem[];
+  readonly #values: readonly ExtensionItem[];
 
   constructor(
     groups: readonly OptionGroup[],
     options: readonly ExtensionOptions[],
-    values: readonly ExtensionValue[],
+    members: readonly ExtensionItem[],
+    values: readonly ExtensionItem[],
   ) {
     this.#groups = groups;
     this.#options = options;
+    this.#members = members;
     this.#values = values;
+  }
+
+  static #items(items: readonly ExtensionItem[]): string[] {
+    return items.map((item) => `| [\`${item.name}\`](${item.api}) | ${item.summary} |`);
   }
 
   #featureTables(): string[] {
@@ -102,11 +107,11 @@ export class ExtensionsPageBuilder {
       '',
       '## Methods',
       '',
-      '| Method | What it does | Docs |',
-      '| ------ | ------------ | ---- |',
-      ...EXTENSION_MEMBERS.map(
-        (item) => `| \`${item.member}\` | ${cell(item.summary)} | ${guideLink(item.guide)} |`,
-      ),
+      'Members tagged `@postgrelize` in the source. Signatures, parameters and examples are on the linked API pages.',
+      '',
+      '| Method | What it does |',
+      '| ------ | ------------ |',
+      ...ExtensionsPageBuilder.#items(this.#members),
       '',
       '## Options that v6 does not have',
       '',
@@ -116,11 +121,11 @@ export class ExtensionsPageBuilder {
       '',
       '## Helper functions and constants',
       '',
-      'Exports of `postgrelize` that `sequelize` does not have. Full signatures are in the [API reference](/api/).',
+      'Exports tagged `@postgrelize` in the source. Full signatures are in the [API reference](/api/).',
       '',
       '| Export | What it does |',
       '| ------ | ------------ |',
-      ...this.#values.map((item) => `| \`${item.name}\` | ${cell(firstSentence(item.summary))} |`),
+      ...ExtensionsPageBuilder.#items(this.#values),
       '',
     ].join('\n');
   }

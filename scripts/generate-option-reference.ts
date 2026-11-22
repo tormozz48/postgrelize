@@ -1,6 +1,11 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { ExtensionsPageBuilder } from './extensions-page-lib.ts';
-import { OPTION_GROUPS, UNLISTED_OPTION_TYPES, V6_RUNTIME_OPTIONS } from './option-groups.ts';
+import {
+  OPTION_GROUPS,
+  UNLISTED_OPTION_TYPES,
+  V6_RUNTIME_MEMBERS,
+  V6_RUNTIME_OPTIONS,
+} from './option-groups.ts';
 import { OptionReferenceBuilder } from './option-reference-lib.ts';
 
 const builder = new OptionReferenceBuilder();
@@ -13,7 +18,13 @@ const failures = [
     .unclassified(OPTION_GROUPS, V6_RUNTIME_OPTIONS)
     .map(
       (name) =>
-        `${name} is missing from the sequelize@6 typings: say "postgrelize extension" in its TSDoc, or add its name to V6_RUNTIME_OPTIONS`,
+        `${name} is missing from the sequelize@6 typings: tag it @postgrelize in its TSDoc, or add its name to V6_RUNTIME_OPTIONS`,
+    ),
+  ...builder
+    .unclassifiedMembers(V6_RUNTIME_MEMBERS)
+    .map(
+      (name) =>
+        `${name} is missing from the sequelize@6 typings: tag it @postgrelize, or add it to V6_RUNTIME_MEMBERS`,
     ),
 ];
 if (failures.length > 0) {
@@ -42,6 +53,20 @@ writeFileSync(
   new ExtensionsPageBuilder(
     OPTION_GROUPS,
     builder.extensionOptions(OPTION_GROUPS),
+    builder.extensionMembers(),
     builder.extensionValues(),
   ).render(),
 );
+
+// TypeDoc renders the `@postgrelize` modifier as a bold label; show the same badge as the guide instead.
+if (existsSync('docs/api')) {
+  for (const entry of readdirSync('docs/api', { recursive: true, encoding: 'utf8' })) {
+    if (entry.endsWith('.md')) {
+      const file = `docs/api/${entry}`;
+      const text = readFileSync(file, 'utf8');
+      if (text.includes('**`Postgrelize`**')) {
+        writeFileSync(file, text.replaceAll('**`Postgrelize`**', '<Ext />'));
+      }
+    }
+  }
+}

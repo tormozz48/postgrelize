@@ -17,20 +17,39 @@ const V6_NAMES: Readonly<Record<string, string>> = {
 
 type TypeInfo = Readonly<{ checker: ts.TypeChecker; type: ts.Type; symbol: ts.Symbol }>;
 
-const EXTENSION_TEXT = /\b(?:postgrelize|PostgreSQL) extension\b/i;
+type Loaded = Readonly<{ checker: ts.TypeChecker; exports: ReadonlyMap<string, ts.Symbol> }>;
+
+/** The TSDoc modifier tag (registered in `tsdoc.json`) that marks an API item Sequelize v6 does not have. */
+const EXTENSION_TAG = 'postgrelize';
+
+/** Classes whose `@postgrelize` members are listed on the Extensions page. */
+const EXTENSION_CLASSES: readonly string[] = [
+  'Model',
+  'Sequelize',
+  'Transaction',
+  'QueryInterface',
+];
+
+const tagText = (tag: ts.JSDocTagInfo): string => ts.displayPartsToString(tag.text).trim();
+
+const hasExtensionTag = (symbol: ts.Symbol): boolean =>
+  symbol.getJsDocTags().some((tag) => tag.name === EXTENSION_TAG);
 
 /** Options of one type that Sequelize v6 lacks; `whole` when the entire type is new. */
 export type ExtensionOptions = Readonly<{ type: string; whole: boolean; names: readonly string[] }>;
 
-/** A value exported by postgrelize (helper function or constant) that `sequelize@6` does not export. */
-export type ExtensionValue = Readonly<{ name: string; summary: string }>;
+/** A method, function or constant tagged `@postgrelize`, with the first sentence of its TSDoc. */
+export type ExtensionItem = Readonly<{ name: string; summary: string; api: string }>;
 
-/** Reads option types from postgrelize and from the `sequelize@6` declarations and renders reference tables. */
+/**
+ * Reads option types and `@postgrelize` items from the postgrelize declarations (and the `sequelize@6`
+ * typings for comparison) and renders the option reference tables.
+ */
 export class OptionReferenceBuilder {
+  readonly #ownProgram: Loaded;
   readonly #own: Map<string, TypeInfo>;
   readonly #v6: Map<string, TypeInfo>;
-  readonly #v6Exports: Set<string>;
-  readonly #ownValues: ExtensionValue[];
+  readonly #v6Program: Loaded;
 
   constructor(root: string = process.cwd()) {
     const config = ts.readConfigFile(`${root}/tsconfig.build.json`, ts.sys.readFile);
@@ -38,69 +57,112 @@ export class OptionReferenceBuilder {
       ...ts.parseJsonConfigFileContent(config.config, ts.sys, root).options,
       noEmit: true,
     };
-    this.#own = OptionReferenceBuilder.#load(`${root}/src/index.ts`, options);
-    this.#v6 = OptionReferenceBuilder.#load(
+    this.#ownProgram = OptionReferenceBuilder.#load(`${root}/src/index.ts`, options);
+    this.#own = OptionReferenceBuilder.#types(this.#ownProgram);
+    this.#v6Program = OptionReferenceBuilder.#load(
       `${root}/node_modules/sequelize/types/index.d.ts`,
       options,
     );
-    this.#v6Exports = new Set(
-      OptionReferenceBuilder.#exports(
-        `${root}/node_modules/sequelize/types/index.d.ts`,
-        options,
-        false,
-      ).map((entry) => entry.name),
-    );
-    this.#ownValues = OptionReferenceBuilder.#exports(`${root}/src/index.ts`, options, true).filter(
-      (entry) => /^[a-z]/.test(entry.name) || /^[A-Z_]+$/.test(entry.name),
-    );
+    this.#v6 = OptionReferenceBuilder.#types(this.#v6Program);
   }
 
-  static #load(entry: string, options: ts.CompilerOptions): Map<string, TypeInfo> {
+  static #load(entry: string, options: ts.CompilerOptions): Loaded {
     const program = ts.createProgram([entry], options);
     const checker = program.getTypeChecker();
     const source = program.getSourceFile(entry);
     const module = source === undefined ? undefined : checker.getSymbolAtLocation(source);
-    const result = new Map<string, TypeInfo>();
+    const exports = new Map<string, ts.Symbol>();
     for (const exported of module === undefined ? [] : checker.getExportsOfModule(module)) {
-      const symbol =
+      exports.set(
+        exported.name,
         (exported.flags & ts.SymbolFlags.Alias) === 0
           ? exported
-          : checker.getAliasedSymbol(exported);
+          : checker.getAliasedSymbol(exported),
+      );
+    }
+    return { checker, exports };
+  }
+
+  static #types({ checker, exports }: Loaded): Map<string, TypeInfo> {
+    const result = new Map<string, TypeInfo>();
+    for (const [name, symbol] of exports) {
       if ((symbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias)) !== 0) {
-        result.set(exported.name, {
-          checker,
-          symbol,
-          type: checker.getDeclaredTypeOfSymbol(symbol),
-        });
+        result.set(name, { checker, symbol, type: checker.getDeclaredTypeOfSymbol(symbol) });
       }
     }
     return result;
   }
 
-  static #exports(
-    entry: string,
-    options: ts.CompilerOptions,
-    onlyValues: boolean,
-  ): ExtensionValue[] {
-    const program = ts.createProgram([entry], options);
-    const checker = program.getTypeChecker();
-    const source = program.getSourceFile(entry);
-    const module = source === undefined ? undefined : checker.getSymbolAtLocation(source);
-    return (module === undefined ? [] : checker.getExportsOfModule(module))
-      .map((exported) => ({
-        name: exported.name,
-        symbol:
-          (exported.flags & ts.SymbolFlags.Alias) === 0
-            ? exported
-            : checker.getAliasedSymbol(exported),
-      }))
+  #summary(symbol: ts.Symbol): string {
+    const text = ts.displayPartsToString(symbol.getDocumentationComment(this.#ownProgram.checker));
+    return OptionReferenceBuilder.#inline(
+      /^.*?[^.](?<!\be\.g|\bi\.e)[.!?](?=\s+[A-Z]|$)/s.exec(text.trim())?.[0] ?? text.trim(),
+    );
+  }
+
+  /** Members of `Model`, `Sequelize`, `Transaction` and `QueryInterface` tagged `@postgrelize`. */
+  extensionMembers(): ExtensionItem[] {
+    return EXTENSION_CLASSES.flatMap((name) => {
+      const members = OptionReferenceBuilder.#members(this.#ownProgram, name);
+      return members.filter(hasExtensionTag).map((member) => ({
+        name: `${name}.${member.name}`,
+        summary: this.#summary(member),
+        api: `/api/classes/${name}#${member.name.toLowerCase()}`,
+      }));
+    });
+  }
+
+  static #members({ checker, exports }: Loaded, name: string): ts.Symbol[] {
+    const symbol = exports.get(name);
+    return symbol === undefined
+      ? []
+      : [
+          ...checker.getPropertiesOfType(checker.getTypeOfSymbol(symbol)),
+          ...checker.getPropertiesOfType(checker.getDeclaredTypeOfSymbol(symbol)),
+        ];
+  }
+
+  /**
+   * Documented public members of `Model`, `Sequelize`, `Transaction` and `QueryInterface` that the
+   * `sequelize@6` typings lack and that are neither tagged `@postgrelize` nor allowlisted as v6 runtime
+   * members. Static aliases (capitalised names such as `Sequelize.STRING`) are v6 statics and skipped.
+   */
+  unclassifiedMembers(v6Runtime: readonly string[]): string[] {
+    const { checker } = this.#ownProgram;
+    return EXTENSION_CLASSES.flatMap((name) => {
+      const v6 = new Set(OptionReferenceBuilder.#members(this.#v6Program, name).map((m) => m.name));
+      return OptionReferenceBuilder.#members(this.#ownProgram, name)
+        .filter(
+          (member) =>
+            !v6.has(member.name) &&
+            /^[a-z]/.test(member.name) &&
+            !hasExtensionTag(member) &&
+            !member.getJsDocTags().some((tag) => tag.name === 'internal') &&
+            ts.displayPartsToString(member.getDocumentationComment(checker)).trim() !== '' &&
+            !v6Runtime.includes(`${name}.${member.name}`),
+        )
+        .map((member) => `${name}.${member.name}`);
+    });
+  }
+
+  /** TypeDoc files `const f = () => ...` exports under `functions/`, like function declarations. */
+  #isCallable(symbol: ts.Symbol): boolean {
+    const { checker } = this.#ownProgram;
+    return checker.getTypeOfSymbol(symbol).getCallSignatures().length > 0;
+  }
+
+  /** Top-level functions and constants of `src/index.ts` tagged `@postgrelize`. */
+  extensionValues(): ExtensionItem[] {
+    return [...this.#ownProgram.exports]
       .filter(
-        ({ symbol }) =>
-          !onlyValues || (symbol.flags & (ts.SymbolFlags.Variable | ts.SymbolFlags.Function)) !== 0,
+        ([, symbol]) =>
+          (symbol.flags & (ts.SymbolFlags.Variable | ts.SymbolFlags.Function)) !== 0 &&
+          hasExtensionTag(symbol),
       )
-      .map(({ name, symbol }) => ({
+      .map(([name, symbol]) => ({
         name,
-        summary: ts.displayPartsToString(symbol.getDocumentationComment(checker)).trim(),
+        summary: this.#summary(symbol),
+        api: `/api/${this.#isCallable(symbol) ? 'functions' : 'variables'}/${name}`,
       }));
   }
 
@@ -148,26 +210,22 @@ export class OptionReferenceBuilder {
     return ts.displayPartsToString(info.symbol.getDocumentationComment(info.checker)).trim();
   }
 
-  #isExtension(info: TypeInfo, property: ts.Symbol): boolean {
-    return EXTENSION_TEXT.test(this.#describe(info, property));
-  }
-
-  /** Options (and whole types) whose TSDoc says they are postgrelize extensions. */
+  /** Options (and whole option types) tagged `@postgrelize`. */
   extensionOptions(groups: readonly OptionGroup[]): ExtensionOptions[] {
     return groups
       .flatMap((group) => group.types)
       .flatMap((name) => {
         const info = this.#own.get(name)!;
-        const whole = EXTENSION_TEXT.test(this.#typeSummary(info));
+        const whole = hasExtensionTag(info.symbol);
         const names = this.#properties(info)
-          .filter((property) => this.#isExtension(info, property))
+          .filter((property) => hasExtensionTag(property))
           .map((property) => property.name);
         return whole || names.length > 0 ? [{ type: name, whole, names }] : [];
       });
   }
 
   /**
-   * Options that the `sequelize@6` typings lack, are not marked as extensions in TSDoc and are not in the
+   * Options that the `sequelize@6` typings lack, are not tagged `@postgrelize` and are not in the
    * allowlist of options that v6 accepts at runtime without declaring them. Forces a decision for new options.
    */
   unclassified(groups: readonly OptionGroup[], v6Runtime: readonly string[]): string[] {
@@ -184,18 +242,11 @@ export class OptionReferenceBuilder {
           .filter(
             (property) =>
               !v6Props.has(property.name) &&
-              !this.#isExtension(info, property) &&
+              !hasExtensionTag(property) &&
               !v6Runtime.includes(property.name),
           )
           .map((property) => `${name}.${property.name}`);
       });
-  }
-
-  /** Top-level functions and constants of `src/index.ts` that `sequelize@6` does not export. */
-  extensionValues(): ExtensionValue[] {
-    return this.#ownValues
-      .filter((entry) => !this.#v6Exports.has(entry.name))
-      .map((entry) => ({ name: entry.name, summary: entry.summary }));
   }
 
   #describe(info: TypeInfo, property: ts.Symbol): string {
@@ -241,9 +292,9 @@ export class OptionReferenceBuilder {
   #renderType(name: string): string {
     const info = this.#own.get(name)!;
     const summary = OptionReferenceBuilder.#inline(this.#typeSummary(info));
-    const badge = EXTENSION_TEXT.test(this.#typeSummary(info)) ? ' <Ext />' : '';
+    const badge = hasExtensionTag(info.symbol) ? ' <Ext />' : '';
     const rows = this.#properties(info).map((property) => {
-      const ext = this.#isExtension(info, property) ? ' <Ext />' : '';
+      const ext = hasExtensionTag(property) ? ' <Ext />' : '';
       return `| \`${property.name}\`${ext} | ${this.#typeText(info, property)} | ${this.#describe(info, property)} |`;
     });
     return [
@@ -251,11 +302,25 @@ export class OptionReferenceBuilder {
       '',
       summary,
       '',
+      ...this.#typeTags(info),
       '| Option | Type | Description |',
       '| ------ | ---- | ----------- |',
       ...rows,
       '',
     ].join('\n');
+  }
+
+  /** `@see` links and `@example` blocks of the type's own TSDoc, as Markdown. */
+  #typeTags(info: TypeInfo): string[] {
+    const tags = info.symbol.getJsDocTags(info.checker);
+    const see = tags
+      .filter((tag) => tag.name === 'see')
+      .map((tag) => OptionReferenceBuilder.#inline(tagText(tag)));
+    const examples = tags.filter((tag) => tag.name === 'example').map(tagText);
+    return [
+      ...(see.length === 0 ? [] : [`See also: ${see.join(', ')}.`, '']),
+      ...examples.flatMap((example) => [example, '']),
+    ];
   }
 
   #names(info: TypeInfo): string[] {
