@@ -8,6 +8,7 @@ const MAX_NORMALIZATION = 63;
 /**
  * Options of {@link tsRank}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: TsRankOptions = { cd: true, weights: [0.1, 0.2, 0.4, 1], normalization: 1 };
@@ -25,6 +26,7 @@ export type TsRankOptions = Readonly<{
 /**
  * Options of {@link tsHeadline}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: TsHeadlineOptions = { config: 'english', options: 'StartSel=<b>, StopSel=</b>' };
@@ -64,6 +66,7 @@ const normalizationOf = (value: number): Cast => {
 /**
  * `to_tsvector([config,] document)`: parses a document into a `tsvector`. PostgreSQL extension.
  *
+ * @postgrelize
  * @param document - Text value (bound as a parameter) or an expression such as `col('body')`.
  * @param config - Text search configuration; the server default when omitted.
  * @returns Function call expression.
@@ -79,6 +82,7 @@ export const toTsVector = (document: unknown, config?: string): Fn =>
 /**
  * `to_tsquery([config,] query)`: parses `tsquery` syntax (`&`, `|`, `!`, `<->`). PostgreSQL extension.
  *
+ * @postgrelize
  * @param query - Query text in `tsquery` syntax, bound as a parameter. Invalid syntax is a database error.
  * @param config - Text search configuration; the server default when omitted.
  * @returns Function call expression.
@@ -94,6 +98,7 @@ export const toTsQuery = (query: unknown, config?: string): Fn =>
 /**
  * `plainto_tsquery([config,] text)`: ANDs all words of plain text. PostgreSQL extension.
  *
+ * @postgrelize
  * @param text - Plain text, bound as a parameter.
  * @param config - Text search configuration; the server default when omitted.
  * @returns Function call expression.
@@ -109,6 +114,7 @@ export const plainToTsQuery = (text: unknown, config?: string): Fn =>
 /**
  * `phraseto_tsquery([config,] text)`: words of plain text that must follow each other. PostgreSQL extension.
  *
+ * @postgrelize
  * @param text - Plain text, bound as a parameter.
  * @param config - Text search configuration; the server default when omitted.
  * @returns Function call expression.
@@ -124,6 +130,7 @@ export const phraseToTsQuery = (text: unknown, config?: string): Fn =>
 /**
  * `websearch_to_tsquery([config,] text)`: web-search syntax (quotes, `or`, `-`) that never fails to parse. PostgreSQL extension.
  *
+ * @postgrelize
  * @param text - User search text, bound as a parameter.
  * @param config - Text search configuration; the server default when omitted.
  * @returns Function call expression.
@@ -139,6 +146,7 @@ export const websearchToTsQuery = (text: unknown, config?: string): Fn =>
 /**
  * `ts_rank` / `ts_rank_cd`: relevance of a `tsvector` for a `tsquery`, for `attributes` and `order`. PostgreSQL extension.
  *
+ * @postgrelize
  * @param vector - `tsvector` expression, e.g. `col('search')`.
  * @param query - `tsquery` expression, e.g. {@link websearchToTsQuery}.
  * @param options - `cd`, `weights` and `normalization`.
@@ -165,6 +173,7 @@ export const tsRank = (vector: unknown, query: unknown, options: TsRankOptions =
 /**
  * `ts_headline`: a document excerpt with the query terms highlighted. PostgreSQL extension.
  *
+ * @postgrelize
  * @param document - Text expression or value, bound as a parameter.
  * @param query - `tsquery` expression.
  * @param options - Configuration and `ts_headline` options string.
@@ -190,6 +199,7 @@ export const tsHeadline = (
 /**
  * `setweight(vector, weight)`: labels every lexeme of a `tsvector` `A`, `B`, `C` or `D`. PostgreSQL extension.
  *
+ * @postgrelize
  * @param vector - `tsvector` expression, e.g. {@link toTsVector}.
  * @param weight - Label `'A'`, `'B'`, `'C'` or `'D'`.
  * @returns Function call expression.

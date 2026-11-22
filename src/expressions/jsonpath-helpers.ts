@@ -14,6 +14,7 @@ export type JsonbPathKind = 'exists' | 'match' | 'query' | 'queryFirst' | 'query
 /**
  * Options of {@link jsonbPath}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: JsonbPathOptions = { vars: { min: 10 }, silent: true };
@@ -50,6 +51,7 @@ const optionalArgs = (options: JsonbPathOptions): readonly unknown[] =>
  *
  * `Op.jsonPathExists` (`@?`) and `Op.match` (`@@`) are the operator forms of `exists` and `match`.
  *
+ * @postgrelize
  * @param kind - Which function to call.
  * @param target - jsonb expression, e.g. `col('doc')`.
  * @param path - jsonpath text, bound as a parameter. Invalid syntax is a database error.

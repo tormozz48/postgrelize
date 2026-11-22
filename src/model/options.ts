@@ -136,7 +136,10 @@ export type InitOptions = DefinitionOptions &
     whereMergeStrategy?: WhereMergeStrategy;
     /** Model-level validators; throw to fail. */
     validate?: Readonly<Record<string, ModelValidatorFunction>>;
-    /** Standard Schema (zod, valibot, arktype) validating all attribute values. postgrelize extension; `schema` keeps its v6 meaning (PostgreSQL schema). */
+    /**
+     * Standard Schema (zod, valibot, arktype) validating all attribute values. postgrelize extension; `schema` keeps its v6 meaning (PostgreSQL schema).
+     * @postgrelize
+     */
     validationSchema?: StandardSchemaV1;
   }>;
 

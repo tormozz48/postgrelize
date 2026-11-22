@@ -26,6 +26,7 @@ export type WriteStatementOptions<T = Values> = Readonly<{
 /**
  * Options of `Model.updateStatement()`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: UpdateStatementOptions<Task> = { where: { id: 1 }, returning: true, silent: true };

@@ -28,6 +28,7 @@ export class QueryInterfacePolicies extends QueryInterfaceViews {
   /**
    * Turns on row-level security for a table (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`). Without policies, non-owners see no rows.
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - `force` (also applies to the table owner) and query options.
    *
@@ -47,6 +48,7 @@ export class QueryInterfacePolicies extends QueryInterfaceViews {
   /**
    * Turns off row-level security for a table (`ALTER TABLE ... DISABLE ROW LEVEL SECURITY`); policies are kept.
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param options - `noForce` and query options.
    *
@@ -67,6 +69,7 @@ export class QueryInterfacePolicies extends QueryInterfaceViews {
    *
    * `using` and `withCheck` are SQL text you provide (not escaped, never build them from user input) or a where object, whose values are rendered as escaped literals. Session variables set with the `settings` transaction option work in conditions: `"tenant_id = current_setting('app.tenant_id')::int"`.
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param name - Policy name.
    * @param options - `command`, `kind`, `roles`, `using`, `withCheck` and query options.
@@ -92,6 +95,7 @@ export class QueryInterfacePolicies extends QueryInterfaceViews {
   /**
    * Changes a policy with `ALTER POLICY`: roles, conditions and name (`rename`, applied last).
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param name - Current policy name.
    * @param options - Changes (at least one) and query options.
@@ -113,6 +117,7 @@ export class QueryInterfacePolicies extends QueryInterfaceViews {
   /**
    * Drops a policy with `DROP POLICY`.
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param name - Policy name.
    * @param options - `ifExists`, `cascade` and query options.

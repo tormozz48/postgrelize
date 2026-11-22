@@ -32,6 +32,7 @@ export type PolicyCondition = string | Readonly<Record<string | symbol, unknown>
 /**
  * Options of `enableRowLevelSecurity`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: EnableRowLevelSecurityOptions = { force: true };
@@ -46,6 +47,7 @@ export type EnableRowLevelSecurityOptions = Readonly<{
 /**
  * Options of `disableRowLevelSecurity`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: DisableRowLevelSecurityOptions = { noForce: true };
@@ -60,6 +62,7 @@ export type DisableRowLevelSecurityOptions = Readonly<{
 /**
  * Options of `createPolicy`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: CreatePolicyOptions = {
@@ -86,6 +89,7 @@ export type CreatePolicyOptions = Readonly<{
 /**
  * Options of `alterPolicy`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: AlterPolicyOptions = { roles: ['app_user', 'app_admin'], rename: 'tenant_rows' };
@@ -102,6 +106,7 @@ export type AlterPolicyOptions = Readonly<
 /**
  * Options of `dropPolicy`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: DropPolicyOptions = { ifExists: true };

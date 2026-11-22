@@ -135,7 +135,10 @@ export type IndexOptions = Readonly<{
   name?: string;
   /** Unique index. */
   unique?: boolean;
-  /** `NULLS NOT DISTINCT` for unique indexes. PostgreSQL extension. */
+  /**
+   * `NULLS NOT DISTINCT` for unique indexes. PostgreSQL extension.
+   * @postgrelize
+   */
   nullsNotDistinct?: boolean;
   /** Index method: `btree`, `hash`, `gist`, `gin`, `brin`, ... */
   using?: string;
@@ -207,21 +210,39 @@ export type ConstraintOptions = Readonly<{
   onUpdate?: string;
   /** Deferrable mode. */
   deferrable?: DeferrableValue;
-  /** `NULLS NOT DISTINCT` for unique constraints. PostgreSQL extension. */
+  /**
+   * `NULLS NOT DISTINCT` for unique constraints. PostgreSQL extension.
+   * @postgrelize
+   */
   nullsNotDistinct?: boolean;
-  /** Exclusion elements: `{ column | expression, with }`. Required by `exclude`. PostgreSQL extension. */
+  /**
+   * Exclusion elements: `{ column | expression, with }`. Required by `exclude`. PostgreSQL extension.
+   * @postgrelize
+   */
   exclude?: readonly ExcludeElement[];
   /** Index method of an `exclude` constraint (`gist`, `spgist`, `btree`, ...). */
   using?: string;
   /** Covering columns of an `exclude` constraint (`INCLUDE (...)`). */
   include?: readonly string[];
-  /** Last field of a `unique` / `primary key` constraint is `WITHOUT OVERLAPS` (temporal key, PostgreSQL 18). */
+  /**
+   * Last field of a `unique` / `primary key` constraint is `WITHOUT OVERLAPS` (temporal key, PostgreSQL 18).
+   * @postgrelize
+   */
   withoutOverlaps?: boolean;
-  /** Last field (and last referenced field) of a foreign key is `PERIOD` (PostgreSQL 18). */
+  /**
+   * Last field (and last referenced field) of a foreign key is `PERIOD` (PostgreSQL 18).
+   * @postgrelize
+   */
   period?: boolean;
-  /** `false` adds `NOT ENFORCED` (check and foreign key, PostgreSQL 18). */
+  /**
+   * `false` adds `NOT ENFORCED` (check and foreign key, PostgreSQL 18).
+   * @postgrelize
+   */
   enforced?: boolean;
-  /** Adds `NOT VALID` (check and foreign key only); run `validateConstraint` later. PostgreSQL extension. */
+  /**
+   * Adds `NOT VALID` (check and foreign key only); run `validateConstraint` later. PostgreSQL extension.
+   * @postgrelize
+   */
   notValid?: boolean;
 }>;
 

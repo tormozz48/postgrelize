@@ -43,7 +43,10 @@ export type TransactionOptions = Readonly<{
   isolationLevel?: IsolationLevel;
   /** Accepted for compatibility, ignored. */
   type?: (typeof TRANSACTION_TYPES)[keyof typeof TRANSACTION_TYPES];
-  /** Start `READ ONLY`. PostgreSQL extension. */
+  /**
+   * Start `READ ONLY`. PostgreSQL extension.
+   * @postgrelize
+   */
   readOnly?: boolean;
   /**
    * `true` / `false`: start `DEFERRABLE` / `NOT DEFERRABLE`. PostgreSQL honours it only for
@@ -51,6 +54,7 @@ export type TransactionOptions = Readonly<{
    * without serialization failures; ignored for savepoints (PostgreSQL extension).
    * `Deferrable.SET_DEFERRED` / `Deferrable.SET_IMMEDIATE` (Sequelize v6): run `SET CONSTRAINTS ... DEFERRED` /
    * `IMMEDIATE` right after the transaction starts, for all constraints or the names given.
+   * @postgrelize
    */
   deferrable?: boolean | DeferrableValue;
   /** Parent transaction: the new transaction becomes a savepoint inside it. */
@@ -58,6 +62,7 @@ export type TransactionOptions = Readonly<{
   /**
    * Session settings applied with `SET LOCAL` semantics (`set_config(name, value, true)`), e.g.
    * `{ 'app.user_id': '42', statement_timeout: '5s' }` for row-level security. PostgreSQL extension.
+   * @postgrelize
    */
   settings?: Readonly<Record<string, string | number | boolean>>;
   /** SQL logger for transaction statements. */
@@ -237,6 +242,7 @@ export class Transaction {
    * Takes a transaction-level advisory lock (`pg_advisory_xact_lock`), waiting until it is free.
    * The lock is released on commit or rollback. PostgreSQL extension.
    *
+   * @postgrelize
    * @param key - Integer key, or a string hashed with `hashtextextended`.
    * @param options - `shared: true` for a shared lock.
    * @returns Resolves when the lock is held.
@@ -259,6 +265,7 @@ export class Transaction {
   /**
    * Tries to take a transaction-level advisory lock without waiting. PostgreSQL extension.
    *
+   * @postgrelize
    * @param key - Integer key, or a string hashed with `hashtextextended`.
    * @param options - `shared: true` for a shared lock.
    * @returns True when the lock was acquired.

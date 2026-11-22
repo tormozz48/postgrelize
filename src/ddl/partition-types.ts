@@ -11,6 +11,7 @@ export type PartitionBoundMarker = Readonly<{
  * `MINVALUE` and `MAXVALUE` for the `from` / `to` lists of a range partition bound. They are
  * markers, not strings, so a string value can never be read as a keyword.
  *
+ * @postgrelize
  * @example
  * ```ts
  * await queryInterface.createPartition('events', 'events_old', {

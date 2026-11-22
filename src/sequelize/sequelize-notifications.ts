@@ -14,6 +14,7 @@ export const SequelizeNotifications = <TBase extends SequelizeConstructor>(Base:
      * Subscribes a handler to `NOTIFY` messages on a channel over one dedicated connection per instance, which is
      * re-subscribed after connection loss. PostgreSQL extension.
      *
+     * @postgrelize
      * @param channel - Channel name.
      * @param handler - Called with the payload and the channel.
      * @returns Function that unsubscribes the handler.
@@ -34,6 +35,7 @@ export const SequelizeNotifications = <TBase extends SequelizeConstructor>(Base:
     /**
      * Sends a notification to a channel with `pg_notify`. PostgreSQL extension.
      *
+     * @postgrelize
      * @param channel - Channel name.
      * @param payload - Payload text (objects are sent as JSON).
      * @param options - Query options (inside a transaction the notification is sent on commit).

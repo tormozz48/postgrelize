@@ -20,6 +20,7 @@ export type QueryOptionsBase = Readonly<{
    * PostgreSQL cancels the statement with a `DatabaseError` (code `57014`) when it runs longer.
    * Outside a transaction the query runs in its own short transaction; inside one the previous
    * timeout is restored afterwards. PostgreSQL extension.
+   * @postgrelize
    */
   statementTimeout?: number;
   /**
@@ -28,7 +29,10 @@ export type QueryOptionsBase = Readonly<{
    * retried.
    */
   retry?: RetryOptions;
-  /** Force the writer even for SELECTs when read replicas are configured. postgrelize extension. */
+  /**
+   * Force the writer even for SELECTs when read replicas are configured. postgrelize extension.
+   * @postgrelize
+   */
   useMaster?: boolean;
   /**
    * Values of `?` (array) or `:name` (object) placeholders written in raw SQL inside the options

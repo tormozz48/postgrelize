@@ -28,6 +28,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Installs an extension with `CREATE EXTENSION`. Needs the privileges PostgreSQL requires for that extension (superuser or a trusted extension).
    *
+   * @postgrelize
    * @param name - Extension name, quoted as an identifier.
    * @param options - `ifNotExists`, `schema`, `version`, `cascade` and query options.
    * @throws DatabaseError when the extension is not available on the server or the role may not install it.
@@ -48,6 +49,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Removes an extension with `DROP EXTENSION`.
    *
+   * @postgrelize
    * @param name - Extension name.
    * @param options - `ifExists`, `cascade` and query options.
    * @throws DatabaseError when objects depend on the extension and `cascade` is not set.
@@ -67,6 +69,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Creates a sequence with `CREATE SEQUENCE`. Numbers must be whole (`number` or `bigint`).
    *
+   * @postgrelize
    * @param name - Sequence name or `{ tableName, schema }`.
    * @param options - Sequence properties and query options.
    * @throws Error for an unknown `dataType` or a non-integer number.
@@ -86,6 +89,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Changes a sequence with `ALTER SEQUENCE`.
    *
+   * @postgrelize
    * @param name - Sequence name or `{ tableName, schema }`.
    * @param options - Properties to change (at least one) and query options.
    * @throws Error when no property is given or a number is not whole.
@@ -105,6 +109,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Drops a sequence with `DROP SEQUENCE`.
    *
+   * @postgrelize
    * @param name - Sequence name or `{ tableName, schema }`.
    * @param options - `ifExists`, `cascade` and query options.
    *
@@ -123,6 +128,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Advances a sequence and returns the new value (`SELECT nextval(...)`; the name is bound).
    *
+   * @postgrelize
    * @param name - Sequence name or `{ tableName, schema }`.
    * @param options - Query options.
    * @returns The value as text, so bigint values stay exact.
@@ -139,6 +145,7 @@ export class QueryInterfaceObjects extends QueryInterfaceTables {
   /**
    * Sets the current value of a sequence (`SELECT setval(...)`; name and value are bound).
    *
+   * @postgrelize
    * @param name - Sequence name or `{ tableName, schema }`.
    * @param value - New value (`number` or `bigint`).
    * @param isCalled - `true` (default): the next `nextval` returns `value + increment`; `false`: it returns `value`.

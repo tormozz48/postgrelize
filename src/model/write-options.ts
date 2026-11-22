@@ -33,7 +33,10 @@ export type SaveOptions<T = Values> = QueryOptionsBase &
     /** Run validations.
      * @defaultValue true (`false` for `bulkCreate`) */
     validate?: boolean;
-    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension. */
+    /**
+     * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension.
+     * @postgrelize
+     */
     overriding?: 'system' | 'user';
   }>;
 
@@ -54,7 +57,10 @@ export type SaveOptions<T = Values> = QueryOptionsBase &
  */
 export type CreateOptions<T = Values> = SaveOptions<T> &
   Readonly<{
-    /** Advanced `ON CONFLICT` handling. PostgreSQL extension. */
+    /**
+     * Advanced `ON CONFLICT` handling. PostgreSQL extension.
+     * @postgrelize
+     */
     onConflict?: OnConflictOptions<T>;
     /** Create associated rows from nested values (Sequelize v6). */
     include?: IncludeOption;
@@ -79,9 +85,15 @@ export type UpsertOptions<T = Values> = SaveOptions<T> &
   Readonly<{
     /** Conflict target columns. Default: unique key containing a given attribute, else the primary key. */
     conflictFields?: readonly string[];
-    /** Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension. */
+    /**
+     * Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension.
+     * @postgrelize
+     */
     onConflict?: OnConflictOptions<T>;
-    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
+    /**
+     * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns.
+     * @postgrelize
+     */
     overriding?: 'system' | 'user';
   }>;
 
@@ -90,6 +102,7 @@ export type UpsertOptions<T = Values> = SaveOptions<T> &
  *
  * Rows are inserted with a single `INSERT` and no per-row save hooks; only the bulk-create hooks run.
  *
+ * @postgrelize
  * @see {@link Model.insert}
  *
  * @example
@@ -115,13 +128,17 @@ export type InsertOptions<T = Values> = QueryOptionsBase &
     validate?: boolean;
     /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
     overriding?: 'system' | 'user';
-    /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+. */
+    /**
+     * Return the pre-statement row values as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
+     * @postgrelize
+     */
     returningOld?: boolean;
   }>;
 
 /**
  * Options of `Model.insertFrom`, which inserts the result of a subquery (`INSERT ... SELECT`). PostgreSQL extension.
  *
+ * @postgrelize
  * @see {@link Model.insertFrom}
  *
  * @example

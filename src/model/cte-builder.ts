@@ -33,6 +33,7 @@ export type CteDefinition = Readonly<{
 /**
  * `search` of a recursive CTE definition. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const search: CteSearchOptions = { by: ['id'], mode: 'breadth', set: 'ordercol' };
@@ -51,6 +52,7 @@ export type CteSearchOptions = Readonly<{
 /**
  * `cycle` of a recursive CTE definition. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const cycle: CteCycleOptions = { columns: ['id'], set: 'is_cycle', using: 'path' };
@@ -73,6 +75,7 @@ export type WithOption = Readonly<Record<string, Subquery | WriteStatement | Cte
  *
  * Combined into {@link FindOptions} and {@link CountOptions}.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const opts: CteFindOptions = {
@@ -82,15 +85,22 @@ export type WithOption = Readonly<Record<string, Subquery | WriteStatement | Cte
  * ```
  */
 export type CteFindOptions = Readonly<{
-  /** Common table expressions (`WITH [RECURSIVE] ...`). PostgreSQL extension. */
+  /**
+   * Common table expressions (`WITH [RECURSIVE] ...`). PostgreSQL extension.
+   * @postgrelize
+   */
   with?: WithOption;
   /**
    * Read model rows from this relation instead of the model table: a CTE or table name, or a
    * subquery such as a set operation (`a.union(b)`), aliased with the model name. Columns are
    * named like the attributes. PostgreSQL extension.
+   * @postgrelize
    */
   source?: string | Subquery;
-  /** Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. PostgreSQL extension. */
+  /**
+   * Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. PostgreSQL extension.
+   * @postgrelize
+   */
   from?: JoinSources;
 }>;
 

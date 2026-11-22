@@ -222,6 +222,7 @@ export class QueryInterface extends QueryInterfaceCatalog {
   /**
    * Validates a constraint added with `notValid: true`, scanning existing rows without blocking writes.
    *
+   * @postgrelize
    * @param table - Table name or `{ tableName, schema }`.
    * @param name - Constraint name.
    * @param options - Query options.

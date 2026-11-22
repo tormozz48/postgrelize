@@ -19,6 +19,7 @@ const STRATEGIES: ReadonlySet<string> = new Set<PartitionStrategy>(['range', 'li
 /**
  * Options of `createPartition`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * await queryInterface.createPartition(
@@ -39,6 +40,7 @@ export type CreatePartitionOptions = Readonly<{
 /**
  * Options of `detachPartition`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * await queryInterface.detachPartition('events', 'events_2026', { concurrently: true });

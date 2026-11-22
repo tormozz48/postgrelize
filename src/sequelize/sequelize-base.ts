@@ -137,6 +137,7 @@ export class SequelizeBase {
    * each one like `Model.init` and then adds its associations, so classes may refer to each other
    * in any order. Pass every class of an association before using it.
    *
+   * @postgrelize
    * @param models - Model classes.
    * @returns This instance.
    * @example

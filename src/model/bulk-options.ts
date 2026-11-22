@@ -31,7 +31,9 @@ export type BulkCreateOptions<T = Values> = SaveOptions<T> &
      * Insert with one array parameter per column (`INSERT … SELECT * FROM unnest($1::type[], …)`) instead of
      * one parameter per cell, so batches are not capped by PostgreSQL's 65535 parameters. Every row must
      * provide every column; `ARRAY` columns and conflict options are not supported. PostgreSQL extension.
-     * @defaultValue false */
+     * @defaultValue false
+     * @postgrelize
+     */
     unnest?: boolean;
     /** Add `ON CONFLICT DO NOTHING`, skipping rows that violate a unique constraint.
      * @defaultValue false */
@@ -47,7 +49,10 @@ export type BulkCreateOptions<T = Values> = SaveOptions<T> &
     conflictAttributes?: readonly (keyof T & string)[];
     /** Predicate of a partial unique index used as conflict target. */
     conflictWhere?: WhereOptions<T>;
-    /** Advanced `ON CONFLICT` handling; cannot be combined with the options above. PostgreSQL extension. */
+    /**
+     * Advanced `ON CONFLICT` handling; cannot be combined with the options above. PostgreSQL extension.
+     * @postgrelize
+     */
     onConflict?: OnConflictOptions<T>;
   }>;
 
@@ -96,7 +101,10 @@ export type UpdateOptions<T = Values> = QueryOptionsBase &
     silent?: boolean;
     /** Return updated rows as the second element of the result. */
     returning?: boolean;
-    /** With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+. */
+    /**
+     * With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
+     * @postgrelize
+     */
     returningOld?: boolean;
     /** Validate the new values.
      * @defaultValue true */
@@ -104,7 +112,10 @@ export type UpdateOptions<T = Values> = QueryOptionsBase &
     /** For paranoid models: `false` also updates soft-deleted rows.
      * @defaultValue true */
     paranoid?: boolean;
-    /** Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension. */
+    /**
+     * Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension.
+     * @postgrelize
+     */
     from?: JoinSources;
   }> &
   BulkHookOptions;
@@ -137,12 +148,18 @@ export type DestroyOptions<T = Values> = QueryOptionsBase &
     /** With `truncate`: add `RESTART IDENTITY`.
      * @defaultValue false */
     restartIdentity?: boolean;
-    /** Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension. */
+    /**
+     * Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension.
+     * @postgrelize
+     */
     returning?: boolean;
     /** For paranoid models: delete rows instead of setting `deletedAt`.
      * @defaultValue false */
     force?: boolean;
-    /** Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension. */
+    /**
+     * Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension.
+     * @postgrelize
+     */
     using?: JoinSources;
   }> &
   BulkHookOptions;

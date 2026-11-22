@@ -46,6 +46,7 @@ export interface MergeInsertAction<T> {
  *
  * Rows of the model table are the target; `source` rows or a subquery are the source.
  *
+ * @postgrelize
  * @see {@link Model.merge}
  *
  * @example
