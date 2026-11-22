@@ -672,12 +672,9 @@
       ]
     },
     "test/integration/associations/scope.test.js": {
-      "unstable": true,
-      "pass": 5,
       "failing": [
         "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values",
         "[POSTGRES] associations scope 1:M should create, find and include associations with scope values",
-        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values",
         "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
       ]
     },
@@ -805,18 +802,13 @@
     },
     "test/integration/hooks/bulkOperation.test.js": {
       "failing": [
-        "[POSTGRES] Hooks #bulkRestore with the {individualHooks: true} option should run the after/before functions for each item restored with an error",
-        "[POSTGRES] Hooks #bulkUpdate with the {individualHooks: true} option should run the after/before functions for each item created successfully",
-        "[POSTGRES] Hooks #bulkUpdate with the {individualHooks: true} option should run the after/before functions for each item created successfully changing some data before updating"
+        "[POSTGRES] Hooks #bulkRestore with the {individualHooks: true} option should run the after/before functions for each item restored with an error"
       ]
     },
     "test/integration/hooks/destroy.test.js": {
       "failing": [
         "[POSTGRES] Hooks #destroy with paranoid mode enabled should not throw error when a beforeDestroy hook changes a virtual column"
       ]
-    },
-    "test/integration/hooks/find.test.js": {
-      "failing": ["[POSTGRES] Hooks #find on success afterFind hook can change results"]
     },
     "test/integration/hooks/hooks.test.js": {
       "failing": [
@@ -993,7 +985,6 @@
         "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
         "[POSTGRES] Model update does not update virtual attributes",
         "[POSTGRES] Model update doesn't update attributes that are altered by virtual setters when option is enabled",
-        "[POSTGRES] Model update should properly set data when individualHooks are true",
         "[POSTGRES] Model update throws an error if no where clause is given",
         "[POSTGRES] Model update throws an error if where has a key with undefined value",
         "[POSTGRES] Model update updates attributes that are altered by virtual setters",
@@ -1131,9 +1122,7 @@
     },
     "test/integration/model/schema.test.js": {
       "failing": [
-        "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert and retrieve associated data into the table in schema_two\"",
-        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to insert data into default table using create",
-        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to insert data into schema table using create",
+        "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"",
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two",

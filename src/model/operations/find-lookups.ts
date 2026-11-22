@@ -63,7 +63,11 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
     model: ModelStatic<M>,
     options: FindOptions & Readonly<{ rejectOnEmpty?: boolean | Error }>,
   ): Promise<M | null> {
-    const [first] = await model.findAll({ ...options, limit: options.limit ?? 1 });
+    const [first] = await model.findAll({
+      ...options,
+      limit: options.limit ?? 1,
+      plain: true,
+    } as never);
     if (
       first === undefined &&
       options.rejectOnEmpty !== undefined &&
