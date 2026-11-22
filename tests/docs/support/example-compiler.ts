@@ -30,8 +30,11 @@ export class ExampleCompiler {
   private readonly names: string[];
 
   constructor(exportedNames: readonly string[]) {
-    // Exports named like a global (`JSON`, `Error`) must not shadow it inside snippets.
-    this.names = [...new Set(exportedNames)].filter((name) => !(name in globalThis));
+    // Exports named like a global (`JSON`, `Error`) must not shadow it inside snippets; `default` is
+    // not an importable name (the default export is `Sequelize`, already imported by name).
+    this.names = [...new Set(exportedNames)].filter(
+      (name) => name !== 'default' && !(name in globalThis),
+    );
   }
 
   /** Names every snippet may use without importing: all public exports, `sequelize`, and the guide's models. */

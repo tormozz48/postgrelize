@@ -195,13 +195,6 @@
     },
     {
       "file": "hooks.ts",
-      "code": "TS2305",
-      "message": "Module '\"sequelize\"' has no exported member 'Config'.",
-      "count": 1,
-      "cause": "missing-export"
-    },
-    {
-      "file": "hooks.ts",
       "code": "TS2339",
       "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
       "count": 3,
@@ -258,6 +251,13 @@
     },
     {
       "file": "hooks.ts",
+      "code": "TS2614",
+      "message": "Module '\"sequelize\"' has no exported member 'Config'. Did you mean to use 'import Config from \"sequelize\"' instead?",
+      "count": 1,
+      "cause": "missing-export"
+    },
+    {
+      "file": "hooks.ts",
       "code": "TS7006",
       "message": "Parameter 'config' implicitly has an 'any' type.",
       "count": 2,
@@ -279,15 +279,15 @@
     },
     {
       "file": "index-hints.ts",
-      "code": "TS2305",
-      "message": "Module '\"sequelize\"' has no exported member 'IndexHints'.",
+      "code": "TS2353",
+      "message": "Object literal may only specify known properties, and 'indexHints' does not exist in type 'FindOptions<InferAttributes<U",
       "count": 1,
       "cause": "index-hints"
     },
     {
       "file": "index-hints.ts",
-      "code": "TS2353",
-      "message": "Object literal may only specify known properties, and 'indexHints' does not exist in type 'FindOptions<InferAttributes<U",
+      "code": "TS2614",
+      "message": "Module '\"sequelize\"' has no exported member 'IndexHints'. Did you mean to use 'import IndexHints from \"sequelize\"' inste",
       "count": 1,
       "cause": "index-hints"
     },
@@ -503,13 +503,6 @@
     },
     {
       "file": "sequelize.ts",
-      "code": "TS2305",
-      "message": "Module '\"sequelize\"' has no exported member 'Config'.",
-      "count": 1,
-      "cause": "missing-export"
-    },
-    {
-      "file": "sequelize.ts",
       "code": "TS2339",
       "message": "Property 'addHook' does not exist on type 'typeof Sequelize'.",
       "count": 1,
@@ -528,6 +521,13 @@
       "message": "Property 'beforeConnect' does not exist on type 'typeof Sequelize'.",
       "count": 1,
       "cause": "static-hooks"
+    },
+    {
+      "file": "sequelize.ts",
+      "code": "TS2614",
+      "message": "Module '\"sequelize\"' has no exported member 'Config'. Did you mean to use 'import Config from \"sequelize\"' instead?",
+      "count": 1,
+      "cause": "missing-export"
     },
     {
       "file": "sequelize.ts",
@@ -608,15 +608,15 @@
     },
     {
       "file": "where.ts",
-      "code": "TS2305",
-      "message": "Module '\"sequelize\"' has no exported member 'AndOperator'.",
+      "code": "TS2614",
+      "message": "Module '\"sequelize\"' has no exported member 'AndOperator'. Did you mean to use 'import AndOperator from \"sequelize\"' ins",
       "count": 1,
       "cause": "missing-export"
     },
     {
       "file": "where.ts",
-      "code": "TS2305",
-      "message": "Module '\"sequelize\"' has no exported member 'OrOperator'.",
+      "code": "TS2614",
+      "message": "Module '\"sequelize\"' has no exported member 'OrOperator'. Did you mean to use 'import OrOperator from \"sequelize\"' inste",
       "count": 1,
       "cause": "missing-export"
     }
