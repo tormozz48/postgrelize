@@ -1,8 +1,12 @@
 # Decorators
 
+::: tip postgrelize extension
+Decorators and `sequelize.addModels` do not exist in Sequelize v6. The rest of the library works the same with or without them. See all [extensions](/extensions/).
+:::
+
 Decorators are an optional way to define models. They produce exactly what `Model.init` and the association methods produce, so everything else in this guide (queries, hooks, scopes, sync) works unchanged. The names follow `sequelize-typescript`, which makes moving from it straightforward.
 
-## Defining models
+## Defining models <Ext />
 
 Decorate the class and its fields, then register the classes with `sequelize.addModels`:
 

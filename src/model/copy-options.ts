@@ -5,6 +5,7 @@ import type { QueryOptionsBase } from './runtime.ts';
 /**
  * Options of `Model.copyFrom`, which loads rows with `COPY ... FROM STDIN`. PostgreSQL extension.
  *
+ * @postgrelize
  * @see {@link Model.copyFrom}
  *
  * @example
@@ -22,6 +23,7 @@ export type CopyFromOptions<T = Values> = QueryOptionsBase &
 /**
  * Output format options of `Model.copyTo` (`COPY ... TO STDOUT`). PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const format: CopyToFormatOptions = { format: 'csv', header: true, delimiter: ';', nullString: '' };
@@ -43,8 +45,9 @@ export type CopyToFormatOptions = Readonly<{
 }>;
 
 /**
- * Options of `Model.copyTo`: a finder query that selects the exported rows plus the output format.
+ * Options of `Model.copyTo`: a finder query that selects the exported rows plus the output format. PostgreSQL extension.
  *
+ * @postgrelize
  * @see {@link Model.copyTo}
  *
  * @example

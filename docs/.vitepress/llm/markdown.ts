@@ -10,11 +10,16 @@ export class MarkdownTools {
     this.#snippets = snippets;
   }
 
-  /** Removes the YAML front matter and `<script setup>` blocks. */
+  /**
+   * Removes the YAML front matter and `<script setup>` blocks, turns the `<Ext />` badge into text and
+   * drops the `:::` container markers (their text stays).
+   */
   clean(markdown: string): string {
     return markdown
       .replace(/^---\n[\s\S]*?\n---\n/, '')
       .replace(/<script setup>[\s\S]*?<\/script>\n?/, '')
+      .replace(/ ?<Ext \/>/g, ' (postgrelize extension)')
+      .replace(/^:::.*\n?/gm, '')
       .trim();
   }
 

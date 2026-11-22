@@ -92,16 +92,26 @@ export type SelectOptions = Readonly<{
   lock?: LockOption;
   /** Add `SKIP LOCKED` to the row lock; only with `lock`. */
   skipLocked?: boolean;
-  /** Add `NOWAIT` to the row lock so the query fails instead of waiting; only with `lock`. PostgreSQL extension. */
+  /**
+   * Add `NOWAIT` to the row lock so the query fails instead of waiting; only with `lock`. PostgreSQL extension.
+   * @postgrelize
+   */
   noWait?: boolean;
-  /** `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension. */
+  /**
+   * `SELECT DISTINCT ON (...)`: attributes or expressions. PostgreSQL extension.
+   * @postgrelize
+   */
   distinctOn?: readonly unknown[];
   /**
    * `FETCH FIRST limit ROWS WITH TIES` instead of `LIMIT`: also returns the rows that tie with the
    * last one on the `order` columns. Needs `limit` and `order`. PostgreSQL extension.
+   * @postgrelize
    */
   withTies?: boolean;
-  /** Read only a random sample of the model table (`TABLESAMPLE`). PostgreSQL extension. */
+  /**
+   * Read only a random sample of the model table (`TABLESAMPLE`). PostgreSQL extension.
+   * @postgrelize
+   */
   sample?: TableSampleOptions;
   /** @internal Top-N-per-parent read of a lateral include. */
   lateralKeys?: LateralKeys;

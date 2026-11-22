@@ -60,7 +60,7 @@ Attribute validators go into `validate`: the validator.js-based built-ins of v6 
 
 Validation runs before `create` and `save` (skip it with `validate: false`) and on `Model.update`. `bulkCreate` and `Model.insert` validate only with `validate: true`. `allowNull: false` violations are reported as validation errors before the query runs; set a custom message with `validate: { notNull: { msg } }`.
 
-## Standard Schema
+## Standard Schema <Ext />
 
 Any [Standard Schema](https://standardschema.dev) v1 object can validate a single attribute (`validate: { schema }`) or the whole row (`validationSchema` model option). Schema issues become `ValidationErrorItem`s with `validatorKey: 'schema'`, and the issue path selects the attribute:
 

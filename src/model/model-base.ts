@@ -36,6 +36,7 @@ export class ModelBase {
    * For instances returned by `insert`, `create` / `bulkCreate` / `upsert` with `onConflict`:
    * true when the row was inserted, false when an existing row was updated (or nothing was
    * written). `undefined` otherwise. PostgreSQL extension.
+   * @postgrelize
    */
   get wasInserted(): boolean | undefined {
     return InstanceState.of(this).wasInserted;
@@ -44,6 +45,7 @@ export class ModelBase {
   /**
    * For instances returned with `returningOld: true`: attribute values of the row before the
    * statement, or `null` when the row did not exist (inserted). `undefined` otherwise. PostgreSQL 18+.
+   * @postgrelize
    */
   get oldValues(): Readonly<Record<string, unknown>> | null | undefined {
     return InstanceState.of(this).oldValues;

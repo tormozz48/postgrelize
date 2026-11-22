@@ -79,6 +79,7 @@ export const SequelizeTransactions = <TBase extends SequelizeConstructor>(Base: 
     /**
      * Runs a callback in a managed transaction that first takes a transaction-level advisory lock, so concurrent callers with the same key run one at a time. The lock is released when the transaction ends. PostgreSQL extension.
      *
+     * @postgrelize
      * @param key - Lock key (integer or string).
      * @param run - Callback receiving the transaction.
      * @param options - Transaction options.

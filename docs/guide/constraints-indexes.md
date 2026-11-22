@@ -1,8 +1,12 @@
 # Constraints and indexes
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 `addIndex` and `addConstraint` cover the Sequelize v6 shapes (see [Schema](/guide/schema)). This page lists the PostgreSQL additions. They are new options: existing option shapes and defaults do not change.
 
-## Expression indexes
+## Expression indexes <Ext />
 
 <<< @/examples/constraints-indexes.ts#expression-index{ts}
 
@@ -11,7 +15,7 @@
 - A name cannot be derived from an expression, so an index with an expression field needs an explicit `name`.
 - Model `indexes` accept the same fields. An expression must be immutable (PostgreSQL rejects `date_trunc` on `timestamptz`, for example).
 
-## EXCLUDE constraints
+## EXCLUDE constraints <Ext />
 
 <<< @/examples/constraints-indexes.ts#exclude{ts}
 
@@ -21,13 +25,13 @@
 - Without `name` the constraint is called `<table>_<columns>_excl`; with an expression element give a `name`.
 - A violation raises `ExclusionConstraintError`.
 
-## NOT VALID and VALIDATE CONSTRAINT
+## NOT VALID and VALIDATE CONSTRAINT <Ext />
 
 <<< @/examples/constraints-indexes.ts#not-valid{ts}
 
 `notValid: true` (check and foreign key constraints) adds the constraint without scanning existing rows, so it takes only a short lock; new and updated rows are checked at once. After cleaning the old rows, `validateConstraint(table, name)` scans the table without blocking writes. Using `notValid` with another constraint type throws.
 
-## Declarative partitioning
+## Declarative partitioning <Ext />
 
 <<< @/examples/constraints-indexes.ts#partitioning{ts}
 
@@ -36,7 +40,7 @@
 - `attachPartition(parent, existingTable, bound)` and `detachPartition(parent, partition, { concurrently, finalize })`. `concurrently` cannot run inside a transaction.
 - Partitions are real tables: `showAllTables` lists them, `describeTable` works on parent and partitions, and queries and models on the parent work as usual. `sync` does not create partitions: create them with `createPartition`.
 
-## PostgreSQL 18 constraints
+## PostgreSQL 18 constraints <Ext />
 
 <<< @/examples/constraints-indexes-pg18.ts#temporal{ts}
 

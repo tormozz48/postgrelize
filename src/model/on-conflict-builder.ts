@@ -48,6 +48,7 @@ export type OnConflictUpdateAction<T> = Readonly<{
 /**
  * Advanced `INSERT ... ON CONFLICT` specification. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const rows = [{ tenantId: 1, key: 'views', hits: 1, version: 2 }];

@@ -26,7 +26,7 @@ postgrelize creates and changes tables in two ways, both compatible with Sequeli
 
 Index options are the v6 ones (`name`, `fields`, `unique`, `using`, `operator`, `where`, `concurrently`) plus:
 
-- `nullsNotDistinct: true` → `UNIQUE NULLS NOT DISTINCT`: `NULL` values count as equal, so only one row may have `NULL` in the key. Also accepted in the attribute option `unique: { nullsNotDistinct: true }`.
+- <Ext /> `nullsNotDistinct: true` → `UNIQUE NULLS NOT DISTINCT`: `NULL` values count as equal, so only one row may have `NULL` in the key. Also accepted in the attribute option `unique: { nullsNotDistinct: true }`.
 - `include: ['col']` → covering index (`INCLUDE (...)`).
 - `ifNotExists: true` → `CREATE INDEX IF NOT EXISTS`.
 

@@ -29,6 +29,7 @@ export class QueryInterfaceViews extends QueryInterfaceRoutines {
    *
    * The `query` is SQL text you provide: it is not escaped, so never build it from user input. Names and column lists are quoted identifiers. A trailing `;` is removed.
    *
+   * @postgrelize
    * @param name - View name or `{ tableName, schema }`.
    * @param query - Trusted `SELECT` text.
    * @param options - `replace`, `temporary`, `recursive`, `columns`, `checkOption`, `securityBarrier`, `securityInvoker` and query options.
@@ -51,6 +52,7 @@ export class QueryInterfaceViews extends QueryInterfaceRoutines {
   /**
    * Drops a view with `DROP VIEW`.
    *
+   * @postgrelize
    * @param name - View name or `{ tableName, schema }`.
    * @param options - `ifExists`, `cascade` and query options.
    *
@@ -68,6 +70,7 @@ export class QueryInterfaceViews extends QueryInterfaceRoutines {
    *
    * The `query` is trusted SQL text, as in {@link QueryInterface.createView}. PostgreSQL has no `OR REPLACE` for materialized views: drop and create, or use `ifNotExists`.
    *
+   * @postgrelize
    * @param name - View name or `{ tableName, schema }`.
    * @param query - Trusted `SELECT` text.
    * @param options - `ifNotExists`, `columns`, `using`, `withData` and query options.
@@ -89,6 +92,7 @@ export class QueryInterfaceViews extends QueryInterfaceRoutines {
   /**
    * Recomputes a materialized view with `REFRESH MATERIALIZED VIEW`.
    *
+   * @postgrelize
    * @param name - View name or `{ tableName, schema }`.
    * @param options - `concurrently` (needs a unique index), `withData` and query options.
    * @throws Error when `concurrently` is combined with `withData: false`.
@@ -108,6 +112,7 @@ export class QueryInterfaceViews extends QueryInterfaceRoutines {
   /**
    * Drops a materialized view with `DROP MATERIALIZED VIEW`.
    *
+   * @postgrelize
    * @param name - View name or `{ tableName, schema }`.
    * @param options - `ifExists`, `cascade` and query options.
    *

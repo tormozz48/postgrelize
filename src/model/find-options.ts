@@ -121,7 +121,10 @@ export type CountOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Join associations (rows are counted per joined row unless `distinct`). */
     include?: IncludeOption;
-    /** Count only a random sample of the table (`TABLESAMPLE`). PostgreSQL extension. */
+    /**
+     * Count only a random sample of the table (`TABLESAMPLE`). PostgreSQL extension.
+     * @postgrelize
+     */
     sample?: TableSampleOptions;
   }> &
   CteFindOptions;

@@ -4,8 +4,9 @@ import { SqlLiteral } from './sql-literal.ts';
 const sqlLiteral = new SqlLiteral();
 
 /**
- * Options of `createExtension`.
+ * Options of `createExtension`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: CreateExtensionOptions = { ifNotExists: true, schema: 'public' };
@@ -24,8 +25,9 @@ export type CreateExtensionOptions = Readonly<{
 }>;
 
 /**
- * Options of `dropExtension`.
+ * Options of `dropExtension`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: DropExtensionOptions = { ifExists: true, cascade: true };

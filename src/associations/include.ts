@@ -69,6 +69,7 @@ export type IncludeOptions = Readonly<{
    * keys) instead of loading every child and trimming in memory. Needs `separate` and `limit`.
    * PostgreSQL extension.
    *
+   * @postgrelize
    * @defaultValue false
    */
   lateral?: boolean;

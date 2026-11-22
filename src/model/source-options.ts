@@ -4,6 +4,7 @@ import type { AnyModel, ModelStatic } from './options.ts';
 /**
  * `TABLESAMPLE` of a table. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const sample: TableSampleOptions = { method: 'BERNOULLI', percent: 10, seed: 42 };
@@ -20,8 +21,9 @@ export type TableSampleOptions = Readonly<{
 }>;
 
 /**
- * One column of a {@link JsonTableOptions}.
+ * One column of a {@link JsonTableOptions}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const columns: JsonTableColumnOptions[] = [
@@ -45,8 +47,9 @@ export type JsonTableColumnOptions = Readonly<{
 }>;
 
 /**
- * `JSON_TABLE` source: turns a JSON document into rows. Needs PostgreSQL 17.
+ * `JSON_TABLE` source: turns a JSON document into rows. PostgreSQL extension. Needs PostgreSQL 17.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const source: JsonTableOptions = {

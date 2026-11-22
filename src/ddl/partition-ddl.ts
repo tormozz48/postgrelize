@@ -17,8 +17,9 @@ const sqlLiteral = new SqlLiteral();
 const STRATEGIES: ReadonlySet<string> = new Set<PartitionStrategy>(['range', 'list', 'hash']);
 
 /**
- * Options of `createPartition`.
+ * Options of `createPartition`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * await queryInterface.createPartition(
@@ -37,8 +38,9 @@ export type CreatePartitionOptions = Readonly<{
 }>;
 
 /**
- * Options of `detachPartition`.
+ * Options of `detachPartition`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * await queryInterface.detachPartition('events', 'events_2026', { concurrently: true });

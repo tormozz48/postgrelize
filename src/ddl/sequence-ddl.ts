@@ -20,8 +20,9 @@ export type SequenceOwner = Readonly<{
 }>;
 
 /**
- * Options of `createSequence`.
+ * Options of `createSequence`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: CreateSequenceOptions = { dataType: 'bigint', start: 1000, cache: 10 };
@@ -50,8 +51,9 @@ export type CreateSequenceOptions = Readonly<{
 }>;
 
 /**
- * Options of `alterSequence`.
+ * Options of `alterSequence`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: AlterSequenceOptions = { restartWith: 1, cycle: true };
@@ -70,8 +72,9 @@ export type AlterSequenceOptions = Omit<
   }>;
 
 /**
- * Options of `dropSequence`.
+ * Options of `dropSequence`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: DropSequenceOptions = { ifExists: true };

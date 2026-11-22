@@ -136,6 +136,7 @@ export const where: WhereFactory = (
  * References the value proposed for insertion (`EXCLUDED."column"`) inside an `onConflict`
  * update. PostgreSQL extension.
  *
+ * @postgrelize
  * @param attribute - Model attribute name.
  * @returns Excluded column expression.
  * @example
@@ -151,6 +152,7 @@ export const excluded = (attribute: string): Excluded => new Excluded(attribute)
 /**
  * `EXISTS (subquery)`. PostgreSQL extension.
  *
+ * @postgrelize
  * @param subquery - Subquery from `Model.subquery()`.
  * @returns Condition usable as `where`.
  * @example
@@ -163,6 +165,7 @@ export const exists = (subquery: Subquery): Exists => new Exists(subquery, false
 /**
  * `NOT EXISTS (subquery)`. PostgreSQL extension.
  *
+ * @postgrelize
  * @param subquery - Subquery from `Model.subquery()`.
  * @returns Condition usable as `where`.
  * @example
@@ -173,8 +176,9 @@ export const exists = (subquery: Subquery): Exists => new Exists(subquery, false
 export const notExists = (subquery: Subquery): Exists => new Exists(subquery, true);
 
 /**
- * Window definition of {@link over}.
+ * Window definition of {@link over}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const window: WindowOptions = { partitionBy: ['userId'], orderBy: [['createdAt', 'DESC']] };
@@ -191,6 +195,7 @@ export type WindowOptions = Readonly<{
  * Window function call: `over(fn('row_number'), { partitionBy: ['userId'], orderBy: [['createdAt', 'DESC']] })`.
  * PostgreSQL extension.
  *
+ * @postgrelize
  * @param windowFunction - Function call, e.g. `fn('rank')`.
  * @param window - Partition and order.
  * @returns Expression usable in `attributes` and `order`.
@@ -208,6 +213,7 @@ export const over = (windowFunction: Fn | Literal, window: WindowOptions = {}): 
  * Row constructor for row comparisons: `where(tuple(col('createdAt'), col('id')), Op.lt, tuple(date, id))`.
  * PostgreSQL extension.
  *
+ * @postgrelize
  * @param items - Row items (values or expressions).
  * @returns Row expression.
  * @example

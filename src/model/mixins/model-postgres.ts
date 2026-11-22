@@ -32,6 +32,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `bulkCreate`, rows skipped by `DO NOTHING` or by the `DO UPDATE ... WHERE` condition are not
      * returned. Each instance has `wasInserted`. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param values - Attribute values of one row or several rows.
      * @param options - Insert options (`onConflict`, `fields`, `hooks`, `validate`, `overriding`, `returningOld`, query options).
@@ -59,6 +60,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `INSERT INTO ... SELECT`: inserts the rows produced by a subquery. Returns the inserted (or, with
      * `onConflict`, updated) rows with `wasInserted`. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The target model class.
      * @param source - Subquery from `Model.subquery()`; its columns must match `options.columns`.
      * @param options - Target columns, `onConflict` and query options.
@@ -83,6 +85,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * `MERGE INTO ... USING ...` (PostgreSQL 15+). With `returning: true` (PostgreSQL 17+) returns the
      * written rows with the action taken. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param options - Source, join condition and WHEN clauses.
      * @returns Affected row count and, with `returning`, `{ action, instance }` per row.
@@ -116,6 +119,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * in `attributes` (scalar subquery) and as a source of `insertFrom` / `merge`. Default scope and
      * paranoid filter apply; values stay bound parameters of the outer statement. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class the subquery selects from.
      * @param options - Find options (`attributes`, `where`, `order`, `limit`, `include`, ...) and `as` (table alias).
      * @returns Subquery expression.
@@ -136,6 +140,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * No hooks or validation run; `updatedAt` is set unless `silent`. With `returning: true` the CTE
      * can be read through `source`. Queries with such a CTE always use the writer. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param values - New attribute values.
      * @param options - `where`, `returning`, `silent`.
@@ -159,6 +164,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * models, and ignores the paranoid filter. With `returning: true` the deleted rows can be read
      * through `source`, e.g. to move them to another table. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param options - `where`, `returning`.
      * @returns Statement for the `with` option.
@@ -179,6 +185,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * Builds an `INSERT` of attribute-keyed rows for a data-modifying CTE (`with`). Defaults and
      * timestamps are filled in; no hooks or validation run. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param rows - Rows to insert (at least one).
      * @param options - `returning`.
@@ -203,6 +210,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * are not loaded at once. Runs inside `options.transaction` or its own transaction; the cursor is
      * closed when iteration ends or is stopped early. Joined includes are not supported. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param options - Find options.
      * @param cursor - `batchSize` (rows per FETCH, default 100).
@@ -227,6 +235,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * volumes. No hooks or validation run; missing values are written as `NULL`. `createdAt` /
      * `updatedAt` are filled when the model has timestamps. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param rows - Rows (array, iterable or async iterable of attribute values).
      * @param options - `columns` (attribute names; default: keys of the first row of an array) and query options.
@@ -257,6 +266,7 @@ export const ModelPostgres = <TBase extends ModelConstructor>(Base: TBase) => {
      * escaped literals because COPY cannot take parameters (ADR-013). Stopping early drains the rest
      * before the connection is released. PostgreSQL extension.
      *
+     * @postgrelize
      * @param this - The model class.
      * @param options - Find options and output format (`format`, `header`, ...).
      * @returns Async iterator of raw output chunks.

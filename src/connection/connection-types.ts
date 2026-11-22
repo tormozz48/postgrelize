@@ -77,7 +77,10 @@ export type GetConnectionOptions = Readonly<{
    * `'read'` (v6 passes the query type of a SELECT there).
    */
   type?: 'read' | 'write' | 'SELECT';
-  /** Forces the writer even when `type` is `'read'`. */
+  /**
+   * Forces the writer even when `type` is `'read'`. postgrelize extension.
+   * @postgrelize
+   */
   useMaster?: boolean;
   /** Transaction id the connection is acquired for; informational (v6 passes it for transactions). */
   uuid?: string;

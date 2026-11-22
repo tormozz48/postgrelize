@@ -21,16 +21,16 @@ const Item = sequelize.define('Item', {
 
 Supported operators are the v6 ones for PostgreSQL: comparison (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `between`, `notBetween`), lists (`in`, `notIn`, `any`, `all`), text (`like`, `iLike`, `startsWith`, `endsWith`, `substring`, `regexp`, `iRegexp` and their negations), `is` / `not`, arrays and ranges (`contains`, `contained`, `overlap`, `adjacent`, `strictLeft`, `strictRight`, `noExtendLeft`, `noExtendRight`), full-text `match`, and `col` for column comparisons.
 
-PostgreSQL additions and fixes:
+PostgreSQL additions and fixes (<Ext /> marks what v6 does not have):
 
-- `Op.isDistinctFrom` / `Op.isNotDistinctFrom` compare with `IS [NOT] DISTINCT FROM`, which treats `NULL` as a value.
+- <Ext /> `Op.isDistinctFrom` / `Op.isNotDistinctFrom` compare with `IS [NOT] DISTINCT FROM`, which treats `NULL` as a value.
 - `Op.hasKey`, `Op.hasAnyKeys`, `Op.hasAllKeys` map to the jsonb `?`, `?|` and `?&` operators; they also work on nested JSON paths.
-- `{ [Op.any]: [1, 3] }` is shorthand for `= ANY($1)` with one array parameter.
+- <Ext /> `{ [Op.any]: [1, 3] }` is shorthand for `= ANY($1)` with one array parameter.
 - `IN` lists with 100 or more values are sent as `= ANY($1)` with a single array parameter instead of one parameter per value. Change the threshold with the `inAsAnyThreshold` constructor option.
 
 <<< @/examples/querying.ts#any-list{ts}
 
-## Operator and search helpers
+## Operator and search helpers <Ext />
 
 PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `Op` entries and expression helpers. Every value is a bound parameter; regconfig names, weights and function kinds are validated.
 
@@ -60,7 +60,7 @@ PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `O
 
 <<< @/examples/querying.ts#pagination{ts}
 
-PostgreSQL sorts `NULL` last in `ASC` and first in `DESC` order. Add `NULLS FIRST` or `NULLS LAST` to the direction to choose where rows with `NULL` go; any other direction text is rejected.
+<Ext /> PostgreSQL sorts `NULL` last in `ASC` and first in `DESC` order. Add `NULLS FIRST` or `NULLS LAST` to the direction to choose where rows with `NULL` go; any other direction text is rejected.
 
 <<< @/examples/querying.ts#nulls-order{ts}
 

@@ -43,3 +43,19 @@
     width: 480px;
   }
 }
+
+/* Marks an option, method or section that Sequelize v6 does not have. */
+.pgz-ext {
+  display: inline-block;
+  margin-left: 0.4em;
+  padding: 0 6px;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 4px;
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  font-size: 0.65em;
+  font-weight: 600;
+  line-height: 1.6;
+  vertical-align: middle;
+  white-space: nowrap;
+}

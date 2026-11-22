@@ -1,12 +1,16 @@
 # Bulk writes and COPY
 
+::: tip postgrelize extensions
+Sections marked <Ext /> describe options, methods and statements that Sequelize v6 does not have. Everything else here behaves as in v6. All extensions are listed on the [extensions page](/extensions/).
+:::
+
 Set-based writes avoid loading rows into Node.js and writing them back one by one. postgrelize exposes the PostgreSQL statements for this: `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `MERGE`, and `COPY` for bulk import and export. None of them exist in Sequelize v6.
 
 The examples use three models: `Stock` (`sku`, `qty`), `Delivery` (`sku`, `amount`) and `Archive` (`sku`, `qty`):
 
 <<< @/examples/bulk-writes.ts#models{ts}
 
-## Large inserts with `unnest` {#unnest}
+## Large inserts with `unnest` <Ext /> {#unnest}
 
 `bulkCreate` sends one bound parameter per cell, and PostgreSQL accepts at most 65 535 parameters per statement. `bulkCreate(rows, { unnest: true })` sends one array parameter per column instead (`INSERT … SELECT * FROM unnest($1::integer[], $2::text[])`), so one statement can insert hundreds of thousands of rows:
 
@@ -14,7 +18,7 @@ The examples use three models: `Stock` (`sku`, `qty`), `Delivery` (`sku`, `amoun
 
 Every row must provide every column (there is no per-row `DEFAULT`), and `ARRAY` columns and the conflict options (`ignoreDuplicates`, `updateOnDuplicate`, `onConflict`) are not supported with `unnest`; those calls throw. Values, hooks, validation and returned instances behave as for the default path. For millions of rows prefer [`copyFrom`](#copy).
 
-## `UPDATE ... FROM`
+## `UPDATE ... FROM` <Ext />
 
 The `from` option of `Model.update` joins other relations, keyed by alias. Reference their columns with `col('alias.attr')` in `where` and with `literal` or `col` in the new values:
 
@@ -22,13 +26,13 @@ The `from` option of `Model.update` joins other relations, keyed by alias. Refer
 
 A `from` value can be a model, a subquery from `Model.subquery()`, or a table / CTE name as a string.
 
-## `DELETE ... USING`
+## `DELETE ... USING` <Ext />
 
 `Model.destroy` takes `using` with the same shape:
 
 <<< @/examples/bulk-writes.ts#destroy-using{ts}
 
-## `INSERT ... SELECT` {#insert-select}
+## `INSERT ... SELECT` <Ext /> {#insert-select}
 
 `Model.insertFrom(subquery, { columns })` inserts the rows a subquery produces, without a round trip through Node.js. `columns` lists the target attributes in the order of the subquery columns:
 
@@ -36,7 +40,7 @@ A `from` value can be a model, a subquery from `Model.subquery()`, or a table / 
 
 It returns the written rows as instances (with `wasInserted`) and accepts [`onConflict`](./upserts#onconflict), so it can upsert from another table. Fill `NOT NULL` timestamps in the subquery, e.g. `attributes: ['sku', [literal('now()'), 'createdAt']]`.
 
-## `MERGE`
+## `MERGE` <Ext />
 
 `Model.merge` runs `MERGE INTO ... USING ...` (PostgreSQL 15+): one statement that updates, deletes or inserts depending on whether each source row matches a target row. The source is an array of plain objects (sent as a `VALUES` list with bound parameters) or a subquery:
 
@@ -52,7 +56,7 @@ With a subquery source and an explicit insert map:
 
 <<< @/examples/bulk-writes.ts#merge-subquery{ts}
 
-### `RETURNING` and `NOT MATCHED BY SOURCE` (PostgreSQL 17+)
+### `RETURNING` and `NOT MATCHED BY SOURCE` (PostgreSQL 17+) <Ext />
 
 On PostgreSQL 17, `returning: true` returns each written row with the action taken, and `whenNotMatchedBySource` handles target rows that have no source row — for example to retire items missing from a full import:
 
@@ -60,11 +64,11 @@ On PostgreSQL 17, `returning: true` returns each written row with the action tak
 
 On older servers these options throw before any SQL runs. With `returningOld: true` (PostgreSQL 18), each instance also has [`oldValues`](./upserts#old-values-with-returningold-postgresql-18).
 
-## COPY {#copy}
+## COPY <Ext /> {#copy}
 
 `COPY` is the fastest way to move many rows in or out of PostgreSQL.
 
-### Import with `copyFrom`
+### Import with `copyFrom` <Ext />
 
 `Model.copyFrom(rows, options)` streams rows with `COPY ... FROM STDIN`. `rows` can be an array, an iterable or an async iterable, so you can pipe a file parser or another database cursor through it without holding everything in memory:
 
@@ -78,7 +82,7 @@ On older servers these options throw before any SQL runs. With `returningOld: tr
 - No hooks, validation or defaults defined in Node.js run, and missing values are `NULL` (column defaults of the table do not apply to listed columns). The result is the number of copied rows.
 - With `transaction`, the copy is rolled back together with the transaction.
 
-### Export with `copyTo`
+### Export with `copyTo` <Ext />
 
 `Model.copyTo(options)` runs `COPY (SELECT ...) TO STDOUT` and returns an async iterator of `Buffer` chunks. It takes the find options (`attributes`, `where`, `order`, `include`, scopes, `with`) and the output format:
 

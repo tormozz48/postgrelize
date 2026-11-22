@@ -9,8 +9,9 @@ const sqlLiteral = new SqlLiteral();
 const CHECK_OPTIONS: Readonly<Record<string, string>> = { local: 'LOCAL', cascaded: 'CASCADED' };
 
 /**
- * Options of `createView`.
+ * Options of `createView`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: CreateViewOptions = { replace: true, columns: ['id', 'title'], checkOption: 'local' };
@@ -35,8 +36,9 @@ export type CreateViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `createMaterializedView`.
+ * Options of `createMaterializedView`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: CreateMaterializedViewOptions = { ifNotExists: true, withData: false };
@@ -55,8 +57,9 @@ export type CreateMaterializedViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `refreshMaterializedView`.
+ * Options of `refreshMaterializedView`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: RefreshMaterializedViewOptions = { concurrently: true };
@@ -71,8 +74,9 @@ export type RefreshMaterializedViewOptions = Readonly<{
 }>;
 
 /**
- * Options of `dropView` and `dropMaterializedView`.
+ * Options of `dropView` and `dropMaterializedView`. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const options: DropViewOptions = { ifExists: true, cascade: true };

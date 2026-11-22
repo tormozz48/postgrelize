@@ -30,8 +30,9 @@ export type PoolOptions = Readonly<{
 }>;
 
 /**
- * Named prepared statement cache settings, given as the `statementCache` option of {@link SequelizeOptions}.
+ * Named prepared statement cache settings, given as the `statementCache` option of {@link SequelizeOptions}. PostgreSQL extension.
  *
+ * @postgrelize
  * @example
  * ```ts
  * const db = new Sequelize('postgres://user:pass@localhost:5432/app', { statementCache: { max: 50 } });
@@ -157,12 +158,16 @@ export type SequelizeOptions = Readonly<{
    * `retry` option is merged over it. Off by default.
    */
   retry?: RetryOptions;
-  /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
+  /**
+   * Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension.
+   * @postgrelize
+   */
   inAsAnyThreshold?: number;
   /**
    * Opt-in named prepared statements (PostgreSQL extension): repeated SELECT / INSERT / UPDATE / DELETE texts are
    * parsed and planned once per connection. `true` uses the default bound of 100 statements per connection.
    * Off by default; not for PgBouncer in transaction pooling mode; pair with a bounded `pool.max`.
+   * @postgrelize
    */
   statementCache?: boolean | StatementCacheOptions;
 }>;

@@ -23,6 +23,7 @@ export class QueryInterfacePartitions extends QueryInterfacePolicies {
   /**
    * Creates a partition of a partitioned table (`CREATE TABLE ... PARTITION OF`). The partitioned parent comes from `createTable` with `partitionBy`.
    *
+   * @postgrelize
    * @param parent - Partitioned table name or `{ tableName, schema }`.
    * @param partition - New partition name or `{ tableName, schema }`.
    * @param bound - `{ in }` (list), `{ from, to }` (range), `{ modulus, remainder }` (hash) or `{ default: true }`; values are rendered as literals.
@@ -52,6 +53,7 @@ export class QueryInterfacePartitions extends QueryInterfacePolicies {
   /**
    * Attaches an existing table as a partition (`ALTER TABLE ... ATTACH PARTITION`). PostgreSQL scans the table to check the bounds unless a matching `CHECK` constraint exists.
    *
+   * @postgrelize
    * @param parent - Partitioned table name or `{ tableName, schema }`.
    * @param partition - Existing table name or `{ tableName, schema }`.
    * @param bound - Partition bounds, see {@link QueryInterface.createPartition}.
@@ -77,6 +79,7 @@ export class QueryInterfacePartitions extends QueryInterfacePolicies {
   /**
    * Detaches a partition, keeping it as a standalone table (`ALTER TABLE ... DETACH PARTITION`).
    *
+   * @postgrelize
    * @param parent - Partitioned table name or `{ tableName, schema }`.
    * @param partition - Partition name or `{ tableName, schema }`.
    * @param options - `concurrently` (PostgreSQL 14+, not inside a transaction), `finalize` and query options.
