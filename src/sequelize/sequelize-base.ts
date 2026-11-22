@@ -196,7 +196,8 @@ export class SequelizeBase {
    * (for example per request to one of several databases). A replacement must keep the
    * acquire / release pairing and release a connection to the pool it came from; a connection
    * taken from another `Sequelize` instance's manager works on this instance too.
-   * `LISTEN` opens its own dedicated connection and does not use the manager.
+   * `LISTEN` opens its own dedicated connection and does not use the manager. `pool` gives live
+   * pool counters for health gauges and `destroyConnection` drops a broken connection from its pool.
    *
    * @see {@link ConnectionManagerContract}
    *

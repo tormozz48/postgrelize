@@ -93,9 +93,9 @@ Replicas lag behind the primary. To read your own writes immediately, pass `useM
 
 ## Routing connections
 
-`sequelize.connectionManager` is the Sequelize v6 object that hands out pooled connections. Its two methods are the whole contract:
+`sequelize.connectionManager` is the Sequelize v6 object that hands out pooled connections. Routing uses two methods:
 
-- `getConnection(options?: { type?: 'read' | 'write'; useMaster?: boolean; uuid?: string })` returns a connection (the pooled `pg` client). `type: 'read'` selects a read replica when one is configured and `useMaster` is not set. `uuid` is the id of the transaction the connection is for.
+- `getConnection(options?: { type?: 'read' | 'write'; useMaster?: boolean; uuid?: string })` returns a connection (the pooled `pg` client). `type: 'read'` (or `'SELECT'`, what v6 passes for a SELECT) selects a read replica when one is configured and `useMaster` is not set. `uuid` is the id of the transaction the connection is for.
 - `releaseConnection(connection)` gives a connection back to the pool it came from.
 
 Every query, finder, write, managed or unmanaged transaction, `findEach`, `copyFrom` / `copyTo`, advisory lock and `sync` acquires through `getConnection` and releases through `releaseConnection`, looked up on the manager at call time. A transaction takes one connection when it starts and releases it on commit or rollback. As in v6, you can reassign both methods on the instance to route connections, for example each request to one of several databases chosen from an `AsyncLocalStorage` value:
@@ -107,6 +107,19 @@ Rules for a replacement:
 - Keep acquire and release paired: whatever `getConnection` returns must reach `releaseConnection` exactly once per use. Releasing the same connection twice is ignored.
 - Release a connection to the pool that owns it. A connection from another `Sequelize` instance's manager works on this instance's queries and transactions, but only that instance's `releaseConnection` returns it to its pool; remember the owner (a `WeakMap` keyed by the connection, as above).
 - Wrap the original methods (`manager.getConnection.bind(manager)`) to fall back to the default pool.
+
+### Raw connections, destroying and pool counters
+
+You can hold a connection outside any query, for example a replica connection for a long running report, and watch the pools from a health check:
+
+<<< @/examples/sessions.ts#connection-pool{ts}
+
+- `releaseConnection(connection)` returns the connection to the pool it came from: a read connection goes back to its replica pool. A connection that is acquired late (the caller timed out and the promise resolved afterwards) is released the same way, and releasing it twice is ignored.
+- `destroyConnection(connection)` closes a broken connection and removes it from its pool without returning it; the pool opens a replacement when one is needed. A later `releaseConnection` of the same connection is ignored.
+- `pool` has `size` (open connections), `available` (idle), `using` (checked out), `waiting` (acquisitions queued for a free connection) and `maxSize` (`pool.max`, default 5). They are read live, are `0` before the first connection and never open one. They mirror the `pg` pool: `size = totalCount`, `available = idleCount`, `waiting = waitingCount`, `using = size - available`.
+- With `replication`, v6 has no totals: `pool` is an object with separate `read` and `write` pools. Here `pool.size` and the other counters are the sums over the writer and all replicas, and `pool.write` and `pool.read` hold the counters of each side (`pool.read` sums all replicas). Without replication `pool.read` and `pool.write` are `undefined`.
+
+`getConnection({ type: 'read' })` goes to a replica. In v6 the runtime only recognises the query type `'SELECT'` there, so `type: 'read'` (the value its typings document) reaches the writer; postgrelize accepts both names.
 
 `listen` does not go through the manager: it opens a dedicated connection outside the pool, from this instance's own settings, so it is not routed. Hooks such as `beforePoolAcquire` are not run (see [migrating](/guide/migrating)).
 
@@ -131,6 +144,6 @@ Differences from v6: v6 also retries statements that run inside a transaction (t
 - [`Sequelize`](/api/classes/Sequelize) — `listen`, `notify`, `withAdvisoryLock`
 - [`Transaction`](/api/classes/Transaction) — `advisoryLock`, `tryAdvisoryLock`
 - [`TransactionOptions`](/api/type-aliases/TransactionOptions), [`AdvisoryLockKey`](/api/type-aliases/AdvisoryLockKey)
-- [`ConnectionManagerContract`](/api/interfaces/ConnectionManagerContract), [`GetConnectionOptions`](/api/type-aliases/GetConnectionOptions), `Sequelize#connectionManager`
+- [`ConnectionManagerContract`](/api/interfaces/ConnectionManagerContract), [`ConnectionPool`](/api/interfaces/ConnectionPool), [`PoolCounters`](/api/interfaces/PoolCounters), [`GetConnectionOptions`](/api/type-aliases/GetConnectionOptions), `Sequelize#connectionManager`
 - [`RetryOptions`](/api/type-aliases/RetryOptions), [`RetryMatch`](/api/type-aliases/RetryMatch)
 - [`ReplicationOptions`](/api/type-aliases/ReplicationOptions), [`NotificationHandler`](/api/type-aliases/NotificationHandler)
