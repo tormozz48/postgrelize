@@ -161,4 +161,42 @@ routed = [
 
 Keep acquire/release paired and release a connection to the pool that owns it (it may come from another `Sequelize` instance's manager). `listen` uses its own dedicated connection and is not routed.
 
+Retry (v6 `retry`): `new Sequelize({ retry: { max: 5, match: [/SequelizeConnectionRefusedError/], backoffBase: 100 } })` or per query `{ retry: {...} }` (merged over the instance option) repeats a failed query, and the connection acquisition plus `BEGIN` of a transaction. Nothing is retried without `max`; an empty `match` retries every error; a statement inside an open transaction, `COMMIT`, COPY and `listen` are never retried.
+
+```ts
+const retry = {
+  max: 5, // attempts, the first one included
+  match: [/SequelizeConnectionRefusedError/, 'ECONNRESET'], // retry only these errors
+  backoffBase: 10, // ms before the first retry; grows by backoffExponent (default 1.1)
+};
+const refusing = new Sequelize({
+  database,
+  username,
+  password,
+  host,
+  port,
+  logging: false,
+  dialectOptions: sequelize.options.dialectOptions,
+  retry, // every query and transaction start of this instance
+});
+
+// Simulate a database that refuses the first two connections.
+const manager = refusing.connectionManager;
+const getConnection = manager.getConnection.bind(manager);
+manager.getConnection = async (options) => {
+  attempts += 1;
+  if (attempts <= 2) {
+    throw new ConnectionRefusedError(new Error('connect ECONNREFUSED'));
+  }
+  return getConnection(options);
+};
+
+retried = await refusing.query('SELECT 1 AS one', { type: QueryTypes.SELECT, plain: true });
+// retried: { one: 1 }, attempts: 3
+
+// A query can override the instance setting; a statement inside a transaction is never retried.
+await refusing.query('SELECT 1', { retry: { max: 2 } });
+await refusing.close();
+```
+
 Read replicas: `new Sequelize({ replication: { read: [...], write } })` routes reads to replicas; see <https://tormozz48.github.io/postgrelize/guide/sessions>.

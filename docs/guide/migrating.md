@@ -31,6 +31,7 @@ The package ships ES modules and CommonJS, so `require('postgrelize')` works as 
 - Only PostgreSQL is supported. Omit `dialect` or set it to `'postgres'`; any other value throws.
 - `dialectOptions` is passed to the [`pg`](https://node-postgres.com/) pool as is.
 - `pool` accepts `max`, `min`, `idle`, `acquire`, `evict` and `maxUses`. `min` and `evict` are accepted for compatibility but have no effect: `pg` does not keep idle connections open.
+- `retry` (instance option and per-query / per-transaction option) is supported with the v6 fields and matching rules; it is off by default, as v6's default only lists a SQLite message. Statements inside an open transaction are not retried (v6 retries them). See [Retrying failed queries](/guide/sessions#retrying-failed-queries).
 - `sequelize.connectionManager` exposes `getConnection(options?)` and `releaseConnection(connection)`, and you can reassign them on the instance to route connections, as in v6. The other v6 connection manager members (`pool`, `destroyConnection`, `initPools`, `close`, ...) are not provided. See [Routing connections](/guide/sessions#routing-connections).
 - `minifyAliases: true` works as in v6 for include aliases, see [Associations](./associations#eager-loading).
 - `replication: { read, write }` works as in v6, see [Sessions and scaling](./sessions#read-replicas).

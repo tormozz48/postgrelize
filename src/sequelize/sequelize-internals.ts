@@ -8,6 +8,7 @@ import type {
   SequelizeOptions,
 } from '../connection/options.ts';
 import { QueryLogger } from '../connection/query-logger.ts';
+import { RetryRunner } from '../connection/retry.ts';
 import { PgErrorMapper } from '../errors/map-pg-error.ts';
 import { HookRegistry } from '../hooks/hooks.ts';
 import type { ModelAttributes } from '../model/model-definition.ts';
@@ -43,6 +44,7 @@ export class SequelizeInternals {
   /** Services provided to models. */
   readonly runtime: ModelRuntime;
   readonly #owner: InternalsOwner;
+  readonly #retries: RetryRunner;
   readonly #transactions: TransactionStarter;
   #serverVersion: Promise<number> | undefined;
   #notifier: NotificationListener | undefined;
@@ -55,7 +57,8 @@ export class SequelizeInternals {
     this.#owner = owner;
     this.hooks = HookRegistry.fromOption(connectionConfig.options.hooks);
     this.connections = this.#createConnections(connectionConfig);
-    this.#transactions = new TransactionStarter(this.connections);
+    this.#retries = new RetryRunner(connectionConfig.options.retry);
+    this.#transactions = new TransactionStarter(this.connections, this.#retries);
     this.runtime = this.#createRuntime(connectionConfig.options);
   }
 
@@ -72,7 +75,11 @@ export class SequelizeInternals {
     options: QueryOptionsBase,
     kind: 'read' | 'write' = 'write',
   ): Promise<QueryResult> {
-    return this.connections.execute(query, this.executeOptions(options, kind));
+    const settings = this.executeOptions(options, kind);
+    // A statement inside a transaction is never retried: PostgreSQL has aborted the transaction.
+    return settings.client === undefined && this.#retries.active(options.retry)
+      ? this.#retries.run(() => this.connections.execute(query, settings), options.retry)
+      : this.connections.execute(query, settings);
   }
 
   /**

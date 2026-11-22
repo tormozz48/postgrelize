@@ -1,16 +1,20 @@
 import type { ConnectionManager } from '../connection/connection-manager.ts';
+import type { RetryRunner } from '../connection/retry.ts';
 import { Transaction, type TransactionOptions } from './transaction.ts';
 import { transactionScope } from './transaction-runner.ts';
 
 /** Creates transactions on a connection manager, nesting them in the CLS transaction when enabled. */
 export class TransactionStarter {
   readonly #connections: ConnectionManager;
+  readonly #retries: RetryRunner;
 
   /**
    * @param connections - Connection manager of the owning `Sequelize` instance.
+   * @param retries - Retry settings of the owning `Sequelize` instance, applied to starting a transaction.
    */
-  constructor(connections: ConnectionManager) {
+  constructor(connections: ConnectionManager, retries: RetryRunner) {
     this.#connections = connections;
+    this.#retries = retries;
   }
 
   /**
@@ -40,9 +44,10 @@ export class TransactionStarter {
   #create(options: TransactionOptions): Transaction {
     const parent =
       options.transaction === undefined ? transactionScope.implicitParent() : options.transaction;
-    return new Transaction(this.#connections, {
-      ...options,
-      ...(parent === undefined ? {} : { transaction: parent }),
-    });
+    return new Transaction(
+      this.#connections,
+      { ...options, ...(parent === undefined ? {} : { transaction: parent }) },
+      this.#retries,
+    );
   }
 }
