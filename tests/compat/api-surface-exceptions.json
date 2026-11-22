@@ -409,11 +409,6 @@
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
-      "name": "connectionManager",
-      "category": "internal",
-      "note": "v6 connection manager object; postgrelize pools through pg, use sequelize.close()"
-    },
-    {
       "name": "dialect",
       "category": "internal",
       "note": "v6 dialect object; use sequelize.getDialect()"

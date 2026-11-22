@@ -155,6 +155,11 @@ export type {
   TransactionOptions,
 } from './transaction/transaction.ts';
 export type {
+  Connection,
+  ConnectionManagerContract,
+  GetConnectionOptions,
+} from './connection/connection-types.ts';
+export type {
   ConnectionConfig,
   LoggingFunction,
   ModelDefaults,

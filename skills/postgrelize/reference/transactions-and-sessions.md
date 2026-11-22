@@ -119,4 +119,46 @@ await holder.commit(); // transaction-level locks are released on commit / rollb
 await other.rollback();
 ```
 
+Routing connections (v6 `sequelize.connectionManager`): every query, transaction, COPY and `sync` takes its connection from `connectionManager.getConnection(options?)` and returns it through `connectionManager.releaseConnection(connection)`, looked up at call time, so both can be reassigned on the instance (for example to pick a database per request from an `AsyncLocalStorage`):
+
+```ts
+const shardOfRequest = new AsyncLocalStorage<string>();
+const shards: Record<string, Sequelize> = { b: shard };
+const manager = sequelize.connectionManager;
+const defaultGet = manager.getConnection.bind(manager);
+const defaultRelease = manager.releaseConnection.bind(manager);
+const owners = new WeakMap<object, Sequelize>();
+
+manager.getConnection = async (options) => {
+  const target = shards[shardOfRequest.getStore() ?? ''];
+  if (target === undefined) {
+    return defaultGet(options);
+  }
+  const connection = await target.connectionManager.getConnection(options);
+  owners.set(connection, target); // remember which pool the connection must go back to
+  return connection;
+};
+manager.releaseConnection = (connection) => {
+  const owner = owners.get(connection);
+  return owner === undefined
+    ? defaultRelease(connection)
+    : owner.connectionManager.releaseConnection(connection);
+};
+
+const applicationName = async (): Promise<string> => {
+  const rows = (await sequelize.query('SHOW application_name', {
+    type: QueryTypes.SELECT,
+  })) as { application_name: string }[];
+  return rows[0]?.application_name ?? '';
+};
+routed = [
+  await applicationName(), // no routing value: the instance's own pool
+  await shardOfRequest.run('b', applicationName), // routed to the other instance's pool
+  await shardOfRequest.run('b', () => sequelize.transaction(() => applicationName())),
+];
+// routed: ['', 'shard-b', 'shard-b']
+```
+
+Keep acquire/release paired and release a connection to the pool that owns it (it may come from another `Sequelize` instance's manager). `listen` uses its own dedicated connection and is not routed.
+
 Read replicas: `new Sequelize({ replication: { read: [...], write } })` routes reads to replicas; see <https://tormozz48.github.io/postgrelize/guide/sessions>.

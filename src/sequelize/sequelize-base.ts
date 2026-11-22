@@ -1,5 +1,6 @@
 import { ModelDecorators } from '../decorators/model-decorators.ts';
 import { ConnectionConfig } from '../connection/connection-config.ts';
+import type { ConnectionManagerContract } from '../connection/connection-types.ts';
 import type {
   ConnectionConfig as ConnectionSettings,
   SequelizeOptions,
@@ -178,6 +179,43 @@ export class SequelizeBase {
    */
   isDefined(modelName: string): boolean {
     return modelName in this.models;
+  }
+
+  /**
+   * Acquire / release contract of the instance's pools (Sequelize v6 `sequelize.connectionManager`).
+   * Every query, finder, write, transaction, `findEach`, COPY, advisory lock and `sync` gets its
+   * pooled connection from `getConnection` and gives it back through `releaseConnection`, looked
+   * up on this object at call time, so both can be replaced on the instance to route connections
+   * (for example per request to one of several databases). A replacement must keep the
+   * acquire / release pairing and release a connection to the pool it came from; a connection
+   * taken from another `Sequelize` instance's manager works on this instance too.
+   * `LISTEN` opens its own dedicated connection and does not use the manager.
+   *
+   * @see {@link ConnectionManagerContract}
+   *
+   * @example
+   * ```ts
+   * const manager = sequelize.connectionManager;
+   * const defaultGet = manager.getConnection.bind(manager);
+   * const defaultRelease = manager.releaseConnection.bind(manager);
+   * const other = new Sequelize('postgres://localhost/other');
+   * const owners = new WeakMap<object, Sequelize>();
+   * manager.getConnection = async (options) => {
+   *   const shard = other;
+   *   const connection = await shard.connectionManager.getConnection(options);
+   *   owners.set(connection, shard);
+   *   return connection;
+   * };
+   * manager.releaseConnection = (connection) => {
+   *   const owner = owners.get(connection);
+   *   return owner === undefined
+   *     ? defaultRelease(connection)
+   *     : owner.connectionManager.releaseConnection(connection);
+   * };
+   * ```
+   */
+  get connectionManager(): ConnectionManagerContract {
+    return this.internals.connections;
   }
 
   /**

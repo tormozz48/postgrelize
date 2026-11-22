@@ -102,6 +102,26 @@ describe('read replicas', () => {
       }),
     ));
 
+  it('selects replicas through connectionManager.getConnection', () =>
+    withReaderRole((role) =>
+      withSchema(async ({ schema }) => {
+        const { sequelize, writer } = await setup(schema, role);
+        const manager = sequelize.connectionManager;
+        const user = async (options?: { type?: 'read' | 'write'; useMaster?: boolean }) => {
+          const connection = await manager.getConnection(options);
+          try {
+            return (await connection.query('SELECT current_user AS who')).rows[0]?.who;
+          } finally {
+            await manager.releaseConnection(connection);
+          }
+        };
+        expect(await user()).toBe(writer);
+        expect(await user({ type: 'write' })).toBe(writer);
+        expect(await user({ type: 'read' })).toBe(role);
+        expect(await user({ type: 'read', useMaster: true })).toBe(writer);
+      }),
+    ));
+
   it('round-robins between readers', () =>
     withReaderRole((role) =>
       withSchema(async ({ schema }) => {

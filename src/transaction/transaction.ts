@@ -146,7 +146,7 @@ export class Transaction {
   /** @internal */
   async begin(): Promise<this> {
     if (this.parent === undefined) {
-      this.#client = await this.#connections.acquire();
+      this.#client = await this.#connections.getConnection({ type: 'write', uuid: this.id });
     }
     try {
       await this.#run(this.#statements.begin(this.options));
@@ -178,7 +178,7 @@ export class Transaction {
       await this.#run(this.#statements.commit());
       this.finished = 'commit';
     } finally {
-      this.#release();
+      await this.#release();
     }
     await this.#afterCommit.reduce<Promise<unknown>>(
       (previous, hook) => previous.then(() => hook(this)),
@@ -209,7 +209,7 @@ export class Transaction {
       await this.#run(this.#statements.rollback());
       this.finished = 'rollback';
     } finally {
-      this.#release();
+      await this.#release();
     }
   }
 
@@ -301,7 +301,7 @@ export class Transaction {
     if (this.parent === undefined) {
       // Never return a connection inside an open (possibly aborted) transaction to the pool.
       await this.#run(this.#statements.rollback()).catch(() => undefined);
-      this.#release();
+      await this.#release();
     }
   }
 
@@ -317,11 +317,12 @@ export class Transaction {
     await this.#connections.execute({ text: sql, values: [] }, this.executeOptions());
   }
 
-  #release(): void {
+  async #release(): Promise<void> {
     transactionScope.release(this);
-    if (this.parent === undefined && this.#client !== undefined) {
-      this.#client.release();
+    const client = this.#client;
+    if (this.parent === undefined && client !== undefined) {
       this.#client = undefined;
+      await this.#connections.releaseConnection(client);
     }
   }
 }

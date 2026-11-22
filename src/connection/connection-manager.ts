@@ -1,7 +1,14 @@
 import { Client as PgClient, Pool, types, type PoolClient, type PoolConfig } from 'pg';
 import { hookFailures } from './after-connect-hook.ts';
 import { CopyRunner } from './copy-runner.ts';
-import type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
+import type {
+  Client,
+  Connection,
+  ConnectionManagerContract,
+  ExecuteOptions,
+  GetConnectionOptions,
+  QueryResult,
+} from './connection-types.ts';
 import { ConnectionAcquireTimeoutError } from '../errors/errors.ts';
 import type { PgErrorMapper } from '../errors/map-pg-error.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
@@ -11,7 +18,14 @@ import { StatementTimeout } from './statement-timeout.ts';
 import { StatementCache, type StatementClient } from './statement-cache.ts';
 import type { StatementCacheOptions } from './options.ts';
 
-export type { Client, ExecuteOptions, QueryResult } from './connection-types.ts';
+export type {
+  Client,
+  Connection,
+  ConnectionManagerContract,
+  ExecuteOptions,
+  GetConnectionOptions,
+  QueryResult,
+} from './connection-types.ts';
 
 const DATE_OID = 1082;
 const INTERVAL_OID = 1186;
@@ -28,7 +42,7 @@ const typeParsers: NonNullable<PoolConfig['types']> = {
  * Owner of the `pg` pools of a `Sequelize` instance: runs queries (mapping driver errors to Sequelize v6
  * error classes), acquires clients for transactions, streams COPY data and closes the pools.
  */
-export class ConnectionManager {
+export class ConnectionManager implements ConnectionManagerContract {
   readonly #config: PoolConfig;
   readonly #router: ReplicaRouter<Pool>;
   readonly #logger: QueryLogger;
@@ -58,7 +72,7 @@ export class ConnectionManager {
       statementCache === undefined || statementCache === false
         ? undefined
         : new StatementCache(statementCache);
-    this.#copies = new CopyRunner(() => this.acquire(), logger, errors);
+    this.#copies = this.#copyRunner();
     this.#router = new ReplicaRouter(
       ConnectionManager.#pool(config),
       readConfigs.map((readConfig) => ConnectionManager.#pool(readConfig)),
@@ -73,7 +87,9 @@ export class ConnectionManager {
    * @returns Rows, row count and command.
    */
   async execute(query: CompiledQuery, options: ExecuteOptions = {}): Promise<QueryResult> {
-    const client = options.client ?? (await this.#acquire(this.#router.pool(options.route)));
+    const client =
+      options.client ??
+      (await this.getConnection({ type: options.route === 'read' ? 'read' : 'write' }));
     const logged = this.#logger.enabled(options);
     const started = logged ? performance.now() : 0;
     try {
@@ -86,18 +102,53 @@ export class ConnectionManager {
       throw this.#errors.mapQueryError(error, { sql: query.text, parameters: query.values });
     } finally {
       if (options.client === undefined) {
-        client.release();
+        await this.releaseConnection(client);
       }
     }
   }
 
   /**
-   * Acquires a writer connection (e.g. for a transaction); release it when done.
+   * Acquires a pooled connection: the writer, or the next read replica for `type: 'read'` when
+   * replicas are configured and `useMaster` is not set. Every acquisition of the instance goes
+   * through this method, looked up on the manager at call time, so it can be replaced to route
+   * connections (Sequelize v6 `connectionManager.getConnection`).
    *
-   * @returns Pooled client.
+   * @param options - Replica selection and transaction id.
+   * @returns Pooled client; pass it to {@link ConnectionManager.releaseConnection} when done.
+   * @throws ConnectionAcquireTimeoutError when the pool is exhausted for `pool.acquire` milliseconds.
+   * @throws ConnectionError and its subclasses when a connection cannot be opened.
+   *
+   * @example
+   * ```ts
+   * const manager = sequelize.connectionManager;
+   * const connection = await manager.getConnection({ type: 'write' });
+   * try {
+   *   await connection.query('SELECT 1');
+   * } finally {
+   *   await manager.releaseConnection(connection);
+   * }
+   * ```
    */
-  acquire(): Promise<Client> {
-    return this.#acquire(this.#router.writer);
+  getConnection(options: GetConnectionOptions = {}): Promise<Connection> {
+    const read = options.type === 'read' && options.useMaster !== true;
+    return this.#acquire(this.#router.pool(read ? 'read' : 'write'));
+  }
+
+  /**
+   * Returns a connection to the pool that owns it (Sequelize v6 `connectionManager.releaseConnection`).
+   * A connection obtained from another instance's manager is released to that instance's pool.
+   *
+   * @param connection - Connection obtained from `getConnection`.
+   * @returns Nothing.
+   *
+   * @example
+   * ```ts
+   * const connection = await sequelize.connectionManager.getConnection();
+   * await sequelize.connectionManager.releaseConnection(connection);
+   * ```
+   */
+  releaseConnection(connection: Connection): void {
+    connection.release();
   }
 
   /**
@@ -157,6 +208,15 @@ export class ConnectionManager {
     ]);
   }
 
+  #copyRunner(): CopyRunner {
+    return new CopyRunner(
+      () => this.getConnection({ type: 'write' }),
+      (client) => this.releaseConnection(client),
+      this.#logger,
+      this.#errors,
+    );
+  }
+
   #send(
     client: Client,
     query: CompiledQuery,
@@ -193,7 +253,14 @@ export class ConnectionManager {
     };
     client.on('error', onError);
     const release = client.release.bind(client);
+    let released = false;
+    // Releasing twice is a no-op: a routing wrapper written as `owner?.release(c) ?? defaultRelease(c)`
+    // calls both, because v6 style `releaseConnection` returns nothing.
     client.release = (error?: Error | boolean): void => {
+      if (released) {
+        return;
+      }
+      released = true;
       client.removeListener('error', onError);
       release(error ?? broken);
     };
