@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
+- The `retry` option of Sequelize v6 (`max`, `match`, `backoffBase`, `backoffExponent`, `backoffJitter`, `timeout`, `name`, `report`) on the `Sequelize` constructor, on queries and on transactions (merged field by field over the instance option). It repeats a failed query, including the connection acquisition, and the connection acquisition plus `BEGIN` of a transaction, with the matching and backoff rules of `retry-as-promised` (implemented in-house, no new dependency). A statement inside an open transaction, `COMMIT`, COPY and `listen` are not retried; nothing is retried by default or without `max`. The connection error classes carry the v6 names (`SequelizeConnectionRefusedError`, ...), so v6 `match` lists work unchanged. ADR-031
 - `sequelize.connectionManager` with `getConnection(options?)` and `releaseConnection(connection)`, as in Sequelize v6. Every query, finder, write, transaction, `findEach`, `copyFrom` / `copyTo`, advisory lock and `sync` acquires and releases its pooled connection through these two methods, looked up at call time, so apps can reassign them on the instance to route connections (for example per request to one of several databases). A connection from another `Sequelize` instance's manager works on this instance and is released to its own pool; releasing a connection twice is ignored. New types `Connection`, `GetConnectionOptions`, `ConnectionManagerContract`. ADR-030
 
 ## [1.1.0] - 2026-11-22

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { DataTypes, QueryTypes, Sequelize } from 'postgrelize';
+import { ConnectionRefusedError, DataTypes, QueryTypes, Sequelize } from 'postgrelize';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -168,13 +168,55 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     await shard.close();
   }
 
+  let attempts = 0;
+  let retried: unknown;
+  {
+    // #region retry
+    const retry = {
+      max: 5, // attempts, the first one included
+      match: [/SequelizeConnectionRefusedError/, 'ECONNRESET'], // retry only these errors
+      backoffBase: 10, // ms before the first retry; grows by backoffExponent (default 1.1)
+    };
+    const refusing = new Sequelize({
+      database,
+      username,
+      password,
+      host,
+      port,
+      logging: false,
+      dialectOptions: sequelize.options.dialectOptions,
+      retry, // every query and transaction start of this instance
+    });
+
+    // Simulate a database that refuses the first two connections.
+    const manager = refusing.connectionManager;
+    const getConnection = manager.getConnection.bind(manager);
+    manager.getConnection = async (options) => {
+      attempts += 1;
+      if (attempts <= 2) {
+        throw new ConnectionRefusedError(new Error('connect ECONNREFUSED'));
+      }
+      return getConnection(options);
+    };
+
+    retried = await refusing.query('SELECT 1 AS one', { type: QueryTypes.SELECT, plain: true });
+    // retried: { one: 1 }, attempts: 3
+
+    // A query can override the instance setting; a statement inside a transaction is never retried.
+    await refusing.query('SELECT 1', { retry: { max: 2 } });
+    await refusing.close();
+    // #endregion retry
+  }
+
   if (
     JSON.stringify(received) !== '["jobs: {\\"id\\":1}","jobs: export queued"]' ||
     JSON.stringify(user) !== '{"id":"42"}' ||
     busy ||
     !free ||
     order.join(',') !== 'first start,first end,second' ||
-    routed.join(',') !== ',shard-b,shard-b'
+    routed.join(',') !== ',shard-b,shard-b' ||
+    attempts !== 4 ||
+    JSON.stringify(retried) !== '{"one":1}'
   ) {
     throw new Error(
       `sessions example: unexpected result ${JSON.stringify([received, user, order, routed])}`,

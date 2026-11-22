@@ -5,6 +5,7 @@ import type {
   ExecuteOptions,
 } from '../connection/connection-manager.ts';
 import type { LoggingFunction } from '../connection/options.ts';
+import type { RetryOptions, RetryRunner } from '../connection/retry.ts';
 import { transactionScope } from './transaction-runner.ts';
 import type { DeferrableValue } from '../ddl/ddl-types.ts';
 import { AdvisoryLocks, type AdvisoryLockKey } from './advisory-locks.ts';
@@ -61,6 +62,12 @@ export type TransactionOptions = Readonly<{
   settings?: Readonly<Record<string, string | number | boolean>>;
   /** SQL logger for transaction statements. */
   logging?: LoggingFunction | false;
+  /**
+   * Retries acquiring the connection and `BEGIN` (and the statements that follow it, up to the
+   * first user statement) when they fail, merged over the instance `retry` option (Sequelize v6).
+   * Ignored for savepoints and for statements inside the transaction. See {@link RetryOptions}.
+   */
+  retry?: RetryOptions;
 }>;
 
 /**
@@ -103,6 +110,7 @@ export class Transaction {
   readonly #connections: ConnectionManager;
   readonly #advisoryLocks: AdvisoryLocks;
   readonly #statements: TransactionStatements;
+  readonly #retries: RetryRunner | undefined;
   #client: Client | undefined;
   #afterCommit: readonly ((transaction: Transaction) => unknown)[] = [];
 
@@ -111,9 +119,15 @@ export class Transaction {
    *
    * @param connections - Connection manager of the owning `Sequelize` instance.
    * @param options - Transaction options.
+   * @param retries - Retry settings applied when starting the transaction.
    */
-  constructor(connections: ConnectionManager, options: TransactionOptions = {}) {
+  constructor(
+    connections: ConnectionManager,
+    options: TransactionOptions = {},
+    retries?: RetryRunner,
+  ) {
     this.#connections = connections;
+    this.#retries = retries;
     this.#advisoryLocks = new AdvisoryLocks(connections, () => this.executeOptions());
     this.options = options;
     this.parent = options.transaction ?? undefined;
@@ -145,6 +159,13 @@ export class Transaction {
 
   /** @internal */
   async begin(): Promise<this> {
+    await (this.parent === undefined && this.#retries !== undefined
+      ? this.#retries.run(() => this.#start(), this.options.retry)
+      : this.#start());
+    return this;
+  }
+
+  async #start(): Promise<void> {
     if (this.parent === undefined) {
       this.#client = await this.#connections.getConnection({ type: 'write', uuid: this.id });
     }
@@ -156,7 +177,6 @@ export class Transaction {
       await this.#abortBegin();
       throw error;
     }
-    return this;
   }
 
   /**

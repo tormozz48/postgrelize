@@ -1,5 +1,6 @@
 import type { PoolConfig } from 'pg';
 import type { HooksOption } from '../hooks/hooks.ts';
+import type { RetryOptions } from './retry.ts';
 
 /** Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms. */
 export type LoggingFunction = (sql: string, timingOrOptions?: unknown) => void;
@@ -148,6 +149,14 @@ export type SequelizeOptions = Readonly<{
    * Default `false`.
    */
   minifyAliases?: boolean;
+  /**
+   * Retries failed queries and transaction starts (Sequelize v6 `retry`, backed by the same rules as
+   * `retry-as-promised`). Applies to connection acquisition and query execution of `query`, finders
+   * and writes, and to acquiring the connection and `BEGIN` of a transaction; never to a statement
+   * inside an open transaction (PostgreSQL aborts it) or to COPY. A per-query or per-transaction
+   * `retry` option is merged over it. Off by default.
+   */
+  retry?: RetryOptions;
   /** Minimum IN-list length compiled to `= ANY($n)`. Default 100. PostgreSQL extension. */
   inAsAnyThreshold?: number;
   /**
