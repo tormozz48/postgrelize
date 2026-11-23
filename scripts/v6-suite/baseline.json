@@ -643,13 +643,7 @@
     },
     "test/integration/transaction.test.js": {
       "failing": [
-        "[POSTGRES] Transaction does not allow queries after commit",
-        "[POSTGRES] Transaction does not allow queries immediately after commit call",
-        "[POSTGRES] Transaction does not allow queries immediately after rollback call",
         "[POSTGRES] Transaction should not rollback if connection was not acquired",
-        "[POSTGRES] Transaction should throw an error if an object is passed to afterCommit",
-        "[POSTGRES] Transaction should throw an error if null is passed to afterCommit",
-        "[POSTGRES] Transaction should throw an error if undefined is passed to afterCommit",
         "[POSTGRES] Transaction works even if a transaction: null option is passed",
         "[POSTGRES] Transaction works even if a transaction: undefined option is passed"
       ]
