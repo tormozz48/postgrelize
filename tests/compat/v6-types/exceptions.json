@@ -270,7 +270,7 @@
       "file": "model.ts",
       "code": "TS2554",
       "message": "Expected 1 arguments, but got 0.",
-      "count": 15,
+      "count": 14,
       "cause": "expect-type-mismatch"
     },
     {
@@ -305,13 +305,6 @@
       "file": "model.ts",
       "code": "TS7023",
       "message": "'multiply' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly",
-      "count": 1,
-      "cause": "model-typing-misc"
-    },
-    {
-      "file": "model.ts",
-      "code": "TS7053",
-      "message": "Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'Number'.",
       "count": 1,
       "cause": "model-typing-misc"
     },
