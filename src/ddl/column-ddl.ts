@@ -91,8 +91,8 @@ export class ColumnDdl {
     if (value === undefined || column.autoIncrement || column.generated !== undefined) {
       return undefined;
     }
-    if (value instanceof DefaultValueGenerator) {
-      return value.key === 'NOW' ? 'now()' : undefined;
+    if (value instanceof DefaultValueGenerator || typeof value === 'function') {
+      return value instanceof DefaultValueGenerator && value.key === 'NOW' ? 'now()' : undefined;
     }
     if (value instanceof SqlExpression) {
       return sqlLiteral.inlineExpr(noContext.toExpr(value));

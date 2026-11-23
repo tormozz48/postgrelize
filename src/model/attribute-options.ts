@@ -92,7 +92,7 @@ export type AttributeOptions = Readonly<{
   /** Whether `NULL` is allowed.
    * @defaultValue true */
   allowNull?: boolean;
-  /** Default value: a literal value, an expression, or `DataTypes.NOW` / `DataTypes.UUIDV4`. */
+  /** Default value: a literal value, an expression, `DataTypes.NOW` / `DataTypes.UUIDV4`, or a function called once per new row (client-side only, never part of the DDL). */
   defaultValue?: unknown;
   /** Part of the primary key. Without any primary key, an `id` attribute is added.
    * @defaultValue false */
