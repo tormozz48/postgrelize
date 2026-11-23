@@ -354,3 +354,7 @@ export {
   byKey,
   bulk,
 };
+
+type UnionA = { id: number; type: 'a' | 'b'; a?: string };
+type UnionB = { id: number; type: 'c'; b?: string };
+export const whereOverUnionModel: WhereOptions<UnionA | UnionB> = { type: ['a', 'c'] };
