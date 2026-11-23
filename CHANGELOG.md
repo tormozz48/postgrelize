@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-23
+
 ### Changed
 
 - Finder `replacements` (`literal()` with `:name` / `?` in `findAll`, `count`, `findByPk`, `update`, ...) are written into the SQL as escaped literals like Sequelize v6, instead of one bound parameter per occurrence; a placeholder used in `SELECT` and `GROUP BY` now produces identical expressions. Narrow exception to ADR-002, extends ADR-036 (ADR-037).
@@ -381,7 +383,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/tormozz48/postgrelize/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/tormozz48/postgrelize/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...v1.3.0
