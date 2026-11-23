@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference); 1.4.0 in release (2026-11-23, G5 parts 3–9: hooks, cascade hooks, sequelize.query, where guards)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference); 1.4.0 released (2026-11-23, G5 parts 3–9: hooks, cascade hooks, sequelize.query, where guards)
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
@@ -206,6 +206,10 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 ## Release 1.1.0 (2026-11-22, released)
 - S19: Sequelize v6 parity found by migrating a production project; additive only, so a minor bump. Release PR `chore/release-1.1.0`; released on the maintainer's go.
 - Released: tag `v1.1.0` on merge commit `2d610c8` (PR #109), `release.yml` run 45005493053. Local preflight failed twice in `tests/integration/security/types.test.ts` under machine load (52–78); the maintainer approved releasing on green GitHub CI. First publish attempt failed `E403 OIDC permission denied` (npm Trusted Publisher config); after the maintainer fixed it, `gh run rerun --failed` published `postgrelize@1.1.0` (`latest`, provenance), mirror and GitHub Release v1.1.0 green. Verified: `npm view`, clean install, ESM and CJS import (153 exports). npm showed 1.0.0 for about a minute after the job went green (processing delay). Bench gate not run (maintainer declined).
+
+## Release 1.4.0 (2026-11-23, released)
+
+Tag `v1.4.0` on merge commit `bbf066a` (PR #142), release.yml run 45153859514: ci gate, npm publish with provenance, GitHub Packages mirror and GitHub Release all green. `npm view postgrelize` shows `1.4.0` (`latest`, visible after a short registry delay); clean install imports in ESM (155 exports, `default` is the class) and CJS (constructable `Sequelize`). Contents: G5 parts 3–9 (hook semantics, cascade hooks, `sequelize.query` statements and messages, CLS in hooks, v6 guards for `update`/`destroy` without `where`, undefined `where` values, ENUM without values; breaking only for code relying on the old behaviour), `InitOptions.name`, `findAndCountAll({ group })`, type parity III. Not included: #140 (VIRTUAL attributes). Bench gate not run (query code changed since 1.3.0).
 
 ## Release 1.3.0 (2026-11-22, released)
 
