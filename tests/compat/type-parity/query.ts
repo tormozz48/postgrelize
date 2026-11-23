@@ -45,3 +45,12 @@ export async function queries(): Promise<void> {
   await sequelize.query('select 1', { retry: { max: 2 } });
   void options;
 }
+
+export async function updateReturning(): Promise<void> {
+  const [, rows] = await Entry.update({}, { where: {}, returning: true });
+  const [first] = rows;
+  void first;
+  const plain = await Entry.update({}, { where: {} });
+  const [count]: [number] = plain;
+  void count;
+}

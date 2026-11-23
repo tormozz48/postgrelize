@@ -38,6 +38,18 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `dialectModule` constructor option, accepted for Sequelize v6 type compatibility (postgrelize always loads `pg` and ignores it).
+
+### Fixed
+
+- `Model.count({ group })` is typed as `GroupedCountResultItem[]` (v6 overloads), so `rows.map((r) => r.count)` type-checks; the ungrouped call stays `number`. `CountWithOptions` is exported. Runtime unchanged. Part of the Sequelize v6 type-parity work (ADR-032).
+- Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
+- `Model.update` types follow v6: with `returning: true` the result is `[affectedCount, affectedRows]` (rows no longer optional), otherwise `[affectedCount]`. Part of the Sequelize v6 type-parity work (ADR-032).
+- `Order` is `Fn | Col | Literal | OrderItem[]` as in Sequelize v6 instead of collapsing to `unknown`, so `const order: Order = []; order.push(['id', 'ASC'])` type-checks. Part of the Sequelize v6 type-parity work (ADR-032).
+- `WhereOptions<A | B>` no longer distributes over a union model: like v6 it keys on the attributes the members share, so `{ type: ['a', 'c'] }` type-checks when `type` is `'a' | 'b'` on `A` and `'c'` on `B`. Part of the Sequelize v6 type-parity work (ADR-032).
+
 ## [1.4.0] - 2026-11-23
 
 Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` statements and error messages, and the v6 guards against writes without `where`; breaking only for code that relied on those guards missing.
@@ -55,6 +67,7 @@ Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` 
 ### Fixed
 
 - A model that declares `createdAt` / `updatedAt` itself with `allowNull: false` (typically with a custom `field`) can create records: the timestamps of a new record are set before validation, as in Sequelize v6; before, `create`, `save` and `bulkCreate` failed with `notNull Violation: createdAt cannot be null`. Found by the v6 suite harness; differential test.
+- Association API as in Sequelize v6: defining an association whose alias is the name of an attribute of the source model throws `Naming collision between attribute 'x' and association 'x' on model M. To remedy this, change either foreignKey or as in your association definition` (it used to shadow the attribute); `hasMany.get(instances)` and `hasOne.get(instances)` load the rows of several source instances with one query and return an object keyed by the source key (arrays for `hasMany`, an instance or `null` for `hasOne`). Found by the v6 suite harness; differential tests.
 - Guards of Sequelize v6 against writes and reads that match more than intended: `Model.update` without `where` throws `Missing where attribute in the options parameter`; `Model.destroy` without `where` (and without `truncate: true`) throws `Missing where or truncate attribute in the options parameter of model.destroy.` (both used to update or delete every row); a `where` attribute whose value is `undefined` (a missing variable) throws `WHERE parameter "x" has invalid "undefined" value` in every query that takes a `where`, instead of silently matching nothing; an `ENUM` attribute without values throws `Values for ENUM have not been defined.` when the model is defined. Breaking only for code that relied on the old behaviour (an update or destroy without `where`, an undefined value in a `where`); `where: {}` is still allowed. Found by the v6 suite harness; differential tests.
 - With `Sequelize.useCLS`, model hooks (`beforeCreate`, `afterFind`, `beforeBulkUpdate`, `beforeCount`, `beforeDestroy`, `beforeRestore`, `beforeUpsert`, ...) receive the current transaction in the `transaction` option they are given, as in Sequelize v6; the queries of the operation already used it. Found by the v6 suite harness; differential test.
 - `sequelize.query` as in Sequelize v6: a statement given as an object (`{ query, values }`, `{ query, bind }`, or a class instance with these properties) works; conflicting `replacements` / `bind` (also `sql.values`, `sql.bind`) are rejected with the v6 messages ("Both `replacements` and `bind` cannot be set at the same time", ...); `replacements` that is neither an array nor a plain object, a missing named replacement (`Named replacement ":x" has no entry in the replacement map.`) and a missing bind parameter (`Named bind parameter "$x" has no value in the given object.`, also for `$0` and `$01` of an array) use the v6 error messages; integer and boolean replacements are sent with a cast (`$1::int4`, `$2::boolean`) so that `select :n as n` returns a number, as v6 does by writing the value into the SQL (the value stays a bound parameter). The generated SQL text of replacements changes accordingly. Found by the v6 suite harness; differential tests.
