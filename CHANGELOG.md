@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- `Order` is `Fn | Col | Literal | OrderItem[]` as in Sequelize v6 instead of collapsing to `unknown`, so `const order: Order = []; order.push(['id', 'ASC'])` type-checks. Part of the Sequelize v6 type-parity work (ADR-032).
 - `WhereOptions<A | B>` no longer distributes over a union model: like v6 it keys on the attributes the members share, so `{ type: ['a', 'c'] }` type-checks when `type` is `'a' | 'b'` on `A` and `'c'` on `B`. Part of the Sequelize v6 type-parity work (ADR-032).
 
 ## [1.4.0] - 2026-11-23
