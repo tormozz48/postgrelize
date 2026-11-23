@@ -252,7 +252,7 @@ export class SequelizeBase {
   }
 
   /**
-   * Runs a raw SQL statement and shapes the result by `options.type`. Replacements are bound as parameters (never inlined).
+   * Runs a raw SQL statement and shapes the result by `options.type`. Replacements are escaped into the SQL text like Sequelize v6 (so one call can run several statements); `bind` values are sent as parameters.
    * The SQL text itself is sent as is: never build it from user input — pass user values through
    * `replacements` or `bind`.
    *
