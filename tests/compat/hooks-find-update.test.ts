@@ -33,10 +33,10 @@ describe('compat: hooks around find and update', () => {
       User.beforeUpdate((user: { set(key: string, value: unknown): void }) =>
         user.set('name', 'hooked'),
       );
-      const [count, rows] = await User.update(
+      const [count, rows] = (await User.update(
         { n: 10 },
         { where: { n: 1 }, individualHooks: true },
-      );
+      )) as unknown as [number, unknown[]];
       const stored = await User.findAll({ order: [['id', 'ASC']] });
       return {
         count,
@@ -58,10 +58,10 @@ describe('compat: hooks around find and update', () => {
           if (user.get('id') === 1) user.set('n', user.get('n') + 3);
         },
       );
-      const [count, rows] = await User.update(
+      const [count, rows] = (await User.update(
         { n: 10 },
         { where: { n: 1 }, individualHooks: true },
-      );
+      )) as unknown as [number, unknown[]];
       return {
         count,
         rows: (rows as { get(key: string): unknown }[]).map((row) => row.get('n')).toSorted(),

@@ -205,11 +205,6 @@
       "note": "MySQL / other-dialect or v6 constructor-internal type; postgrelize is PostgreSQL only"
     },
     {
-      "name": "CountWithOptions",
-      "category": "tracked",
-      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
-    },
-    {
       "name": "CreateDatabaseOptions",
       "category": "not-planned",
       "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
