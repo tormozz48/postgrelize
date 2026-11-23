@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-23
+
+Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` statements and error messages, and the v6 guards against writes without `where`; breaking only for code that relied on those guards missing.
+
 ### Added
 
 - Cascade hooks, as in Sequelize v6: an association with `onDelete: 'CASCADE'` and `hooks: true` loads its rows and destroys each with its own `beforeDestroy` / `afterDestroy` hooks when the owner instance is destroyed (a real delete, not the soft delete of a paranoid model); an error in a hook stops the destroy. This replaces the documented limitation that `hooks` was accepted and ignored. `association.options` is public, as in v6. Found by the v6 suite harness; differential tests.
@@ -51,6 +55,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 ### Fixed
 
 - VIRTUAL attributes as in Sequelize v6: `Model.update` never writes a virtual attribute (it used to fail with `column "x" does not exist`) and, with `sideEffects` (default `true`), also updates the attributes the setter of a virtual attribute changes (`sideEffects: false` turns this off); `DataTypes.VIRTUAL(type, ['a', 'b'])` dependencies are used: a query that selects the virtual attribute selects `a` and `b` instead of a non-existent column. Found by the v6 suite harness; differential tests.
+- Guards of Sequelize v6 against writes and reads that match more than intended: `Model.update` without `where` throws `Missing where attribute in the options parameter`; `Model.destroy` without `where` (and without `truncate: true`) throws `Missing where or truncate attribute in the options parameter of model.destroy.` (both used to update or delete every row); a `where` attribute whose value is `undefined` (a missing variable) throws `WHERE parameter "x" has invalid "undefined" value` in every query that takes a `where`, instead of silently matching nothing; an `ENUM` attribute without values throws `Values for ENUM have not been defined.` when the model is defined. Breaking only for code that relied on the old behaviour (an update or destroy without `where`, an undefined value in a `where`); `where: {}` is still allowed. Found by the v6 suite harness; differential tests.
+- With `Sequelize.useCLS`, model hooks (`beforeCreate`, `afterFind`, `beforeBulkUpdate`, `beforeCount`, `beforeDestroy`, `beforeRestore`, `beforeUpsert`, ...) receive the current transaction in the `transaction` option they are given, as in Sequelize v6; the queries of the operation already used it. Found by the v6 suite harness; differential test.
 - `sequelize.query` as in Sequelize v6: a statement given as an object (`{ query, values }`, `{ query, bind }`, or a class instance with these properties) works; conflicting `replacements` / `bind` (also `sql.values`, `sql.bind`) are rejected with the v6 messages ("Both `replacements` and `bind` cannot be set at the same time", ...); `replacements` that is neither an array nor a plain object, a missing named replacement (`Named replacement ":x" has no entry in the replacement map.`) and a missing bind parameter (`Named bind parameter "$x" has no value in the given object.`, also for `$0` and `$01` of an array) use the v6 error messages; integer and boolean replacements are sent with a cast (`$1::int4`, `$2::boolean`) so that `select :n as n` returns a number, as v6 does by writing the value into the SQL (the value stays a bound parameter). The generated SQL text of replacements changes accordingly. Found by the v6 suite harness; differential tests.
 - Hook semantics of Sequelize v6: `individualHooks` of `update`, `destroy` and `restore` run the hook for every row at once (`Promise.all`; the first rejection ends the call) instead of one row after the other; a `beforeDestroy` hook that sets a VIRTUAL attribute no longer breaks the soft delete (virtual attributes are never written by `save`); `sequelize.options.hooks = {}` replaces the global hooks of the instance; `sequelize.modelManager` (`models`, `getModel`, `addModel`, `removeModel`). Differential tests.
 - `InitOptions.name` (`{ singular, plural }`) is applied: it gives the default alias and foreign key of `belongsTo`, `hasOne`, `hasMany` and `belongsToMany` and the accessor names; it was ignored, so `Agent.belongsTo(User)` with `name: { singular: 'user' }` looked for the column `UserId` instead of `userId` ([#133](https://github.com/tormozz48/postgrelize/pull/133)).
@@ -331,7 +337,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...v1.1.0

@@ -127,4 +127,50 @@ describe('Sequelize.useCLS(namespace) matches sequelize v6', () => {
     expectSameError(SETUP, async (lib) => {
       lib.Sequelize.useCLS({} as never);
     }));
+
+  it('hooks receive the current transaction in their options', () =>
+    expectSameResult(
+      'CREATE TABLE hooked (id serial PRIMARY KEY, label text)',
+      async (lib, sequelize) => {
+        useNamespace(lib);
+        const Hooked = sequelize.define(
+          'Hooked',
+          { label: lib.DataTypes.STRING },
+          { tableName: 'hooked', timestamps: false },
+        );
+        const seen: Record<string, boolean> = {};
+        let current: unknown;
+        const record =
+          (name: string) =>
+          (...args: unknown[]) => {
+            const options = args.at(-1) as { transaction?: unknown } | undefined;
+            seen[name] = options?.transaction === current;
+          };
+        const hooks = Hooked as unknown as Record<
+          string,
+          (fn: (...args: unknown[]) => void) => void
+        >;
+        for (const name of [
+          'beforeCreate',
+          'afterCreate',
+          'beforeFind',
+          'afterFind',
+          'beforeUpdate',
+          'beforeBulkUpdate',
+          'beforeDestroy',
+          'beforeCount',
+        ]) {
+          hooks[name]?.(record(name));
+        }
+        await sequelize.transaction(async (t) => {
+          current = t;
+          const row = await Hooked.create({ label: 'a' });
+          await Hooked.findAll();
+          await Hooked.count();
+          await Hooked.update({ label: 'b' }, { where: {}, individualHooks: true });
+          await row.destroy();
+        });
+        return seen;
+      },
+    ));
 });
