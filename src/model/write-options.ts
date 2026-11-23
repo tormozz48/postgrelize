@@ -17,10 +17,10 @@ import type { WhereOptions } from './types.ts';
  * await user.save(opts);
  * ```
  */
-export type SaveOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Attributes to save; others are ignored. Default: all changed attributes. */
-    fields?: readonly (keyof T & string)[];
+export type SaveOptions<T = Values> = QueryOptionsBase & {
+  /** Attributes to save; others are ignored. Default: all changed attributes. Mutable so hooks can adjust it, as in v6. */
+  fields?: readonly (keyof T & string)[];
+} & Readonly<{
     /** Do not update `updatedAt`.
      * @defaultValue false */
     silent?: boolean;
