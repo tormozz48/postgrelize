@@ -265,8 +265,7 @@
     },
     "test/integration/instance/save.test.js": {
       "failing": [
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used",
-        "[POSTGRES] Instance save with custom timestamp options works with `allowNull: false` on createdAt and updatedAt columns"
+        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used"
       ]
     },
     "test/integration/instance/to-json.test.js": {
@@ -280,8 +279,7 @@
         "[POSTGRES] Instance update doesn't update primary keys or timestamps",
         "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
         "[POSTGRES] Instance update should only save passed attributes",
-        "[POSTGRES] Instance update should save attributes affected by setters",
-        "[POSTGRES] Instance update should update timestamps with milliseconds"
+        "[POSTGRES] Instance update should save attributes affected by setters"
       ]
     },
     "test/integration/instance/values.test.js": {
@@ -344,16 +342,10 @@
     },
     "test/integration/model/attributes/field.test.js": {
       "failing": [
-        "[POSTGRES] Model attributes field decrement should work",
-        "[POSTGRES] Model attributes field field and attribute name is the same save should work",
-        "[POSTGRES] Model attributes field field names that are the same as property names should create, update, and read correctly",
-        "[POSTGRES] Model attributes field increment should work",
         "[POSTGRES] Model attributes field should support renaming of sequelize method fields",
         "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
         "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`",
-        "[POSTGRES] Model attributes field should work with where on includes for find",
-        "[POSTGRES] Model attributes field should work with where on includes for findAll",
-        "[POSTGRES] Model attributes field sum should work"
+        "[POSTGRES] Model attributes field should work with where on includes for find"
       ]
     },
     "test/integration/model/attributes/types.test.js": {
