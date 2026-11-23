@@ -318,7 +318,7 @@ const found = (await sequelize.query('SELECT id FROM llm_users WHERE email = :em
 const ordered = await User.findAll({ order: [literal('"email" DESC NULLS LAST')] });
 ```
 
-`sequelize.query(sql, { replacements | bind, type: QueryTypes.SELECT, plain, raw, transaction })`. `replacements` use `:name` or `?`, `bind` uses `$1` / `$name`. Set `type: QueryTypes.SELECT` to get the rows array directly.
+`sequelize.query(sql, { replacements | bind, type: QueryTypes.SELECT, plain, raw, transaction })`. `replacements` use `:name` or `?` and are escaped into the SQL text (several `;`-separated statements work, as in v6), `bind` uses `$1` / `$name` and is sent as parameters. Set `type: QueryTypes.SELECT` to get the rows array directly.
 
 ## Schema, sync, migrations
 
@@ -412,7 +412,7 @@ Source of truth: <https://tormozz48.github.io/postgrelize/postgresql-coverage> (
 
 ## Security rules
 
-- **Values are always bound** (`$1..$n`) in `where`, `create`, `update`, `upsert`, `insert`, `merge`, `replacements`, `bind`, `NOTIFY` payloads, advisory keys and `settings`. Never concatenate user input into SQL text.
+- **Values are bound** (`$1..$n`) in `where`, `create`, `update`, `upsert`, `insert`, `merge`, finder `replacements`, `bind`, `NOTIFY` payloads, advisory keys and `settings`. Never concatenate user input into SQL text.
 - **Identifiers** (column, table, alias, schema, channel names) are quoted. Operators, function names, cast types, lock strengths, isolation levels and `order` directions are checked against allowlists and throw on anything else. If a column name comes from a user, map it through your own allowlist anyway.
 - **`literal()`, raw `sequelize.query` text and string `where` are raw by design** and not escaped. Use them only with constants you wrote.
 

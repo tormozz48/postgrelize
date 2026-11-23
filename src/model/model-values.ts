@@ -192,10 +192,13 @@ export class ModelValues {
   }
 
   #defaultValueOf(attribute: AttributeDefinition): unknown {
-    return attribute.defaultValue instanceof DefaultValueGenerator
-      ? attribute.defaultValue.generate()
-      : attribute.defaultValue instanceof SqlExpression
-        ? attribute.defaultValue
-        : structuredClone(attribute.defaultValue);
+    const value = attribute.defaultValue;
+    return value instanceof DefaultValueGenerator
+      ? value.generate()
+      : typeof value === 'function'
+        ? (value as () => unknown)()
+        : value instanceof SqlExpression
+          ? value
+          : structuredClone(value);
   }
 }

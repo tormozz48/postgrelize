@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Changed
+
+- `sequelize.query` writes `replacements` (`:name` and `?`) into the SQL text as escaped literals through the shared `SqlLiteral` escaper, as Sequelize v6 does, instead of binding them as `$n` parameters. A query with several `;`-separated statements and replacements now runs (before: `cannot insert multiple commands into a prepared statement`). `bind` and the replacements of the finders stay bound; a string with a NUL character throws. This is a deliberate, narrow exception to always-bound values; payload and property tests cover the escaper. v6 gap H, ADR-036.
+
 ### Added
 
 - `dialectModule` constructor option, accepted for Sequelize v6 type compatibility (postgrelize always loads `pg` and ignores it).
@@ -45,6 +49,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 ### Fixed
 
 - An explicit `undefined` no longer overrides an attribute default: `Model.build({ s: undefined })`, `create` and `upsert` use `defaultValue` like Sequelize v6 instead of failing a `NOT NULL` constraint.
+- A function `defaultValue` is called once per new row and its result used, as in Sequelize v6 (`build`, `create`, `bulkCreate`, `findOrCreate`); it threw `DataCloneError` before. `sync` no longer renders the function source as a `DEFAULT` clause.
 - `Model.count({ group })` is typed as `GroupedCountResultItem[]` (v6 overloads), so `rows.map((r) => r.count)` type-checks; the ungrouped call stays `number`. `CountWithOptions` is exported. Runtime unchanged. Part of the Sequelize v6 type-parity work (ADR-032).
 - Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
 - `Model.update` types follow v6: with `returning: true` the result is `[affectedCount, affectedRows]` (rows no longer optional), otherwise `[affectedCount]`. Part of the Sequelize v6 type-parity work (ADR-032).
@@ -67,6 +72,10 @@ Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` 
 
 ### Fixed
 
+- VIRTUAL attributes as in Sequelize v6: `Model.update` never writes a virtual attribute (it used to fail with `column "x" does not exist`) and, with `sideEffects` (default `true`), also updates the attributes the setter of a virtual attribute changes (`sideEffects: false` turns this off); `DataTypes.VIRTUAL(type, ['a', 'b'])` dependencies are used: a query that selects the virtual attribute selects `a` and `b` instead of a non-existent column. Found by the v6 suite harness; differential tests.
+- Finished transactions as in Sequelize v6: a query on a transaction that was committed or rolled back (or whose `commit()` / `rollback()` is already running) is rejected with `commit|rollback has been called on this transaction(<id>), you can no longer use it. (The rejected query is attached as the 'sql' property of this error)` and the error has `sql`, instead of `Transaction has not started` or running; `transaction.afterCommit(fn)` throws `"fn" must be a function` for anything else. Found by the v6 suite harness; differential tests.
+- `instance.destroy()` of a paranoid model (soft delete) and `instance.restore()` resolve with the instance, as in Sequelize v6 (they resolved with nothing); a hard `destroy()` still resolves with nothing (v6 resolves with `[]`). The declared type stays `Promise<void>`. Found by the v6 suite harness; differential test.
+- A model that declares `createdAt` / `updatedAt` itself with `allowNull: false` (typically with a custom `field`) can create records: the timestamps of a new record are set before validation, as in Sequelize v6; before, `create`, `save` and `bulkCreate` failed with `notNull Violation: createdAt cannot be null`. Found by the v6 suite harness; differential test.
 - Association API as in Sequelize v6: defining an association whose alias is the name of an attribute of the source model throws `Naming collision between attribute 'x' and association 'x' on model M. To remedy this, change either foreignKey or as in your association definition` (it used to shadow the attribute); `hasMany.get(instances)` and `hasOne.get(instances)` load the rows of several source instances with one query and return an object keyed by the source key (arrays for `hasMany`, an instance or `null` for `hasOne`). Found by the v6 suite harness; differential tests.
 - Guards of Sequelize v6 against writes and reads that match more than intended: `Model.update` without `where` throws `Missing where attribute in the options parameter`; `Model.destroy` without `where` (and without `truncate: true`) throws `Missing where or truncate attribute in the options parameter of model.destroy.` (both used to update or delete every row); a `where` attribute whose value is `undefined` (a missing variable) throws `WHERE parameter "x" has invalid "undefined" value` in every query that takes a `where`, instead of silently matching nothing; an `ENUM` attribute without values throws `Values for ENUM have not been defined.` when the model is defined. Breaking only for code that relied on the old behaviour (an update or destroy without `where`, an undefined value in a `where`); `where: {}` is still allowed. Found by the v6 suite harness; differential tests.
 - With `Sequelize.useCLS`, model hooks (`beforeCreate`, `afterFind`, `beforeBulkUpdate`, `beforeCount`, `beforeDestroy`, `beforeRestore`, `beforeUpsert`, ...) receive the current transaction in the `transaction` option they are given, as in Sequelize v6; the queries of the operation already used it. Found by the v6 suite harness; differential test.

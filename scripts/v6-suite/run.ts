@@ -168,7 +168,11 @@ const main = async (): Promise<number> => {
       ? (JSON.parse(readFileSync(BASELINE, 'utf8')) as Baseline)
       : { version: merged.version, files: {} };
     const kept = Object.fromEntries(
-      Object.entries(previous.files).filter(([file]) => !file.startsWith(`test/${kind}/`)),
+      // with a filter only the files of this run are replaced
+      Object.entries(previous.files).filter(
+        ([file]) =>
+          !(file in results) && (filter !== undefined || !file.startsWith(`test/${kind}/`)),
+      ),
     );
     writeFileSync(
       BASELINE,

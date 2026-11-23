@@ -1,3 +1,4 @@
+import { SqlLiteral } from '../ddl/sql-literal.ts';
 import { SqlExpression } from '../expressions/methods.ts';
 import { SqlCompiler, type Chunks, type CompiledQuery } from '../sql/compile.ts';
 import { WhereCompiler } from '../where/where.ts';
@@ -25,18 +26,23 @@ const noContext = new WhereCompiler({ resolve: () => undefined });
 
 const compiler = new SqlCompiler();
 
+const literals = new SqlLiteral();
+
 type TokenContext = Readonly<{
   replacements: Replacements | undefined;
   bind: BindParameters | undefined;
   bindParams: ReadonlyMap<string, Readonly<{ param: unknown }>>;
   /** Leave `$name` and unknown `$n` tokens alone (text that is already parameterized). */
   lenient: boolean;
+  /** Write replacement values into the SQL text as escaped literals instead of binding them (ADR-036). */
+  inline: boolean;
 }>;
 
 /**
  * Converts raw SQL with Sequelize v6 `replacements` and `bind` into a parameterized query.
- * Replacement values are bound as parameters instead of being inlined; string literals,
- * quoted identifiers, comments, dollar-quoted strings and `::` casts are left untouched.
+ * Replacement values of `sequelize.query` are written into the SQL text as escaped literals like v6, so a
+ * text may hold several statements (ADR-036); `bind` values and the replacements of a compiled finder
+ * statement ({@link RawQuery.inject}) stay bound parameters. String literals, quoted identifiers, comments, dollar-quoted strings and `::` casts are left untouched.
  *
  * @internal
  */
@@ -123,8 +129,8 @@ export class RawQuery {
    *
    * @param sql - SQL text with `?` / `:name` replacements and `$1` / `$name` bind parameters.
    * @param options - Replacements and bind parameters.
-   * @returns Query text with `$n` placeholders and its values.
-   * @throws Error for a missing replacement or bind parameter.
+   * @returns Query text with replacements written as literals, `$n` placeholders for bind parameters and their values.
+   * @throws Error for a missing replacement or bind parameter, or a replacement string with a NUL character.
    */
   prepare(
     sql: string,
@@ -133,7 +139,7 @@ export class RawQuery {
     if (options.replacements === undefined && options.bind === undefined) {
       return { text: sql, values: [] };
     }
-    return this.#substitute(sql, options, false);
+    return this.#substitute(sql, options, false, true);
   }
 
   /**
@@ -149,19 +155,21 @@ export class RawQuery {
   inject(query: CompiledQuery, replacements: Replacements | undefined): CompiledQuery {
     return replacements === undefined
       ? query
-      : this.#substitute(query.text, { replacements, bind: query.values }, true);
+      : this.#substitute(query.text, { replacements, bind: query.values }, true, false);
   }
 
   #substitute(
     sql: string,
     options: Readonly<{ replacements?: Replacements; bind?: BindParameters }>,
     lenient: boolean,
+    inline: boolean,
   ): CompiledQuery {
     const ctx: TokenContext = {
       replacements: options.replacements,
       bind: options.bind,
       bindParams: this.#bindChunks(options.bind),
       lenient,
+      inline,
     };
     const matches = [...sql.matchAll(TOKEN)];
     return compiler.finalize([
@@ -183,7 +191,7 @@ export class RawQuery {
     return last === undefined ? sql : sql.slice(last.index + last[0].length);
   }
 
-  #valueChunks(value: unknown): Chunks {
+  #valueChunks(value: unknown, inline: boolean): Chunks {
     if (value instanceof SqlExpression) {
       const compiled = compiler.compileExpr(noContext.toExpr(value));
       if (compiled.values.length > 0) {
@@ -193,14 +201,14 @@ export class RawQuery {
     }
     if (Array.isArray(value)) {
       return value.flatMap((item: unknown, index) =>
-        index === 0 ? this.#valueChunks(item) : [', ', ...this.#valueChunks(item)],
+        index === 0 ? this.#valueChunks(item, inline) : [', ', ...this.#valueChunks(item, inline)],
       );
     }
-    return RawQuery.#typed(value);
+    return inline ? [literals.escape(value)] : RawQuery.#typed(value);
   }
 
-  // v6 writes a number or a boolean into the SQL, where PostgreSQL types it (`select 1 as n` is an
-  // integer); a bare parameter would be typed `text`. The value stays bound, only the cast is added.
+  // Bound finder replacements: v6 writes a number or a boolean into the SQL, where PostgreSQL types it
+  // (`select 1 as n` is an integer); a bare parameter would be typed `text`. Only the cast is added.
   static #typed(value: unknown): Chunks {
     if (typeof value === 'number' && Number.isInteger(value) && Math.abs(value) <= INT4_MAX) {
       return [{ param: value }, '::int4'];
@@ -228,10 +236,13 @@ export class RawQuery {
   #tokenChunks(match: RegExpExecArray, questionIndex: number, ctx: TokenContext): Chunks {
     const [token, , named, bindName] = match;
     if (named !== undefined && ctx.replacements !== undefined && !Array.isArray(ctx.replacements)) {
-      return this.#valueChunks(this.#lookup(ctx.replacements, named, 'replacement'));
+      return this.#valueChunks(this.#lookup(ctx.replacements, named, 'replacement'), ctx.inline);
     }
     if (token === '?' && Array.isArray(ctx.replacements)) {
-      return this.#valueChunks(this.#lookup(ctx.replacements, questionIndex, 'replacement'));
+      return this.#valueChunks(
+        this.#lookup(ctx.replacements, questionIndex, 'replacement'),
+        ctx.inline,
+      );
     }
     return bindName !== undefined && ctx.bind !== undefined
       ? this.#bindTokenChunks(token, bindName, ctx.bind, ctx)

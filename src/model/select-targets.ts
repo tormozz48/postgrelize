@@ -1,3 +1,4 @@
+import type { VirtualType } from '../data-types/virtual-type.ts';
 import { SqlExpression } from '../expressions/methods.ts';
 import { SqlAst, type ExprNode, type OrderNode } from '../sql/ast.ts';
 import { OrderDirection } from '../sql/order.ts';
@@ -44,9 +45,23 @@ export class SelectTargets {
     if (attributes === undefined || !Array.isArray(attributes)) {
       return this.#specColumns(definition, alias, ctx, (attributes ?? {}) as AttributeSpec);
     }
-    return (attributes as readonly (string | readonly [unknown, string])[]).map((item) =>
+    return SelectTargets.#withDependencies(definition, attributes).map((item) =>
       this.#attributeItem(definition, alias, ctx, item),
     );
+  }
+
+  // A VIRTUAL attribute has no column: selecting it selects the attributes it depends on (v6).
+  static #withDependencies(
+    definition: ModelDefinition,
+    attributes: readonly unknown[],
+  ): readonly (string | readonly [unknown, string])[] {
+    const list = (attributes as readonly (string | readonly [unknown, string])[]).flatMap(
+      (item) => {
+        const type = typeof item === 'string' ? definition.attributes.get(item)?.type : undefined;
+        return type?.isVirtual === true ? [...((type as VirtualType).dependencies ?? [])] : [item];
+      },
+    );
+    return list.filter((item, index) => typeof item !== 'string' || list.indexOf(item) === index);
   }
 
   /**

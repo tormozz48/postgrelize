@@ -188,9 +188,9 @@ export class InstanceLifecycle {
    *
    * @param instance - Instance.
    * @param options - Destroy options.
-   * @returns Resolves when deleted.
+   * @returns The instance after a soft delete, nothing after a DELETE.
    */
-  destroy(instance: AnyModel, options: InstanceDestroyOptions): Promise<void> {
+  destroy(instance: AnyModel, options: InstanceDestroyOptions): Promise<AnyModel | undefined> {
     return this.#destroyer.destroy(instance, options);
   }
 
@@ -199,13 +199,13 @@ export class InstanceLifecycle {
    *
    * @param instance - Instance.
    * @param options - Query options; `hooks: false` skips restore hooks.
-   * @returns Resolves when restored.
+   * @returns The restored instance.
    * @throws Error when the model is not paranoid.
    */
   restore(
     instance: AnyModel,
     options: QueryOptionsBase & Readonly<{ hooks?: boolean }>,
-  ): Promise<void> {
+  ): Promise<AnyModel> {
     return this.#destroyer.restore(instance, options);
   }
 
