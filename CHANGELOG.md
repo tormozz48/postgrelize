@@ -41,6 +41,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 ### Fixed
 
 - `Model.count({ group })` is typed as `GroupedCountResultItem[]` (v6 overloads), so `rows.map((r) => r.count)` type-checks; the ungrouped call stays `number`. `CountWithOptions` is exported. Runtime unchanged. Part of the Sequelize v6 type-parity work (ADR-032).
+- `WhereOptions<A | B>` no longer distributes over a union model: like v6 it keys on the attributes the members share, so `{ type: ['a', 'c'] }` type-checks when `type` is `'a' | 'b'` on `A` and `'c'` on `B`. Part of the Sequelize v6 type-parity work (ADR-032).
 
 ## [1.4.0] - 2026-11-23
 
