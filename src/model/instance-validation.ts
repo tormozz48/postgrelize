@@ -30,10 +30,10 @@ export class InstanceValidation {
    *
    * @param instance - Instance.
    * @param options - `hooks`, `skip`, `fields`.
-   * @returns Resolves when valid.
+   * @returns The instance, when valid (as v6 does at runtime).
    * @throws ValidationError with all failures.
    */
-  async validate(instance: AnyModel, options: ValidateOptions): Promise<void> {
+  async validate(instance: AnyModel, options: ValidateOptions): Promise<AnyModel> {
     const model = instance.constructor;
     const state = this.#services.registry.state(model);
     const hooks = options.hooks !== false;
@@ -41,17 +41,28 @@ export class InstanceValidation {
     if (hooks) {
       await this.#lifecycle.runHooks(model, 'beforeValidate', instance, options);
     }
-    const items = await this.#failures(instance, state, skip);
-    if (items.length > 0) {
-      const error = new ValidationError(null, items);
-      if (hooks) {
-        await this.#lifecycle.runHooks(model, 'validationFailed', instance, options, error);
-      }
-      throw error;
-    }
+    await this.#throwFailures(instance, skip, options);
     if (hooks) {
       await this.#lifecycle.runHooks(model, 'afterValidate', instance, options);
     }
+    return instance;
+  }
+
+  async #throwFailures(
+    instance: AnyModel,
+    skip: ReadonlySet<string>,
+    options: ValidateOptions,
+  ): Promise<void> {
+    const model = instance.constructor;
+    const items = await this.#failures(instance, this.#services.registry.state(model), skip);
+    if (items.length === 0) {
+      return;
+    }
+    const error = new ValidationError(null, items);
+    if (options.hooks !== false) {
+      await this.#lifecycle.runHooks(model, 'validationFailed', instance, options, error);
+    }
+    throw error;
   }
 
   /**

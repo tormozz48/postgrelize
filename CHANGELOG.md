@@ -38,6 +38,26 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Changed
+
+- Finder `replacements` (`literal()` with `:name` / `?` in `findAll`, `count`, `findByPk`, `update`, ...) are written into the SQL as escaped literals like Sequelize v6, instead of one bound parameter per occurrence; a placeholder used in `SELECT` and `GROUP BY` now produces identical expressions. Narrow exception to ADR-002, extends ADR-036 (ADR-037).
+- `Json` and `json()` take `string | number | boolean | null` as value, as in v6 types.
+- `DataTypeInput` also accepts a raw PostgreSQL type name (`{ type: 'vector(384)' }`), as `DataType` of v6 does.
+
+### Added
+
+- `sequelize.getQueryInterface().queryGenerator.selectQuery(tableName, options, model)` renders finder options to SQL text (values as escaped literals, ends with `;`), as v6; no scope, paranoid filter or hook is applied.
+
+### Fixed
+
+- `get({ plain: true })`, `get()` and `toJSON()` include every attribute with a custom getter, also VIRTUAL ones without a stored value, as in Sequelize v6.
+- `order: [[Model.association, 'id', 'ASC']]` accepts an association instance as the first item (`findAll`, `reload`); it threw `Invalid order direction: id`.
+- `where: { '$user.agent.id$': ... }` with more than two path parts addresses the nested include alias `"user->agent"."id"`, as v6.
+- A finder value beyond the `int4` range (`findByPk(99999999999)`) compares as a `bigint` and finds nothing instead of failing with `out of range for type integer`.
+- `instance.validate()` resolves with the instance at runtime, as v6 (declared `Promise<void>`).
+- A column option object with a string `type` (`{ type: 'varchar(5)' }`) is read as column options.
+- Type parity with Sequelize v6: plain strings, numbers, booleans and dates are accepted for narrow columns in `where` (enums, unions, `Date | null`, `[Op.between]` with a `string[]`); `WhereOptions<T>` accepts a top-level `{ [Op.and]: [...] }`; `Model#previous` has the v6 overloads; `SaveOptions` without argument is assignable to `SaveOptions<Attrs>`; `sequelize.transaction` callbacks return `PromiseLike<T>`, which keeps the contextual return type.
+
 ## [1.5.0] - 2026-11-23
 
 ### Changed

@@ -33,6 +33,7 @@ import {
 
 export type { AttributeRef, WhereContext } from './where-support.ts';
 
+const INT4_MAX = 2_147_483_647;
 const ast = new SqlAst();
 
 const splitConditions = (value: unknown): readonly unknown[] =>
@@ -104,8 +105,15 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
     if (value instanceof SqlExpression) {
       return value.accept(this);
     }
-    const param = ast.param(serializeWith(ref, value));
-    return ref?.castType === undefined ? param : { kind: 'cast', expr: param, type: ref.castType };
+    const bound = serializeWith(ref, value);
+    const param = ast.param(bound);
+    if (ref?.castType !== undefined) {
+      return { kind: 'cast', expr: param, type: ref.castType };
+    }
+    // v6 writes the number into the SQL, so `id = 99999999999` is false; a bound parameter would be typed as the column (int4) and fail
+    return typeof bound === 'number' && Number.isSafeInteger(bound) && Math.abs(bound) > INT4_MAX
+      ? { kind: 'cast', expr: param, type: 'bigint' }
+      : param;
   }
 
   /** @internal */

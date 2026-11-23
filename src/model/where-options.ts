@@ -16,7 +16,10 @@ import type { AllowArray } from './types.ts';
 /** Expressions accepted in place of a value (`Excluded` only inside `onConflict`). */
 export type SqlValue = Literal | Fn | Col | Cast | Excluded | Subquery | Tuple;
 
-type Comparable<V> = V | SqlValue;
+// Like v6 `StaticValues`: a plain string, number, boolean, bigint, Date or Buffer compares with any column.
+type Serializable = string | number | bigint | boolean | Date | Buffer;
+
+type Comparable<V> = V | Serializable | SqlValue;
 
 /** Operators applicable to an attribute of type `V`. */
 export type WhereOperators<V = unknown> = {
@@ -37,13 +40,13 @@ export type WhereOperators<V = unknown> = {
   /** `<= value`. */
   [Op.lte]?: Comparable<V> | AnyAll<V>;
   /** `IN (...)`; long lists compile to `= ANY($n)`. */
-  [Op.in]?: readonly V[] | Literal | Subquery;
+  [Op.in]?: readonly Comparable<V>[] | Literal | Subquery;
   /** `NOT IN (...)`; long lists compile to `<> ALL($n)`. */
-  [Op.notIn]?: readonly V[] | Literal | Subquery;
+  [Op.notIn]?: readonly Comparable<V>[] | Literal | Subquery;
   /** `BETWEEN a AND b`, value is `[a, b]`. */
-  [Op.between]?: readonly [Comparable<V>, Comparable<V>];
+  [Op.between]?: readonly Comparable<V>[];
   /** `NOT BETWEEN a AND b`, value is `[a, b]`. */
-  [Op.notBetween]?: readonly [Comparable<V>, Comparable<V>];
+  [Op.notBetween]?: readonly Comparable<V>[];
   /** `LIKE pattern`. */
   [Op.like]?: string | SqlValue | AnyAll<string>;
   /** `NOT LIKE pattern`. */
@@ -91,9 +94,9 @@ export type WhereOperators<V = unknown> = {
   /** Logical OR of nested conditions. */
   [Op.or]?: AllowArray<Comparable<V> | WhereOperators<V>>;
   /** `ANY (ARRAY[...])`, combined with a comparison operator. */
-  [Op.any]?: readonly V[] | Literal;
+  [Op.any]?: readonly Comparable<V>[] | Literal;
   /** `ALL (ARRAY[...])`, combined with a comparison operator. */
-  [Op.all]?: readonly V[] | Literal;
+  [Op.all]?: readonly Comparable<V>[] | Literal;
   /** `IS DISTINCT FROM value` (null-safe `<>`). PostgreSQL extension. */
   [Op.isDistinctFrom]?: Comparable<V> | null;
   /** `IS NOT DISTINCT FROM value` (null-safe `=`). PostgreSQL extension. */
@@ -130,24 +133,24 @@ export type WhereOperators<V = unknown> = {
 export type AnyAll<V> =
   | {
       /** `ANY (...)`. */
-      [Op.any]: readonly V[] | ValuesList<V>;
+      [Op.any]: readonly Comparable<V>[] | ValuesList<V>;
     }
   | {
       /** `ALL (...)`. */
-      [Op.all]: readonly V[] | ValuesList<V>;
+      [Op.all]: readonly Comparable<V>[] | ValuesList<V>;
     };
 
 /** `{ [Op.values]: [...] }` — `VALUES (...)` list for `Op.any` / `Op.all`. */
 export type ValuesList<V> = {
   /** Values. */
-  [Op.values]: readonly V[];
+  [Op.values]: readonly Comparable<V>[];
 };
 
 /** Condition for one attribute: a value, a list of values (`IN`), operators, or an expression. */
 export type WhereAttributeValue<V> =
   | Comparable<V>
   | null
-  | readonly V[]
+  | readonly Comparable<V>[]
   | WhereOperators<V>
   | (V extends object ? Readonly<Record<string, unknown>> : never);
 
@@ -213,6 +216,7 @@ export type WhereAttributeHash<T = any> = WhereAttributeShape<[T]> & {
  */
 export type WhereOptions<T = Record<string, unknown>> =
   | WhereAttributeHash<T>
+  | WhereLogic<T>
   | readonly WhereOptions<T>[]
   | Where
   | Literal

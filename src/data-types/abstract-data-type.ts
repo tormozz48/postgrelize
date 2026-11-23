@@ -23,8 +23,8 @@ export type DataType = Readonly<{
   serialize?: (value: unknown) => unknown;
 }>;
 
-/** A data type used as is (`DataTypes.INTEGER`) or after calling it (`DataTypes.STRING(64)`). */
-export type DataTypeInput = DataType | ((...args: never[]) => DataType);
+/** A data type used as is (`DataTypes.INTEGER`) or after calling it (`DataTypes.STRING(64)`), or a raw PostgreSQL type name (`'vector(384)'`) like in Sequelize v6. */
+export type DataTypeInput = string | DataType | ((...args: never[]) => DataType);
 
 /**
  * Base of the built-in data type classes. Conversions (`parse`, `serialize`) are own function
@@ -68,6 +68,9 @@ export abstract class AbstractDataType implements DataType {
    * @returns The data type; a callable type carries the properties of its default form.
    */
   static from(input: DataTypeInput): DataType {
+    if (typeof input === 'string') {
+      return { key: input, sqlType: input };
+    }
     return typeof input === 'function' ? (input as unknown as DataType) : input;
   }
 }

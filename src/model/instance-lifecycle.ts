@@ -130,7 +130,7 @@ export class InstanceLifecycle {
    * @returns Resolves when valid.
    * @throws ValidationError with all failures.
    */
-  validate(instance: AnyModel, options: ValidateOptions = {}): Promise<void> {
+  validate(instance: AnyModel, options: ValidateOptions = {}): Promise<AnyModel> {
     return this.#validation.validate(instance, options);
   }
 

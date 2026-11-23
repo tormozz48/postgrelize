@@ -98,7 +98,7 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
     expect(rawQuery.inject(query, undefined)).toBe(query);
   });
 
-  it('keeps the bound values of the statement and binds each replacement after them', () => {
+  it('keeps the bound values of the statement and writes each replacement as a literal', () => {
     expect(
       rawQuery.inject(
         {
@@ -108,23 +108,26 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
         { min: 5, ids: [1, 2] },
       ),
     ).toEqual({
-      text: 'SELECT * FROM t WHERE a = $1 AND b > $2::int4 AND c IN ($3::int4, $4::int4) AND d = $5',
-      values: ['x', 5, 1, 2, 'y'],
+      text: 'SELECT * FROM t WHERE a = $1 AND b > 5 AND c IN (1, 2) AND d = $2',
+      values: ['x', 'y'],
     });
   });
 
-  it('numbers positional replacements in order and reuses a repeated statement value', () => {
+  it('writes positional replacements in order and reuses a repeated statement value', () => {
     expect(rawQuery.inject({ text: 'SELECT $1, ?, $1, ?', values: ['v'] }, ['a', 'b'])).toEqual({
-      text: 'SELECT $1, $2, $1, $3',
-      values: ['v', 'a', 'b'],
+      text: "SELECT $1, 'a', $1, 'b'",
+      values: ['v'],
     });
   });
 
-  it('never scans a bound value, whatever it contains', () => {
+  it('never scans a bound value and escapes a replacement that looks like a placeholder', () => {
     const payload = "x'; DROP TABLE t; -- :name ? $1";
     expect(
       rawQuery.inject({ text: 'SELECT $1, :name', values: [payload] }, { name: payload }),
-    ).toEqual({ text: 'SELECT $1, $2', values: [payload, payload] });
+    ).toEqual({
+      text: "SELECT $1, 'x''; DROP TABLE t; -- :name ? $1'",
+      values: [payload],
+    });
   });
 
   it('leaves quoted text, comments, casts and unknown $ tokens alone', () => {
@@ -138,7 +141,7 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
     );
   });
 
-  it('types integers and booleans of a compiled statement and leaves other values alone', () => {
+  it('writes numbers, booleans, strings and null as literals', () => {
     expect(
       rawQuery.inject({ text: 'SELECT ?, ?, ?, ?, ?, ?', values: [] }, [
         1,
@@ -149,8 +152,8 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
         null,
       ]),
     ).toEqual({
-      text: 'SELECT $1::int4, $2::boolean, $3, $4, $5, $6',
-      values: [1, true, 1.5, 3_000_000_000, 'x', null],
+      text: "SELECT 1, true, 1.5, 3000000000, 'x', NULL",
+      values: [],
     });
   });
 });

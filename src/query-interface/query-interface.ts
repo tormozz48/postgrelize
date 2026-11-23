@@ -7,6 +7,7 @@ import { BulkData } from './bulk-data.ts';
 import { ColumnCommands } from './column-commands.ts';
 import { EnumCommands } from './enum-commands.ts';
 import { IndexCommands } from './index-commands.ts';
+import { QueryGenerator } from './query-generator.ts';
 import { QueryInterfaceCatalog } from './query-interface-catalog.ts';
 import { StatementRunner } from './statement-runner.ts';
 
@@ -35,11 +36,8 @@ export type {
  * @see [Schema guide](/guide/schema)
  */
 export class QueryInterface extends QueryInterfaceCatalog {
-  /**
-   * Sequelize v6 `queryGenerator` property, typed `unknown` like v6. Declared so that v6-typed code
-   * compiles; postgrelize has no separate query generator object, so the value is `undefined`.
-   */
-  declare queryGenerator: unknown;
+  /** Sequelize v6 `queryGenerator` property; only `selectQuery` is provided. */
+  readonly queryGenerator: QueryGenerator = new QueryGenerator();
 
   readonly #columns: ColumnCommands;
   readonly #indexes: IndexCommands;

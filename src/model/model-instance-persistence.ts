@@ -58,7 +58,10 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    * ```
    */
   validate(options: ValidateOptions = {}): Promise<void> {
-    return lifecycle.validate(this as unknown as AnyModel, options);
+    return lifecycle.validate(
+      this as unknown as AnyModel,
+      options,
+    ) as Promise<unknown> as Promise<void>;
   }
 
   /**
