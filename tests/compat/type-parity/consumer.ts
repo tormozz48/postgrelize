@@ -68,6 +68,12 @@ export async function consumer(): Promise<void> {
   };
   await Invoice.findAndCountAll(counting);
 
+  // count with group resolves to the grouped items, without group to a number.
+  const grouped = await Invoice.count({ group: ['title'] });
+  const perGroup: number[] = grouped.map((row) => row.count);
+  const total: number = await Invoice.count({ where: { title: 'a' } });
+  void [perGroup, total];
+
   // replacements of the finders.
   const options: FindOptions<InferAttributes<Invoice>> = {
     where: literal('"title" = :title'),

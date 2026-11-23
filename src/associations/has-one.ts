@@ -1,3 +1,4 @@
+import { Op } from '../expressions/op.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
@@ -28,19 +29,49 @@ export class HasOne<
   }
 
   /**
-   * Loads the associated instance (`getX`).
+   * Loads the associated instance (`getX`); given an array of source instances it loads all of them with one query.
    *
-   * @param instance - Source instance.
+   * @param instance - Source instance, or an array of them.
    * @param options - Find options.
-   * @returns Associated instance, or `null`.
+   * @returns Associated instance, or `null`; for an array, an object keyed by the source key value with the instance or `null`.
    */
-  get(instance: Instance, options: AccessorOptions = {}): Promise<Instance | null> {
+  get(
+    instances: readonly Instance[],
+    options?: AccessorOptions,
+  ): Promise<Record<string, Instance | null>>;
+  get(instance: Instance, options?: AccessorOptions): Promise<Instance | null>;
+  get(
+    instance: Instance | readonly Instance[],
+    options: AccessorOptions = {},
+  ): Promise<Instance | null | Record<string, Instance | null>> {
+    if (Array.isArray(instance)) {
+      return this.#getMany(instance as readonly Instance[], options);
+    }
     return this.target.findOne({
       ...options,
       where: this.andWhere(options.where, this.scope, {
-        [this.foreignKey]: instance.get(this.sourceKey),
+        [this.foreignKey]: (instance as Instance).get(this.sourceKey),
       }),
     } as never);
+  }
+
+  async #getMany(
+    instances: readonly Instance[],
+    options: AccessorOptions,
+  ): Promise<Record<string, Instance | null>> {
+    const values = instances.map((instance) => instance.get(this.sourceKey));
+    const found = await this.target.findAll({
+      ...options,
+      where: this.andWhere(options.where, this.scope, { [this.foreignKey]: { [Op.in]: values } }),
+    } as never);
+    const result: Record<string, Instance | null> = {};
+    for (const key of values) {
+      result[String(key)] = null;
+    }
+    for (const row of found as readonly Instance[]) {
+      result[String(row.get(this.foreignKey))] = row;
+    }
+    return result;
   }
 
   /**

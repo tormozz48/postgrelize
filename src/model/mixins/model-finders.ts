@@ -3,6 +3,7 @@ import type {
   AnyModel,
   Attributes,
   CountOptions,
+  CountWithOptions,
   FindAndCountResult,
   GroupedCountResultItem,
   FindAndCountOptions,
@@ -126,12 +127,30 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
+     * Counts rows per group, applying the default scope and the paranoid filter. Runs `beforeCount`
+     * hooks unless `hooks: false`.
+     *
+     * @param this - The model class (or a scoped model class from {@link Model.scope}).
+     * @param options - Count options with `group`.
+     * @returns One `{ count, ...groupColumns }` item per group.
+     * @example
+     * ```ts
+     * const rows = await User.count({ group: ['role'] });
+     * rows.map((r) => r.count);
+     * ```
+     */
+    static count<M extends AnyModel>(
+      this: ModelStatic<M>,
+      options: CountWithOptions<Attributes<M>>,
+    ): Promise<GroupedCountResultItem[]>;
+
+    /**
      * Counts rows, applying the default scope and the paranoid filter. Runs `beforeCount` hooks
      * unless `hooks: false`.
      *
      * @param this - The model class (or a scoped model class from {@link Model.scope}).
-     * @param options - Count options (`where`, `col`, `distinct`, `group`, `include`).
-     * @returns The count. With `group` the runtime value is an array of `{ count, ...groupColumns }` objects, as in Sequelize v6.
+     * @param options - Count options (`where`, `col`, `distinct`, `include`).
+     * @returns The count. Use the `group` overload for per-group counts.
      * @example
      * ```ts
      * const active = await User.count({ where: { active: true } });
@@ -139,8 +158,12 @@ export const ModelFinders = <TBase extends ModelConstructor>(Base: TBase) => {
      */
     static count<M extends AnyModel>(
       this: ModelStatic<M>,
+      options?: Omit<CountOptions<Attributes<M>>, 'group'>,
+    ): Promise<number>;
+    static count<M extends AnyModel>(
+      this: ModelStatic<M>,
       options: CountOptions<Attributes<M>> = {},
-    ): Promise<number> {
+    ): Promise<number | GroupedCountResultItem[]> {
       return counter.count(this, options as CountOptions);
     }
 

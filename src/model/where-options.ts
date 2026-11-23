@@ -172,6 +172,11 @@ export type WhereLogic<T> = {
  */
 export type WhereAttributeHashValue<V> = WhereAttributeValue<V>;
 
+// Indexed through a tuple so a union model is not distributed: a mapped type over a bare type parameter is, one over `W[0]` is not.
+type WhereAttributeShape<W extends readonly [unknown]> = {
+  [K in keyof W[0]]?: WhereAttributeValue<W[0][K]>;
+};
+
 /**
  * Where object keyed by attribute names, nested JSON paths (`'meta.a'`), casts (`'id::text'`) or included columns (`'$posts.title$'`).
  * Without a type argument every key is accepted, as in Sequelize v6.
@@ -183,7 +188,7 @@ export type WhereAttributeHashValue<V> = WhereAttributeValue<V>;
  * ```
  */
 // oxlint-disable-next-line typescript/no-explicit-any -- v6 declares the default this way.
-export type WhereAttributeHash<T = any> = { [K in keyof T]?: WhereAttributeValue<T[K]> } & {
+export type WhereAttributeHash<T = any> = WhereAttributeShape<[T]> & {
   [key: `$${string}$` | `${string}.${string}` | `${string}::${string}`]: unknown;
 } & WhereLogic<T>;
 

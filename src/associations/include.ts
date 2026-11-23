@@ -41,7 +41,7 @@ export type IncludeThroughOptions = Readonly<{
  * const users = await User.findAll({ include: [opts] });
  * ```
  */
-export type IncludeOptions = Readonly<{
+export type IncludeOptions = {
   /** Associated model; the association is looked up by model (and `as`). */
   model?: Model;
   /** Alias of the association, as given when it was defined. */
@@ -88,7 +88,7 @@ export type IncludeOptions = Readonly<{
   /** Include every association of the model (`{ all: true }`).
    * @defaultValue false */
   all?: boolean;
-}>;
+};
 
 /**
  * One entry of the `include` option (Sequelize v6 `Includeable`): a model, an association (or its

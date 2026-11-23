@@ -133,6 +133,11 @@ export type SequelizeOptions = Readonly<{
   ssl?: PoolConfig['ssl'];
   /** Extra options passed to the `pg` pool/client as is. */
   dialectOptions?: Readonly<Omit<PoolConfig, 'types'>>;
+  /**
+   * Accepted for Sequelize v6 type compatibility; postgrelize ignores it and always loads `pg`.
+   * @defaultValue undefined
+   */
+  dialectModule?: object;
   /** Pool settings. */
   pool?: PoolOptions;
   /** SQL logger, or `false` to disable. Default `console.log`. */
