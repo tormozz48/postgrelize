@@ -85,13 +85,18 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
     if (!isPlainObject(where)) {
       throw new Error(`Invalid where value: ${String(where)}`);
     }
-    return ast.and(
-      ownKeys(where).map((key) =>
-        isOpKey(key)
-          ? this.#topLevelOperator(key, where[key])
-          : conditions.condition(this, operands.operand(this.context, key), where[key]),
-      ),
-    );
+    return ast.and(ownKeys(where).map((key) => this.#entry(where, key)));
+  }
+
+  #entry(where: Readonly<Record<string | symbol, unknown>>, key: string | symbol): ExprNode {
+    if (isOpKey(key)) {
+      return this.#topLevelOperator(key, where[key]);
+    }
+    if (where[key] === undefined) {
+      // like v6: an undefined value is a mistake (a missing variable), not "no condition"
+      throw new Error(`WHERE parameter "${String(key)}" has invalid "undefined" value`);
+    }
+    return conditions.condition(this, operands.operand(this.context, key), where[key]);
   }
 
   /** Converts an expression builder or a plain value (bound as a parameter) into an AST node. */
