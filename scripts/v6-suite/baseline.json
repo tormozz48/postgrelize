@@ -240,12 +240,7 @@
         "[POSTGRES] Instance destroy converts Infinity in where clause to a timestamp",
         "[POSTGRES] Instance destroy delete a record of multiple primary keys table",
         "[POSTGRES] Instance destroy does not set the deletedAt date in subsequent destroys if dao is paranoid",
-        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys",
-        "[POSTGRES] Instance destroy persists other model changes when soft deleting",
-        "[POSTGRES] Instance destroy should not call save hooks when soft deleting",
-        "[POSTGRES] Instance destroy supports custom deletedAt database column",
-        "[POSTGRES] Instance destroy supports custom deletedAt field",
-        "[POSTGRES] Instance destroy supports custom deletedAt field and database column"
+        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys"
       ]
     },
     "test/integration/instance/increment.test.js": {
