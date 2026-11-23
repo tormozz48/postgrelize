@@ -110,7 +110,12 @@ export class InstanceLifecycle {
     instance.isNewRecord = options.isNewRecord ?? true;
     instance.dataValues = instance.isNewRecord ? this.#services.values.initial(definition) : {};
     instance._previousDataValues = {};
-    state.includes = this.#assign(instance, model, values, options);
+    const defined = Object.fromEntries(
+      Object.entries(values).filter(
+        ([key, value]) => value !== undefined || !(key in instance.dataValues),
+      ),
+    );
+    state.includes = this.#assign(instance, model, defined, options);
     if (!instance.isNewRecord || options.raw === true) {
       instance._previousDataValues = { ...instance.dataValues };
       state.reset();
