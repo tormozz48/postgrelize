@@ -41,7 +41,7 @@ describe('injection surfaces', () => {
     expect(() => selects.build(definition, { order: [['name', 'ASC; DROP TABLE x']] })).toThrow(
       /Invalid order direction/,
     );
-    expect(() => selects.build(definition, { order: 'name; DROP TABLE x' })).toThrow(
+    expect(() => selects.build(definition, { order: 'name; DROP TABLE x' as never })).toThrow(
       /Order must be type of array/,
     );
     expect(() => compileExpr(ctx.compile({ 'name::text); DROP TABLE x; --': 1 }))).toThrow(

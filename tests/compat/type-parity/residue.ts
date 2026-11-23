@@ -83,6 +83,9 @@ export async function residue(): Promise<void> {
     [literal('"amount"'), 'DESC'],
     ['id', 'ASC'],
   ];
+  const pushed: Order = [];
+  pushed.push(['id', 'ASC']);
+  void pushed;
   const filter: WhereOptions<InferAttributes<Ledger>> = {
     [Op.and]: [{ name: { [Op.like]: 'a%' } }, where(fn('lower', col('name')), 'a')],
     parentId: { [Op.or]: [null, { [Op.gt]: 1 }] },
