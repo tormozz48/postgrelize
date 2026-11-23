@@ -45,6 +45,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 ### Fixed
 
 - Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
+- `WhereOptions<A | B>` no longer distributes over a union model: like v6 it keys on the attributes the members share, so `{ type: ['a', 'c'] }` type-checks when `type` is `'a' | 'b'` on `A` and `'c'` on `B`. Part of the Sequelize v6 type-parity work (ADR-032).
 
 ## [1.4.0] - 2026-11-23
 
