@@ -442,13 +442,6 @@
       "cause": "missing-export"
     },
     {
-      "file": "sequelize.ts",
-      "code": "TS2769",
-      "message": "No overload matches this call.",
-      "count": 1,
-      "cause": "model-typing-misc"
-    },
-    {
       "file": "typescriptDocs/ModelInit.ts",
       "code": "TS7009",
       "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
