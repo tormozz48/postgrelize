@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Changed
+
+- `sequelize.query` writes `replacements` (`:name` and `?`) into the SQL text as escaped literals through the shared `SqlLiteral` escaper, as Sequelize v6 does, instead of binding them as `$n` parameters. A query with several `;`-separated statements and replacements now runs (before: `cannot insert multiple commands into a prepared statement`). `bind` and the replacements of the finders stay bound; a string with a NUL character throws. This is a deliberate, narrow exception to always-bound values; payload and property tests cover the escaper. v6 gap H, ADR-036.
+
 ### Added
 
 - `dialectModule` constructor option, accepted for Sequelize v6 type compatibility (postgrelize always loads `pg` and ignores it).

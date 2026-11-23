@@ -94,6 +94,11 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     bind: ['a'],
     type: QueryTypes.SELECT,
   })) as { code: string }[];
+  // Replacements are escaped into the SQL text (as in Sequelize v6), so one call may hold several statements.
+  const code = 'a\'; DROP TABLE "Items"; --';
+  await sequelize.query('UPDATE "Items" SET qty = qty WHERE code = :code; SELECT :code AS code', {
+    replacements: { code },
+  });
   // #endregion raw
 
   const expected = JSON.stringify([

@@ -97,13 +97,15 @@ await Person.scope('adults', 'young').findAll(); // 18 <= age < 30
 
 ## Raw SQL
 
-`sequelize.query` runs SQL with named replacements (`:name`, escaped into the SQL text) or bind parameters (`$1`, sent separately). `type: QueryTypes.SELECT` returns the rows only:
+`sequelize.query` runs SQL with replacements (`:name` or `?`, escaped into the SQL text as in Sequelize v6) or bind parameters (`$1`, sent separately). `type: QueryTypes.SELECT` returns the rows only:
 
 <<< @/examples/querying.ts#raw{ts}
 
 `sequelize.query` returns `Promise<unknown>`; cast the result to the row type you expect. The result follows the query `type` like v6: `SELECT` rows, `INSERT` / `UPDATE` `[rows, rowCount]`, `DELETE` the statement rows (`[]` without `RETURNING`), `BULKUPDATE` / `BULKDELETE` the row count, `UPSERT` `[undefined, null]`. Other v6 options are supported: `plain`, `raw`, `nest` (nests `a.b` column names into objects), `model` / `mapToModel`, `transaction`, `logging`.
 
-The finders take `replacements` as well, for placeholders inside `literal()`: `await User.findAll({ where: literal('"age" > :min AND "role" IN (:roles)'), replacements: { min: 18, roles: ['admin', 'editor'] } })`. Arrays expand to a list, `?` placeholders take an array, and every value is sent as a bound parameter, never concatenated into the SQL. A placeholder without a value throws. An integer (up to 32 bits) or a boolean replacement is sent as a parameter with a cast (`$1::int4`, `$2::boolean`), so `select :n as n` returns the number 1 as in v6, where the value is written into the SQL; other values are plain parameters.
+Because replacements are written into the SQL text, the query goes to PostgreSQL as one simple query and may hold several `;`-separated statements, as in v6 (bind parameters cannot: PostgreSQL rejects several commands in one prepared statement). Strings are quoted (`'` doubled, `E'...'` when they contain a backslash), numbers and booleans are written as is, `null` is `NULL`, dates are ISO strings, objects are JSON text and arrays in `IN (:ids)` expand to a list. A string with a NUL character throws (v6 writes `\0` and changes the value). Placeholders inside string literals, quoted identifiers, comments, dollar quotes and `::` casts are left alone. Never build the SQL text from user input; pass the values as replacements.
+
+The finders take `replacements` as well, for placeholders inside `literal()`: `await User.findAll({ where: literal('"age" > :min AND "role" IN (:roles)'), replacements: { min: 18, roles: ['admin', 'editor'] } })`. Arrays expand to a list, `?` placeholders take an array, and every value is sent as a bound parameter (unlike `sequelize.query`), never concatenated into the SQL. A placeholder without a value throws. An integer (up to 32 bits) or a boolean replacement is sent as a parameter with a cast (`$1::int4`, `$2::boolean`), so `select :n as n` returns the number 1 as in v6, where the value is written into the SQL; other values are plain parameters.
 
 ## Locking
 

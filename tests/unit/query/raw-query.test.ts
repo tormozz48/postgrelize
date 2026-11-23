@@ -9,29 +9,59 @@ describe('prepareRawQuery', () => {
     expect(rawQuery.prepare('SELECT :a, ?')).toEqual({ text: 'SELECT :a, ?', values: [] });
   });
 
-  it('binds named replacements and expands arrays', () => {
+  it('inlines named replacements as escaped literals and expands arrays', () => {
     expect(
       rawQuery.prepare('SELECT * FROM t WHERE a = :a AND b IN (:ids) AND c = :a', {
         replacements: { a: 1, ids: [2, 3] },
       }),
     ).toEqual({
-      text: 'SELECT * FROM t WHERE a = $1::int4 AND b IN ($2::int4, $3::int4) AND c = $4::int4',
-      values: [1, 2, 3, 1],
+      text: 'SELECT * FROM t WHERE a = 1 AND b IN (2, 3) AND c = 1',
+      values: [],
     });
   });
 
-  it('binds positional replacements', () => {
+  it('inlines positional replacements', () => {
     expect(rawQuery.prepare('SELECT ?, ?', { replacements: ['x', null] })).toEqual({
-      text: 'SELECT $1, $2',
-      values: ['x', null],
+      text: "SELECT 'x', NULL",
+      values: [],
+    });
+  });
+
+  it('escapes quotes and backslashes and keeps a payload inside its literal', () => {
+    expect(
+      rawQuery.prepare('SELECT :a, :b, :c', {
+        replacements: { a: "x'; DROP TABLE t; --", b: 'a\\b', c: { k: "v'" } },
+      }).text,
+    ).toBe(`SELECT 'x''; DROP TABLE t; --', E'a\\\\b', '{"k":"v''"}'`);
+  });
+
+  it('renders booleans, dates and empty arrays', () => {
+    expect(
+      rawQuery.prepare('SELECT ?, ?, ?', {
+        replacements: [true, new Date('2020-01-02T03:04:05.000Z'), false],
+      }).text,
+    ).toBe("SELECT true, '2020-01-02T03:04:05.000Z', false");
+  });
+
+  it('rejects a NUL character and a non-finite number', () => {
+    expect(() => rawQuery.prepare('SELECT ?', { replacements: ['a\0b'] })).toThrow(/NUL/);
+    expect(() => rawQuery.prepare('SELECT ?', { replacements: [Number.NaN] })).toThrow(
+      /non-finite/,
+    );
+  });
+
+  it('keeps several statements in one text', () => {
+    expect(rawQuery.prepare('SELECT :a; SELECT :b', { replacements: { a: 1, b: 2 } })).toEqual({
+      text: 'SELECT 1; SELECT 2',
+      values: [],
     });
   });
 
   it('skips strings, identifiers, comments, dollar quotes, casts and jsonb ?| ?&', () => {
     const sql = `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , :a`;
     expect(rawQuery.prepare(sql, { replacements: { a: 1 } })).toEqual({
-      text: `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , $1::int4`,
-      values: [1],
+      text: `SELECT ':a', "?x", $q$ :a ? $q$, x::text, j ?| arr -- :a ?\n/* :a */ , 1`,
+      values: [],
     });
   });
 
@@ -108,11 +138,16 @@ describe('RawQuery.inject (replacements of a compiled statement)', () => {
     );
   });
 
-  it('types integers and booleans like v6 does by writing them into the SQL, and leaves other values alone', () => {
+  it('types integers and booleans of a compiled statement and leaves other values alone', () => {
     expect(
-      rawQuery.prepare('SELECT ?, ?, ?, ?, ?, ?', {
-        replacements: [1, true, 1.5, 3_000_000_000, 'x', null],
-      }),
+      rawQuery.inject({ text: 'SELECT ?, ?, ?, ?, ?, ?', values: [] }, [
+        1,
+        true,
+        1.5,
+        3_000_000_000,
+        'x',
+        null,
+      ]),
     ).toEqual({
       text: 'SELECT $1::int4, $2::boolean, $3, $4, $5, $6',
       values: [1, true, 1.5, 3_000_000_000, 'x', null],
