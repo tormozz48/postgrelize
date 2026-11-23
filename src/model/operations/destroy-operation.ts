@@ -67,6 +67,11 @@ export class DestroyOperation extends ModelOperation<DestroyOperationServices> {
       force: false,
       ...this.services.registry.scoped(model, options),
     };
+    if (!opts['where'] && opts['truncate'] !== true) {
+      throw new Error(
+        'Missing where or truncate attribute in the options parameter of model.destroy.',
+      );
+    }
     return (await this.#bulkDestroy(model, opts, options)) as number | M[];
   }
 

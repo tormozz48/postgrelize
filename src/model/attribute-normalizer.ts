@@ -1,5 +1,5 @@
 import { inflector as inflection } from './inflector.ts';
-import { AbstractDataType } from '../data-types/abstract-data-type.ts';
+import { AbstractDataType, type DataType } from '../data-types/abstract-data-type.ts';
 import { DataTypes, type DataTypeInput } from '../data-types/data-types.ts';
 import { EnumType } from '../data-types/enum-type.ts';
 import type { AttributeDefinition, AttributeOptions } from './attribute-options.ts';
@@ -29,11 +29,20 @@ export class AttributeNormalizer {
       ...rest,
       fieldName: name,
       field: field ?? this.underscoredIf(name, underscored),
-      type:
-        type === DataTypes.ENUM ? new EnumType(options.values ?? []) : AbstractDataType.from(type),
+      type: AttributeNormalizer.#dataType(type, options.values),
       allowNull: options.allowNull ?? options.primaryKey !== true,
       ...(options.identity === undefined ? {} : { autoIncrement: true }),
     });
+  }
+
+  // A bare `ENUM` takes its values from the `values` option; an enum without values is an error (v6).
+  static #dataType(type: DataTypeInput, values: readonly string[] | undefined): DataType {
+    const resolved =
+      type === DataTypes.ENUM ? new EnumType(values ?? []) : AbstractDataType.from(type);
+    if (resolved instanceof EnumType && resolved.values.length === 0) {
+      throw new Error('Values for ENUM have not been defined.');
+    }
+    return resolved;
   }
 
   /**

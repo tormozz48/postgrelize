@@ -1,3 +1,4 @@
+import { AssertionError } from 'node:assert';
 import { isDeepStrictEqual } from 'node:util';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
@@ -68,6 +69,9 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       ...this.services.registry.scoped(model, options),
       attributes: { ...values },
     };
+    if (opts['where'] === undefined || opts['where'] === null) {
+      throw new AssertionError({ message: 'Missing where attribute in the options parameter' });
+    }
     if (opts['validate'] === true) {
       await this.#validate(model, values, opts);
     }

@@ -659,6 +659,8 @@
       ]
     },
     "test/integration/associations/scope.test.js": {
+      "unstable": true,
+      "pass": 5,
       "failing": [
         "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values",
         "[POSTGRES] associations scope 1:M should create, find and include associations with scope values",
@@ -765,36 +767,27 @@
       "failing": ["[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks"]
     },
     "test/integration/include.test.js": {
-      "unstable": true,
-      "pass": 7,
       "failing": [
-        "\"after each\" hook for \"should support a hasMany association reference\"",
-        "[POSTGRES] Include find should support to use associations with Sequelize.col"
+        "[POSTGRES] Include find should support Sequelize.literal and renaming of attributes in included model attributes",
+        "[POSTGRES] Include find should support including date fields, with the correct timeszone",
+        "[POSTGRES] Include find should support to use associations with Sequelize.col",
+        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is not given (implicitly false)",
+        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is set to false"
       ]
     },
     "test/integration/include/findAll.test.js": {
-      "unstable": true,
-      "pass": 2,
       "failing": [
         "[POSTGRES] Include findAll should allow through model to be paranoid",
         "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit",
         "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)",
         "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)",
-        "[POSTGRES] Include findAll should support an include with multiple different association types",
         "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
       ]
     },
     "test/integration/include/findOne.test.js": {
-      "unstable": true,
-      "pass": 2,
       "failing": [
-        "\"after each\" hook for \"should work with a 1:M to M:1 relation with a where on the last include\""
+        "[POSTGRES] Include findOne should include a model with a where clause when the PK field name and attribute name are different"
       ]
-    },
-    "test/integration/include/limit.test.js": {
-      "unstable": true,
-      "pass": 16,
-      "failing": []
     },
     "test/integration/include/schema.test.js": {
       "failing": [
@@ -927,8 +920,6 @@
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
-        "[POSTGRES] Model destroy throws an error if no where clause is given",
-        "[POSTGRES] Model destroy throws an error if where has a key with undefined value",
         "[POSTGRES] Model paranoid is true and where is an array should fail when array contains strings",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
@@ -936,7 +927,6 @@
         "[POSTGRES] Model update does not update virtual attributes",
         "[POSTGRES] Model update doesn't update attributes that are altered by virtual setters when option is enabled",
         "[POSTGRES] Model update throws an error if no where clause is given",
-        "[POSTGRES] Model update throws an error if where has a key with undefined value",
         "[POSTGRES] Model update updates attributes that are altered by virtual setters",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ]
@@ -1013,7 +1003,6 @@
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
         "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL",
         "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL in include",
-        "[POSTGRES] Model findAll normal findAll should throw for undefined where parameters",
         "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
@@ -1107,8 +1096,6 @@
       ]
     },
     "test/integration/model/scope/merge.test.js": {
-      "unstable": true,
-      "pass": 0,
       "failing": [
         "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
         "[POSTGRES] Model scope complex merge should merge complex scopes with findAll options correctly regardless of their order",
@@ -1206,7 +1193,7 @@
     },
     "test/integration/sequelize.test.js": {
       "unstable": true,
-      "pass": 47,
+      "pass": 49,
       "failing": [
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
@@ -1214,8 +1201,6 @@
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
         "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
-        "[POSTGRES] Sequelize define enum raises an error if no values are defined",
-        "[POSTGRES] Sequelize define enum raises an error if no values are defined",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
@@ -1264,10 +1249,7 @@
       ]
     },
     "test/integration/transaction.test.js": {
-      "unstable": true,
-      "pass": 25,
       "failing": [
-        "[POSTGRES] Transaction autoCallback does not try to rollback a transaction that failed upon committing with SERIALIZABLE isolation level (#3689)",
         "[POSTGRES] Transaction does not allow queries after commit",
         "[POSTGRES] Transaction does not allow queries immediately after commit call",
         "[POSTGRES] Transaction does not allow queries immediately after rollback call",
