@@ -96,11 +96,29 @@ export class SequelizeInternals {
     options: QueryOptionsBase,
     kind: 'read' | 'write' = 'write',
   ): Promise<QueryResult> {
+    const finished = SequelizeInternals.#finishedTransaction(query, options);
+    if (finished !== undefined) {
+      return Promise.reject(finished);
+    }
     const settings = this.executeOptions(options, kind);
     // A statement inside a transaction is never retried: PostgreSQL has aborted the transaction.
     return settings.client === undefined && this.#retries.active(options.retry)
       ? this.#retries.run(() => this.connections.execute(query, settings), options.retry)
       : this.connections.execute(query, settings);
+  }
+
+  // A query on a transaction that was committed or rolled back is rejected with the v6 message and `sql`.
+  static #finishedTransaction(query: CompiledQuery, options: QueryOptionsBase): Error | undefined {
+    const transaction = options.transaction;
+    if (transaction?.finished === undefined) {
+      return undefined;
+    }
+    return Object.assign(
+      new Error(
+        `${transaction.finished} has been called on this transaction(${transaction.id}), you can no longer use it. (The rejected query is attached as the 'sql' property of this error)`,
+      ),
+      { sql: query.text },
+    );
   }
 
   /**

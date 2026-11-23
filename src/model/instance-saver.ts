@@ -3,7 +3,7 @@ import type { InstanceLifecycleServices } from './instance-lifecycle-services.ts
 import type { InstanceLifecycle } from './instance-lifecycle.ts';
 import { InstanceState } from './instance-state.ts';
 import { InstanceWriter, type SaveContext } from './instance-writer.ts';
-import type { AnyModel, SaveOptions } from './options.ts';
+import type { AnyModel, SaveOptions, Values } from './options.ts';
 
 /**
  * `instance.save()`: validation, `beforeCreate` / `beforeUpdate` hooks (with re-validation of
@@ -41,8 +41,9 @@ export class InstanceSaver {
     if (!context.isNew && fields.length === 0) {
       return instance;
     }
-    const hookFields = await this.#prepare(instance, context, fields);
     const now = new Date();
+    this.#stampNew(instance, context, now);
+    const hookFields = await this.#prepare(instance, context, fields);
     await (context.isNew
       ? this.#writer.insert(instance, context, now)
       : this.#writer.update(instance, context, hookFields, now));
@@ -50,6 +51,19 @@ export class InstanceSaver {
       await this.#hook(instance, context, 'afterCreate', 'afterUpdate');
     }
     return instance;
+  }
+
+  // Like v6, a new record gets its `createdAt` / `updatedAt` before validation, so a timestamp attribute
+  // declared with `allowNull: false` passes the not-null check.
+  #stampNew(instance: AnyModel, context: SaveContext, now: Date): void {
+    if (context.isNew) {
+      const silent = context.opts['silent'] === true;
+      const values = instance.dataValues as Values;
+      Object.assign(
+        values,
+        this.#services.values.withTimestamps(context.definition, values, now, true, silent),
+      );
+    }
   }
 
   #context(instance: AnyModel, options: SaveOptions): SaveContext {

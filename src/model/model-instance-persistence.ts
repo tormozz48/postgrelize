@@ -137,7 +137,8 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    * ```
    */
   destroy(options: InstanceDestroyOptions = {}): Promise<void> {
-    return lifecycle.destroy(this as unknown as AnyModel, options);
+    // typed `Promise<void>` like v6; a soft delete resolves with the instance at run time, as in v6
+    return lifecycle.destroy(this as unknown as AnyModel, options) as Promise<void>;
   }
 
   /**
@@ -152,7 +153,7 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    * ```
    */
   restore(options: QueryOptionsBase & Readonly<{ hooks?: boolean }> = {}): Promise<void> {
-    return lifecycle.restore(this as unknown as AnyModel, options);
+    return lifecycle.restore(this as unknown as AnyModel, options) as unknown as Promise<void>;
   }
 
   /**

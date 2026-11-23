@@ -240,12 +240,7 @@
         "[POSTGRES] Instance destroy converts Infinity in where clause to a timestamp",
         "[POSTGRES] Instance destroy delete a record of multiple primary keys table",
         "[POSTGRES] Instance destroy does not set the deletedAt date in subsequent destroys if dao is paranoid",
-        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys",
-        "[POSTGRES] Instance destroy persists other model changes when soft deleting",
-        "[POSTGRES] Instance destroy should not call save hooks when soft deleting",
-        "[POSTGRES] Instance destroy supports custom deletedAt database column",
-        "[POSTGRES] Instance destroy supports custom deletedAt field",
-        "[POSTGRES] Instance destroy supports custom deletedAt field and database column"
+        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys"
       ]
     },
     "test/integration/instance/increment.test.js": {
@@ -265,8 +260,7 @@
     },
     "test/integration/instance/save.test.js": {
       "failing": [
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used",
-        "[POSTGRES] Instance save with custom timestamp options works with `allowNull: false` on createdAt and updatedAt columns"
+        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used"
       ]
     },
     "test/integration/instance/to-json.test.js": {
@@ -280,8 +274,7 @@
         "[POSTGRES] Instance update doesn't update primary keys or timestamps",
         "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
         "[POSTGRES] Instance update should only save passed attributes",
-        "[POSTGRES] Instance update should save attributes affected by setters",
-        "[POSTGRES] Instance update should update timestamps with milliseconds"
+        "[POSTGRES] Instance update should save attributes affected by setters"
       ]
     },
     "test/integration/instance/values.test.js": {
@@ -341,16 +334,10 @@
     },
     "test/integration/model/attributes/field.test.js": {
       "failing": [
-        "[POSTGRES] Model attributes field decrement should work",
-        "[POSTGRES] Model attributes field field and attribute name is the same save should work",
-        "[POSTGRES] Model attributes field field names that are the same as property names should create, update, and read correctly",
-        "[POSTGRES] Model attributes field increment should work",
         "[POSTGRES] Model attributes field should support renaming of sequelize method fields",
         "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
         "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`",
-        "[POSTGRES] Model attributes field should work with where on includes for find",
-        "[POSTGRES] Model attributes field should work with where on includes for findAll",
-        "[POSTGRES] Model attributes field sum should work"
+        "[POSTGRES] Model attributes field should work with where on includes for find"
       ]
     },
     "test/integration/model/attributes/types.test.js": {
@@ -649,13 +636,7 @@
     },
     "test/integration/transaction.test.js": {
       "failing": [
-        "[POSTGRES] Transaction does not allow queries after commit",
-        "[POSTGRES] Transaction does not allow queries immediately after commit call",
-        "[POSTGRES] Transaction does not allow queries immediately after rollback call",
         "[POSTGRES] Transaction should not rollback if connection was not acquired",
-        "[POSTGRES] Transaction should throw an error if an object is passed to afterCommit",
-        "[POSTGRES] Transaction should throw an error if null is passed to afterCommit",
-        "[POSTGRES] Transaction should throw an error if undefined is passed to afterCommit",
         "[POSTGRES] Transaction works even if a transaction: null option is passed",
         "[POSTGRES] Transaction works even if a transaction: undefined option is passed"
       ]

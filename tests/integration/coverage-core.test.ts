@@ -210,7 +210,7 @@ describe('transactions', () => {
       expect(transaction.LOCK.UPDATE).toBe('UPDATE');
       await transaction.commit();
       await expect(sequelize.query('SELECT 1', { transaction })).rejects.toThrow(
-        'Transaction has not started',
+        /commit has been called on this transaction\([^)]+\), you can no longer use it\./,
       );
       await expect(transaction.commit()).rejects.toThrow(/already been finished|has been finished/);
       await expect(transaction.rollback()).rejects.toThrow(
