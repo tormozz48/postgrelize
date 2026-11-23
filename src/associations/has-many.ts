@@ -32,17 +32,48 @@ export class HasMany<
   }
 
   /**
-   * Loads the associated instances (`getXs`).
+   * Loads the associated instances (`getXs`); given an array of source instances it loads the rows of all
+   * of them with one query.
    *
-   * @param instance - Source instance.
+   * @param instance - Source instance, or an array of them.
    * @param options - Find options.
-   * @returns Associated instances.
+   * @returns Associated instances; for an array, an object keyed by the source key value with the instances of each source.
    */
-  get(instance: Instance, options: AccessorOptions = {}): Promise<Instance[]> {
+  get(
+    instances: readonly Instance[],
+    options?: AccessorOptions,
+  ): Promise<Record<string, Instance[]>>;
+  get(instance: Instance, options?: AccessorOptions): Promise<Instance[]>;
+  get(
+    instance: Instance | readonly Instance[],
+    options: AccessorOptions = {},
+  ): Promise<Instance[] | Record<string, Instance[]>> {
+    if (Array.isArray(instance)) {
+      return this.#getMany(instance as readonly Instance[], options);
+    }
     return this.target.findAll({
       ...options,
-      where: this.andWhere(options.where, this.scope, this.#own(instance)),
+      where: this.andWhere(options.where, this.scope, this.#own(instance as Instance)),
     } as never);
+  }
+
+  async #getMany(
+    instances: readonly Instance[],
+    options: AccessorOptions,
+  ): Promise<Record<string, Instance[]>> {
+    const values = instances.map((instance) => instance.get(this.sourceKey));
+    const found = await this.target.findAll({
+      ...options,
+      where: this.andWhere(options.where, this.scope, { [this.foreignKey]: { [Op.in]: values } }),
+    } as never);
+    const result: Record<string, Instance[]> = {};
+    for (const key of values) {
+      result[String(key)] = [];
+    }
+    for (const row of found as readonly Instance[]) {
+      result[String(row.get(this.foreignKey))]?.push(row);
+    }
+    return result;
   }
 
   /**

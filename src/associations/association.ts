@@ -96,20 +96,34 @@ export abstract class Association<
     Object.assign(this, shape.fields({ type, source, target, options, name, keys }));
   }
 
+  #assertFreeName(
+    state: Readonly<{
+      associations: ReadonlyMap<string, unknown>;
+      definition: Readonly<{ name: string; attributes: ReadonlyMap<string, unknown> }>;
+    }>,
+  ): void {
+    if (state.associations.has(this.as)) {
+      throw new AssociationError(
+        `You have used the alias ${this.as} in two separate associations. Aliased associations must have unique aliases.`,
+      );
+    }
+    if (state.definition.attributes.has(this.as)) {
+      throw new Error(
+        `Naming collision between attribute '${this.as}' and association '${this.as}' on model ${state.definition.name}. To remedy this, change either foreignKey or as in your association definition`,
+      );
+    }
+  }
+
   /**
    * Registers the association on the source model, installs the accessor methods and the
    * instance properties of the alias (and of the junction model on the target).
    *
-   * @throws AssociationError when the alias is already used on the source.
+   * @throws AssociationError when the alias is already used on the source; Error when it is the name of an attribute of the source.
    * @internal
    */
   protected install(): void {
     registry.update(this.source, (state) => {
-      if (state.associations.has(this.as)) {
-        throw new AssociationError(
-          `You have used the alias ${this.as} in two separate associations. Aliased associations must have unique aliases.`,
-        );
-      }
+      this.#assertFreeName(state);
       return { ...state, associations: new Map([...state.associations, [this.as, this]]) };
     });
     accessors.install(this, this.source.prototype as object, this.accessors);
