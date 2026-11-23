@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Model.update` types follow v6: with `returning: true` the result is `[affectedCount, affectedRows]` (rows no longer optional), otherwise `[affectedCount]`. Part of the Sequelize v6 type-parity work (ADR-032).
+
 ## [1.4.0] - 2026-11-23
 
 Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` statements and error messages, and the v6 guards against writes without `where`; breaking only for code that relied on those guards missing.
