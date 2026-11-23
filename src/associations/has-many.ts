@@ -1,5 +1,5 @@
 import { Op } from '../expressions/op.ts';
-import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
+import type { AnyModel, CountOptions, ModelStatic, Values } from '../model/options.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
 import { OwnerKeys } from './owner-keys.ts';
@@ -56,7 +56,7 @@ export class HasMany<
     return this.target.count({
       ...options,
       where: this.andWhere(options.where, this.scope, this.#own(instance)),
-    } as never) as Promise<number>;
+    } as CountOptions);
   }
 
   /**
@@ -73,7 +73,7 @@ export class HasMany<
       (await this.target.count({
         ...this.passThrough(options),
         where: this.andWhere(this.scope, this.#own(instance), { [this.#targetPk]: wanted }),
-      } as never)) === wanted.length
+      } as CountOptions)) === wanted.length
     );
   }
 

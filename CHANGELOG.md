@@ -44,6 +44,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- `Model.count({ group })` is typed as `GroupedCountResultItem[]` (v6 overloads), so `rows.map((r) => r.count)` type-checks; the ungrouped call stays `number`. `CountWithOptions` is exported. Runtime unchanged. Part of the Sequelize v6 type-parity work (ADR-032).
 - Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
 - `Model.update` types follow v6: with `returning: true` the result is `[affectedCount, affectedRows]` (rows no longer optional), otherwise `[affectedCount]`. Part of the Sequelize v6 type-parity work (ADR-032).
 - `Order` is `Fn | Col | Literal | OrderItem[]` as in Sequelize v6 instead of collapsing to `unknown`, so `const order: Order = []; order.push(['id', 'ASC'])` type-checks. Part of the Sequelize v6 type-parity work (ADR-032).
