@@ -15,7 +15,7 @@ type Exceptions = Readonly<{ causes: Readonly<Record<string, Cause>>; errors: re
 
 const CATEGORIES = new Set(['not-planned', 'other-dialect', 'internal', 'tracked']);
 // Lower this when entries leave the allow-list; it must never grow.
-const MAX_ERRORS = 175;
+const MAX_ERRORS = 173;
 
 const here = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
 const exceptions = JSON.parse(readFileSync(here('v6-types/exceptions.json'), 'utf8')) as Exceptions;

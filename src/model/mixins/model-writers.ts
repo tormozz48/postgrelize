@@ -157,17 +157,44 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     /**
      * Updates all rows matching `where` with one `UPDATE` and refreshes `updatedAt` unless `silent`.
      * Values are validated unless `validate: false`; bulk hooks run unless `hooks: false`.
+     * With `returning: true` the updated instances are returned as the second element.
+     *
+     * @param this - The model class.
+     * @param values - New attribute values.
+     * @param options - Update options with `returning: true`; `where` is required.
+     * @returns `[affectedCount, affectedRows]`.
+     * @throws ValidationError when the new values are invalid.
+     * @example
+     * ```ts
+     * const [count, rows] = await Post.update({ published: true }, { where: { userId: 1 }, returning: true });
+     * ```
+     */
+    static update<M extends AnyModel>(
+      this: ModelStatic<M>,
+      values: UpdateValues<Attributes<M>>,
+      options: Omit<UpdateOptions<Attributes<M>>, 'returning'> & { returning: true },
+    ): Promise<[affectedCount: number, affectedRows: M[]]>;
+
+    /**
+     * Updates all rows matching `where` with one `UPDATE` and refreshes `updatedAt` unless `silent`.
+     * Values are validated unless `validate: false`; bulk hooks run unless `hooks: false`.
      *
      * @param this - The model class.
      * @param values - New attribute values.
      * @param options - Update options; `where` is required.
-     * @returns `[affectedCount]`, or `[affectedCount, rows]` with `returning: true`.
+     * @returns `[affectedCount]`.
      * @throws ValidationError when the new values are invalid.
      * @example
      * ```ts
      * const [count] = await Post.update({ published: true }, { where: { userId: 1 } });
      * ```
      */
+    static update<M extends AnyModel>(
+      this: ModelStatic<M>,
+      values: UpdateValues<Attributes<M>>,
+      options: UpdateOptions<Attributes<M>>,
+    ): Promise<[affectedCount: number]>;
+
     static update<M extends AnyModel>(
       this: ModelStatic<M>,
       values: UpdateValues<Attributes<M>>,

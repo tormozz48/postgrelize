@@ -59,9 +59,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
    */
   async update<M extends AnyModel>(
     model: ModelStatic<M>,
-    values: Values,
+    given: Values,
     options: UpdateOptions,
   ): Promise<UpdateResult<M>> {
+    // like v6, values outside an explicit `fields` list are dropped before anything else
+    const values = UpdateOperation.#listed(given, options.fields);
     const opts: MutableOptions = {
       validate: true,
       hooks: true,
@@ -74,6 +76,12 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     }
     await this.#validated(model, values, opts, options);
     return (await this.#bulkUpdate(model, opts, options)) as UpdateResult<M>;
+  }
+
+  static #listed(values: Values, fields: readonly string[] | undefined): Values {
+    return fields === undefined
+      ? values
+      : Object.fromEntries(Object.entries(values).filter(([name]) => fields.includes(name)));
   }
 
   async #validated(

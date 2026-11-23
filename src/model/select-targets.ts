@@ -5,7 +5,7 @@ import { OrderDirection } from '../sql/order.ts';
 import type { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
 import type { ModelDefinition } from './model-definition.ts';
-import type { AttributeSpec, FindAttributeOptions, Order } from './select-options.ts';
+import type { AttributeSpec, FindAttributeOptions, Order, OrderItem } from './select-options.ts';
 
 const ast = new SqlAst();
 
@@ -125,7 +125,7 @@ export class SelectTargets {
     definition: ModelDefinition,
     alias: string,
     ctx: WhereCompiler,
-    order: Order,
+    order: Order | readonly OrderItem[] | undefined | null,
   ): readonly OrderNode[] {
     return order === undefined || order === null
       ? []

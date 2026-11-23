@@ -316,7 +316,6 @@
       "NonNullFindOptions.type": "option-keys",
       "Options.attributeBehavior": "option-keys",
       "Options.clientMinMessages": "option-keys",
-      "Options.dialectModule": "option-keys",
       "Options.dialectModulePath": "option-keys",
       "Options.isolationLevel": "option-keys",
       "Options.logQueryParameters": "option-keys",

@@ -59,6 +59,7 @@ export type {
   CopyToFormatOptions,
   CopyToOptions,
   CountOptions,
+  CountWithOptions,
   CreateOptions,
   CreationAttributes,
   DestroyOptions,
