@@ -1,4 +1,4 @@
-import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
+import type { AnyModel, CountOptions, ModelStatic, Values } from '../model/options.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
@@ -100,7 +100,7 @@ export class BelongsToMany<
     return this.target.count({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: linked }),
-    } as never) as Promise<number>;
+    } as CountOptions);
   }
 
   /**

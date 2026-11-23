@@ -52,4 +52,8 @@ export type AttributeValidateOptions = Readonly<
  * const callback: ModelValidatorFunction = (next) => next('invalid');
  * ```
  */
-export type ModelValidatorFunction = (next: (error?: unknown) => void) => unknown;
+export type ModelValidatorFunction = (
+  // oxlint-disable-next-line typescript/no-explicit-any -- `this` is the model instance; a validator may annotate it with its own model type, as in v6.
+  this: any,
+  next: (error?: unknown) => void,
+) => unknown;

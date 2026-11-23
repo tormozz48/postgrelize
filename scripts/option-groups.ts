@@ -12,6 +12,7 @@ export const OPTION_GROUPS: readonly OptionGroup[] = [
       'FindOrCreateOptions',
       'FindOrBuildOptions',
       'CountOptions',
+      'CountWithOptions',
       'AggregateOptions',
       'IncludeOptions',
       'IncludeThroughOptions',

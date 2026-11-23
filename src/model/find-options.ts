@@ -138,6 +138,23 @@ export type CountOptions<T = Values> = QueryOptionsBase &
   CteFindOptions;
 
 /**
+ * {@link CountOptions} with a required `group`, which makes {@link Model.count} resolve to one {@link GroupedCountResultItem} per group.
+ *
+ * @see {@link Model.count}
+ *
+ * @example
+ * ```ts
+ * const opts: CountWithOptions<Post> = { group: ['authorId'] };
+ * const perAuthor = await Post.count(opts); // [{ authorId, count }, ...]
+ * ```
+ */
+export type CountWithOptions<T = Values> = CountOptions<T> &
+  Readonly<{
+    /** Group by attributes; the result is an array of `{ count, ...groups }`. */
+    group: string | readonly string[];
+  }>;
+
+/**
  * Options of `aggregate`, `max`, `min` and `sum`.
  *
  * Same as {@link CountOptions} plus `plain`.

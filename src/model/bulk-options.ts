@@ -90,12 +90,12 @@ export type BulkHookOptions = Readonly<{
  * const opts: UpdateOptions<Task> = { where: { done: false }, returning: true };
  * ```
  */
-export type UpdateOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
+export type UpdateOptions<T = Values> = QueryOptionsBase & {
+  /** Attributes to update; others are ignored. Mutable so hooks can adjust it, as in v6. */
+  fields?: readonly (keyof T & string)[];
+} & Readonly<{
     /** Rows to update. */
     where: WhereOptions<T>;
-    /** Attributes to update; others are ignored. */
-    fields?: readonly (keyof T & string)[];
     /** Do not update `updatedAt`.
      * @defaultValue false */
     silent?: boolean;

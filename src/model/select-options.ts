@@ -37,7 +37,7 @@ export type AttributeSpec = Readonly<{
 export type OrderItem = string | unknown | readonly [unknown, string?];
 
 /** `order` option of finders: a single expression or a list of {@link OrderItem}. */
-export type Order = unknown | readonly OrderItem[];
+export type Order = Fn | Col | Literal | OrderItem[];
 
 /** Model whose rows are locked by `lock.of`. */
 export type LockTarget = Readonly<{
@@ -79,7 +79,7 @@ export type SelectOptions = Readonly<{
   /** Selected attributes. All attributes when omitted. */
   attributes?: FindAttributeOptions;
   /** Sort order: attribute names, `[attribute, 'ASC' | 'DESC']` pairs or expressions. */
-  order?: Order;
+  order?: Order | readonly OrderItem[];
   /** `GROUP BY` attributes or expressions. */
   group?: unknown;
   /** `HAVING` condition. */

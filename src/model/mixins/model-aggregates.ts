@@ -52,7 +52,7 @@ export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => 
      * const highest = await Product.max('price');
      * ```
      */
-    static max<M extends AnyModel, T = unknown>(
+    static max<T = unknown, M extends AnyModel = AnyModel>(
       this: ModelStatic<M>,
       field: keyof Attributes<M>,
       options?: AggregateOptions<Attributes<M>>,
@@ -77,7 +77,7 @@ export const ModelAggregates = <TBase extends ModelConstructor>(Base: TBase) => 
      * const lowest = await Product.min('price', { where: { active: true } });
      * ```
      */
-    static min<M extends AnyModel, T = unknown>(
+    static min<T = unknown, M extends AnyModel = AnyModel>(
       this: ModelStatic<M>,
       field: keyof Attributes<M>,
       options?: AggregateOptions<Attributes<M>>,

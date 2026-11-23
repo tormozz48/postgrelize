@@ -13,6 +13,7 @@ import type { MakeNullishOptional } from './types.ts';
 export type {
   AggregateOptions,
   CountOptions,
+  CountWithOptions,
   FindAndCountOptions,
   FindAndCountResult,
   GroupedCountResultItem,
