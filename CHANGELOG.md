@@ -38,6 +38,14 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `dialectModule` constructor option, accepted for Sequelize v6 type compatibility (postgrelize always loads `pg` and ignores it).
+
+### Fixed
+
+- Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
+
 ## [1.4.0] - 2026-11-23
 
 Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` statements and error messages, and the v6 guards against writes without `where`; breaking only for code that relied on those guards missing.
