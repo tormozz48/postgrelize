@@ -88,7 +88,12 @@ export class ColumnDdl {
    */
   defaultSql(column: ColumnDefinition): string | undefined {
     const value = column.defaultValue;
-    if (value === undefined || column.autoIncrement || column.generated !== undefined) {
+    if (
+      value === undefined ||
+      typeof value === 'function' ||
+      column.autoIncrement ||
+      column.generated !== undefined
+    ) {
       return undefined;
     }
     if (value instanceof DefaultValueGenerator) {
