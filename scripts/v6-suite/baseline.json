@@ -89,21 +89,6 @@
     "test/integration/cls.test.js": {
       "failing": [
         "[POSTGRES] CLS (Async hooks) CLS namespace is stored in Sequelize._cls",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeBulkRestore,afterBulkRestore} when calling Model.restore",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeRestore,afterRestore} when calling Model#restore",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration paranoid restore passes the transaction to hooks {beforeRestore,afterRestore} when calling Model.restore with individualHooks",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {afterFind} when calling Model.findAll",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkCreate,beforeCreate,afterCreate,afterBulkCreate} when calling Model.bulkCreate",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkDestroy,afterBulkDestroy} when calling Model.destroy",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeBulkUpdate,afterBulkUpdate} when calling Model.update",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeCount} when calling Model.count",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeCreate,afterCreate} when calling Model#save (isNewRecord)",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeDestroy,beforeDestroy} when calling Model#destroy",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeDestroy,beforeDestroy} when calling Model.destroy with individualHooks",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeFind,beforeFindAfterExpandIncludeAll,beforeFindAfterOptions} when calling Model.findAll",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpdate,afterUpdate} when calling Model#save (!isNewRecord)",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpdate,afterUpdate} when calling Model.update with individualHooks",
-        "[POSTGRES] CLS (Async hooks) Model Hook integration passes the transaction to hooks {beforeUpsert,afterUpsert} when calling Model.upsert",
         "[POSTGRES] CLS (Async hooks) context does not leak outside findOrCreate",
         "[POSTGRES] CLS (Async hooks) context does not use continuation storage on manually managed transactions"
       ]

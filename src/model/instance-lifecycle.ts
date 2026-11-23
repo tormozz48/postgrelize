@@ -1,6 +1,7 @@
 import type { IncludeNode } from '../associations/include.ts';
 import { InstanceError } from '../errors/errors.ts';
 import { HookRegistry, type HookType } from '../hooks/hooks.ts';
+import { transactionScope } from '../transaction/transaction-runner.ts';
 import { InstanceDestroyer } from './instance-destroyer.ts';
 import type { InstanceLifecycleServices, ValidateOptions } from './instance-lifecycle-services.ts';
 import { InstanceSaver } from './instance-saver.ts';
@@ -55,7 +56,24 @@ export class InstanceLifecycle {
    */
   runHooks(model: object, type: HookType, ...args: readonly unknown[]): Promise<void> {
     const { hooks, runtime } = this.#services.registry.state(model);
+    InstanceLifecycle.#withActiveTransaction(args.at(-1));
     return HookRegistry.runAll([hooks, runtime.hooks()], type, model, ...args);
+  }
+
+  // With CLS, hooks see the current transaction in the options they receive, as in v6 (where every
+  // operation puts it into its options first); queries of the operation already use it.
+  static #withActiveTransaction(options: unknown): void {
+    if (
+      typeof options === 'object' &&
+      options !== null &&
+      Object.getPrototypeOf(options) === Object.prototype &&
+      (options as { transaction?: unknown }).transaction === undefined
+    ) {
+      const active = transactionScope.active();
+      if (active !== undefined) {
+        (options as { transaction?: unknown }).transaction = active;
+      }
+    }
   }
 
   /**
