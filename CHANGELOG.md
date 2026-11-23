@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-23
+
+Sequelize v6 parity part four: cascade hooks, hook semantics, `sequelize.query` statements and error messages, and the v6 guards against writes without `where`; breaking only for code that relied on those guards missing.
+
 ### Added
 
 - Cascade hooks, as in Sequelize v6: an association with `onDelete: 'CASCADE'` and `hooks: true` loads its rows and destroys each with its own `beforeDestroy` / `afterDestroy` hooks when the owner instance is destroyed (a real delete, not the soft delete of a paranoid model); an error in a hook stops the destroy. This replaces the documented limitation that `hooks` was accepted and ignored. `association.options` is public, as in v6. Found by the v6 suite harness; differential tests.
@@ -332,7 +336,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/tormozz48/postgrelize/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/tormozz48/postgrelize/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/tormozz48/postgrelize/compare/v1.0.0...v1.1.0

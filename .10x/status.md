@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference); 1.4.0 in release (2026-11-23, G5 parts 3–9: hooks, cascade hooks, sequelize.query, where guards)
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
