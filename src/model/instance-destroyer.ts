@@ -32,9 +32,12 @@ export class InstanceDestroyer {
    *
    * @param instance - Instance.
    * @param options - Destroy options.
-   * @returns Resolves when deleted.
+   * @returns The instance after a soft delete (like v6), nothing after a DELETE.
    */
-  async destroy(instance: AnyModel, options: InstanceDestroyOptions): Promise<void> {
+  async destroy(
+    instance: AnyModel,
+    options: InstanceDestroyOptions,
+  ): Promise<AnyModel | undefined> {
     const model = instance.constructor;
     const state = this.#services.registry.state(model);
     const opts: MutableOptions = { hooks: true, force: false, ...options };
@@ -42,12 +45,14 @@ export class InstanceDestroyer {
       await this.#lifecycle.runHooks(model, 'beforeDestroy', instance, opts);
     }
     const { deletedAt } = state.definition;
-    await (deletedAt !== undefined && opts['force'] !== true
+    const soft = deletedAt !== undefined && opts['force'] !== true;
+    await (soft
       ? this.#softDelete(instance, deletedAt, options)
       : this.#deleteRow(instance, state, options));
     if (opts['hooks'] === true) {
       await this.#lifecycle.runHooks(model, 'afterDestroy', instance, opts);
     }
+    return soft ? instance : undefined;
   }
 
   /**
@@ -55,13 +60,13 @@ export class InstanceDestroyer {
    *
    * @param instance - Instance.
    * @param options - Query options; `hooks: false` skips restore hooks.
-   * @returns Resolves when restored.
+   * @returns The restored instance (like v6).
    * @throws Error when the model is not paranoid.
    */
   async restore(
     instance: AnyModel,
     options: QueryOptionsBase & Readonly<{ hooks?: boolean }>,
-  ): Promise<void> {
+  ): Promise<AnyModel> {
     const model = instance.constructor;
     const deletedAt = this.#deletedAt(model);
     const hooks = options.hooks !== false;
@@ -73,6 +78,7 @@ export class InstanceDestroyer {
     if (hooks) {
       await this.#lifecycle.runHooks(model, 'afterRestore', instance, options);
     }
+    return instance;
   }
 
   /**
