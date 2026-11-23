@@ -199,9 +199,10 @@ export class Transaction {
    */
   async commit(): Promise<void> {
     this.#assertActive('commit');
+    // marked at once: a query issued while the COMMIT is on its way is rejected (v6)
+    this.finished = 'commit';
     try {
       await this.#run(this.#statements.commit());
-      this.finished = 'commit';
     } finally {
       await this.#release();
     }
@@ -230,9 +231,9 @@ export class Transaction {
    */
   async rollback(): Promise<void> {
     this.#assertActive('rollback');
+    this.finished = 'rollback';
     try {
       await this.#run(this.#statements.rollback());
-      this.finished = 'rollback';
     } finally {
       await this.#release();
     }
@@ -301,6 +302,9 @@ export class Transaction {
    * ```
    */
   afterCommit(hook: (transaction: Transaction) => unknown): void {
+    if (typeof hook !== 'function') {
+      throw new Error('"fn" must be a function');
+    }
     this.#afterCommit = [...this.#afterCommit, hook];
   }
 
