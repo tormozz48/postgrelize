@@ -354,11 +354,9 @@
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
         "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
-        "[POSTGRES] Model update does not update virtual attributes",
-        "[POSTGRES] Model update doesn't update attributes that are altered by virtual setters when option is enabled",
         "[POSTGRES] Model update throws an error if no where clause is given",
         "[POSTGRES] Model update throws an error if where has a key with undefined value",
-        "[POSTGRES] Model update updates attributes that are altered by virtual setters",
+        "[POSTGRES] Model update updates only values that match the allowed fields",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ]
     },
@@ -432,8 +430,6 @@
         "[POSTGRES] Model findAll eager loading include all utilises specified attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
-        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL",
-        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL in include",
         "[POSTGRES] Model findAll normal findAll should throw for undefined where parameters",
         "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
@@ -492,8 +488,6 @@
       ]
     },
     "test/integration/model/schema.test.js": {
-      "unstable": true,
-      "pass": 5,
       "failing": [
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"",
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",

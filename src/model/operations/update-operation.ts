@@ -69,17 +69,47 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       attributes: { ...values },
     };
     if (opts['validate'] === true) {
-      await this.#validate(model, values, opts);
+      const built = await this.#validate(model, values, opts);
+      if (opts['sideEffects'] !== false) {
+        UpdateOperation.#sideEffects(model, built, values, opts, options);
+      }
     }
     return (await this.#bulkUpdate(model, opts, options)) as UpdateResult<M>;
   }
 
-  async #validate(model: ModelStatic<AnyModel>, values: Values, opts: MutableOptions) {
+  async #validate(
+    model: ModelStatic<AnyModel>,
+    values: Values,
+    opts: MutableOptions,
+  ): Promise<AnyModel> {
     const { definition } = this.services.registry.state(model);
     await new model(values, { isNewRecord: false }).validate({
       hooks: opts['hooks'] === true,
       skip: [...definition.attributes.keys()].filter((name) => !(name in values)),
     });
+    // a new-record build tracks every value the setters wrote as changed
+    return new model(values);
+  }
+
+  // Attributes that setters of the given attributes changed (a VIRTUAL attribute with a setter) are
+  // updated too, like v6's `sideEffects: true`.
+  static #sideEffects(
+    model: ModelStatic<AnyModel>,
+    built: AnyModel,
+    values: Values,
+    opts: MutableOptions,
+    options: UpdateOptions,
+  ): void {
+    // defaults of a new build are not changes the caller asked for
+    const defaults = new model({}).changed();
+    const names = (built.changed() || []).filter(
+      (name) => name in values || !(defaults || []).includes(name),
+    );
+    const extra = Object.fromEntries(names.map((name) => [name, built.get(name)]));
+    opts['attributes'] = { ...(opts['attributes'] as Values), ...extra };
+    if (options.fields !== undefined) {
+      opts['fields'] = [...new Set([...options.fields, ...Object.keys(extra)])];
+    }
   }
 
   @ModelOperation.bulkHooks('beforeBulkUpdate', 'afterBulkUpdate')
@@ -189,6 +219,12 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     const { values } = this.services;
     const fields = (opts['fields'] ?? options.fields) as readonly string[] | undefined;
     const picked = values.pick(opts['attributes'] as Values, fields);
-    return values.withTimestamps(definition, picked, new Date(), false, opts['silent'] === true);
+    const stored = Object.fromEntries(
+      Object.entries(picked).filter(([name, value]) => {
+        const attribute = definition.attributes.get(name);
+        return value !== undefined && attribute?.type.isVirtual !== true;
+      }),
+    );
+    return values.withTimestamps(definition, stored, new Date(), false, opts['silent'] === true);
   }
 }
