@@ -9,15 +9,19 @@ export class VirtualType extends AbstractDataType {
   /** The attribute is not stored in the database. */
   readonly isVirtual = true;
 
+  /** Attributes the computed value depends on; a query that selects the virtual attribute selects these instead. */
+  readonly dependencies: readonly string[];
+
   /**
    * @param returnType - Type of the computed value.
-   * @param _fields - Dependency fields; accepted for compatibility and ignored.
+   * @param fields - Attributes the value is computed from.
    */
-  constructor(returnType?: DataTypeInput, _fields?: readonly string[]) {
+  constructor(returnType?: DataTypeInput, fields: readonly string[] = []) {
     super(
       'VIRTUAL',
       returnType === undefined ? 'VIRTUAL' : AbstractDataType.from(returnType).sqlType,
     );
+    this.dependencies = fields;
     Object.freeze(this);
   }
 }

@@ -323,10 +323,7 @@
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
         "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
-        "[POSTGRES] Model update does not update virtual attributes",
-        "[POSTGRES] Model update doesn't update attributes that are altered by virtual setters when option is enabled",
         "[POSTGRES] Model update throws an error if no where clause is given",
-        "[POSTGRES] Model update updates attributes that are altered by virtual setters",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ]
     },
@@ -394,8 +391,6 @@
         "[POSTGRES] Model findAll eager loading include all utilises specified attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
-        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL",
-        "[POSTGRES] Model findAll normal findAll should pull in dependent fields for a VIRTUAL in include",
         "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
@@ -491,8 +486,6 @@
     "test/integration/model/scope/merge.test.js": {
       "failing": [
         "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
-        "[POSTGRES] Model scope complex merge should merge complex scopes with findAll options correctly regardless of their order",
-        "[POSTGRES] Model scope complex merge should merge complex scopes with findOne options correctly regardless of their order",
         "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
       ]
     },
