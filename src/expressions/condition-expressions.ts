@@ -9,13 +9,13 @@ export class Json extends SqlExpression {
   /** Conditions object. */
   readonly conditions?: object;
   /** Value compared with the path (`undefined`: no comparison). */
-  readonly value?: unknown;
+  readonly value?: string | number | boolean | null;
 
   /**
    * @param conditionsOrPath - Dot-separated path or conditions object.
    * @param value - Value compared with the path.
    */
-  constructor(conditionsOrPath: string | object, value?: unknown) {
+  constructor(conditionsOrPath: string | object, value?: string | number | boolean | null) {
     super();
     if (typeof conditionsOrPath === 'string') {
       this.path = conditionsOrPath;

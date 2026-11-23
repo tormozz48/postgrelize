@@ -20,8 +20,6 @@ type TaggedStatement = Readonly<{
   bind?: BindParameters;
 }>;
 
-const INT4_MAX = 2_147_483_647;
-
 const noContext = new WhereCompiler({ resolve: () => undefined });
 
 const compiler = new SqlCompiler();
@@ -35,7 +33,6 @@ type TokenContext = Readonly<{
   /** Leave `$name` and unknown `$n` tokens alone (text that is already parameterized). */
   lenient: boolean;
   /** Write replacement values into the SQL text as escaped literals instead of binding them (ADR-036). */
-  inline: boolean;
 }>;
 
 /**
@@ -139,37 +136,35 @@ export class RawQuery {
     if (options.replacements === undefined && options.bind === undefined) {
       return { text: sql, values: [] };
     }
-    return this.#substitute(sql, options, false, true);
+    return this.#substitute(sql, options, false);
   }
 
   /**
    * Substitutes `replacements` into an already compiled statement (a finder's `where: literal(...)`).
-   * Values of the statement stay bound and are never scanned; each replacement value becomes a
-   * further parameter, so nothing is concatenated into the SQL text.
+   * Values of the statement stay bound and are never scanned; replacement values are written as
+   * escaped literals like v6 (ADR-036), so the same placeholder used twice yields identical SQL.
    *
    * @param query - Compiled statement with `$n` placeholders.
    * @param replacements - `?` or `:name` values; the statement is returned unchanged without them.
-   * @returns Statement with the replacements bound.
+   * @returns Statement with the replacements inlined.
    * @throws Error for a placeholder without a replacement value.
    */
   inject(query: CompiledQuery, replacements: Replacements | undefined): CompiledQuery {
     return replacements === undefined
       ? query
-      : this.#substitute(query.text, { replacements, bind: query.values }, true, false);
+      : this.#substitute(query.text, { replacements, bind: query.values }, true);
   }
 
   #substitute(
     sql: string,
     options: Readonly<{ replacements?: Replacements; bind?: BindParameters }>,
     lenient: boolean,
-    inline: boolean,
   ): CompiledQuery {
     const ctx: TokenContext = {
       replacements: options.replacements,
       bind: options.bind,
       bindParams: this.#bindChunks(options.bind),
       lenient,
-      inline,
     };
     const matches = [...sql.matchAll(TOKEN)];
     return compiler.finalize([
@@ -191,7 +186,7 @@ export class RawQuery {
     return last === undefined ? sql : sql.slice(last.index + last[0].length);
   }
 
-  #valueChunks(value: unknown, inline: boolean): Chunks {
+  #valueChunks(value: unknown): Chunks {
     if (value instanceof SqlExpression) {
       const compiled = compiler.compileExpr(noContext.toExpr(value));
       if (compiled.values.length > 0) {
@@ -201,19 +196,10 @@ export class RawQuery {
     }
     if (Array.isArray(value)) {
       return value.flatMap((item: unknown, index) =>
-        index === 0 ? this.#valueChunks(item, inline) : [', ', ...this.#valueChunks(item, inline)],
+        index === 0 ? this.#valueChunks(item) : [', ', ...this.#valueChunks(item)],
       );
     }
-    return inline ? [literals.escape(value)] : RawQuery.#typed(value);
-  }
-
-  // Bound finder replacements: v6 writes a number or a boolean into the SQL, where PostgreSQL types it
-  // (`select 1 as n` is an integer); a bare parameter would be typed `text`. Only the cast is added.
-  static #typed(value: unknown): Chunks {
-    if (typeof value === 'number' && Number.isInteger(value) && Math.abs(value) <= INT4_MAX) {
-      return [{ param: value }, '::int4'];
-    }
-    return typeof value === 'boolean' ? [{ param: value }, '::boolean'] : [{ param: value }];
+    return [literals.escape(value)];
   }
 
   #lookup(source: Replacements | BindParameters, key: string | number, kind: string): unknown {
@@ -236,13 +222,10 @@ export class RawQuery {
   #tokenChunks(match: RegExpExecArray, questionIndex: number, ctx: TokenContext): Chunks {
     const [token, , named, bindName] = match;
     if (named !== undefined && ctx.replacements !== undefined && !Array.isArray(ctx.replacements)) {
-      return this.#valueChunks(this.#lookup(ctx.replacements, named, 'replacement'), ctx.inline);
+      return this.#valueChunks(this.#lookup(ctx.replacements, named, 'replacement'));
     }
     if (token === '?' && Array.isArray(ctx.replacements)) {
-      return this.#valueChunks(
-        this.#lookup(ctx.replacements, questionIndex, 'replacement'),
-        ctx.inline,
-      );
+      return this.#valueChunks(this.#lookup(ctx.replacements, questionIndex, 'replacement'));
     }
     return bindName !== undefined && ctx.bind !== undefined
       ? this.#bindTokenChunks(token, bindName, ctx.bind, ctx)

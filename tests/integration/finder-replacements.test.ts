@@ -75,17 +75,17 @@ describe('replacements of the finders', () => {
       expect(names(rows)).toEqual(['b']);
     }));
 
-  it('sends the replacement values as bound parameters, not as SQL text', () => {
+  it('writes the replacement values as escaped literals and binds the finder values', () => {
     const statements: string[] = [];
     return withItems(
       async (_sequelize, Item) => {
         await Item.findAll({
-          where: literal('"name" = :name'),
+          where: { [Op.and]: [{ qty: 1 }, literal('"name" = :name')] },
           replacements: { name: "x'; DROP TABLE y; --" },
         });
         const select = statements.findLast((sql) => sql.includes('FROM "Items"'));
-        expect(select).toContain('"name" = $1');
-        expect(select).not.toContain('DROP TABLE');
+        expect(select).toContain(`"name" = 'x''; DROP TABLE y; --'`);
+        expect(select).toContain('"qty" = $1');
       },
       { logging: (sql) => statements.push(sql) },
     );

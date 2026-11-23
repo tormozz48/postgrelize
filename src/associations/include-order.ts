@@ -124,6 +124,9 @@ export class IncludeOrder {
     if (typeof reference === 'function') {
       return node.model === reference;
     }
+    if (node.association === reference) {
+      return true;
+    }
     if (typeof reference !== 'object' || reference === null || !('model' in reference)) {
       return false;
     }

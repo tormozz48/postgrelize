@@ -324,11 +324,6 @@
       "note": "v6 internal used by sync and the query generator"
     },
     {
-      "name": "queryGenerator",
-      "category": "internal",
-      "note": "v6 internal used by sync and the query generator"
-    },
-    {
       "name": "rawSelect",
       "category": "not-planned",
       "note": "low-level v6 query-generator API that takes model instances or raw attribute maps; use the Model methods or sequelize.query"

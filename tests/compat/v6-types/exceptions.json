@@ -52,10 +52,6 @@
       "category": "tracked",
       "note": "Unknown keys in where are accepted here but rejected by v6 on typed models (an @ts-expect-error in the corpus is unused)."
     },
-    "datatype-string-input": {
-      "category": "tracked",
-      "note": "A plain string is accepted as an attribute type by v6, rejected here."
-    },
     "deep-import": {
       "category": "internal",
       "note": "sequelize/lib/* deep type imports."
@@ -270,7 +266,7 @@
       "file": "model.ts",
       "code": "TS2554",
       "message": "Expected 1 arguments, but got 0.",
-      "count": 12,
+      "count": 8,
       "cause": "expect-type-mismatch"
     },
     {
@@ -454,13 +450,6 @@
       "message": "No overload matches this call.",
       "count": 2,
       "cause": "returning-array"
-    },
-    {
-      "file": "upsert.ts",
-      "code": "TS2322",
-      "message": "Type 'string' is not assignable to type 'DataTypeInput | Readonly<{ type: DataTypeInput; allowNull?: boolean | undefined",
-      "count": 2,
-      "cause": "datatype-string-input"
     },
     {
       "file": "upsert.ts",

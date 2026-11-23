@@ -17,9 +17,11 @@ import type { WhereOptions } from './types.ts';
  * await user.save(opts);
  * ```
  */
-export type SaveOptions<T = Values> = QueryOptionsBase & {
+// oxlint-disable-next-line typescript/no-explicit-any -- v6 declares `SaveOptions<TModelAttributes = any>`.
+export type SaveOptions<T = any> = QueryOptionsBase & {
   /** Attributes to save; others are ignored. Default: all changed attributes. Mutable so hooks can adjust it, as in v6. */
-  fields?: readonly (keyof T & string)[];
+  // oxlint-disable-next-line typescript/no-explicit-any -- an `any` model accepts any field name, like v6
+  fields?: readonly (0 extends 1 & T ? any : keyof T & string)[];
 } & Readonly<{
     /** Do not update `updatedAt`.
      * @defaultValue false */

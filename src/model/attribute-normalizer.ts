@@ -52,7 +52,8 @@ export class AttributeNormalizer {
    * @returns True for column options.
    */
   isOptions(value: DataTypeInput | AttributeOptions): value is AttributeOptions {
-    return typeof value === 'object' && 'type' in value && typeof value.type !== 'string';
+    // a data type (GEOMETRY has a string `type`) carries `sqlType`; column options with a raw type name do not
+    return typeof value === 'object' && 'type' in value && !('sqlType' in value);
   }
 
   /**

@@ -13,7 +13,7 @@ const defineItem = async (sequelize: Sequelize) => {
   return Item;
 };
 
-describe('finder replacements stay bound values', () => {
+describe('finder replacements are escaped into the SQL text (ADR-037)', () => {
   it('binds every payload given as a named or positional replacement', () =>
     withCanary(async ({ sequelize }) => {
       const Item = await defineItem(sequelize);

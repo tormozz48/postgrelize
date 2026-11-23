@@ -97,8 +97,10 @@ export const cast = (val: unknown, type: string): Cast => new Cast(val, type);
  * await User.findAll({ where: json({ meta: { active: true } }) });
  * ```
  */
-export const json = (conditionsOrPath: string | object, value?: unknown): Json =>
-  new Json(conditionsOrPath, value);
+export const json = (
+  conditionsOrPath: string | object,
+  value?: string | number | boolean | null,
+): Json => new Json(conditionsOrPath, value);
 
 /** Call signatures of {@link where}. */
 export type WhereFactory = {

@@ -2,6 +2,7 @@ import { AliasMinifier } from '../../associations/alias-minifier.ts';
 import type { SelectNode } from '../../sql/ast.ts';
 import type { IncludeNode, IncludeOption } from '../../associations/include.ts';
 import type { QueryResult } from '../../connection/connection-manager.ts';
+import { SqlLiteral } from '../../ddl/sql-literal.ts';
 import { Subquery } from '../../expressions/methods.ts';
 import type { ModelDefinition } from '../model-definition.ts';
 import type { AnyModel, FindOptions, ModelStatic, MutableOptions, Values } from '../options.ts';
@@ -166,6 +167,21 @@ export class FindOperation extends FindLookups {
     options: FindOptions & Readonly<{ as?: string }>,
   ): Subquery {
     return new Subquery(() => this.#subquerySelect(model, options));
+  }
+
+  /**
+   * SQL text of a finder, values written as escaped literals (v6 `queryGenerator.selectQuery`): no
+   * scope, paranoid filter or hook is applied, nothing is executed.
+   *
+   * @param model - Model class.
+   * @param options - Find options.
+   * @returns SELECT statement ending with `;`.
+   */
+  selectSql(model: ModelStatic<AnyModel>, options: FindOptions): string {
+    const { definition, runtime } = this.services.registry.state(model);
+    const nodes = this.services.includes.normalize(model, options.include);
+    const select = this.services.finds.build(definition, options, nodes, runtime.inAsAnyThreshold);
+    return `${new SqlLiteral().inlineValues(this.services.compiler.compile(select))};`;
   }
 
   #subquerySelect(model: ModelStatic<AnyModel>, options: FindOptions & Readonly<{ as?: string }>) {

@@ -161,17 +161,28 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
   }
 
   /**
-   * Returns the value an attribute had before it was changed, or all previous values of changed
-   * attributes when no key is given.
+   * Returns the previous values of all changed attributes.
    *
-   * @param key - Attribute name; omit to get all.
-   * @returns Previous value(s).
+   * @returns Previous values keyed by attribute name.
+   * @example
+   * ```ts
+   * user.set('email', 'ada@example.com');
+   * const before = user.previous();
+   * ```
+   */
+  previous(): Partial<TAttributes>;
+  /**
+   * Returns the value an attribute had before it was changed.
+   *
+   * @param key - Attribute name.
+   * @returns Previous value.
    * @example
    * ```ts
    * user.set('email', 'ada@example.com');
    * const before = user.previous('email');
    * ```
    */
+  previous<K extends keyof TAttributes>(key: K): TAttributes[K] | undefined;
   previous<K extends keyof TAttributes>(
     key?: K,
   ): TAttributes[K] | Partial<TAttributes> | undefined {

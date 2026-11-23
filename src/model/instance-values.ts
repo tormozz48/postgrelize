@@ -92,20 +92,35 @@ export class InstanceValues {
   #getAll(instance: AnyModel, options: GetOptions | number | symbol | undefined): Values {
     const raw = typeof options === 'object' && options.raw === true;
     const plain = typeof options === 'object' && options.plain === true;
-    const toPlain = (value: unknown): unknown =>
-      !plain
-        ? value
-        : this.#isInstance(value)
-          ? value.get({ plain: true })
-          : Array.isArray(value) && value.some((item) => this.#isInstance(item))
-            ? value.map(toPlain)
-            : value;
+    const keys = new Set([
+      ...(raw ? [] : this.#getterKeys(instance)),
+      ...Object.keys(instance.dataValues),
+    ]);
     return Object.fromEntries(
-      Object.keys(instance.dataValues).map((key) => [
+      [...keys].map((key) => [
         key,
-        toPlain(raw ? (instance.dataValues as Values)[key] : instance.get(key)),
+        this.#plain(raw ? (instance.dataValues as Values)[key] : instance.get(key), plain),
       ]),
     );
+  }
+
+  #plain(value: unknown, plain: boolean): unknown {
+    if (!plain) {
+      return value;
+    }
+    if (this.#isInstance(value)) {
+      return value.get({ plain: true });
+    }
+    return Array.isArray(value) && value.some((item) => this.#isInstance(item))
+      ? value.map((item) => this.#plain(item, plain))
+      : value;
+  }
+
+  /** v6 `get()` lists every attribute with a custom getter, also those without a stored value (VIRTUAL). */
+  #getterKeys(instance: AnyModel): string[] {
+    return [...this.#registry.definition(instance.constructor).attributes]
+      .filter(([, attribute]) => attribute.get !== undefined)
+      .map(([name]) => name);
   }
 
   #setOne(instance: AnyModel, key: string, value: unknown, options: SetOptions): void {
