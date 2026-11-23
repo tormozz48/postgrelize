@@ -48,6 +48,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- An explicit `undefined` no longer overrides an attribute default: `Model.build({ s: undefined })`, `create` and `upsert` use `defaultValue` like Sequelize v6 instead of failing a `NOT NULL` constraint.
 - A function `defaultValue` is called once per new row and its result used, as in Sequelize v6 (`build`, `create`, `bulkCreate`, `findOrCreate`); it threw `DataCloneError` before. `sync` no longer renders the function source as a `DEFAULT` clause.
 - `Model.count({ group })` is typed as `GroupedCountResultItem[]` (v6 overloads), so `rows.map((r) => r.count)` type-checks; the ungrouped call stays `number`. `CountWithOptions` is exported. Runtime unchanged. Part of the Sequelize v6 type-parity work (ADR-032).
 - Type parity with Sequelize v6: `IncludeOptions` and the `fields` option of `SaveOptions` / `UpdateOptions` are mutable (hooks and helpers can assign `include.required`, `options.fields`, …); `Model.max` / `Model.min` take `<T, M>` in the v6 order, so `max<string | null, MyModel>('name')` compiles; `validate` model functions are typed with `this` as the model instance, so `this.otherAttribute` and `this: MyModel` both compile.
