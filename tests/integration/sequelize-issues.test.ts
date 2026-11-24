@@ -774,3 +774,35 @@ describe('v6 parity: instance update after create with fields, update fields, in
       expect(rows.map((row) => row.get('tag'))).toEqual(['after', 'after']);
     }));
 });
+
+describe('v6 parity: logging', () => {
+  it('logs SQL with the values inlined, keeps bind in the second argument and sends bound parameters', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Mail = sequelize.define('Mail', {
+        sesMessageId: DataTypes.STRING,
+        note: DataTypes.STRING,
+      });
+      await sequelize.sync();
+      await Mail.create({ sesMessageId: "a'bc", note: 'n' });
+      const logged: { sql: string; options: unknown }[] = [];
+      const logging = (sql: string, options?: unknown): void => {
+        logged.push({ sql, options });
+      };
+      const rows = await Mail.findAll({ where: { sesMessageId: "a'bc" }, logging });
+      await Mail.update({ note: 'changed' }, { where: { sesMessageId: "a'bc" }, logging });
+      const loggedSelect = logged[0]?.sql ?? '';
+      expect(loggedSelect).toContain(`WHERE "Mail"."sesMessageId" = 'a''bc'`);
+      expect(loggedSelect).not.toMatch(/\$\d/);
+      const info = logged[0]?.options as { bind: unknown[]; parameterizedSql: string };
+      expect(info.bind).toEqual(["a'bc"]);
+      expect(info.parameterizedSql).toContain('"sesMessageId" = $1');
+      expect(logged[1]?.sql).toContain(`SET "note" = 'changed'`);
+      // the logged text runs as it is
+      const replay = await runSelect(sequelize, loggedSelect.replace(/^Executing \([^)]*\): /, ''));
+      expect(replay).toHaveLength(rows.length);
+    }));
+});
+
+const runSelect = (sequelize: Sequelize, sql: string) =>
+  sequelize.query(sql, { type: 'SELECT' }) as Promise<unknown[]>;

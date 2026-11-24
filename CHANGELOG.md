@@ -38,6 +38,14 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `instance.reload()` of an instance reached through nested includes (a `hasMany` child, a `belongsTo` of a child, …) loads that instance's own includes again, like v6 (`_options.include` of a nested build); 1.8.3 did this only for an instance a finder returned itself.
+
+### Changed
+
+- The `logging` callback receives the SQL with the values inlined as literals (first argument), like v6, so a logged statement can be run as it is; the statement sent to PostgreSQL keeps its bound parameters. The second argument is `{ bind, parameterizedSql }` (the bound values and the statement as sent; `parameterizedSql` is a postgrelize extension). The default `console.log` logger therefore prints the values of `INSERT` / `UPDATE` statements too: set `logging: false` or a logger that redacts where that matters.
+
 ## [1.8.3] - 2026-11-24
 
 ### Fixed

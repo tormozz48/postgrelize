@@ -134,23 +134,24 @@ describe('ConnectionConfig', () => {
 
 describe('QueryLogger', () => {
   const query = { text: 'SELECT $1', values: [1] };
+  const bound = { bind: [1], parameterizedSql: 'SELECT $1' };
 
   it('logs the SQL with its bind values and the transaction id', () => {
     const logging = vi.fn<(...args: unknown[]) => unknown>();
     new QueryLogger({ logging }).log(query, { transactionId: 'tx1' }, 5);
-    expect(logging).toHaveBeenCalledWith('Executing (tx1): SELECT $1', { bind: [1] });
+    expect(logging).toHaveBeenCalledWith('Executing (tx1): SELECT 1', bound);
     new QueryLogger({ logging }).log(query, {}, 5);
-    expect(logging).toHaveBeenLastCalledWith('Executing (default): SELECT $1', { bind: [1] });
+    expect(logging).toHaveBeenLastCalledWith('Executing (default): SELECT 1', bound);
   });
 
   it('reports the elapsed time in benchmark mode, from defaults or per query', () => {
     const logging = vi.fn<(...args: unknown[]) => unknown>();
     new QueryLogger({ logging, benchmark: true }).log(query, {}, 12);
-    expect(logging).toHaveBeenCalledWith('Executed (default): SELECT $1', 12);
+    expect(logging).toHaveBeenCalledWith('Executed (default): SELECT 1', 12);
     new QueryLogger({ logging }).log(query, { benchmark: true }, 3);
-    expect(logging).toHaveBeenLastCalledWith('Executed (default): SELECT $1', 3);
+    expect(logging).toHaveBeenLastCalledWith('Executed (default): SELECT 1', 3);
     new QueryLogger({ logging, benchmark: true }).log(query, { benchmark: false }, 3);
-    expect(logging).toHaveBeenLastCalledWith('Executing (default): SELECT $1', { bind: [1] });
+    expect(logging).toHaveBeenLastCalledWith('Executing (default): SELECT 1', bound);
   });
 
   it('stays silent when logging is disabled or per-query logging overrides it', () => {

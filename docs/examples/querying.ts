@@ -39,7 +39,8 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   const statements: string[] = [];
   const longIn = await Item.count({
     where: { id: { [Op.in]: ids } },
-    logging: (sql) => statements.push(sql),
+    logging: (_sql, info?: unknown) =>
+      statements.push((info as { parameterizedSql: string }).parameterizedSql),
   }); // 150 values: one array parameter, `"id" = ANY($1)`
   // #endregion any-list
   if (longIn !== 3 || !statements.some((sql) => sql.includes('ANY($1)'))) {

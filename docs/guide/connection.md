@@ -32,7 +32,7 @@ The same settings can be given as separate options, together with the pool, sess
 
 ## Logging
 
-`logging` receives the SQL text of every executed query (values are sent to the server as bound parameters, never inlined). Use `false` to silence it and `benchmark: true` to receive the duration in milliseconds as the second argument. A per-query `logging` option overrides the instance value.
+`logging` receives the SQL text of every executed query with the values inlined as literals, like Sequelize v6, so a logged statement can be run as it is. The query itself is still sent to the server with bound parameters; the second argument is `{ bind, parameterizedSql }` (the bound values and the statement as sent, `$1`, `$2`, …; `parameterizedSql` is a postgrelize extension). Use `false` to silence it and `benchmark: true` to receive the duration in milliseconds as the second argument. A per-query `logging` option overrides the instance value.
 
 <<< @/examples/connection.ts#logging{ts}
 

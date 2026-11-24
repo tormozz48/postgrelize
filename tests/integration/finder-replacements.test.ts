@@ -1,3 +1,4 @@
+import { parameterizedSql } from '../support/parameterized-log.ts';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DataTypes, literal, Op, QueryTypes, Sequelize } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
@@ -10,7 +11,7 @@ afterEach(async () => {
 
 const withItems = <T>(
   run: (sequelize: Sequelize, Item: ReturnType<Sequelize['define']>) => Promise<T>,
-  options: Readonly<{ logging?: (sql: string) => void }> = {},
+  options: Readonly<{ logging?: (sql: string, options?: unknown) => void }> = {},
 ): Promise<T> =>
   withSchema(async ({ schema }) => {
     const sequelize = new Sequelize(testDatabaseUrl(), {
@@ -87,7 +88,7 @@ describe('replacements of the finders', () => {
         expect(select).toContain(`"name" = 'x''; DROP TABLE y; --'`);
         expect(select).toContain('"qty" = $1');
       },
-      { logging: (sql) => statements.push(sql) },
+      { logging: (_sql, options) => statements.push(parameterizedSql(options)) },
     );
   });
 

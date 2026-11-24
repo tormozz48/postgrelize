@@ -2,6 +2,7 @@ import { ModelRegistry } from '../model/model-registry.ts';
 import type { ModelDefinition } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { IncludeNode } from './include.ts';
+import { InstanceState } from '../model/instance-state.ts';
 import { ValuesWriter } from '../model/values-writer.ts';
 import { IncludeRows, type IncludeRow, type InstanceBuilder } from './include-rows.ts';
 
@@ -133,6 +134,8 @@ export class IncludeAssembler {
 
   #child(node: IncludeNode, group: Group, build: InstanceBuilder): Instance {
     const child = build(node.model, group.values);
+    // like v6 (`_setInclude`), a nested instance keeps its own includes so a bare `reload()` loads them again
+    InstanceState.of(child).loadedIncludes = node.children;
     this.#attachThrough(child, node, group.rows[0] ?? {}, build);
     this.#attachChildren(child, node.children, group.rows, build);
     return child;

@@ -1,3 +1,4 @@
+import { SqlLiteral } from '../ddl/sql-literal.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { LoggingFunction } from './options.ts';
 
@@ -46,6 +47,16 @@ export class QueryLogger {
     return logging !== false && logging !== undefined;
   }
 
+  // Like v6 for a finder, the logged text carries the values, so it can be run as it is; the statement
+  // sent to PostgreSQL keeps its bound parameters, and `bind` stays in the second argument.
+  static #inlined(query: CompiledQuery): string {
+    try {
+      return new SqlLiteral().inlineValues(query);
+    } catch {
+      return query.text;
+    }
+  }
+
   /**
    * Logs one executed statement.
    *
@@ -58,12 +69,15 @@ export class QueryLogger {
     if (logging === false || logging === undefined) {
       return;
     }
-    const sql = `Executing (${options.transactionId ?? 'default'}): ${query.text}`;
+    const sql = `Executing (${options.transactionId ?? 'default'}): ${QueryLogger.#inlined(query)}`;
     if (options.benchmark ?? this.#defaults.benchmark) {
       logging(sql.replace('Executing', 'Executed'), elapsed);
     } else {
       // v6 passes the query options here although its typings declare `timing?: number`.
-      (logging as (sql: string, options: unknown) => void)(sql, { bind: query.values });
+      (logging as (sql: string, options: unknown) => void)(sql, {
+        bind: query.values,
+        parameterizedSql: query.text,
+      });
     }
   }
 }
