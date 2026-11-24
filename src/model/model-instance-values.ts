@@ -164,6 +164,14 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * @returns True when changed.
    */
   changed<K extends keyof this>(key: K): boolean;
+
+  /**
+   * Marks an attribute as changed or unchanged, addressed by a key of the model class (Sequelize v6 signature).
+   *
+   * @param key - Attribute name.
+   * @param value - Changed flag.
+   */
+  changed<K extends keyof this>(key: K, value: boolean): void;
   changed(key?: string | number | symbol, value?: boolean): unknown {
     return instanceValues.changed(this as unknown as AnyModel, key as string | undefined, value);
   }
