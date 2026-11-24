@@ -85,6 +85,12 @@ export class FindOperation extends FindLookups {
   async #beforeFind(model: object, opts: MutableOptions): Promise<void> {
     if (opts['hooks'] === true) {
       await this.services.lifecycle.runHooks(model, 'beforeFind', opts);
+      if (opts['include'] !== undefined) {
+        opts['include'] = this.services.includes.conform(
+          model as ModelStatic<AnyModel>,
+          opts['include'] as IncludeOption,
+        );
+      }
       await this.services.lifecycle.runHooks(model, 'beforeFindAfterExpandIncludeAll', opts);
       await this.services.lifecycle.runHooks(model, 'beforeFindAfterOptions', opts);
     }

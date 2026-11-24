@@ -688,3 +688,47 @@ describe('v6 parity: plain values of assigned associations', () => {
       expect(b.form.transport).toBe(b);
     }));
 });
+
+describe('v6 parity: paranoid destroy and include hooks', () => {
+  it('a soft-deleted instance keeps its in-memory values', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const C = sequelize.define('C', { token: DataTypes.STRING }, { paranoid: true });
+      type Row = { get(key: string): unknown; set(key: string, value: unknown): void };
+      C.addHook('beforeSave', (row: unknown) => {
+        const r = row as Row;
+        const token = String(r.get('token'));
+        if (!token.startsWith('enc:')) r.set('token', `enc:${token}`);
+      });
+      const decrypt = (row: unknown): void => {
+        const r = row as Row;
+        r.set('token', String(r.get('token')).replace(/^enc:/, ''));
+      };
+      C.addHook('afterCreate', decrypt);
+      C.addHook('afterUpdate', decrypt);
+      await sequelize.sync();
+      const c = await C.create({ token: 'plain-token' });
+      await sequelize.transaction((transaction) => c.destroy({ transaction }));
+      expect(c.get('token')).toBe('plain-token');
+      expect(c.get('deletedAt')).toBeInstanceOf(Date);
+    }));
+
+  it('beforeFindAfterExpandIncludeAll sees { association } includes resolved to model and as', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const A = sequelize.define('A', {}, { timestamps: false });
+      const B = sequelize.define('B', {}, { timestamps: false });
+      A.hasMany(B, { as: 'rows' });
+      await sequelize.sync();
+      let seen: unknown;
+      A.addHook(
+        'beforeFindAfterExpandIncludeAll',
+        (options: { include: { model: unknown; as: string }[] }) => {
+          seen = options.include.map((item) => ({ hasModel: item.model === B, as: item.as }));
+        },
+      );
+      await A.findAll({ include: [{ association: 'rows' }] });
+      await A.findAll({ include: [A.associations['rows'] as never] });
+      expect(seen).toEqual([{ hasModel: true, as: 'rows' }]);
+    }));
+});

@@ -88,19 +88,30 @@ export class InstanceWriter {
     if (definition.version !== undefined && result.rowCount === 0) {
       throw new OptimisticLockError({ modelName: definition.name, values: set, where });
     }
-    this.#lifecycle.applyRow(instance, definition, result.rows[0]);
-    InstanceWriter.#keepAssigned(instance, changes);
+    this.#applyUpdate(instance, definition, changes, set, result.rows[0]);
   }
 
-  // v6 sends no RETURNING with an instance update, so the instance keeps what was assigned (`'08:30'`),
-  // not what PostgreSQL normalised (`'08:30:00'`); only columns the update did not write come back.
-  static #keepAssigned(instance: AnyModel, changes: Values): void {
+  // v6 sends no RETURNING with an instance update: the instance keeps its in-memory values (`'08:30'`,
+  // not the normalised `'08:30:00'`; an encrypted column that a hook decrypted stays decrypted). Only
+  // a column written from an expression (`fn`, `literal`) and a generated column take the value PostgreSQL computed.
+  #applyUpdate(
+    instance: AnyModel,
+    definition: ModelDefinition,
+    changes: Values,
+    set: Values,
+    row: Readonly<Record<string, unknown>> | undefined,
+  ): void {
     const values = instance.dataValues as Values;
-    Object.entries(changes).forEach(([name, value]) => {
-      if (!(value instanceof SqlExpression)) {
-        values[name] = value;
+    if (definition.version !== undefined) {
+      values[definition.version] = set[definition.version];
+    }
+    instance.isNewRecord = false;
+    const computed = row === undefined ? {} : this.#services.rows.parse(definition, row);
+    for (const name of Object.keys(computed)) {
+      if (changes[name] instanceof SqlExpression || definition.attributes.get(name)?.generated) {
+        values[name] = computed[name];
       }
-    });
+    }
   }
 
   #updateRow(

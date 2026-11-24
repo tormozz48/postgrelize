@@ -12,8 +12,16 @@ type BaseNode = Omit<IncludeNode, 'alias' | 'path' | 'through' | 'children'>;
 
 const isModel = (value: unknown): value is Model => typeof value === 'function';
 
+const isAssociation = (value: object): value is Association => 'associationType' in value;
+
 const toOptions = (item: Model | string | IncludeOptions): IncludeOptions =>
-  isModel(item) ? { model: item } : typeof item === 'string' ? { association: item } : item;
+  isModel(item)
+    ? { model: item }
+    : typeof item === 'string'
+      ? { association: item }
+      : isAssociation(item)
+        ? { association: item }
+        : item;
 
 /**
  * Normalizes the `include` option into an include tree: resolves associations by model, alias or
@@ -47,6 +55,41 @@ export class IncludeResolver {
     );
     const parent = { alias: parentAlias, path: parentPath };
     return items.map((item) => this.#node(source, item, parent));
+  }
+
+  /**
+   * Include entries the way v6 hands them to `beforeFindAfterExpandIncludeAll`: always a list of
+   * option objects, `{ all: true }` expanded, and an `association` entry (object or alias) carrying
+   * its `model` and `as`; nested includes are conformed too.
+   *
+   * @param source - Model the includes are resolved on.
+   * @param option - `include` option.
+   * @returns Conformed entries, or `undefined` without includes.
+   * @throws EagerLoadingError when an alias is not an association of `source`.
+   */
+  conform(source: Model, option: IncludeOption | undefined): readonly IncludeOptions[] | undefined {
+    if (option === undefined) {
+      return undefined;
+    }
+    const items = this.#lookup.expandAll(
+      source,
+      (Array.isArray(option) ? option : [option]).map(toOptions),
+    );
+    return items.map((item) => this.#conformed(source, item));
+  }
+
+  #conformed(source: Model, item: IncludeOptions): IncludeOptions {
+    if (item.association === undefined) {
+      return item.model === undefined || item.include === undefined
+        ? item
+        : { ...item, include: this.conform(item.model, item.include) as IncludeOption };
+    }
+    const association = this.#lookup.resolve(source, item);
+    const model = item.model ?? association.target;
+    const conformed = { ...item, association, model, as: item.as ?? association.as };
+    return item.include === undefined
+      ? conformed
+      : { ...conformed, include: this.conform(model, item.include) as IncludeOption };
   }
 
   /**

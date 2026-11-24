@@ -40,6 +40,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- `instance.update()` / `save()` send no `RETURNING` data back into the instance, like v6: it keeps its in-memory values (a column a hook decrypted stays decrypted after a paranoid `destroy()`); only columns written from `fn` / `literal` and generated columns take the value PostgreSQL computed. This replaces the narrower rule "only unwritten columns come back".
+- `beforeFindAfterExpandIncludeAll` hooks receive `{ association }` includes already resolved to `model` and `as` (and `{ all: true }` expanded), like v6.
 - An association value assigned to an instance (`b.form.transport = b`) is a plain property, not one of its values, like v6: `get({ plain: true })` and `toJSON()` follow only the includes the query loaded and no longer overflow the stack on a cycle.
 - `Model.name` equals the `modelName` init option when the model has no `beforeDefine` hook (it stayed the class name, e.g. `File$1` from a bundler), like v6, so SQL built from `Model.name` matches the table alias.
 - After `instance.update()` the instance keeps the values the caller assigned (`'08:30'` for a `TIME` column), so `afterUpdate` hooks see them, not what PostgreSQL normalised (`'08:30:00'`), like v6; columns the update did not write still come back from the database.
