@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-24
+
 ### Fixed
 
 - `Model.update` sets `options.fields` (the attributes in `values`, plus `updatedAt`) and `options.attributes` (the values with the new `updatedAt`) before the `beforeBulkUpdate` hooks, like v6; an explicit `fields` option is kept, and a hook that changes `fields`, `attributes` or `individualHooks` takes effect ([#162](https://github.com/tormozz48/postgrelize/pull/162)).
@@ -395,7 +397,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/tormozz48/postgrelize/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/tormozz48/postgrelize/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/tormozz48/postgrelize/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/tormozz48/postgrelize/compare/v1.3.0...v1.4.0

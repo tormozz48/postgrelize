@@ -2,7 +2,7 @@
 
 **Project:** postgrelize — PostgreSQL-only, Sequelize v6 drop-in ORM (TypeScript)
 **Feature slug:** `postgrelize-mvp`
-**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference); 1.4.0 released (2026-11-23, G5 parts 3–9: hooks, cascade hooks, sequelize.query, where guards); 1.5.0 released (2026-11-23, G5 parts 9–14, type parity IV, default values, inlined raw replacements); 1.6.0 released (2026-11-23, v6 parity for the ddt migration R1–R9, T2–T11, ADR-037)
+**Current phase:** Backlog 3 delivered including S10 performance; next: backlog 4 PostgreSQL gap stages S14 → S12 → S11 → S13 → S16 → S17 → S15 (spec `.10x/specs/2026-11-15-backlog-4-roadmap-design.md`); 1.0.0 released (2026-11-21); 1.1.0 released (2026-11-22, S19 v6 parity); 1.2.0 released (2026-11-22, retry, connectionManager, v6 type API); 1.3.0 released (2026-11-22, findByPk/replacements, default export + CJS, v6 gates G1–G4, docs reference); 1.4.0 released (2026-11-23, G5 parts 3–9: hooks, cascade hooks, sequelize.query, where guards); 1.5.0 released (2026-11-23, G5 parts 9–14, type parity IV, default values, inlined raw replacements); 1.6.0 released (2026-11-23, v6 parity for the ddt migration R1–R9, T2–T11, ADR-037); 1.7.0 release PR open (2026-11-24, v6 parity Q–X from ddt, ADR-038)
 
 **S19 (v6 parity from a production migration):** done, in release 1.1.0 (PRs #99–#107): `afterConnect`, `useCLS(namespace)`, `minifyAliases`, static aliases, hook shorthands, `Model` and `QueryInterface` methods, `Sequelize#truncate`, `Deferrable.SET_*`; `tests/unit/api-surface.test.ts` keeps the allow-list (142 names, each with a reason) from growing.
 
@@ -206,6 +206,10 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 ## Release 1.1.0 (2026-11-22, released)
 - S19: Sequelize v6 parity found by migrating a production project; additive only, so a minor bump. Release PR `chore/release-1.1.0`; released on the maintainer's go.
 - Released: tag `v1.1.0` on merge commit `2d610c8` (PR #109), `release.yml` run 45005493053. Local preflight failed twice in `tests/integration/security/types.test.ts` under machine load (52–78); the maintainer approved releasing on green GitHub CI. First publish attempt failed `E403 OIDC permission denied` (npm Trusted Publisher config); after the maintainer fixed it, `gh run rerun --failed` published `postgrelize@1.1.0` (`latest`, provenance), mirror and GitHub Release v1.1.0 green. Verified: `npm view`, clean install, ESM and CJS import (153 exports). npm showed 1.0.0 for about a minute after the job went green (processing delay). Bench gate not run (maintainer declined).
+
+## Release 1.7.0 (2026-11-24, in progress)
+
+Release PR `chore/release-1.7.0`; tag `v1.7.0` follows the merge. Contents: v6 parity found by ddt on 1.6.0 (PRs #161, #162): `fn()` string arguments and `Op.is` values as escaped literals (ADR-038), `col('a.b.c')` alias paths, mutable option types and `this` of attribute `get`/`set`, required includes nested inside an optional parent's `LEFT JOIN`, `Op.or`/`Op.and` object values, `changed()`/`previous()` inside after hooks, `fields`/`attributes` visible to `beforeBulkUpdate`. Bench gate run (stub, 3 runs): the branch and `main` give the same v6/pgz ratios on this machine, no regression. Not reproduced without the ddt errors: R3, T-U, T9, T1/T4, bankInstitution; `tableAs` is not in the v6 types.
 
 ## Release 1.6.0 (2026-11-23, released)
 
