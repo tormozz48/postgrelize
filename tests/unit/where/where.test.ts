@@ -122,6 +122,38 @@ describe('whereToAst', () => {
   it('rejects invalid input', () => {
     expect(() => sql('id = 1')).toThrow(/Invalid where/);
     expect(() => sql({ id: { [Op.between]: [1] } })).toThrow(/two values/);
-    expect(() => sql({ id: { [Op.is]: 5 } })).toThrow(/Op.is/);
+  });
+});
+
+describe('v6 parity: fn() strings, Op.is values, col() paths', () => {
+  it("writes a string argument of fn() as an escaped literal, like v6 COUNT('*')", () => {
+    expect(sql(where(fn('concat_ws', ' ', col('a'), "it's"), Op.ne, 'x'))).toEqual({
+      text: "concat_ws(' ', \"a\", 'it''s') <> $1",
+      values: ['x'],
+    });
+  });
+
+  it('keeps other fn() arguments bound', () => {
+    expect(sql(where(fn('round', col('a'), 2), '>', 1))).toEqual({
+      text: 'round("a", $1) > $2',
+      values: [2, 1],
+    });
+  });
+
+  it('accepts a literal, an expression or any value after Op.is', () => {
+    expect(sql({ id: { [Op.is]: literal('NULL') } }).text).toBe('"User"."id" IS NULL');
+    expect(sql({ id: { [Op.is]: null } }).text).toBe('"User"."id" IS NULL');
+    expect(sql({ id: { [Op.is]: false } }).text).toBe('"User"."id" IS FALSE');
+    expect(sql({ id: { [Op.is]: 5 } }).text).toBe('"User"."id" IS 5');
+    expect(sql({ id: { [Op.is]: "x'y" } }).text).toBe(`"User"."id" IS 'x''y'`);
+  });
+
+  it('joins all but the last part of a col() path with ->', () => {
+    expect(sql(where(fn('lower', col('user.agent.id')), Op.ne, 'x')).text).toBe(
+      'lower("user->agent"."id") <> $1',
+    );
+    expect(sql(where(fn('lower', col('user.id')), Op.ne, 'x')).text).toBe(
+      'lower("user"."id") <> $1',
+    );
   });
 });

@@ -12,15 +12,24 @@ export class Fn extends SqlExpression {
   readonly fn: string;
   /** Arguments. */
   readonly args: readonly unknown[];
+  /**
+   * Write string arguments into the SQL as escaped literals like v6 (set by {@link fn}); the
+   * internal helpers leave it off, so their strings stay bound parameters.
+   *
+   * @internal
+   */
+  readonly inlineStrings: boolean;
 
   /**
    * @param fn - Function name; must be a plain or schema-qualified identifier.
    * @param args - Arguments.
+   * @param inlineStrings - Internal: render string arguments inline.
    */
-  constructor(fn: string, args: readonly unknown[]) {
+  constructor(fn: string, args: readonly unknown[], inlineStrings = false) {
     super();
     this.fn = Fn.validName(fn);
     this.args = args;
+    this.inlineStrings = inlineStrings;
     Object.freeze(this);
   }
 

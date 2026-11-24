@@ -111,7 +111,7 @@ export class ConditionCompiler {
       case Op.ne:
         return this.#equals(compiler, left, value, true);
       case Op.is:
-        return isOperator(left, value);
+        return isOperator(compiler, left, value);
       case Op.not:
         return this.#negation(compiler, left, value);
       default:

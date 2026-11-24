@@ -22,25 +22,25 @@ export type SaveOptions<T = any> = QueryOptionsBase & {
   /** Attributes to save; others are ignored. Default: all changed attributes. Mutable so hooks can adjust it, as in v6. */
   // oxlint-disable-next-line typescript/no-explicit-any -- an `any` model accepts any field name, like v6
   fields?: readonly (0 extends 1 & T ? any : keyof T & string)[];
-} & Readonly<{
-    /** Do not update `updatedAt`.
-     * @defaultValue false */
-    silent?: boolean;
-    /** Return all columns after insert/update; PostgreSQL always uses `RETURNING`, so this is accepted for v6 compatibility.
-     * @defaultValue true */
-    returning?: boolean;
-    /** Run lifecycle hooks.
-     * @defaultValue true */
-    hooks?: boolean;
-    /** Run validations.
-     * @defaultValue true (`false` for `bulkCreate`) */
-    validate?: boolean;
-    /**
-     * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension.
-     * @postgrelize
-     */
-    overriding?: 'system' | 'user';
-  }>;
+} & {
+  /** Do not update `updatedAt`.
+   * @defaultValue false */
+  silent?: boolean;
+  /** Return all columns after insert/update; PostgreSQL always uses `RETURNING`, so this is accepted for v6 compatibility.
+   * @defaultValue true */
+  returning?: boolean;
+  /** Run lifecycle hooks.
+   * @defaultValue true */
+  hooks?: boolean;
+  /** Run validations.
+   * @defaultValue true (`false` for `bulkCreate`) */
+  validate?: boolean;
+  /**
+   * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. PostgreSQL extension.
+   * @postgrelize
+   */
+  overriding?: 'system' | 'user';
+};
 
 /**
  * Options of `create`.
@@ -57,16 +57,15 @@ export type SaveOptions<T = any> = QueryOptionsBase & {
  * );
  * ```
  */
-export type CreateOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /**
-     * Advanced `ON CONFLICT` handling. PostgreSQL extension.
-     * @postgrelize
-     */
-    onConflict?: OnConflictOptions<T>;
-    /** Create associated rows from nested values (Sequelize v6). */
-    include?: IncludeOption;
-  }>;
+export type CreateOptions<T = Values> = SaveOptions<T> & {
+  /**
+   * Advanced `ON CONFLICT` handling. PostgreSQL extension.
+   * @postgrelize
+   */
+  onConflict?: OnConflictOptions<T>;
+  /** Create associated rows from nested values (Sequelize v6). */
+  include?: IncludeOption;
+};
 
 /**
  * Options of `upsert`.
@@ -83,21 +82,20 @@ export type CreateOptions<T = Values> = SaveOptions<T> &
  * );
  * ```
  */
-export type UpsertOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /** Conflict target columns. Default: unique key containing a given attribute, else the primary key. */
-    conflictFields?: readonly string[];
-    /**
-     * Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension.
-     * @postgrelize
-     */
-    onConflict?: OnConflictOptions<T>;
-    /**
-     * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns.
-     * @postgrelize
-     */
-    overriding?: 'system' | 'user';
-  }>;
+export type UpsertOptions<T = Values> = SaveOptions<T> & {
+  /** Conflict target columns. Default: unique key containing a given attribute, else the primary key. */
+  conflictFields?: readonly string[];
+  /**
+   * Advanced `ON CONFLICT` handling; the result becomes `[instance, created]`. PostgreSQL extension.
+   * @postgrelize
+   */
+  onConflict?: OnConflictOptions<T>;
+  /**
+   * `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns.
+   * @postgrelize
+   */
+  overriding?: 'system' | 'user';
+};
 
 /**
  * Options of `Model.insert`. PostgreSQL extension.
@@ -116,26 +114,25 @@ export type UpsertOptions<T = Values> = SaveOptions<T> &
  * const rows = await User.insert([{ email: 'a@example.com' }], opts);
  * ```
  */
-export type InsertOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Attributes to insert; others are ignored. Default: all given attributes. */
-    fields?: readonly (keyof T & string)[];
-    /** Advanced `ON CONFLICT` handling. */
-    onConflict?: OnConflictOptions<T>;
-    /** Run `beforeBulkCreate` / `afterBulkCreate` hooks.
-     * @defaultValue true */
-    hooks?: boolean;
-    /** Validate rows before inserting.
-     * @defaultValue false */
-    validate?: boolean;
-    /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
-    overriding?: 'system' | 'user';
-    /**
-     * Return the pre-statement row values as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
-     * @postgrelize
-     */
-    returningOld?: boolean;
-  }>;
+export type InsertOptions<T = Values> = QueryOptionsBase & {
+  /** Attributes to insert; others are ignored. Default: all given attributes. */
+  fields?: readonly (keyof T & string)[];
+  /** Advanced `ON CONFLICT` handling. */
+  onConflict?: OnConflictOptions<T>;
+  /** Run `beforeBulkCreate` / `afterBulkCreate` hooks.
+   * @defaultValue true */
+  hooks?: boolean;
+  /** Validate rows before inserting.
+   * @defaultValue false */
+  validate?: boolean;
+  /** `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE` for identity columns. */
+  overriding?: 'system' | 'user';
+  /**
+   * Return the pre-statement row values as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
+   * @postgrelize
+   */
+  returningOld?: boolean;
+};
 
 /**
  * Options of `Model.insertFrom`, which inserts the result of a subquery (`INSERT ... SELECT`). PostgreSQL extension.

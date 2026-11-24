@@ -113,9 +113,9 @@ export class ModelBase {
    * );
    * ```
    */
-  static init<MS extends ModelStatic<AnyModel>>(
+  static init<MS extends ModelStatic<AnyModel>, M extends InstanceType<MS> = InstanceType<MS>>(
     this: MS,
-    attributes: ModelAttributes,
+    attributes: ModelAttributes<M>,
     options: InitOptions,
   ): MS {
     registry.init(this, attributes, options);

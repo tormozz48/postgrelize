@@ -86,7 +86,7 @@ export type ReferencedModel = Readonly<{
  * };
  * ```
  */
-export type AttributeOptions = Readonly<{
+export type AttributeOptions<M extends AnyModel = AnyModel> = Readonly<{
   /** Column type; a `DataTypes` entry or its factory call. */
   type: DataTypeInput;
   /** Whether `NULL` is allowed.
@@ -127,13 +127,20 @@ export type AttributeOptions = Readonly<{
   /** Validators run before INSERT / UPDATE. */
   validate?: AttributeValidateOptions;
   /** Custom getter, called with the model instance as `this`. */
-  get?(this: AnyModel): unknown;
+  get?(this: M): unknown;
   /** Custom setter, called with the model instance as `this`. */
-  set?(this: AnyModel, value: unknown): void;
+  set?(this: M, value: unknown): void;
 }>;
 
-/** Attributes passed to `Model.init` / `sequelize.define`: a type or full column options per attribute. */
-export type ModelAttributes = Readonly<Record<string, DataTypeInput | AttributeOptions>>;
+/**
+ * Attributes passed to `Model.init` / `sequelize.define`: a type or full column options per attribute.
+ * `M` is the model instance type of `this` in `get` / `set`; with `TAttributes` (v6 shape) every
+ * attribute of that type must be defined.
+ */
+// oxlint-disable-next-line typescript/no-explicit-any -- the v6 default of `TAttributes`
+export type ModelAttributes<M extends AnyModel = AnyModel, TAttributes = any> = {
+  readonly [name in keyof TAttributes]: DataTypeInput | AttributeOptions<M>;
+};
 
 /** Normalized attribute (exposed as `Model.rawAttributes[name]`). */
 export type AttributeDefinition = Readonly<

@@ -143,7 +143,7 @@ export class SequelizeBase {
    */
   define<M extends AnyModel = Model>(
     modelName: string,
-    attributes: ModelAttributes = {},
+    attributes: ModelAttributes<M> = {},
     options: DefineOptions = {},
   ): ModelStatic<M> {
     const DefinedModel = { [modelName]: class extends Model {} }[

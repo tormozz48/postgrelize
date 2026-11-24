@@ -45,8 +45,7 @@ export type FindAndCountResult<M, C = number> = {
  * ```
  */
 export type FindOptions<T = Values> = QueryOptionsBase &
-  Omit<SelectOptions, 'where'> &
-  Readonly<{
+  Omit<SelectOptions, 'where'> & {
     /** Filter rows; see {@link WhereOptions}. All rows when omitted. */
     where?: WhereOptions<T>;
     /** Return plain row objects instead of model instances.
@@ -71,8 +70,7 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     include?: IncludeOption;
     /** `false` disables the sub-query used for `limit` combined with multi-row includes. */
     subQuery?: boolean;
-  }> &
-  CteFindOptions;
+  } & CteFindOptions;
 
 /**
  * Options of `findAndCountAll` (Sequelize v6 `FindAndCountOptions`): the finder options plus the

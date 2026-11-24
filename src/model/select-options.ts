@@ -73,7 +73,7 @@ export type LockOption =
  * };
  * ```
  */
-export type SelectOptions = Readonly<{
+export type SelectOptions = {
   /** Filter; finders type this as {@link WhereOptions}. */
   where?: unknown;
   /** Selected attributes. All attributes when omitted. */
@@ -121,4 +121,4 @@ export type SelectOptions = Readonly<{
   withClause?: WithClause;
   /** @internal Resolved extra FROM relations. */
   extraFrom?: readonly FromItem[];
-}>;
+};

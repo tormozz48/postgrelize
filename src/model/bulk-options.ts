@@ -25,36 +25,35 @@ import type { SaveOptions } from './write-options.ts';
  * const opts: BulkCreateOptions<User> = { ignoreDuplicates: true };
  * ```
  */
-export type BulkCreateOptions<T = Values> = SaveOptions<T> &
-  Readonly<{
-    /**
-     * Insert with one array parameter per column (`INSERT … SELECT * FROM unnest($1::type[], …)`) instead of
-     * one parameter per cell, so batches are not capped by PostgreSQL's 65535 parameters. Every row must
-     * provide every column; `ARRAY` columns and conflict options are not supported. PostgreSQL extension.
-     * @defaultValue false
-     * @postgrelize
-     */
-    unnest?: boolean;
-    /** Add `ON CONFLICT DO NOTHING`, skipping rows that violate a unique constraint.
-     * @defaultValue false */
-    ignoreDuplicates?: boolean;
-    /** Run per-instance `create` hooks (rows are then inserted one by one, like v6).
-     * @defaultValue false */
-    individualHooks?: boolean;
-    /** Create associated rows from nested values (rows are inserted one by one). */
-    include?: IncludeOption;
-    /** Attributes updated from the proposed row on conflict (`DO UPDATE SET a = EXCLUDED.a`). */
-    updateOnDuplicate?: readonly (keyof T & string)[];
-    /** Conflict target attributes for `updateOnDuplicate`. Default: first unique key, else primary key. */
-    conflictAttributes?: readonly (keyof T & string)[];
-    /** Predicate of a partial unique index used as conflict target. */
-    conflictWhere?: WhereOptions<T>;
-    /**
-     * Advanced `ON CONFLICT` handling; cannot be combined with the options above. PostgreSQL extension.
-     * @postgrelize
-     */
-    onConflict?: OnConflictOptions<T>;
-  }>;
+export type BulkCreateOptions<T = Values> = SaveOptions<T> & {
+  /**
+   * Insert with one array parameter per column (`INSERT … SELECT * FROM unnest($1::type[], …)`) instead of
+   * one parameter per cell, so batches are not capped by PostgreSQL's 65535 parameters. Every row must
+   * provide every column; `ARRAY` columns and conflict options are not supported. PostgreSQL extension.
+   * @defaultValue false
+   * @postgrelize
+   */
+  unnest?: boolean;
+  /** Add `ON CONFLICT DO NOTHING`, skipping rows that violate a unique constraint.
+   * @defaultValue false */
+  ignoreDuplicates?: boolean;
+  /** Run per-instance `create` hooks (rows are then inserted one by one, like v6).
+   * @defaultValue false */
+  individualHooks?: boolean;
+  /** Create associated rows from nested values (rows are inserted one by one). */
+  include?: IncludeOption;
+  /** Attributes updated from the proposed row on conflict (`DO UPDATE SET a = EXCLUDED.a`). */
+  updateOnDuplicate?: readonly (keyof T & string)[];
+  /** Conflict target attributes for `updateOnDuplicate`. Default: first unique key, else primary key. */
+  conflictAttributes?: readonly (keyof T & string)[];
+  /** Predicate of a partial unique index used as conflict target. */
+  conflictWhere?: WhereOptions<T>;
+  /**
+   * Advanced `ON CONFLICT` handling; cannot be combined with the options above. PostgreSQL extension.
+   * @postgrelize
+   */
+  onConflict?: OnConflictOptions<T>;
+};
 
 /**
  * Hook switches shared by bulk `update`, `destroy` and `restore`.
@@ -65,14 +64,14 @@ export type BulkCreateOptions<T = Values> = SaveOptions<T> &
  * await User.destroy({ where: { active: false }, ...opts });
  * ```
  */
-export type BulkHookOptions = Readonly<{
+export type BulkHookOptions = {
   /** Run the bulk hooks (`beforeBulkUpdate`, `beforeBulkDestroy`, ...).
    * @defaultValue true */
   hooks?: boolean;
   /** Also run per-instance hooks; rows are loaded first, which costs an extra query.
    * @defaultValue false */
   individualHooks?: boolean;
-}>;
+};
 
 /**
  * Options of static `update`.
@@ -93,32 +92,31 @@ export type BulkHookOptions = Readonly<{
 export type UpdateOptions<T = Values> = QueryOptionsBase & {
   /** Attributes to update; others are ignored. Mutable so hooks can adjust it, as in v6. */
   fields?: readonly (keyof T & string)[];
-} & Readonly<{
-    /** Rows to update. */
-    where: WhereOptions<T>;
-    /** Do not update `updatedAt`.
-     * @defaultValue false */
-    silent?: boolean;
-    /** Return updated rows as the second element of the result. */
-    returning?: boolean;
-    /**
-     * With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
-     * @postgrelize
-     */
-    returningOld?: boolean;
-    /** Validate the new values.
-     * @defaultValue true */
-    validate?: boolean;
-    /** For paranoid models: `false` also updates soft-deleted rows.
-     * @defaultValue true */
-    paranoid?: boolean;
-    /**
-     * Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension.
-     * @postgrelize
-     */
-    from?: JoinSources;
-  }> &
-  BulkHookOptions;
+} & {
+  /** Rows to update. */
+  where: WhereOptions<T>;
+  /** Do not update `updatedAt`.
+   * @defaultValue false */
+  silent?: boolean;
+  /** Return updated rows as the second element of the result. */
+  returning?: boolean;
+  /**
+   * With `returning`: expose values before the update as `instance.oldValues`. PostgreSQL extension, needs PostgreSQL 18+.
+   * @postgrelize
+   */
+  returningOld?: boolean;
+  /** Validate the new values.
+   * @defaultValue true */
+  validate?: boolean;
+  /** For paranoid models: `false` also updates soft-deleted rows.
+   * @defaultValue true */
+  paranoid?: boolean;
+  /**
+   * Extra relations (`UPDATE ... FROM`), keyed by alias; reference them with `col('alias.attr')`. PostgreSQL extension.
+   * @postgrelize
+   */
+  from?: JoinSources;
+} & BulkHookOptions;
 
 /**
  * Options of static `destroy`.
@@ -133,36 +131,34 @@ export type UpdateOptions<T = Values> = QueryOptionsBase & {
  * const opts: DestroyOptions<Task> = { truncate: true, cascade: true, restartIdentity: true };
  * ```
  */
-export type DestroyOptions<T = Values> = QueryOptionsBase &
-  Readonly<{
-    /** Rows to delete. */
-    where?: WhereOptions<T>;
-    /** Delete at most this many rows. */
-    limit?: number;
-    /** Use `TRUNCATE` instead of `DELETE`.
-     * @defaultValue false */
-    truncate?: boolean;
-    /** With `truncate`: add `CASCADE`.
-     * @defaultValue false */
-    cascade?: boolean;
-    /** With `truncate`: add `RESTART IDENTITY`.
-     * @defaultValue false */
-    restartIdentity?: boolean;
-    /**
-     * Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension.
-     * @postgrelize
-     */
-    returning?: boolean;
-    /** For paranoid models: delete rows instead of setting `deletedAt`.
-     * @defaultValue false */
-    force?: boolean;
-    /**
-     * Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension.
-     * @postgrelize
-     */
-    using?: JoinSources;
-  }> &
-  BulkHookOptions;
+export type DestroyOptions<T = Values> = QueryOptionsBase & {
+  /** Rows to delete. */
+  where?: WhereOptions<T>;
+  /** Delete at most this many rows. */
+  limit?: number;
+  /** Use `TRUNCATE` instead of `DELETE`.
+   * @defaultValue false */
+  truncate?: boolean;
+  /** With `truncate`: add `CASCADE`.
+   * @defaultValue false */
+  cascade?: boolean;
+  /** With `truncate`: add `RESTART IDENTITY`.
+   * @defaultValue false */
+  restartIdentity?: boolean;
+  /**
+   * Return deleted rows instead of their count (`DELETE ... RETURNING`). PostgreSQL extension.
+   * @postgrelize
+   */
+  returning?: boolean;
+  /** For paranoid models: delete rows instead of setting `deletedAt`.
+   * @defaultValue false */
+  force?: boolean;
+  /**
+   * Extra relations (`DELETE ... USING`), keyed by alias. PostgreSQL extension.
+   * @postgrelize
+   */
+  using?: JoinSources;
+} & BulkHookOptions;
 
 /**
  * Options of static `restore`, which clears `deletedAt` of soft-deleted rows of paranoid models.
@@ -193,12 +189,11 @@ export type RestoreOptions<T = Values> = QueryOptionsBase &
  * const opts: InstanceDestroyOptions = { hooks: false };
  * ```
  */
-export type InstanceDestroyOptions = QueryOptionsBase &
-  Readonly<{
-    /** For paranoid models: delete the row instead of setting `deletedAt`.
-     * @defaultValue false */
-    force?: boolean;
-    /** Run `beforeDestroy` / `afterDestroy` hooks.
-     * @defaultValue true */
-    hooks?: boolean;
-  }>;
+export type InstanceDestroyOptions = QueryOptionsBase & {
+  /** For paranoid models: delete the row instead of setting `deletedAt`.
+   * @defaultValue false */
+  force?: boolean;
+  /** Run `beforeDestroy` / `afterDestroy` hooks.
+   * @defaultValue true */
+  hooks?: boolean;
+};
