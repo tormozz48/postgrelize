@@ -34,6 +34,9 @@ export type UpdateOperationServices = OperationServices &
 
 type UpdateRows = Readonly<{ count: number; rows: AnyModel[] }>;
 
+// Targets of an `individualHooks` update and the rows saved one by one (when the hooks diverged).
+type EachResult = Readonly<{ saved: UpdateRows | undefined; targets: readonly AnyModel[] }>;
+
 type UpdateResult<M> = [affectedCount: number, affectedRows?: M[]];
 
 // One `Model.update` call: the hook-visible options and the caller's options.
@@ -69,13 +72,28 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       hooks: true,
       individualHooks: false,
       ...this.services.registry.scoped(model, options),
-      attributes: { ...values },
     };
+    this.#expose(model, values, opts);
     if (opts['where'] === undefined || opts['where'] === null) {
       throw new AssertionError({ message: 'Missing where attribute in the options parameter' });
     }
-    await this.#validated(model, values, opts, options);
+    await this.#validated(model, values, opts);
     return (await this.#bulkUpdate(model, opts, options)) as UpdateResult<M>;
+  }
+
+  // Like v6, `beforeBulkUpdate` hooks see `fields` (the attributes being updated, plus `updatedAt`)
+  // and `attributes` (the values, with the new `updatedAt`); both are read back after the hooks.
+  #expose(model: ModelStatic<AnyModel>, values: Values, opts: MutableOptions): void {
+    const { definition } = this.services.registry.state(model);
+    const { updatedAt } = definition;
+    const stamped = updatedAt !== undefined && opts['silent'] !== true;
+    opts['attributes'] = stamped ? { ...values, [updatedAt]: new Date() } : { ...values };
+    if (opts['fields'] === undefined) {
+      const columns = Object.keys(values).filter(
+        (name) => definition.attributes.get(name)?.type.isVirtual !== true,
+      );
+      opts['fields'] = updatedAt === undefined ? columns : [...new Set([...columns, updatedAt])];
+    }
   }
 
   static #listed(values: Values, fields: readonly string[] | undefined): Values {
@@ -88,12 +106,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     model: ModelStatic<AnyModel>,
     values: Values,
     opts: MutableOptions,
-    options: UpdateOptions,
   ): Promise<void> {
     if (opts['validate'] === true) {
       const built = await this.#validate(model, values, opts);
       if (opts['sideEffects'] !== false) {
-        UpdateOperation.#sideEffects(model, built, values, opts, options);
+        UpdateOperation.#sideEffects(model, built, values, opts);
       }
     }
   }
@@ -119,7 +136,6 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     built: AnyModel,
     values: Values,
     opts: MutableOptions,
-    options: UpdateOptions,
   ): void {
     // defaults of a new build are not changes the caller asked for
     const defaults = new model({}).changed();
@@ -128,9 +144,8 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     );
     const extra = Object.fromEntries(names.map((name) => [name, built.get(name)]));
     opts['attributes'] = { ...(opts['attributes'] as Values), ...extra };
-    if (options.fields !== undefined) {
-      opts['fields'] = [...new Set([...options.fields, ...Object.keys(extra)])];
-    }
+    const attributes = Object.keys(opts['attributes'] as Values);
+    opts['fields'] = [...new Set([...(opts['fields'] as readonly string[]), ...attributes])];
   }
 
   @ModelOperation.bulkHooks('beforeBulkUpdate', 'afterBulkUpdate')
@@ -145,10 +160,10 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     const individual = opts['individualHooks'] === true;
     const call = { model, state, opts, options, where, individual };
     UpdateOperation.#check(call);
-    const saved = call.individual ? await this.#beforeEach(call) : undefined;
-    const updated = saved ?? (await this.#execute(call));
-    if (call.individual) {
-      await this.services.lifecycle.runEach(model, 'afterUpdate', updated.rows, opts);
+    const each = call.individual ? await this.#beforeEach(call) : undefined;
+    const updated = each?.saved ?? (await this.#execute(call));
+    if (each !== undefined) {
+      await this.#afterEach(call, each, updated);
     }
     // like v6, `individualHooks` returns the instances even without `returning`
     return options.returning === true || call.individual
@@ -156,9 +171,17 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       : [updated.count];
   }
 
+  // v6: the hooks get the instances that `beforeUpdate` saw (still marked changed) unless the rows
+  // came back from `returning` or were saved one by one.
+  #afterEach(call: UpdateCall, each: EachResult, updated: UpdateRows): Promise<void> {
+    const hooked =
+      each.saved === undefined && call.options.returning !== true ? each.targets : updated.rows;
+    return this.services.lifecycle.runEach(call.model, 'afterUpdate', hooked, call.opts);
+  }
+
   // Runs `beforeUpdate` on every target. Changes the hooks made become part of the UPDATE when every
   // row ends up with the same changes; otherwise the rows are saved one by one (v6).
-  async #beforeEach(call: UpdateCall): Promise<UpdateRows | undefined> {
+  async #beforeEach(call: UpdateCall): Promise<EachResult> {
     const { model, where, opts, options } = call;
     const queryOptions = this.services.values.queryOptions(options);
     const targets = await model.findAll({
@@ -170,10 +193,10 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     await this.services.lifecycle.runEach(model, 'beforeUpdate', targets, opts);
     const changes = targets.map((instance) => UpdateOperation.#changedValues(instance));
     if (changes.some((entry) => !isDeepStrictEqual(entry, changes[0]))) {
-      return UpdateOperation.#saveEach(targets, queryOptions);
+      return { saved: await UpdateOperation.#saveEach(targets, queryOptions), targets };
     }
     UpdateOperation.#adopt(call, changes[0] ?? {});
-    return undefined;
+    return { saved: undefined, targets };
   }
 
   static async #saveEach(targets: readonly AnyModel[], queryOptions: object): Promise<UpdateRows> {
@@ -184,11 +207,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   }
 
   // The changes made by the hooks, shared by every row, replace the values of the UPDATE.
-  static #adopt({ opts, options }: UpdateCall, common: Values): void {
+  static #adopt({ opts }: UpdateCall, common: Values): void {
     opts['attributes'] = { ...common };
-    if (options.fields !== undefined) {
-      opts['fields'] = [...new Set([...options.fields, ...Object.keys(common)])];
-    }
+    opts['fields'] = [
+      ...new Set([...(opts['fields'] as readonly string[]), ...Object.keys(common)]),
+    ];
   }
 
   static #changedValues(instance: AnyModel): Values {
@@ -236,9 +259,9 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     );
   }
 
-  #changes({ state: { definition }, opts, options }: UpdateCall): Values {
+  #changes({ state: { definition }, opts }: UpdateCall): Values {
     const { values } = this.services;
-    const fields = (opts['fields'] ?? options.fields) as readonly string[] | undefined;
+    const fields = opts['fields'] as readonly string[];
     const picked = values.pick(opts['attributes'] as Values, fields);
     const stored = Object.fromEntries(
       Object.entries(picked).filter(([name, value]) => {

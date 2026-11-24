@@ -156,4 +156,14 @@ describe('v6 parity: fn() strings, Op.is values, col() paths', () => {
       'lower("user"."id") <> $1',
     );
   });
+
+  it('joins the entries of an Op.or / Op.and object value with the operator itself', () => {
+    expect(sql({ id: { [Op.or]: { [Op.is]: null, [Op.eq]: 5 } } })).toEqual({
+      text: '("User"."id" IS NULL OR "User"."id" = $1)',
+      values: [5],
+    });
+    expect(sql({ id: { [Op.and]: { [Op.gt]: 1, [Op.lt]: 9 } } }).text).toBe(
+      '("User"."id" > $1 AND "User"."id" < $2)',
+    );
+  });
 });

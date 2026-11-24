@@ -63,6 +63,32 @@ describe('compileExpr', () => {
 });
 
 describe('compile select', () => {
+  it('renders nested joins inside the parentheses of the parent join', () => {
+    expect(
+      compile({
+        kind: 'select',
+        columns: [ast.raw('1')],
+        from: { name: 'ts', alias: 'T' },
+        joins: [
+          {
+            type: 'LEFT OUTER',
+            table: { name: 'fs', alias: 'fee' },
+            on: ast.binary('=', ast.ident('T', 'id'), ast.ident('fee', 'tId')),
+            nested: [
+              {
+                type: 'INNER',
+                table: { name: 'is', alias: 'fee->inv' },
+                on: ast.binary('=', ast.ident('fee', 'invId'), ast.ident('fee->inv', 'id')),
+              },
+            ],
+          },
+        ],
+      }).text,
+    ).toBe(
+      'SELECT 1 FROM "ts" AS "T" LEFT OUTER JOIN ( "fs" AS "fee" INNER JOIN "is" AS "fee->inv" ON "fee"."invId" = "fee->inv"."id" ) ON "T"."id" = "fee"."tId"',
+    );
+  });
+
   it('renders all clauses', () => {
     expect(
       compile({

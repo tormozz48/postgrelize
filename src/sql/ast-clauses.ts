@@ -50,6 +50,8 @@ export type JoinNode = Readonly<{
   type: 'INNER' | 'LEFT OUTER' | 'RIGHT OUTER';
   table: FromItem;
   on: ExprNode;
+  /** Joins written inside the parentheses of this join: `LEFT JOIN (table INNER JOIN ...) ON ...`. */
+  nested?: readonly JoinNode[];
 }>;
 
 export type FromItem = TableRef | SubquerySource | ValuesSource | FunctionSource | JsonTableSource;

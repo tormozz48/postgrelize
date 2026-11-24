@@ -128,12 +128,16 @@ export class QueryCompiler extends ChunkBuilder {
   }
 
   #join(node: JoinNode): Chunks {
-    return [
-      ` ${node.type} JOIN `,
-      ...this.from(node.table),
-      ' ON ',
-      ...this.expr.expression(node.on),
-    ];
+    const nested = node.nested ?? [];
+    return nested.length === 0
+      ? [` ${node.type} JOIN `, ...this.from(node.table), ' ON ', ...this.expr.expression(node.on)]
+      : [
+          ` ${node.type} JOIN ( `,
+          ...this.from(node.table),
+          ...nested.flatMap(this.#joinClause),
+          ' ) ON ',
+          ...this.expr.expression(node.on),
+        ];
   }
 
   #lock(node: LockNode): string {

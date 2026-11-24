@@ -133,9 +133,13 @@ export class ConditionCompiler {
   }
 
   #logical(compiler: ExprConverter, op: symbol, left: Operand, value: unknown): ExprNode {
-    const items = (Array.isArray(value) ? value : [value]).map((item: unknown) =>
-      this.condition(compiler, left, item),
-    );
+    // v6 _whereGroupBind: the entries of an object value are joined with the operator itself
+    const entries = Array.isArray(value)
+      ? value
+      : isPlainObject(value)
+        ? ownKeys(value).map((key) => ({ [key]: value[key] }))
+        : [value];
+    const items = entries.map((item: unknown) => this.condition(compiler, left, item));
     return op === Op.and ? ast.and(items) : ast.or(items);
   }
 

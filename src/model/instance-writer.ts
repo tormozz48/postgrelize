@@ -39,7 +39,7 @@ export class InstanceWriter {
 
   /**
    * @param services - Collaborators.
-   * @param lifecycle - Row refresh.
+   * @param lifecycle - Row application.
    */
   constructor(services: InstanceLifecycleServices, lifecycle: InstanceLifecycle) {
     this.#services = services;
@@ -58,7 +58,7 @@ export class InstanceWriter {
     const { nested } = this.#services;
     await nested.saveBelongsTo(instance, context.state.includes, context.options);
     const result = await this.#insertRow(context, this.#insertValues(instance, context, now));
-    this.#lifecycle.refresh(instance, context.definition, result.rows[0]);
+    this.#lifecycle.applyRow(instance, context.definition, result.rows[0]);
     await nested.saveChildren(instance, context.state.includes, context.options);
   }
 
@@ -87,7 +87,7 @@ export class InstanceWriter {
     if (definition.version !== undefined && result.rowCount === 0) {
       throw new OptimisticLockError({ modelName: definition.name, values: set, where });
     }
-    this.#lifecycle.refresh(instance, definition, result.rows[0]);
+    this.#lifecycle.applyRow(instance, definition, result.rows[0]);
   }
 
   #updateRow(

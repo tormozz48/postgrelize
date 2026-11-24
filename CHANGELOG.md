@@ -40,11 +40,15 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
-- String arguments of `fn()` are written into the SQL as escaped literals like Sequelize v6 (`COUNT('*')`, `concat_ws(' ', ...)`, `to_char(..., 'YYYY')`) instead of bound parameters, which PostgreSQL could not type; the postgrelize helpers (`trigramSimilarity`, text search) keep binding their strings.
-- `Op.is` accepts a `literal()` or any other value, rendered like v6 (`IS NULL`, `IS 5`), instead of throwing; `WhereOperators` types `[Op.is]` as `boolean | null | Literal`.
-- `col('a.b.c')` with three or more parts renders `"a->b"."c"` (include alias path) like v6, instead of three identifiers.
-- The `get` / `set` of an attribute definition have the model instance as `this` (`ModelAttributes<M, TAttributes>` and `AttributeOptions<M>` take the model type, as in v6 types).
-- Option types of the finders and writers (`FindOptions`, `UpdateOptions`, `DestroyOptions`, `SaveOptions`, `CreateOptions`, `BulkCreateOptions`, ...) have mutable keys, so `options.where = ...` and `{ ...options, paranoid: false }` compile as in v6.
+- `Model.update` sets `options.fields` (the attributes in `values`, plus `updatedAt`) and `options.attributes` (the values with the new `updatedAt`) before the `beforeBulkUpdate` hooks, like v6; an explicit `fields` option is kept, and a hook that changes `fields`, `attributes` or `individualHooks` takes effect ([#162](https://github.com/tormozz48/postgrelize/pull/162)).
+- In `afterCreate` / `afterUpdate` / `afterSave` hooks the instance still reports its pre-save state (`changed()`, `previous(key)`), like v6: previous values and change tracking are reset after the after hooks (with a `fields` option only for the saved fields); `isNewRecord` is already `false` there. With `individualHooks`, a bulk `update` runs `afterUpdate` on the instances `beforeUpdate` saw (changed, with the new `updatedAt`) unless `returning` or row-by-row saves apply ([#162](https://github.com/tormozz48/postgrelize/pull/162)).
+- `[Op.or]` / `[Op.and]` with a plain-object value join its entries with OR / AND like v6 (`_whereGroupBind`); `{ owner: { [Op.or]: { [Op.is]: null, [Op.eq]: 5 } } }` was `IS NULL AND = 5` and returned no rows ([#162](https://github.com/tormozz48/postgrelize/pull/162)).
+- A `required: true` include nested under a non-required include is joined inside the parent's parenthesised `LEFT OUTER JOIN ( ... )` like v6, so root rows whose optional parent is empty are kept (it was a top-level `INNER JOIN` that dropped them). With `limit` and a multi-association parent, the root `EXISTS` filter also applies when a direct child is required, as v6 `subQueryFilter` ([#162](https://github.com/tormozz48/postgrelize/pull/162)).
+- String arguments of `fn()` are written into the SQL as escaped literals like Sequelize v6 (`COUNT('*')`, `concat_ws(' ', ...)`, `to_char(..., 'YYYY')`) instead of bound parameters, which PostgreSQL could not type; the postgrelize helpers (`trigramSimilarity`, text search) keep binding their strings ([#161](https://github.com/tormozz48/postgrelize/pull/161)). ADR-038.
+- `Op.is` accepts a `literal()` or any other value, rendered like v6 (`IS NULL`, `IS 5`), instead of throwing; `WhereOperators` types `[Op.is]` as `boolean | null | Literal` ([#161](https://github.com/tormozz48/postgrelize/pull/161)). ADR-038.
+- `col('a.b.c')` with three or more parts renders `"a->b"."c"` (include alias path) like v6, instead of three identifiers ([#161](https://github.com/tormozz48/postgrelize/pull/161)).
+- The `get` / `set` of an attribute definition have the model instance as `this` (`ModelAttributes<M, TAttributes>` and `AttributeOptions<M>` take the model type, as in v6 types) ([#161](https://github.com/tormozz48/postgrelize/pull/161)).
+- Option types of the finders and writers (`FindOptions`, `UpdateOptions`, `DestroyOptions`, `SaveOptions`, `CreateOptions`, `BulkCreateOptions`, ...) have mutable keys, so `options.where = ...` and `{ ...options, paranoid: false }` compile as in v6 ([#161](https://github.com/tormozz48/postgrelize/pull/161)).
 
 ## [1.6.0] - 2026-11-23
 

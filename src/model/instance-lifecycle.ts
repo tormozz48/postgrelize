@@ -257,12 +257,52 @@ export class InstanceLifecycle {
     definition: ModelDefinition,
     row: Readonly<Record<string, unknown>> | undefined,
   ): I {
+    return this.settle(this.applyRow(instance, definition, row));
+  }
+
+  /**
+   * Applies a returned row to the values of an instance, leaving its change tracking as it is, so
+   * the `after` hooks of a save still see `changed()` and `previous()` (v6 `save`).
+   *
+   * @param instance - Instance.
+   * @param definition - Model definition.
+   * @param row - Returned row (`undefined` keeps the values).
+   * @returns The instance.
+   */
+  applyRow<I extends AnyModel>(
+    instance: I,
+    definition: ModelDefinition,
+    row: Readonly<Record<string, unknown>> | undefined,
+  ): I {
     if (row !== undefined) {
       instance.set(this.#services.rows.parse(definition, row), { raw: true });
     }
+    // like v6, `isNewRecord` is already false inside the after hooks
     instance.isNewRecord = false;
-    instance._previousDataValues = { ...instance.dataValues };
-    InstanceState.of(instance).reset();
+    return instance;
+  }
+
+  /**
+   * Marks an instance as persisted and unchanged: previous values take the current ones.
+   *
+   * @param instance - Instance.
+   * @param fields - Only these attributes become unchanged (the `fields` option of a save); all when omitted.
+   * @returns The instance.
+   */
+  settle<I extends AnyModel>(instance: I, fields?: readonly string[]): I {
+    instance.isNewRecord = false;
+    if (fields === undefined) {
+      instance._previousDataValues = { ...instance.dataValues };
+      InstanceState.of(instance).reset();
+      return instance;
+    }
+    const previous = instance._previousDataValues as Values;
+    const current = instance.dataValues as Values;
+    const state = InstanceState.of(instance);
+    fields.forEach((name) => {
+      previous[name] = current[name];
+      state.mark(name, false);
+    });
     return instance;
   }
 
