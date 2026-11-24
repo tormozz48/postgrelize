@@ -72,8 +72,9 @@ export class ModelBase {
   }
 
   /** First primary key attribute name. */
-  static get primaryKeyAttribute(): string | undefined {
-    return registry.state(this).definition.primaryKeys[0];
+  static get primaryKeyAttribute(): string {
+    // typed `string` like v6; a model without a primary key yields `undefined` at runtime, as in v6
+    return registry.state(this).definition.primaryKeys[0] as string;
   }
 
   /** All primary key attribute names. */

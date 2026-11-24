@@ -66,6 +66,7 @@
     "v6:db:down": "sh scripts/v6-suite/db.sh down",
     "v6:suite": "node --experimental-strip-types scripts/v6-suite/run.ts",
     "prepublishOnly": "npm run llm:build && npm run build",
+    "types:consumer": "node --experimental-strip-types scripts/type-consumer-diff.ts",
     "api:differences": "node --experimental-strip-types scripts/generate-api-differences.ts",
     "llm:build": "node --experimental-strip-types scripts/generate-llm.ts",
     "release:preflight": "node --experimental-strip-types scripts/release-preflight.ts",

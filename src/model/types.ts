@@ -13,8 +13,14 @@ export type {
   WhereOptions,
 } from './where-options.ts';
 
+// Indexed through an object so a union of attribute interfaces is not distributed (as v6 does through `M['_attributes']`):
+// the keys are the shared ones and a value is the union of the member values.
+type UpdateShape<H extends { readonly values: unknown }> = {
+  [K in keyof H['values']]?: H['values'][K] | Fn | Col | Literal;
+};
+
 /** New attribute values of an `update`: each attribute takes its own type or a `fn` / `col` / `literal` expression. */
-export type UpdateValues<A> = { [K in keyof A]?: A[K] | Fn | Col | Literal };
+export type UpdateValues<A> = UpdateShape<{ readonly values: A }>;
 
 declare const CreationAttributeBrand: unique symbol;
 declare const NonAttributeBrand: unique symbol;

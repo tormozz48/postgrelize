@@ -41,6 +41,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 ### Fixed
 
 - Regressions of 1.8.0 found by the nightly v6 suite: `instance.update()` after `create(…, { fields })` no longer fails with an `undefined` primary key, a stamped `updatedAt` reaches the instance again, `update(values, { fields })` assigns only the listed attributes (custom setters excepted), and `Model.update({ individualHooks: true })` returns the instances its hooks worked on. The v6 suite baseline drops the 12 entries that now pass.
+- `instance.reload({ include })` replaces an association instance the caller assigned earlier with the freshly loaded row, and drops values the fresh row no longer holds unless `attributes` limits the reload (v6 `reset`). Compat tests also pin that `instance.update()` leaves the written `updatedAt` on the instance and that `Model.name` equals `modelName` for a renamed class.
+- Types now match Sequelize v6 where ddt hit gaps: `Model.update` accepts a value of a union of attribute interfaces (`UpdateValues` no longer distributes over the union), `changed(key)` accepts `keyof M` in generic code, `Model.primaryKeyAttribute` is typed `string`, and a `WhereOptions` variable initialised with `{}` accepts `where.name = …` (logic operators are separate members that require their operator).
+
+### Changed
+
+- Type-parity tests now also compile the corpus under other compiler flags, and `npm run types:consumer` compiles a Sequelize v6 project against v6 and against postgrelize and lists the errors only postgrelize reports.
 
 ## [1.8.0] - 2026-11-24
 

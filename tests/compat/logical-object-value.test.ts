@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest';
 import { expectSameResult, type Lib } from '../support/compat.ts';
-import type { Sequelize } from '../../src/index.ts';
+import type { Sequelize, WhereOptions } from '../../src/index.ts';
 
 const TABLES = `
   CREATE TABLE "Es" (id SERIAL PRIMARY KEY, owner INTEGER, tag TEXT, "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now());
@@ -22,7 +22,7 @@ const run = (
     return scenario(E, lib, sequelize);
   });
 
-const ids = async (E: ReturnType<Sequelize['define']>, where: object): Promise<unknown[]> =>
+const ids = async (E: ReturnType<Sequelize['define']>, where: WhereOptions): Promise<unknown[]> =>
   (await E.findAll({ where, order: [['id', 'ASC']] })).map((row) => row.get('id'));
 
 describe('compat: Op.or / Op.and with an object value', () => {

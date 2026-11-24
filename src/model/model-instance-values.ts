@@ -156,8 +156,16 @@ export class ModelInstanceValues<TAttributes extends object = Values> {
    * @param value - Changed flag.
    */
   changed(key: keyof TAttributes & string, value: boolean): void;
-  changed(key?: string, value?: boolean): unknown {
-    return instanceValues.changed(this as unknown as AnyModel, key, value);
+
+  /**
+   * Checks whether one attribute changed, addressed by a key of the model class (Sequelize v6 signature, so `keyof M` works in generic code).
+   *
+   * @param key - Attribute name.
+   * @returns True when changed.
+   */
+  changed<K extends keyof this>(key: K): boolean;
+  changed(key?: string | number | symbol, value?: boolean): unknown {
+    return instanceValues.changed(this as unknown as AnyModel, key as string | undefined, value);
   }
 
   /**

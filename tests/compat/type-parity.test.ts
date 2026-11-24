@@ -1,4 +1,5 @@
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -15,6 +16,8 @@ const CATEGORIES = new Set(['not-planned', 'other-dialect', 'internal', 'tracked
 // Lower these when entries are removed from the allow-list; they must never grow.
 const MAX_TYPE_NAMES = 146;
 const MAX_OPTION_KEYS = 70;
+
+const execFileAsync = promisify(execFile);
 
 const here = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
 const exceptions = JSON.parse(
@@ -33,6 +36,41 @@ const compile = (library: 'v6' | 'postgrelize'): string => {
     return String((error as { stdout?: string }).stdout ?? error);
   }
 };
+
+// Consumers compile with their own flags. Under each set, postgrelize may report only errors that v6 reports too
+// (a flag can make the corpus itself fail on both sides); errors are matched by file, line and code.
+const FLAG_SETS: readonly (readonly string[])[] = [
+  ['--exactOptionalPropertyTypes'],
+  ['--strict', 'false'],
+  ['--strictNullChecks', 'false'],
+  ['--noPropertyAccessFromIndexSignature'],
+  ['--useUnknownInCatchVariables', 'false'],
+  ['--skipLibCheck', 'false'],
+];
+
+const corpusErrors = async (library: 'v6' | 'postgrelize', flags: readonly string[]) => {
+  const args = [tsc, '-p', here(`type-parity/tsconfig.${library}.json`), ...flags];
+  const output = await execFileAsync(process.execPath, args, { encoding: 'utf8' }).then(
+    () => '',
+    (error: { stdout?: string }) => String(error.stdout ?? ''),
+  );
+  return output
+    .split('\n')
+    .filter((line) => line.startsWith('tests/compat/type-parity/'))
+    .map((line) => line.replace(/^(.*?\(\d+),\d+\): error (TS\d+).*$/, '$1 $2'));
+};
+
+describe('type-level parity with Sequelize v6 under other compiler flags', () => {
+  for (const flags of FLAG_SETS) {
+    it(`reports no corpus error that v6 does not (${flags.join(' ')})`, async () => {
+      const [theirs, ours] = await Promise.all([
+        corpusErrors('v6', flags),
+        corpusErrors('postgrelize', flags),
+      ]);
+      expect(ours.filter((error) => !theirs.includes(error))).toEqual([]);
+    }, 240_000);
+  }
+});
 
 describe('type-level parity with Sequelize v6', () => {
   // The corpus holds the TypeScript a v6 application writes (models without index signatures,
