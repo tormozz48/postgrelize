@@ -149,6 +149,9 @@ export type ValuesList<V> = {
 /** Condition for one attribute: a value, a list of values (`IN`), operators, or an expression. */
 export type WhereAttributeValue<V> =
   | Comparable<V>
+  // v6 values come from `WhereOperators[Op.eq]`, an optional property, so they include `undefined`
+  // (also under `exactOptionalPropertyTypes`); a runtime `undefined` still throws like in v6
+  | undefined
   | null
   | readonly Comparable<V>[]
   | WhereOperators<V>
@@ -222,7 +225,9 @@ export type WhereAttributeHash<T = any> = WhereAttributeShape<[T]> & {
  * ```
  */
 export type WhereOptions<T = Record<string, unknown>> =
-  | WhereAttributeHash<T>
+  // `NoInfer`: like in v6, `T` is never inferred from the conditions, so a generic helper
+  // `scope<T>(where: WhereOptions<T>)` takes `T` from the `where` it feeds
+  | WhereAttributeHash<NoInfer<T>>
   | RequiredLogic<T>
   | readonly WhereOptions<T>[]
   | Where
