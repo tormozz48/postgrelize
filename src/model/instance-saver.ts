@@ -50,7 +50,17 @@ export class InstanceSaver {
     if (context.opts['hooks'] === true) {
       await this.#hook(instance, context, 'afterCreate', 'afterUpdate');
     }
-    return instance;
+    // v6 resets previous values and `changed` only after the after hooks, which still read them
+    return this.#lifecycle.settle(instance, this.#settled(context, hookFields));
+  }
+
+  // With a `fields` option only those attributes (and the timestamps the save wrote) become unchanged.
+  #settled(context: SaveContext, written: readonly string[]): readonly string[] | undefined {
+    if (context.explicitFields === undefined) {
+      return undefined;
+    }
+    const { createdAt, updatedAt } = context.definition;
+    return [...written, ...[createdAt, updatedAt].filter((name) => name !== undefined)];
   }
 
   // Like v6, a new record gets its `createdAt` / `updatedAt` before validation, so a timestamp attribute

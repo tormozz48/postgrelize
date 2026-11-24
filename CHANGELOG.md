@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- In `afterCreate` / `afterUpdate` / `afterSave` hooks the instance still reports its pre-save state (`changed()`, `previous(key)`), like v6: previous values and change tracking are reset after the after hooks (with a `fields` option only for the saved fields); `isNewRecord` is already `false` there. With `individualHooks`, a bulk `update` runs `afterUpdate` on the instances `beforeUpdate` saw (changed, with the new `updatedAt`) unless `returning` or row-by-row saves apply.
 - `[Op.or]` / `[Op.and]` with a plain-object value join its entries with OR / AND like v6 (`_whereGroupBind`); `{ owner: { [Op.or]: { [Op.is]: null, [Op.eq]: 5 } } }` was `IS NULL AND = 5` and returned no rows.
 - A `required: true` include nested under a non-required include is joined inside the parent's parenthesised `LEFT OUTER JOIN ( ... )` like v6, so root rows whose optional parent is empty are kept (it was a top-level `INNER JOIN` that dropped them). With `limit` and a multi-association parent, the root `EXISTS` filter also applies when a direct child is required, as v6 `subQueryFilter`.
 - String arguments of `fn()` are written into the SQL as escaped literals like Sequelize v6 (`COUNT('*')`, `concat_ws(' ', ...)`, `to_char(..., 'YYYY')`) instead of bound parameters, which PostgreSQL could not type; the postgrelize helpers (`trigramSimilarity`, text search) keep binding their strings.

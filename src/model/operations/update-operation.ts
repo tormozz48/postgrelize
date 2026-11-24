@@ -34,6 +34,9 @@ export type UpdateOperationServices = OperationServices &
 
 type UpdateRows = Readonly<{ count: number; rows: AnyModel[] }>;
 
+// Targets of an `individualHooks` update and the rows saved one by one (when the hooks diverged).
+type EachResult = Readonly<{ saved: UpdateRows | undefined; targets: readonly AnyModel[] }>;
+
 type UpdateResult<M> = [affectedCount: number, affectedRows?: M[]];
 
 // One `Model.update` call: the hook-visible options and the caller's options.
@@ -145,10 +148,10 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     const individual = opts['individualHooks'] === true;
     const call = { model, state, opts, options, where, individual };
     UpdateOperation.#check(call);
-    const saved = call.individual ? await this.#beforeEach(call) : undefined;
-    const updated = saved ?? (await this.#execute(call));
-    if (call.individual) {
-      await this.services.lifecycle.runEach(model, 'afterUpdate', updated.rows, opts);
+    const each = call.individual ? await this.#beforeEach(call) : undefined;
+    const updated = each?.saved ?? (await this.#execute(call));
+    if (each !== undefined) {
+      await this.#afterEach(call, each, updated);
     }
     // like v6, `individualHooks` returns the instances even without `returning`
     return options.returning === true || call.individual
@@ -156,9 +159,17 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       : [updated.count];
   }
 
+  // v6: the hooks get the instances that `beforeUpdate` saw (still marked changed) unless the rows
+  // came back from `returning` or were saved one by one.
+  #afterEach(call: UpdateCall, each: EachResult, updated: UpdateRows): Promise<void> {
+    const hooked =
+      each.saved === undefined && call.options.returning !== true ? each.targets : updated.rows;
+    return this.services.lifecycle.runEach(call.model, 'afterUpdate', hooked, call.opts);
+  }
+
   // Runs `beforeUpdate` on every target. Changes the hooks made become part of the UPDATE when every
   // row ends up with the same changes; otherwise the rows are saved one by one (v6).
-  async #beforeEach(call: UpdateCall): Promise<UpdateRows | undefined> {
+  async #beforeEach(call: UpdateCall): Promise<EachResult> {
     const { model, where, opts, options } = call;
     const queryOptions = this.services.values.queryOptions(options);
     const targets = await model.findAll({
@@ -166,14 +177,21 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       ...queryOptions,
       paranoid: false,
     });
-    targets.forEach((instance) => instance.set(opts['attributes'] as Values));
+    const values = { ...(opts['attributes'] as Values), ...this.#stamp(call) };
+    targets.forEach((instance) => instance.set(values));
     await this.services.lifecycle.runEach(model, 'beforeUpdate', targets, opts);
     const changes = targets.map((instance) => UpdateOperation.#changedValues(instance));
     if (changes.some((entry) => !isDeepStrictEqual(entry, changes[0]))) {
-      return UpdateOperation.#saveEach(targets, queryOptions);
+      return { saved: await UpdateOperation.#saveEach(targets, queryOptions), targets };
     }
     UpdateOperation.#adopt(call, changes[0] ?? {});
-    return undefined;
+    return { saved: undefined, targets };
+  }
+
+  // v6 puts the new `updatedAt` into the values the hooks see
+  #stamp({ model, opts }: UpdateCall): Values {
+    const { updatedAt } = this.services.registry.state(model).definition;
+    return updatedAt !== undefined && opts['silent'] !== true ? { [updatedAt]: new Date() } : {};
   }
 
   static async #saveEach(targets: readonly AnyModel[], queryOptions: object): Promise<UpdateRows> {
