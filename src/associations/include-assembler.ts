@@ -41,7 +41,7 @@ export class IncludeAssembler {
       mainKeys,
       IncludeAssembler.#hasMultiAssociation(includes),
     );
-    return [...groups.values()].map((group) => {
+    return [...groups].map((group) => {
       const instance = build(model, group.values);
       this.#attachChildren(instance, includes, group.rows, build);
       return instance;
@@ -63,12 +63,21 @@ export class IncludeAssembler {
     rows: readonly IncludeRow[],
     mainKeys: (row: IncludeRow) => Values,
     hasMulti: boolean,
-  ): Map<string | number, Group> {
+  ): Iterable<Group> {
+    return hasMulti
+      ? this.#collapse(definition, rows, mainKeys)
+      : rows.map((row): Group => ({ values: mainKeys(row), rows: [row] }));
+  }
+
+  #collapse(
+    definition: ModelDefinition,
+    rows: readonly IncludeRow[],
+    mainKeys: (row: IncludeRow) => Values,
+  ): Iterable<Group> {
     const groups = new Map<string | number, Group>();
     for (const [index, row] of rows.entries()) {
       const values = mainKeys(row);
-      const key =
-        (hasMulti ? this.#rows.identity(definition, values) : undefined) ?? `row:${index}`;
+      const key = this.#rows.identity(definition, values) ?? `row:${index}`;
       const group = groups.get(key);
       if (group === undefined) {
         groups.set(key, { values, rows: [row] });
@@ -76,7 +85,7 @@ export class IncludeAssembler {
         group.rows.push(row);
       }
     }
-    return groups;
+    return groups.values();
   }
 
   // v6 collapses main rows only when some include fans a row out (hasMultiAssociation); otherwise
