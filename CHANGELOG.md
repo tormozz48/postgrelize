@@ -38,6 +38,16 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-11-24
+
+### Fixed
+
+- `changed(key, value)` has the two-argument overload `changed<K extends keyof this>(key: K, value: boolean)` of the v6 typings; it was found by the new generated type-call tests ([#170](https://github.com/tormozz48/postgrelize/pull/170)).
+
+### Changed
+
+- Generated API calls (unions, `null`, `keyof M`, generic helpers, subclasses) and sample-value acceptance checks for `WhereOptions` and `update` values are compared with v6 too, and `noUncheckedIndexedAccess` joins the compiler-flag matrix of the type-parity tests ([#170](https://github.com/tormozz48/postgrelize/pull/170)).
+
 ## [1.8.1] - 2026-11-24
 
 ### Fixed
@@ -48,7 +58,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Changed
 
-- Type-parity tests now also compile the corpus under other compiler flags, and `npm run types:consumer` compiles a Sequelize v6 project against v6 and against postgrelize and lists the errors only postgrelize reports. Generated API calls (unions, `null`, `keyof M`, generic helpers, subclasses) and sample-value acceptance checks for `WhereOptions` and `update` values are compared with v6 too; they found the missing two-argument `changed<K extends keyof this>(key, value)` overload, now added.
+- Type-parity tests now also compile the corpus under other compiler flags, and `npm run types:consumer` compiles a Sequelize v6 project against v6 and against postgrelize and lists the errors only postgrelize reports.
 
 ## [1.8.0] - 2026-11-24
 
@@ -428,7 +438,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.2...HEAD
+[1.8.2]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/tormozz48/postgrelize/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/tormozz48/postgrelize/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/tormozz48/postgrelize/compare/v1.6.0...v1.7.0
