@@ -82,10 +82,18 @@ export class FindOperation extends FindLookups {
     return this.#minifier.restore(result.rows, minified) as QueryResult['rows'];
   }
 
+  // Conforming the includes only matters to a hook that reads them, so a find without one skips it.
+  #hasExpandHooks(model: object): boolean {
+    const { hooks, runtime } = this.services.registry.state(model);
+    return [hooks, runtime.hooks()].some((registry) =>
+      registry.has('beforeFindAfterExpandIncludeAll'),
+    );
+  }
+
   async #beforeFind(model: object, opts: MutableOptions): Promise<void> {
     if (opts['hooks'] === true) {
       await this.services.lifecycle.runHooks(model, 'beforeFind', opts);
-      if (opts['include'] !== undefined) {
+      if (opts['include'] !== undefined && this.#hasExpandHooks(model)) {
         opts['include'] = this.services.includes.conform(
           model as ModelStatic<AnyModel>,
           opts['include'] as IncludeOption,
