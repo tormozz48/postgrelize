@@ -38,12 +38,13 @@ export class InstanceSaver {
     const fields =
       context.explicitFields ??
       (context.isNew ? this.#attributes(context) : this.#changed(context));
-    if (!context.isNew && fields.length === 0) {
-      return instance;
-    }
     const now = new Date();
     this.#stampNew(instance, context, now);
     const hookFields = await this.#prepare(instance, context, fields);
+    // like v6, validation and the before hooks run even when nothing changed; they may still change something
+    if (!context.isNew && this.#changed(context).length === 0 && hookFields.length === 0) {
+      return instance;
+    }
     await (context.isNew
       ? this.#writer.insert(instance, context, now)
       : this.#writer.update(instance, context, hookFields, now));

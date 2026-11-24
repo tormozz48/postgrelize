@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DataTypes, Op, Sequelize } from '../../src/index.ts';
+import { DataTypes, Model, Op, Sequelize, literal } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
 
@@ -496,5 +496,195 @@ describe('Sequelize issues fixed in postgrelize', () => {
       });
       // v6 reports `created: true` with an unsaved instance here (it inserts with ON CONFLICT DO NOTHING).
       expect(result).toEqual([1, 'red', false, 1]);
+    }));
+});
+
+describe('v6 parity: main rows without a selected primary key', () => {
+  it('returns every row of a single-association include, whatever was selected', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Cat = sequelize.define('Cat', { code: DataTypes.STRING }, { timestamps: false });
+      const Ledger = sequelize.define(
+        'Ledger',
+        { gross: DataTypes.INTEGER },
+        { timestamps: false },
+      );
+      Ledger.belongsTo(Cat, { as: 'cat' });
+      Cat.hasMany(Ledger, { as: 'ledgers' });
+      await sequelize.sync();
+      const cat = await Cat.create({ code: 'a' });
+      const cat2 = await Cat.create({ code: 'b' });
+      await Ledger.bulkCreate([
+        { gross: 100, catId: cat.get('id') },
+        { gross: 100, catId: cat2.get('id') },
+      ]);
+      const rows = await Ledger.findAll({
+        attributes: ['gross'],
+        include: [{ association: 'cat', required: true, attributes: ['id'] }],
+      });
+      const nested = await Cat.findAll({
+        attributes: ['code'],
+        include: [{ association: 'ledgers', attributes: ['gross'] }],
+        order: [['id', 'ASC']],
+      });
+      expect(rows.map((row) => row.get('gross'))).toEqual([100, 100]);
+      // a multi-association include still collapses by the selected values, like v6
+      expect(nested.map((row) => row.get('code'))).toEqual(['a', 'b']);
+    }));
+
+  it('tableAs aliases the main table', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Item = sequelize.define('Item', { n: DataTypes.INTEGER }, { timestamps: false });
+      await sequelize.sync();
+      await Item.bulkCreate([{ n: 1 }, { n: 2 }]);
+      const rows = await Item.findAll({
+        tableAs: 'it',
+        where: sequelize.literal('"it"."n" > 1'),
+        raw: true,
+      });
+      expect(rows).toEqual([{ id: 2, n: 2 }]);
+    }));
+});
+
+describe('v6 parity: save without changes', () => {
+  it('runs beforeUpdate and beforeSave when update() changes nothing, and writes nothing', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const calls: string[] = [];
+      const queries: string[] = [];
+      const U = sequelize.define('U', { status: DataTypes.STRING, note: DataTypes.STRING });
+      await sequelize.sync();
+      U.addHook('beforeUpdate', 'h', () => void calls.push('beforeUpdate'));
+      U.addHook('beforeSave', 'hs', () => void calls.push('beforeSave'));
+      const u = await U.create({ status: 'a', note: 'x' });
+      calls.length = 0;
+      await u.update({ status: 'a' }, { logging: (sql: string) => queries.push(sql) });
+      expect(calls).toEqual(['beforeUpdate', 'beforeSave']);
+      expect(queries).toEqual([]);
+    }));
+
+  it('a before hook that changes a value still gets it written', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const U = sequelize.define('U', { status: DataTypes.STRING, note: DataTypes.STRING });
+      await sequelize.sync();
+      U.addHook('beforeUpdate', (instance: { set(key: string, value: string): unknown }) =>
+        instance.set('note', 'hooked'),
+      );
+      const u = await U.create({ status: 'a', note: 'x' });
+      await u.update({ status: 'a' });
+      expect((await U.findByPk(u.get('id') as number))?.get('note')).toBe('hooked');
+    }));
+});
+
+describe('v6 parity: instance update and validation details', () => {
+  it('afterUpdate sees the assigned value, not the one PostgreSQL normalised', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const P = sequelize.define('P', { openingTime: DataTypes.TIME });
+      await sequelize.sync();
+      const created = await P.create({ openingTime: '09:00' });
+      let seen: unknown;
+      let previous: unknown;
+      P.addHook('afterUpdate', 'h', (instance: unknown) => {
+        const row = instance as { get(key: string): unknown; previous(key: string): unknown };
+        seen = row.get('openingTime');
+        previous = row.previous('openingTime');
+      });
+      const loaded = await P.findByPk(created.get('id') as number);
+      await loaded?.update({ openingTime: '08:30' });
+      expect([seen, previous]).toEqual(['08:30', '09:00:00']);
+    }));
+
+  it('instance update() drops explicit undefined values', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const P = sequelize.define('P', {
+        note: DataTypes.STRING,
+        messageId: { type: DataTypes.STRING, allowNull: false },
+      });
+      await sequelize.sync();
+      const p = await P.create({ note: 'a', messageId: 'm1' });
+      await p.update({ note: 'b', messageId: undefined });
+      const reloaded = await P.findByPk(p.get('id') as number, { raw: true });
+      expect(reloaded).toMatchObject({ note: 'b', messageId: 'm1' });
+    }));
+
+  it('ValidationErrorItem.original is what a custom validator threw', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      class Refusal extends Error {}
+      const P = sequelize.define(
+        'P',
+        {
+          a: DataTypes.INTEGER,
+          b: {
+            type: DataTypes.INTEGER,
+            validate: {
+              positive: (v: unknown) => {
+                if (Number(v) < 0) throw new Refusal('negative');
+              },
+            },
+          },
+        },
+        {
+          validate: {
+            notDegenerate() {
+              if ((this as { a: number; b: number }).a === (this as { a: number; b: number }).b) {
+                throw new Refusal('a equals b');
+              }
+            },
+          },
+        },
+      );
+      await sequelize.sync();
+      const model = (await P.create({ a: 1, b: 1 }).catch((error: unknown) => error)) as {
+        errors: { original: unknown }[];
+      };
+      const attribute = (await P.create({ a: 1, b: -1 }).catch((error: unknown) => error)) as {
+        errors: { original: unknown }[];
+      };
+      expect(model.errors[0]?.original).toBeInstanceOf(Refusal);
+      expect(attribute.errors[0]?.original).toBeInstanceOf(Refusal);
+    }));
+});
+
+describe('v6 parity: Model.name', () => {
+  it('equals modelName after init, so SQL built from it matches the table alias', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      class File$1 extends Model {}
+      File$1.init({ n: DataTypes.INTEGER }, { sequelize, tableName: 'f23', modelName: 'File' });
+      await sequelize.sync();
+      await File$1.create({ n: 1 });
+      const rows = await File$1.findAll({
+        where: literal(`EXISTS (SELECT 1 WHERE "${File$1.name}"."n" = 1)`),
+      });
+      expect([File$1.name, File$1.modelName, rows.length]).toEqual(['File', 'File', 1]);
+    }));
+});
+
+describe('v6 parity: plain values of assigned associations', () => {
+  it('get({ plain: true }) and toJSON follow only the includes the query loaded', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const A = sequelize.define('A', { name: DataTypes.STRING }, { timestamps: false });
+      const B = sequelize.define('B', { label: DataTypes.STRING }, { timestamps: false });
+      B.belongsTo(A, { as: 'form' });
+      A.hasOne(B, { as: 'transport', foreignKey: 'formId' });
+      await sequelize.sync();
+      const a = await A.create({ name: 'a' });
+      await B.create({ label: 'b', formId: a.get('id') });
+      const b = (await B.findByPk(1, { include: [{ association: 'form' }] })) as unknown as {
+        form: { transport?: unknown };
+        get(options: { plain: true }): Record<string, unknown>;
+      };
+      b.form.transport = b;
+      const plain = b.get({ plain: true });
+      expect(Object.keys(plain).toSorted()).toEqual(['formId', 'form', 'id', 'label'].toSorted());
+      expect(Object.keys(plain['form'] as object).toSorted()).toEqual(['id', 'name']);
+      expect(JSON.parse(JSON.stringify(b))).toEqual(plain);
+      expect(b.form.transport).toBe(b);
     }));
 });

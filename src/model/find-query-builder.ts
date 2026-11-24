@@ -48,7 +48,14 @@ export class FindQueryBuilder {
     if (query.lateralKeys !== undefined) {
       return this.#lateral(definition, query, inAsAnyThreshold, alias);
     }
-    const base = this.#base(definition, query, includes.length > 0, inAsAnyThreshold, alias);
+    const tableAs = includes.length === 0 ? query.tableAs : undefined;
+    const base = this.#base(
+      definition,
+      query,
+      includes.length > 0,
+      inAsAnyThreshold,
+      alias ?? tableAs,
+    );
     return includes.length === 0 ? base : this.#includes.build(definition, base, includes, query);
   }
 

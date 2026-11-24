@@ -103,7 +103,11 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   ): Promise<this> {
     const single = typeof keyOrValues === 'string';
     const instance = this as unknown as AnyModel;
-    instance.set(single ? { [keyOrValues]: valueOrOptions } : (keyOrValues as Values));
+    const values = single ? { [keyOrValues]: valueOrOptions } : (keyOrValues as Values);
+    // like v6, `undefined` values are not assigned
+    instance.set(
+      Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)),
+    );
     return this.save(single ? maybeOptions : (valueOrOptions as SaveOptions<TAttributes>));
   }
 

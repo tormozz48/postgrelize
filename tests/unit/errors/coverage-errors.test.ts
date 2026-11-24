@@ -31,7 +31,7 @@ describe('constraint error classes', () => {
     expect(error).toBeInstanceOf(DatabaseError);
     expect(error).toMatchObject({
       name: 'SequelizeExclusionConstraintError',
-      fields: ['room'],
+      fields: { room: '1' },
       table: 'bookings',
       constraint: 'no_overlap',
       sql: 'INSERT',
@@ -40,22 +40,26 @@ describe('constraint error classes', () => {
     expect(error.parent).toBe(parent);
   });
 
-  it('defaults exclusion fields to an empty list and keeps array fields', () => {
+  it('leaves exclusion fields undefined when omitted and keeps array fields', () => {
     const parent = pgError('23P01');
-    expect(new ExclusionConstraintError({ parent }).fields).toEqual([]);
+    expect(new ExclusionConstraintError({ parent }).fields).toBeUndefined();
     expect(new ExclusionConstraintError({ parent, fields: ['a', 'b'] }).fields).toEqual(['a', 'b']);
   });
 
   it('builds a foreign key error from object, array or missing fields', () => {
     const parent = pgError('23503');
-    expect(new ForeignKeyConstraintError({ parent, fields: { userId: '9' } }).fields).toEqual([
-      'userId',
-    ]);
+    expect(new ForeignKeyConstraintError({ parent, fields: { userId: '9' } }).fields).toEqual({
+      userId: '9',
+    });
+    expect(new ForeignKeyConstraintError({ fields: { assetAccountId: '9' } }).fields).toEqual({
+      assetAccountId: '9',
+    });
     expect(new ForeignKeyConstraintError({ parent, fields: ['userId'] }).fields).toEqual([
       'userId',
     ]);
     const bare = new ForeignKeyConstraintError({ parent, constraint: 'fk', table: 't' });
-    expect(bare).toMatchObject({ fields: [], index: 'fk', table: 't' });
+    expect(bare).toMatchObject({ index: 'fk', table: 't' });
+    expect(bare.fields).toBeUndefined();
   });
 });
 

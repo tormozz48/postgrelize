@@ -33,7 +33,7 @@ export class DefineHooks {
   ): DefinedModel {
     const hooks = options.sequelize[runtimeKey].hooks();
     if (!hooks.has('beforeDefine')) {
-      return { name: model.name, attributes, options };
+      return { name: options.modelName ?? model.name, attributes, options };
     }
     const name = options.modelName ?? model.name;
     const copy = { attributes: { ...attributes }, options: this.#withNames(options, name) };

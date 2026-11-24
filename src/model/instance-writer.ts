@@ -1,5 +1,6 @@
 import type { QueryResult } from '../connection/connection-manager.ts';
 import { OptimisticLockError } from '../errors/errors.ts';
+import { SqlExpression } from '../expressions/expression.ts';
 import type { InstanceLifecycleServices } from './instance-lifecycle-services.ts';
 import type { InstanceLifecycle } from './instance-lifecycle.ts';
 import type { InstanceState } from './instance-state.ts';
@@ -88,6 +89,18 @@ export class InstanceWriter {
       throw new OptimisticLockError({ modelName: definition.name, values: set, where });
     }
     this.#lifecycle.applyRow(instance, definition, result.rows[0]);
+    InstanceWriter.#keepAssigned(instance, changes);
+  }
+
+  // v6 sends no RETURNING with an instance update, so the instance keeps what was assigned (`'08:30'`),
+  // not what PostgreSQL normalised (`'08:30:00'`); only columns the update did not write come back.
+  static #keepAssigned(instance: AnyModel, changes: Values): void {
+    const values = instance.dataValues as Values;
+    Object.entries(changes).forEach(([name, value]) => {
+      if (!(value instanceof SqlExpression)) {
+        values[name] = value;
+      }
+    });
   }
 
   #updateRow(

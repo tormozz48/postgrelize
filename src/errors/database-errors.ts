@@ -170,24 +170,22 @@ export type ConstraintErrorOptions = QueryErrorContext &
  * ```
  */
 export class ForeignKeyConstraintError extends DatabaseError {
-  /** Referencing columns. */
-  readonly fields: readonly string[];
+  /** Referencing columns, exactly as passed (an object or an array, like v6). */
+  readonly fields: Readonly<Record<string, string>> | readonly string[] | undefined;
   /** Table name. */
   readonly table: string | undefined;
   /** Constraint name. */
   readonly index: string | undefined;
 
   /**
-   * Builds the error from the constraint details; an object `fields` is reduced to its keys.
+   * Builds the error from the constraint details.
    *
    * @param options - Driver error, fields and context.
    */
   constructor(options: ConstraintErrorOptions) {
     super(options.parent, options);
     this.name = 'SequelizeForeignKeyConstraintError';
-    this.fields = Array.isArray(options.fields)
-      ? options.fields
-      : Object.keys(options.fields ?? {});
+    this.fields = options.fields;
     this.table = options.table;
     this.index = options.constraint;
   }
@@ -212,13 +210,13 @@ export class ForeignKeyConstraintError extends DatabaseError {
 export class ExclusionConstraintError extends DatabaseError {
   /** Constraint name. */
   readonly constraint: string | undefined;
-  /** Constraint columns. */
-  readonly fields: readonly string[];
+  /** Constraint columns, exactly as passed (an object or an array, like v6). */
+  readonly fields: Readonly<Record<string, string>> | readonly string[] | undefined;
   /** Table name. */
   readonly table: string | undefined;
 
   /**
-   * Builds the error from the constraint details; an object `fields` is reduced to its keys.
+   * Builds the error from the constraint details.
    *
    * @param options - Driver error, fields and context.
    */
@@ -226,9 +224,7 @@ export class ExclusionConstraintError extends DatabaseError {
     super(options.parent, options);
     this.name = 'SequelizeExclusionConstraintError';
     this.constraint = options.constraint;
-    this.fields = Array.isArray(options.fields)
-      ? options.fields
-      : Object.keys(options.fields ?? {});
+    this.fields = options.fields;
     this.table = options.table;
   }
 }
