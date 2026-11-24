@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-11-24
+
 ### Fixed
 
 - Regressions of 1.8.0 found by the nightly v6 suite: `instance.update()` after `create(…, { fields })` no longer fails with an `undefined` primary key, a stamped `updatedAt` reaches the instance again, `update(values, { fields })` assigns only the listed attributes (custom setters excepted), and `Model.update({ individualHooks: true })` returns the instances its hooks worked on. The v6 suite baseline drops the 12 entries that now pass.
@@ -426,7 +428,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/tormozz48/postgrelize/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/tormozz48/postgrelize/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/tormozz48/postgrelize/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/tormozz48/postgrelize/compare/v1.5.0...v1.6.0
