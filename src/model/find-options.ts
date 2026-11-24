@@ -70,6 +70,11 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     include?: IncludeOption;
     /** `false` disables the sub-query used for `limit` combined with multi-row includes. */
     subQuery?: boolean;
+    /**
+     * Alias of the main table in `FROM` instead of the model name, so `literal`s and `col('alias.x')`
+     * can refer to it (a v6 internal option that v6's typings omit). Ignored when `include` is set.
+     */
+    tableAs?: string;
   } & CteFindOptions;
 
 /**

@@ -35,7 +35,12 @@ export class IncludeAssembler {
     build: InstanceBuilder,
   ): readonly Instance[] {
     const mainKeys = (row: IncludeRow): Values => this.#mainValues(parseMain(row));
-    const groups = this.#groupMain(registry.state(model).definition, rows, mainKeys);
+    const groups = this.#groupMain(
+      registry.state(model).definition,
+      rows,
+      mainKeys,
+      IncludeAssembler.#hasMultiAssociation(includes),
+    );
     return [...groups.values()].map((group) => {
       const instance = build(model, group.values);
       this.#attachChildren(instance, includes, group.rows, build);
@@ -57,11 +62,13 @@ export class IncludeAssembler {
     definition: ModelDefinition,
     rows: readonly IncludeRow[],
     mainKeys: (row: IncludeRow) => Values,
+    hasMulti: boolean,
   ): Map<string | number, Group> {
     const groups = new Map<string | number, Group>();
     for (const [index, row] of rows.entries()) {
       const values = mainKeys(row);
-      const key = this.#rows.identity(definition, values) ?? `row:${index}`;
+      const key =
+        (hasMulti ? this.#rows.identity(definition, values) : undefined) ?? `row:${index}`;
       const group = groups.get(key);
       if (group === undefined) {
         groups.set(key, { values, rows: [row] });
@@ -70,6 +77,17 @@ export class IncludeAssembler {
       }
     }
     return groups;
+  }
+
+  // v6 collapses main rows only when some include fans a row out (hasMultiAssociation); otherwise
+  // every row is its own instance, whatever was selected.
+  static #hasMultiAssociation(nodes: readonly IncludeNode[]): boolean {
+    return nodes.some(
+      (node) =>
+        !node.separate &&
+        (node.association.isMultiAssociation ||
+          IncludeAssembler.#hasMultiAssociation(node.children)),
+    );
   }
 
   #groupNode(node: IncludeNode, rows: readonly IncludeRow[]): Map<string | number, Group> {

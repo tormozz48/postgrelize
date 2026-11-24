@@ -101,6 +101,8 @@ export class ValidationErrorItem {
   readonly validatorName: string | null;
   /** Built-in validator arguments. */
   readonly validatorArgs: readonly unknown[];
+  /** What a custom validator threw (v6 `original`); set only on items of failed custom validators. */
+  original?: unknown;
 
   /**
    * Creates an item; `path`, `instance`, `validatorKey` and `validatorName` default to `null`, `validatorArgs` to `[]`, and `value` to `null` when `undefined`.
@@ -132,6 +134,18 @@ export class ValidationErrorItem {
     this.validatorName = validatorName ?? null;
     this.validatorArgs = validatorArgs ?? [];
     Object.assign(this, classify(type));
+  }
+
+  /**
+   * Records what a custom validator threw as {@link ValidationErrorItem.original}.
+   *
+   * @internal
+   * @param original - The thrown value.
+   * @returns This item.
+   */
+  withOriginal(original: unknown): this {
+    this.original = original;
+    return this;
   }
 }
 

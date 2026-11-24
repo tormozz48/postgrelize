@@ -157,11 +157,11 @@ export type WhereAttributeValue<V> =
 /** Logical combinators allowed at any level of a where object. */
 export type WhereLogic<T> = {
   /** Logical AND of nested conditions. */
-  [Op.and]?: AllowArray<WhereOptions<T>>;
+  [Op.and]?: AllowArray<WhereOptions<NoInfer<T>>>;
   /** Logical OR of nested conditions. */
-  [Op.or]?: AllowArray<WhereOptions<T>>;
+  [Op.or]?: AllowArray<WhereOptions<NoInfer<T>>>;
   /** `IS NOT value` for `null`/booleans, otherwise negates a nested condition. */
-  [Op.not]?: WhereOptions<T>;
+  [Op.not]?: WhereOptions<NoInfer<T>>;
 };
 
 /**

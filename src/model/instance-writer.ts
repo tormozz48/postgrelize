@@ -1,5 +1,6 @@
 import type { QueryResult } from '../connection/connection-manager.ts';
 import { OptimisticLockError } from '../errors/errors.ts';
+import { SqlExpression } from '../expressions/expression.ts';
 import type { InstanceLifecycleServices } from './instance-lifecycle-services.ts';
 import type { InstanceLifecycle } from './instance-lifecycle.ts';
 import type { InstanceState } from './instance-state.ts';
@@ -87,7 +88,30 @@ export class InstanceWriter {
     if (definition.version !== undefined && result.rowCount === 0) {
       throw new OptimisticLockError({ modelName: definition.name, values: set, where });
     }
-    this.#lifecycle.applyRow(instance, definition, result.rows[0]);
+    this.#applyUpdate(instance, definition, changes, set, result.rows[0]);
+  }
+
+  // v6 sends no RETURNING with an instance update: the instance keeps its in-memory values (`'08:30'`,
+  // not the normalised `'08:30:00'`; an encrypted column that a hook decrypted stays decrypted). Only
+  // a column written from an expression (`fn`, `literal`) and a generated column take the value PostgreSQL computed.
+  #applyUpdate(
+    instance: AnyModel,
+    definition: ModelDefinition,
+    changes: Values,
+    set: Values,
+    row: Readonly<Record<string, unknown>> | undefined,
+  ): void {
+    const values = instance.dataValues as Values;
+    if (definition.version !== undefined) {
+      values[definition.version] = set[definition.version];
+    }
+    instance.isNewRecord = false;
+    const computed = row === undefined ? {} : this.#services.rows.parse(definition, row);
+    for (const name of Object.keys(computed)) {
+      if (changes[name] instanceof SqlExpression || definition.attributes.get(name)?.generated) {
+        values[name] = computed[name];
+      }
+    }
   }
 
   #updateRow(

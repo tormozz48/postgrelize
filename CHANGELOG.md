@@ -38,6 +38,24 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `instance.update()` / `save()` send no `RETURNING` data back into the instance, like v6: it keeps its in-memory values (a column a hook decrypted stays decrypted after a paranoid `destroy()`); only columns written from `fn` / `literal` and generated columns take the value PostgreSQL computed. This replaces the narrower rule "only unwritten columns come back".
+- `beforeFindAfterExpandIncludeAll` hooks receive `{ association }` includes already resolved to `model` and `as` (and `{ all: true }` expanded), like v6.
+- An association value assigned to an instance (`b.form.transport = b`) is a plain property, not one of its values, like v6: `get({ plain: true })` and `toJSON()` follow only the includes the query loaded and no longer overflow the stack on a cycle.
+- `Model.name` equals the `modelName` init option when the model has no `beforeDefine` hook (it stayed the class name, e.g. `File$1` from a bundler), like v6, so SQL built from `Model.name` matches the table alias.
+- After `instance.update()` the instance keeps the values the caller assigned (`'08:30'` for a `TIME` column), so `afterUpdate` hooks see them, not what PostgreSQL normalised (`'08:30:00'`), like v6; columns the update did not write still come back from the database.
+- `instance.update(values)` ignores keys whose value is `undefined`, like v6, instead of validating them as `null`.
+- `ValidationErrorItem.original` holds what a custom (attribute or model) validator threw, like v6, so callers can tell their own error class apart.
+- `instance.update(values)` / `save()` with nothing changed runs validation and the `beforeUpdate` / `beforeSave` hooks before returning, like v6, so a hook can still change the write or veto it; no query runs when nothing ends up changed.
+- `findAll` with `include` returns every row when no include is a multi-association (`hasMany`, `belongsToMany`), like v6: rows with equal selected values are no longer collapsed when the primary key is not selected. With a multi-association include rows are still grouped (by primary key, else by the selected values).
+- `ForeignKeyConstraintError.fields` and `ExclusionConstraintError.fields` keep what the caller passed (an object stays an object, no value is `undefined`), like v6; they were turned into arrays of keys.
+- `WhereOptions<T>` no longer infers `T` from the conditions under `Op.and` / `Op.or` / `Op.not`, so generic helpers such as `applyScope<T>(where: WhereOptions<T>)` type-check when called with `{ [Op.or]: [...] }`.
+
+### Added
+
+- `FindOptions.tableAs` (a v6 option missing from its typings) aliases the main table in `FROM`; it is ignored when `include` is set.
+
 ## [1.7.0] - 2026-11-24
 
 ### Fixed

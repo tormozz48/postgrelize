@@ -8,18 +8,18 @@ export class CustomValidators {
    * @param instance - Instance being validated.
    * @param fn - Validator function; with one parameter more than `args` it is callback style.
    * @param args - Arguments passed before the callback.
-   * @returns The failure message, or `undefined` when the validator passed.
+   * @returns The failure (message and the thrown value), or `undefined` when the validator passed.
    */
   async failure(
     instance: object,
     fn: unknown,
     args: readonly unknown[],
-  ): Promise<string | undefined> {
+  ): Promise<Readonly<{ message: string; original: unknown }> | undefined> {
     try {
       await this.#call(instance, fn, args);
       return undefined;
     } catch (error) {
-      return CustomValidators.#messageOf(error);
+      return { message: CustomValidators.#messageOf(error), original: error };
     }
   }
 

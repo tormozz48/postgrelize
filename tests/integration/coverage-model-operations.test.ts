@@ -261,7 +261,7 @@ describe('copyTo single-character options', () => {
 });
 
 describe('association properties of instances', () => {
-  it('stores an assigned association value in the instance data', () =>
+  it('keeps an assigned association value as a plain property outside the instance data (v6)', () =>
     withSchema(async ({ schema }) => {
       const { Stock, Delivery } = await setup(schema);
       Stock.hasMany(Delivery, { foreignKey: 'sku', sourceKey: 'sku', as: 'deliveries' });
@@ -272,7 +272,7 @@ describe('association properties of instances', () => {
       const assigned = [Delivery.build({ sku: 'a', amount: 1 })];
       stock['deliveries'] = assigned;
       expect(stock['deliveries']).toBe(assigned);
-      expect(stock.dataValues['deliveries']).toBe(assigned);
+      expect(stock.dataValues['deliveries']).toBeUndefined();
     }));
 });
 

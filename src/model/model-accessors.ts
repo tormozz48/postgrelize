@@ -52,8 +52,15 @@ export class ModelAccessors {
       get(this: AssociationHost) {
         return this.dataValues[alias];
       },
+      // Like v6, a value assigned by the caller is a plain property of the instance and not part of its
+      // values, so `get({ plain: true })` / `toJSON()` do not follow it (a cycle would never end).
       set(this: AssociationHost, value: unknown) {
-        this.dataValues[alias] = value;
+        Object.defineProperty(this, alias, {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       },
     });
   }

@@ -107,10 +107,19 @@ export class InstanceValidator {
     name: string,
     fn: ModelValidatorFunction,
   ): Promise<readonly ValidationErrorItem[]> {
-    const message = await this.#custom.failure(target.instance, fn, []);
-    return message === undefined
+    const failure = await this.#custom.failure(target.instance, fn, []);
+    return failure === undefined
       ? []
-      : [new ValidationErrorItem(message, 'Validation error', name, null, target.instance, name)];
+      : [
+          new ValidationErrorItem(
+            failure.message,
+            'Validation error',
+            name,
+            null,
+            target.instance,
+            name,
+          ).withOriginal(failure.original),
+        ];
   }
 
   #plainValues(target: ValidationTarget): Readonly<Record<string, unknown>> {
