@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-11-24
+
 ### Fixed
 
 - `instance.reload()` without options loads again the `include` the instance was loaded with by a finder, like v6 (`_options.include`); the loaded association was gone after `reload()`. ([#172](https://github.com/tormozz48/postgrelize/pull/172))
@@ -443,7 +445,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.2...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.3...HEAD
+[1.8.3]: https://github.com/tormozz48/postgrelize/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/tormozz48/postgrelize/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/tormozz48/postgrelize/compare/v1.7.0...v1.8.0
