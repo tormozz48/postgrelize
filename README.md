@@ -89,6 +89,8 @@ npm run docs         # documentation site into docs/.vitepress/dist (npm run doc
 npm run test:coverage # coverage report into coverage/
 ```
 
+The performance gate (`bench/`) also runs on a GitHub runner: the manual workflow `bench gate` compares a ref with the latest tag.
+
 Contribution rules (architecture, tests, documentation sync, releases) are in [AGENTS.md](AGENTS.md). Design records, ADRs and reviews live in `.10x/`.
 
 ## License

@@ -1,0 +1,94 @@
+name: bench gate
+
+# Performance gate on a GitHub runner (AGENTS.md, "Performance gate"). Runs on demand only and is not a
+# required check. Absolute microseconds differ between machines, so the base ref (default: the latest
+# tag) and the target ref (default: main) are measured on the same runner, interleaved, three runs
+# each, and compared by bench/compare.ts: gated cases must stay within +10% of the base.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Base ref to compare against (empty: the latest tag)'
+        required: false
+        default: ''
+      ref:
+        description: 'Ref to measure'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: Bench (stub mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref }}
+          path: target
+      - name: Resolve the base ref
+        id: base
+        working-directory: target
+        env:
+          BASE_INPUT: ${{ inputs.base }}
+        run: |
+          base="$BASE_INPUT"
+          [ -n "$base" ] || base="$(git tag --sort=-v:refname | head -n 1)"
+          [ -n "$base" ] || { echo "no tag and no base input" >&2; exit 1; }
+          echo "ref=$base" >> "$GITHUB_OUTPUT"
+          echo "Base: $base" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          ref: ${{ steps.base.outputs.ref }}
+          path: base
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            target/package-lock.json
+            base/package-lock.json
+      - run: npm ci
+        working-directory: target
+      - run: npm ci
+        working-directory: base
+      - name: Measure (base and target interleaved, 3 runs each)
+        env:
+          PGZ_BENCH_STUB: '1'
+        run: |
+          mkdir -p "$RUNNER_TEMP/bench"
+          for i in 1 2 3; do
+            (cd base && PGZ_BENCH_JSON="$RUNNER_TEMP/bench/base$i.json" npm run bench)
+            (cd target && PGZ_BENCH_JSON="$RUNNER_TEMP/bench/target$i.json" npm run bench)
+          done
+      - name: Compare
+        run: |
+          node -e '
+            const { readFileSync, writeFileSync } = require("node:fs");
+            const dir = process.env.RUNNER_TEMP + "/bench";
+            const runs = [1, 2, 3].map((i) => JSON.parse(readFileSync(`${dir}/base${i}.json`, "utf8")));
+            const best = {};
+            for (const name of Object.keys(runs[0])) {
+              if (name === "details" || typeof runs[0][name] !== "number") continue;
+              best[name] = Math.min(...runs.map((run) => run[name] ?? Infinity));
+            }
+            writeFileSync(`${dir}/base-best.json`, JSON.stringify(best));
+          '
+          set -o pipefail
+          cd target
+          PGZ_BENCH_BASELINE="$RUNNER_TEMP/bench/base-best.json" \
+            node bench/compare.ts "$RUNNER_TEMP"/bench/target1.json "$RUNNER_TEMP"/bench/target2.json "$RUNNER_TEMP"/bench/target3.json \
+            2>&1 | tee "$RUNNER_TEMP/bench/report.txt"
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo '```'
+            cat "$RUNNER_TEMP/bench/report.txt" 2>/dev/null || echo "no report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
