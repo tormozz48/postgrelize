@@ -13,7 +13,7 @@ Rules for anyone continuing this package, human or AI agent. Read it fully befor
 ## Golden rules
 
 1. **The v6 API is a contract.** Public names, option shapes, return values, error classes and hook order match Sequelize v6. Divergence is allowed only to fix a v6 bug ([ADR-016](.10x/adrs/016-v6-bug-divergence.md)), and every divergence is documented.
-2. **Values are always bound.** DML uses `$1..$n` parameters only ([ADR-002](.10x/adrs/002-pg-driver-bound-parameters.md)); the one exception is `replacements` of `sequelize.query` and of the finders, which are written into the SQL as escaped literals like v6 ([ADR-036](.10x/adrs/036-inlined-raw-query-replacements.md), [ADR-037](.10x/adrs/037-inlined-finder-replacements.md)). DDL renders literals through `SqlLiteral` only ([ADR-010](.10x/adrs/010-ddl-literals.md)). Identifiers are always quoted by the shared quoting helper. Enum-like strings (lock strengths, isolation levels, function names, types) go through an allowlist. Never concatenate user input into SQL. Every input that reaches SQL has a row on the Security page and tests in `tests/integration/security/` ([ADR-020](.10x/adrs/020-injection-assurance.md)).
+2. **Values are always bound.** DML uses `$1..$n` parameters only ([ADR-002](.10x/adrs/002-pg-driver-bound-parameters.md)); the exceptions are `replacements` of `sequelize.query` and of the finders, which are written into the SQL as escaped literals like v6 ([ADR-036](.10x/adrs/036-inlined-raw-query-replacements.md), [ADR-037](.10x/adrs/037-inlined-finder-replacements.md)); the same holds for the string arguments of `fn()` and the value of `Op.is` ([ADR-038](.10x/adrs/038-inlined-fn-string-arguments.md)). DDL renders literals through `SqlLiteral` only ([ADR-010](.10x/adrs/010-ddl-literals.md)). Identifiers are always quoted by the shared quoting helper. Enum-like strings (lock strengths, isolation levels, function names, types) go through an allowlist. Never concatenate user input into SQL. Every input that reaches SQL has a row on the Security page and tests in `tests/integration/security/` ([ADR-020](.10x/adrs/020-injection-assurance.md)).
 3. **Only `src/connection` imports `pg`.** No new runtime dependencies without an ADR. Current runtime deps: `inflection`, `validator`.
 4. **No change without a test that needs it** (YAGNI). Every bug fix gets a regression test.
 5. **Docs move with code.** A PR that changes behaviour updates its docs in the same PR (see [Documentation sync](#documentation-sync)).
@@ -247,6 +247,7 @@ Everything lives in `.10x/`:
 | [035](.10x/adrs/035-docs-reference-and-extension-marking.md) | Generated option reference, `<Ext />` extension marking       | Accepted                                              |
 | [036](.10x/adrs/036-inlined-raw-query-replacements.md)       | Inline `sequelize.query` `replacements` as escaped literals   | Accepted (narrow exception to 002)                    |
 | [037](.10x/adrs/037-inlined-finder-replacements.md)          | Inline finder `replacements` as escaped literals              | Accepted (extends 036)                                |
+| [038](.10x/adrs/038-inlined-fn-string-arguments.md)          | Inline `fn()` string arguments and `Op.is` values as literals | Accepted (extends 036, 037)                           |
 
 ## Git, PRs and releases
 
