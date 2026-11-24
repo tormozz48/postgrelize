@@ -164,6 +164,13 @@ export type WhereLogic<T> = {
   [Op.not]?: WhereOptions<NoInfer<T>>;
 };
 
+// Each member requires its operator (as v6 `AndOperator` / `OrOperator` / `NotOperator`): an all-optional member would also
+// accept `{}`, so assigning `{}` to a `WhereOptions` variable would keep it in the narrowed type and hide the attribute keys.
+type RequiredLogic<T> =
+  | { [Op.and]: NonNullable<WhereLogic<T>[typeof Op.and]> }
+  | { [Op.or]: NonNullable<WhereLogic<T>[typeof Op.or]> }
+  | { [Op.not]: NonNullable<WhereLogic<T>[typeof Op.not]> };
+
 /**
  * Condition for one attribute in a where object (Sequelize v6 `WhereAttributeHashValue`); the same type as {@link WhereAttributeValue}.
  *
@@ -216,7 +223,7 @@ export type WhereAttributeHash<T = any> = WhereAttributeShape<[T]> & {
  */
 export type WhereOptions<T = Record<string, unknown>> =
   | WhereAttributeHash<T>
-  | WhereLogic<T>
+  | RequiredLogic<T>
   | readonly WhereOptions<T>[]
   | Where
   | Literal

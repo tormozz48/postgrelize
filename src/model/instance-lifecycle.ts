@@ -176,11 +176,26 @@ export class InstanceLifecycle {
         'Instance could not be reloaded because it does not exist anymore (find call returned null)',
       );
     }
-    instance.set(reloaded.dataValues, { raw: true });
+    InstanceLifecycle.#replaceValues(instance, reloaded.dataValues as Values, options);
     instance.isNewRecord = false;
     instance._previousDataValues = { ...instance.dataValues };
     InstanceState.of(instance).reset();
     return instance;
+  }
+
+  // v6 `reload` sets the fresh values with `reset` unless `attributes` limits them; an association instance the
+  // caller assigned is an own property that would hide the reloaded one, so it is dropped (v6 `_setInclude`).
+  static #replaceValues(instance: AnyModel, fresh: Values, options: FindOptions): void {
+    const values = instance.dataValues as Values;
+    if (options.attributes === undefined) {
+      Object.keys(values)
+        .filter((name) => !(name in fresh))
+        .forEach((name) => Reflect.deleteProperty(values, name));
+    }
+    Object.keys(fresh)
+      .filter((name) => Object.prototype.hasOwnProperty.call(instance, name))
+      .forEach((name) => Reflect.deleteProperty(instance, name));
+    instance.set(fresh, { raw: true });
   }
 
   /**
