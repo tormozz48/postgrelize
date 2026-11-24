@@ -81,7 +81,10 @@ export class InstanceWriter {
   ): Promise<void> {
     const { definition } = context;
     const changes = this.#changes(instance, context, fields, now);
-    const previous = instance._previousDataValues as Values;
+    const previous = {
+      ...(instance.dataValues as Values),
+      ...(instance._previousDataValues as Values),
+    };
     const where = this.#updateWhere(definition, previous);
     const set = this.#updateSet(definition, previous, changes);
     const result = await this.#updateRow(context, set, where);
@@ -106,11 +109,20 @@ export class InstanceWriter {
       values[definition.version] = set[definition.version];
     }
     instance.isNewRecord = false;
+    InstanceWriter.#keepStamp(values, definition, changes);
     const computed = row === undefined ? {} : this.#services.rows.parse(definition, row);
     for (const name of Object.keys(computed)) {
       if (changes[name] instanceof SqlExpression || definition.attributes.get(name)?.generated) {
         values[name] = computed[name];
       }
+    }
+  }
+
+  // the stamped `updatedAt` is not an assigned value, so the instance takes it from the written changes
+  static #keepStamp(values: Values, definition: ModelDefinition, changes: Values): void {
+    const { updatedAt } = definition;
+    if (updatedAt !== undefined && changes[updatedAt] instanceof Date) {
+      values[updatedAt] = changes[updatedAt];
     }
   }
 
