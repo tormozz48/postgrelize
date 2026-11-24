@@ -3,6 +3,7 @@ import { Op } from '../expressions/op.ts';
 import { SqlAst, type ExprNode } from '../sql/ast.ts';
 import { CONTAINMENT_OPERATORS } from './operator-allowlist.ts';
 import {
+  inlineLiteral,
   isPlainObject,
   jsonbAt,
   serializeWith,
@@ -60,13 +61,15 @@ export const isCheck = (left: Operand, value: boolean | null, negated: boolean):
   expr: left.node,
 });
 
-/** `Op.is`: `IS NULL|TRUE|FALSE`. */
-export const isOperator = (left: Operand, value: unknown): ExprNode => {
-  if (!isNullOrBoolean(value)) {
-    throw new Error('Op.is expects null, true or false');
-  }
-  return isCheck(left, value, false);
-};
+/** `Op.is`: `IS NULL|TRUE|FALSE`; any other value is written as an escaped literal like v6. */
+export const isOperator = (compiler: ExprConverter, left: Operand, value: unknown): ExprNode =>
+  isNullOrBoolean(value)
+    ? isCheck(left, value, false)
+    : ast.binary(
+        'IS',
+        left.node,
+        value instanceof SqlExpression ? compiler.toExpr(value) : inlineLiteral(value),
+      );
 
 /**
  * Value comparisons: binary operators with `ANY` / `ALL` quantifiers, `IN` lists (as `= ANY` above

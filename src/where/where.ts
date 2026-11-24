@@ -21,8 +21,9 @@ import { OperandResolver } from './operand-resolver.ts';
 import { validComparator } from './operator-allowlist.ts';
 import { WindowCompiler } from './window-compiler.ts';
 import {
-  columnPath,
+  inlineLiteral,
   isOpKey,
+  nestedColumnPath,
   isPlainObject,
   ownKeys,
   serializeWith,
@@ -125,13 +126,15 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
   visitFn(value: Fn): ExprNode {
     return ast.fnCall(
       value.fn,
-      value.args.map((arg) => this.toExpr(arg)),
+      value.args.map((arg) =>
+        value.inlineStrings && typeof arg === 'string' ? inlineLiteral(arg) : this.toExpr(arg),
+      ),
     );
   }
 
   /** @internal */
   visitCol(value: Col): ExprNode {
-    return typeof value.col === 'string' ? columnPath(value.col) : ast.ident(...value.col);
+    return typeof value.col === 'string' ? nestedColumnPath(value.col) : ast.ident(...value.col);
   }
 
   /** @internal */

@@ -8,7 +8,7 @@ import type { QueryInterface } from '../query-interface/query-interface.ts';
 import type { Transaction, TransactionOptions } from '../transaction/transaction.ts';
 
 /** Options common to every query issued by a model. */
-export type QueryOptionsBase = Readonly<{
+export type QueryOptionsBase = {
   /** Transaction to run in; `null` forces running outside the CLS transaction. */
   transaction?: Transaction | null;
   /** SQL logger for this query, or `false`. */
@@ -41,7 +41,7 @@ export type QueryOptionsBase = Readonly<{
    * comma separated list of parameters.
    */
   replacements?: Replacements;
-}>;
+};
 
 /** Services a `Sequelize` instance provides to its models. */
 export type ModelRuntime = Readonly<{

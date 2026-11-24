@@ -38,6 +38,14 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- String arguments of `fn()` are written into the SQL as escaped literals like Sequelize v6 (`COUNT('*')`, `concat_ws(' ', ...)`, `to_char(..., 'YYYY')`) instead of bound parameters, which PostgreSQL could not type; the postgrelize helpers (`trigramSimilarity`, text search) keep binding their strings.
+- `Op.is` accepts a `literal()` or any other value, rendered like v6 (`IS NULL`, `IS 5`), instead of throwing; `WhereOperators` types `[Op.is]` as `boolean | null | Literal`.
+- `col('a.b.c')` with three or more parts renders `"a->b"."c"` (include alias path) like v6, instead of three identifiers.
+- The `get` / `set` of an attribute definition have the model instance as `this` (`ModelAttributes<M, TAttributes>` and `AttributeOptions<M>` take the model type, as in v6 types).
+- Option types of the finders and writers (`FindOptions`, `UpdateOptions`, `DestroyOptions`, `SaveOptions`, `CreateOptions`, `BulkCreateOptions`, ...) have mutable keys, so `options.where = ...` and `{ ...options, paranoid: false }` compile as in v6.
+
 ## [1.6.0] - 2026-11-23
 
 ### Changed

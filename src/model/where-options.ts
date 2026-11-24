@@ -27,8 +27,8 @@ export type WhereOperators<V = unknown> = {
   [Op.eq]?: Comparable<V> | null;
   /** `<> value`; `IS NOT NULL` when the value is `null`. */
   [Op.ne]?: Comparable<V> | null;
-  /** `IS value`, for `null`, `true` or `false`. */
-  [Op.is]?: boolean | null;
+  /** `IS value`: `null`, `true`, `false` or a `literal(...)` written as is, like v6. */
+  [Op.is]?: boolean | null | Literal;
   /** `IS NOT value` for `null`/booleans, otherwise negates a nested condition. */
   [Op.not]?: Comparable<V> | boolean | null | WhereOperators<V>;
   /** `> value`. */

@@ -383,7 +383,6 @@
       "FindOrBuildOptions: <=,=> -> <=>": "generic-params",
       "FindOrCreateOptions: <=,=> -> <=>": "generic-params",
       "InitOptions: <=> -> <>": "generic-params",
-      "ModelAttributes: <=,=> -> <>": "generic-params",
       "or: <_> -> <>": "generic-params",
       "where: <_> -> <>": "generic-params"
     },

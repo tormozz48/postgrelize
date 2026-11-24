@@ -35,8 +35,16 @@ describe('raw query result shapes (PostgreSQL driver results)', () => {
     inSchema(async (sequelize) => {
       await expect(
         sequelize.query('SELECT :v AS v', {
-          replacements: { v: sequelize.fn('lower', 'ABC') },
+          replacements: { v: sequelize.fn('round', 1.5) },
         }),
       ).rejects.toThrow('Expressions with bound values are not supported in replacements');
+    }));
+
+  it('writes fn() string arguments of a replacement inline, like v6', () =>
+    inSchema(async (sequelize) => {
+      const [rows] = await sequelize.query('SELECT :v AS v', {
+        replacements: { v: sequelize.fn('lower', 'ABC') },
+      });
+      expect(rows).toEqual([{ v: 'abc' }]);
     }));
 });

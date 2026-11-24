@@ -47,7 +47,8 @@ export class Literal extends SqlExpression {
 export const literal = (val: string): Literal => new Literal(val);
 
 /**
- * Creates an SQL function call. Arguments are bound as parameters unless they are expressions.
+ * Creates an SQL function call. String arguments are written into the SQL as escaped literals, like
+ * v6 (`COUNT('*')`, `concat_ws(' ', ...)`); other values are bound as parameters; expressions are rendered as is.
  *
  * @param name - Function name, e.g. `'lower'`.
  * @param args - Function arguments.
@@ -57,7 +58,7 @@ export const literal = (val: string): Literal => new Literal(val);
  * await User.findAll({ where: where(fn('lower', col('email')), 'a@b.c') });
  * ```
  */
-export const fn = (name: string, ...args: readonly unknown[]): Fn => new Fn(name, args);
+export const fn = (name: string, ...args: readonly unknown[]): Fn => new Fn(name, args, true);
 
 /**
  * Creates a column reference. Dots separate table and column: `'user.id'`.
