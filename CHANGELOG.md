@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.8.4] - 2026-11-24
+
 ### Fixed
 
 - `instance.reload()` of an instance reached through nested includes (a `hasMany` child, a `belongsTo` of a child, …) loads that instance's own includes again, like v6 (`_options.include` of a nested build); 1.8.3 did this only for an instance a finder returned itself. ([#176](https://github.com/tormozz48/postgrelize/pull/176))
@@ -453,7 +455,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.4...HEAD
+[1.8.4]: https://github.com/tormozz48/postgrelize/compare/v1.8.3...v1.8.4
 [1.8.3]: https://github.com/tormozz48/postgrelize/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/tormozz48/postgrelize/compare/v1.8.0...v1.8.1
