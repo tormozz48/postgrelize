@@ -1,3 +1,4 @@
+import { InstanceState } from '../instance-state.ts';
 import { AliasMinifier } from '../../associations/alias-minifier.ts';
 import type { SelectNode } from '../../sql/ast.ts';
 import type { IncludeNode, IncludeOption } from '../../associations/include.ts';
@@ -127,15 +128,21 @@ export class FindOperation extends FindLookups {
   }
 
   #instances({ model, definition, includes }: FindCall, rows: QueryResult['rows']): AnyModel[] {
-    return includes.length === 0
-      ? rows.map((row) => this.services.rows.instance(model, row))
-      : (this.services.loader.assemble(
-          model,
-          includes,
-          rows,
-          (row: Row) => this.services.rows.parse(definition, row),
-          (target, values) => new target(values, { isNewRecord: false, raw: true }),
-        ) as AnyModel[]);
+    if (includes.length === 0) {
+      return rows.map((row) => this.services.rows.instance(model, row));
+    }
+    const found = this.services.loader.assemble(
+      model,
+      includes,
+      rows,
+      (row: Row) => this.services.rows.parse(definition, row),
+      (target, values) => new target(values, { isNewRecord: false, raw: true }),
+    ) as AnyModel[];
+    // `reload()` loads the same includes again, like v6 (`_options.include`)
+    found.forEach((instance) => {
+      InstanceState.of(instance).loadedIncludes = includes;
+    });
+    return found;
   }
 
   #raw({ definition, opts, includes }: FindCall, rows: QueryResult['rows']): AnyModel[] {

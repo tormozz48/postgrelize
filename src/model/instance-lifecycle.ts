@@ -170,7 +170,7 @@ export class InstanceLifecycle {
     const model = instance.constructor as ModelStatic<AnyModel>;
     const { definition } = this.#services.registry.state(model);
     const where = this.#services.columns.primaryKeyWhere(definition, instance.dataValues as Values);
-    const reloaded = await model.findOne({ ...options, where });
+    const reloaded = await model.findOne({ ...this.#withLoadedIncludes(instance, options), where });
     if (reloaded === null) {
       throw new InstanceError(
         'Instance could not be reloaded because it does not exist anymore (find call returned null)',
@@ -180,7 +180,19 @@ export class InstanceLifecycle {
     instance.isNewRecord = false;
     instance._previousDataValues = { ...instance.dataValues };
     InstanceState.of(instance).reset();
+    InstanceState.of(instance).loadedIncludes = InstanceState.of(reloaded).loadedIncludes;
     return instance;
+  }
+
+  // v6 `reload` defaults `include` to the include the instance was loaded with.
+  #withLoadedIncludes(instance: AnyModel, options: FindOptions): FindOptions {
+    const { loadedIncludes } = InstanceState.of(instance);
+    return options.include !== undefined || loadedIncludes.length === 0
+      ? options
+      : {
+          ...options,
+          include: loadedIncludes.map((node) => this.#services.includes.toOptions(node)),
+        };
   }
 
   // v6 `reload` sets the fresh values with `reset` unless `attributes` limits them; an association instance the

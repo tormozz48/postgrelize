@@ -38,6 +38,11 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `instance.reload()` without options loads again the `include` the instance was loaded with by a finder, like v6 (`_options.include`); the loaded association was gone after `reload()`. ([#172](https://github.com/tormozz48/postgrelize/pull/172))
+- `WhereOptions<T>` never infers `T` from the attribute conditions, like v6, so a generic helper `scope<T>(where: WhereOptions<T>)` can feed a typed `where` (`findAll({ where: scope({ type: { [Op.in]: types } }) })`), and a where value may be `undefined` in the types under `exactOptionalPropertyTypes` (the runtime still throws, like v6). ([#172](https://github.com/tormozz48/postgrelize/pull/172))
+
 ## [1.8.2] - 2026-11-24
 
 ### Fixed
