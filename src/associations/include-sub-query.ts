@@ -10,6 +10,10 @@ const isMulti = (node: IncludeNode): boolean => node.association.isMultiAssociat
 const aliasesOf = (nodes: readonly IncludeNode[]): readonly string[] =>
   nodes.flatMap((node) => [node.alias, ...aliasesOf(node.children)]);
 
+/** v6 `hasRequired`: the include or one of its direct (non-separate) children is required. */
+export const hasRequired = (node: IncludeNode): boolean =>
+  node.required || node.children.some((child) => !child.separate && child.required);
+
 /** True when a condition references a joined include (`$Include.attr$`) as a table. */
 const referencesIncludes = (
   where: ExprNode | undefined,
@@ -60,7 +64,8 @@ export class IncludeSubQuery {
   }
 
   /**
-   * `EXISTS` condition that keeps the rows of the main table having a matching required include.
+   * `EXISTS` condition that keeps the rows of the main table having a matching required include
+   * (also of a required include nested under an optional one, v6 `subQueryFilter`).
    *
    * @param parent - Main model definition.
    * @param parentAlias - Main table alias.

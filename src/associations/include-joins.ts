@@ -36,14 +36,24 @@ export class IncludeJoins {
   }
 
   #direct(parent: ModelDefinition, parentAlias: string, node: IncludeNode): readonly JoinNode[] {
-    return [
-      {
-        type: this.#type(node),
-        table: attributeColumns.table(node.definition, node.alias),
-        on: ast.and([this.#joinKeys(parent, parentAlias, node), ...this.#extra(node)]),
-      },
-      ...this.#childJoins(node),
-    ];
+    const join: JoinNode = {
+      type: this.#type(node),
+      table: attributeColumns.table(node.definition, node.alias),
+      on: ast.and([this.#joinKeys(parent, parentAlias, node), ...this.#extra(node)]),
+    };
+    return this.#withChildren(node, join, []);
+  }
+
+  // v6 generateInclude: a required child of an optional parent goes inside the parent's parenthesised
+  // join, so that rows without the parent are kept instead of being dropped by a top-level INNER JOIN.
+  #withChildren(
+    node: IncludeNode,
+    join: JoinNode,
+    before: readonly JoinNode[],
+  ): readonly JoinNode[] {
+    const children = this.#childJoins(node);
+    const nest = !node.required && node.children.some((child) => !child.separate && child.required);
+    return nest ? [{ ...join, nested: [...before, ...children] }] : [join, ...before, ...children];
   }
 
   #joinKeys(parent: ModelDefinition, parentAlias: string, node: IncludeNode): ExprNode {
@@ -60,15 +70,12 @@ export class IncludeJoins {
     node: IncludeNode,
     through: Through,
   ): readonly JoinNode[] {
-    return [
-      {
-        type: this.#type(node),
-        table: attributeColumns.table(through.definition, through.alias),
-        on: ast.and(this.#junctionCondition(parent, parentAlias, node, through)),
-      },
-      this.#targetJoin(node, through),
-      ...this.#childJoins(node),
-    ];
+    const junction: JoinNode = {
+      type: this.#type(node),
+      table: attributeColumns.table(through.definition, through.alias),
+      on: ast.and(this.#junctionCondition(parent, parentAlias, node, through)),
+    };
+    return this.#withChildren(node, junction, [this.#targetJoin(node, through)]);
   }
 
   #targetJoin(node: IncludeNode, through: Through): JoinNode {

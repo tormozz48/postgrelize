@@ -4,7 +4,7 @@ import type { IncludeNode } from './include.ts';
 import { IncludeColumns } from './include-columns.ts';
 import { IncludeJoins } from './include-joins.ts';
 import { IncludeOrder, type OrderNodes } from './include-order.ts';
-import { IncludeSubQuery } from './include-sub-query.ts';
+import { hasRequired, IncludeSubQuery } from './include-sub-query.ts';
 
 const ast = new SqlAst();
 
@@ -105,7 +105,7 @@ export class IncludeQueryBuilder {
   #innerSelect(parts: Parts): SelectNode {
     const { definition, alias, base, joined, order } = parts;
     const filters = joined
-      .filter((node) => node.required)
+      .filter((node) => node.required || (node.association.isMultiAssociation && hasRequired(node)))
       .map((node) => this.#subQuery.existsFilter(definition, alias, node));
     const missing = this.#columns.missingKeys(definition, alias, base.columns, joined);
     return {
