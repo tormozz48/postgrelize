@@ -161,10 +161,8 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     const call = { model, state, opts, options, where, individual };
     UpdateOperation.#check(call);
     const each = call.individual ? await this.#beforeEach(call) : undefined;
-    const updated = each?.saved ?? (await this.#execute(call));
-    if (each !== undefined) {
-      await this.#afterEach(call, each, updated);
-    }
+    const executed = each?.saved ?? (await this.#execute(call));
+    const updated = each === undefined ? executed : await this.#afterEach(call, each, executed);
     // like v6, `individualHooks` returns the instances even without `returning`
     return options.returning === true || call.individual
       ? [updated.count, updated.rows]
@@ -172,11 +170,13 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   }
 
   // v6: the hooks get the instances that `beforeUpdate` saw (still marked changed) unless the rows
-  // came back from `returning` or were saved one by one.
-  #afterEach(call: UpdateCall, each: EachResult, updated: UpdateRows): Promise<void> {
-    const hooked =
-      each.saved === undefined && call.options.returning !== true ? each.targets : updated.rows;
-    return this.services.lifecycle.runEach(call.model, 'afterUpdate', hooked, call.opts);
+  // came back from `returning` or were saved one by one; without `returning` the caller gets those
+  // very instances back.
+  async #afterEach(call: UpdateCall, each: EachResult, updated: UpdateRows): Promise<UpdateRows> {
+    const hookedTargets = each.saved === undefined && call.options.returning !== true;
+    const hooked = hookedTargets ? each.targets : updated.rows;
+    await this.services.lifecycle.runEach(call.model, 'afterUpdate', hooked, call.opts);
+    return hookedTargets ? { count: updated.count, rows: [...each.targets] } : updated;
   }
 
   // Runs `beforeUpdate` on every target. Changes the hooks made become part of the UPDATE when every

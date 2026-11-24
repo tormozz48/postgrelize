@@ -732,3 +732,45 @@ describe('v6 parity: paranoid destroy and include hooks', () => {
       expect(seen).toEqual([{ hasModel: true, as: 'rows' }]);
     }));
 });
+
+describe('v6 parity: instance update after create with fields, update fields, individualHooks', () => {
+  it('an instance created with `fields` can be updated, and updatedAt moves', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const U = sequelize.define('U', { name: DataTypes.STRING, bio: DataTypes.TEXT });
+      await sequelize.sync();
+      const user = await U.create({ name: 'a' }, { fields: ['name'] });
+      const created = user.get('updatedAt') as Date;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      await user.update({ bio: 'x' });
+      expect((user.get('updatedAt') as Date).getTime()).toBeGreaterThan(created.getTime());
+      expect((await user.reload()).get('bio')).toBe('x');
+    }));
+
+  it('update assigns only the attributes listed in `fields`', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const U = sequelize.define('U', { bio: DataTypes.TEXT, email: DataTypes.STRING });
+      await sequelize.sync();
+      const user = await U.create({ email: 'email' });
+      await user.update({ bio: 'heyo', email: 'heho' }, { fields: ['bio'] });
+      expect(user.get('email')).toBe('email');
+      expect(user.get('bio')).toBe('heyo');
+    }));
+
+  it('Model.update with individualHooks returns the instances the hooks worked on', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const U = sequelize.define('U', { n: DataTypes.INTEGER, tag: DataTypes.STRING });
+      U.addHook('afterUpdate', (row: unknown) => {
+        (row as { set(key: string, value: unknown): void }).set('tag', 'after');
+      });
+      await sequelize.sync();
+      await U.bulkCreate([{ n: 1 }, { n: 1 }]);
+      const [, rows] = (await U.update(
+        { n: 2 },
+        { where: { n: 1 }, individualHooks: true },
+      )) as unknown as [number, { get(key: string): unknown }[]];
+      expect(rows.map((row) => row.get('tag'))).toEqual(['after', 'after']);
+    }));
+});

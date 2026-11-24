@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Regressions of 1.8.0 found by the nightly v6 suite: `instance.update()` after `create(…, { fields })` no longer fails with an `undefined` primary key, a stamped `updatedAt` reaches the instance again, `update(values, { fields })` assigns only the listed attributes (custom setters excepted), and `Model.update({ individualHooks: true })` returns the instances its hooks worked on. The v6 suite baseline drops the 12 entries that now pass.
+
 ## [1.8.0] - 2026-11-24
 
 ### Fixed

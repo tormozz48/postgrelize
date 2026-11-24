@@ -29,8 +29,7 @@
         "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates",
         "[POSTGRES] BelongsTo foreign key constraints can restrict updates",
-        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table",
-        "[POSTGRES] BelongsTo setAssociation should not clobber atributes"
+        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
       ]
     },
     "test/integration/associations/has-many.test.js": {
@@ -175,10 +174,7 @@
     "test/integration/include.test.js": {
       "failing": [
         "[POSTGRES] Include find should support Sequelize.literal and renaming of attributes in included model attributes",
-        "[POSTGRES] Include find should support including date fields, with the correct timeszone",
-        "[POSTGRES] Include find should support to use associations with Sequelize.col",
-        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is not given (implicitly false)",
-        "[POSTGRES] Include nested includes should not ripple grandchild required to top level find when required of child is set to false"
+        "[POSTGRES] Include find should support including date fields, with the correct timeszone"
       ]
     },
     "test/integration/include/findAll.test.js": {
@@ -218,10 +214,7 @@
         "[POSTGRES] Instance default values uuid should store a string of length 36 in uuidv1 and uuidv4",
         "[POSTGRES] Instance default values uuid should store a valid uuid if the multiple primary key fields used",
         "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications",
-        "[POSTGRES] Instance restore supports custom default value",
-        "[POSTGRES] Instance restore supports custom deletedAt field",
-        "[POSTGRES] Instance restore supports custom deletedAt field and database column",
-        "[POSTGRES] Instance restore supports custom deletedAt field name"
+        "[POSTGRES] Instance restore supports custom default value"
       ]
     },
     "test/integration/instance.validations.test.js": {
@@ -236,7 +229,6 @@
     },
     "test/integration/instance/destroy.test.js": {
       "failing": [
-        "[POSTGRES] Instance destroy allows updating soft deleted instance",
         "[POSTGRES] Instance destroy converts Infinity in where clause to a timestamp",
         "[POSTGRES] Instance destroy delete a record of multiple primary keys table",
         "[POSTGRES] Instance destroy does not set the deletedAt date in subsequent destroys if dao is paranoid",
@@ -279,7 +271,6 @@
     },
     "test/integration/instance/values.test.js": {
       "failing": [
-        "[POSTGRES] DAO Values changed should be available to a afterUpdate hook",
         "[POSTGRES] DAO Values get can pass parameters to getters",
         "[POSTGRES] DAO Values get should custom virtual getters in get(key)",
         "[POSTGRES] DAO Values get should use custom getters in toJSON",
@@ -307,7 +298,6 @@
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
         "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
-        "[POSTGRES] Model constructor should allow me to set a function as default value",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options",
         "[POSTGRES] Model constructor should throw `TypeError` when value for updatedAt, createdAt, or deletedAt is neither string nor boolean",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
@@ -343,8 +333,7 @@
     "test/integration/model/attributes/types.test.js": {
       "failing": [
         "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values",
-        "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes",
-        "[POSTGRES] Model attributes types VIRTUAL should be able to include model with virtual attributes"
+        "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes"
       ]
     },
     "test/integration/model/bulk-create.test.js": {
@@ -486,7 +475,9 @@
     "test/integration/model/scope/merge.test.js": {
       "failing": [
         "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
-        "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
+        "[POSTGRES] Model scope simple merge should merge simple scopes correctly",
+        "[POSTGRES] Model scope complex merge should merge complex scopes with findAll options correctly regardless of their order",
+        "[POSTGRES] Model scope complex merge should merge complex scopes with findOne options correctly regardless of their order"
       ]
     },
     "test/integration/model/scope/update.test.js": {
@@ -627,7 +618,6 @@
         "[POSTGRES] Sequelize query keeps field names that are mapped to the same name",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
-        "[POSTGRES] Sequelize query properly adds and escapes replacement value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",

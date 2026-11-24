@@ -1,5 +1,5 @@
 import type { ValidateOptions } from './instance-lifecycle.ts';
-import { lifecycle } from './model-services.ts';
+import { lifecycle, registry } from './model-services.ts';
 import type {
   AnyModel,
   AttributeAmounts,
@@ -104,11 +104,33 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
     const single = typeof keyOrValues === 'string';
     const instance = this as unknown as AnyModel;
     const values = single ? { [keyOrValues]: valueOrOptions } : (keyOrValues as Values);
-    // like v6, `undefined` values are not assigned
+    const options = single
+      ? maybeOptions
+      : (valueOrOptions as SaveOptions<TAttributes> | undefined);
+    const fields = options?.fields as readonly string[] | undefined;
+    ModelInstancePersistence.#assign(instance, values, fields);
+    return this.save(options);
+  }
+
+  // like v6, `undefined` values and attributes outside `options.fields` are not assigned
+  static #assign(instance: AnyModel, values: Values, fields: readonly string[] | undefined): void {
     instance.set(
-      Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined)),
+      Object.fromEntries(
+        Object.entries(values).filter(
+          ([name, value]) =>
+            value !== undefined && ModelInstancePersistence.#listed(instance, fields, name),
+        ),
+      ),
     );
-    return this.save(single ? maybeOptions : (valueOrOptions as SaveOptions<TAttributes>));
+  }
+
+  // v6 assigns only the `fields` attributes, except through a custom setter (it may write others)
+  static #listed(instance: AnyModel, fields: readonly string[] | undefined, name: string): boolean {
+    if (fields === undefined || fields.includes(name)) {
+      return true;
+    }
+    const { definition } = registry.state(instance.constructor as never);
+    return definition.attributes.get(name)?.set !== undefined;
   }
 
   /**
