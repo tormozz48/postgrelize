@@ -46,7 +46,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Changed
 
-- Type-parity tests now also compile the corpus under other compiler flags, and `npm run types:consumer` compiles a Sequelize v6 project against v6 and against postgrelize and lists the errors only postgrelize reports.
+- Type-parity tests now also compile the corpus under other compiler flags, and `npm run types:consumer` compiles a Sequelize v6 project against v6 and against postgrelize and lists the errors only postgrelize reports. Generated API calls (unions, `null`, `keyof M`, generic helpers, subclasses) and sample-value acceptance checks for `WhereOptions` and `update` values are compared with v6 too; they found the missing two-argument `changed<K extends keyof this>(key, value)` overload, now added.
 
 ## [1.8.0] - 2026-11-24
 

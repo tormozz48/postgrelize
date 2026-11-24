@@ -44,6 +44,7 @@ const FLAG_SETS: readonly (readonly string[])[] = [
   ['--strict', 'false'],
   ['--strictNullChecks', 'false'],
   ['--noPropertyAccessFromIndexSignature'],
+  ['--noUncheckedIndexedAccess', 'false'],
   ['--useUnknownInCatchVariables', 'false'],
   ['--skipLibCheck', 'false'],
 ];

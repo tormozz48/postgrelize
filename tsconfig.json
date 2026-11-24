@@ -35,6 +35,7 @@
   "exclude": [
     "tests/build/fixtures",
     "tests/compat/type-parity",
+    "tests/compat/type-equality",
     "tests/compat/type-parity-cross",
     "tests/compat/v6-types/corpus"
   ]
