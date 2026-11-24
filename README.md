@@ -25,6 +25,7 @@
 
 - **Drop-in for Sequelize v6.** `Sequelize`, `Model`, `DataTypes`, `Op`, hooks, validations, scopes, paranoid models, associations and `include`, transactions, `QueryInterface` and `sync` behave like v6. A differential test suite runs every scenario on both libraries and compares results. The TypeScript types follow the v6 declarations too (`Model`, `ModelStatic`, `query<T>`, association mixins), checked by a type-level parity test.
 - **PostgreSQL first.** One dialect, so every feature can use PostgreSQL fully instead of the lowest common denominator.
+- **Fast.** In the library-overhead benchmark (no database) most operations take 3–10× less CPU time than on Sequelize v6, and a `where` with an `Op.in` of 5 000 values 18× less. Reads of many rows or with `hasMany` / `belongsToMany` includes gain 1.3–1.9×, and `build` + `toJSON` is on par. The table, the method and tuning tips are on the [Performance](https://tormozz48.github.io/postgrelize/guide/performance) page.
 - **Safe by default.** Values are always bound parameters; identifiers are quoted; order directions, cast types and operators are allow-listed.
 - **Typed and documented.** Strict TypeScript, TSDoc on every export, [API reference](https://tormozz48.github.io/postgrelize/).
 

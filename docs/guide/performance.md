@@ -8,24 +8,24 @@ The benchmark (`bench/`) runs the same scenarios on postgrelize and on `sequeliz
 
 | Scenario                                      | postgrelize µs/op | v6 ÷ postgrelize |
 | --------------------------------------------- | ----------------: | ---------------: |
-| `findByPk`                                    |              10.7 |             3.9× |
-| `findAll` 100 rows                            |              33.4 |             3.3× |
-| `findAll` 10 000 rows                         |             3 228 |             2.0× |
-| `findAll` 10 000 rows, `raw: true`            |               940 |             1.0× |
-| `findAll` with `include` (belongsTo)          |                92 |             4.2× |
-| `findAll` with `include` (hasMany)            |                94 |             1.6× |
-| `findAll` with `include` (belongsToMany)      |               126 |             1.5× |
-| `findAndCountAll`                             |                34 |             4.0× |
-| `where` with nested operators and a JSON path |                27 |             5.0× |
-| `where` with `Op.in` of 5 000 values          |               107 |              19× |
-| `create`                                      |                18 |             4.3× |
-| `bulkCreate` 100 / 1 000 rows                 |       300 / 2 635 |      4.3× / 3.7× |
-| `save()` of a changed instance                |              15.7 |             3.8× |
-| transaction with 3 queries                    |                33 |             4.7× |
-| `build` + `toJSON`                            |               2.1 |             3.1× |
-| model definition                              |                17 |             8.3× |
+| `findByPk`                                    |              13.3 |             7.7× |
+| `findAll` 100 rows                            |             132.9 |             4.2× |
+| `findAll` 10 000 rows                         |            11 500 |             1.9× |
+| `findAll` 10 000 rows, `raw: true`            |             1 014 |             1.3× |
+| `findAll` with `include` (belongsTo)          |               242 |             3.1× |
+| `findAll` with `include` (hasMany)            |               151 |             1.7× |
+| `findAll` with `include` (belongsToMany)      |               167 |             1.9× |
+| `findAndCountAll`                             |                74 |             3.2× |
+| `where` with nested operators and a JSON path |                38 |             5.6× |
+| `where` with `Op.in` of 5 000 values          |               124 |              18× |
+| `create`                                      |                39 |             3.3× |
+| `bulkCreate` 100 / 1 000 rows                 |       434 / 5 053 |      3.1× / 2.6× |
+| `save()` of a changed instance                |              17.3 |             6.7× |
+| transaction with 3 queries                    |                81 |             5.1× |
+| `build` + `toJSON`                            |               5.4 |             0.9× |
+| model definition                              |                45 |             9.8× |
 
-Measured on one developer machine (Node 24; no database involved in stub mode); absolute numbers differ on yours, the ratios are what to compare. Against a real database a statement spends most of its time in the network and in PostgreSQL, so the end-to-end difference is smaller: in database mode postgrelize used 1.1–2.4× less CPU than v6 per operation (`raw: true` reads of 10 000 rows about 1.1× less), and read 10 000 rows at about 255 000 rows/s (344 000 rows/s with `raw: true`).
+Measured on a GitHub Actions runner (`ubuntu-latest`, Node 22; no database involved in stub mode) with the `bench gate` workflow on 2026-11-24: `main` after 1.8.3, median of three runs. Absolute numbers differ on your machine, the ratios are what to compare. The database-mode figures below come from an earlier measurement on a developer machine. Against a real database a statement spends most of its time in the network and in PostgreSQL, so the end-to-end difference is smaller: in database mode postgrelize used 1.1–2.4× less CPU than v6 per operation (`raw: true` reads of 10 000 rows about 1.1× less), and read 10 000 rows at about 255 000 rows/s (344 000 rows/s with `raw: true`).
 
 Run it yourself:
 
