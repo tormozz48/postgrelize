@@ -1,3 +1,4 @@
+import { parameterizedSql } from '../support/parameterized-log.ts';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ConnectionRefusedError,
@@ -38,7 +39,10 @@ afterEach(async () => {
   await Promise.all(opened.splice(0).map((sequelize) => sequelize.close()));
 });
 
-const connect = (schema: string, logging: ((sql: string) => void) | false = false): Sequelize => {
+const connect = (
+  schema: string,
+  logging: ((sql: string, options?: unknown) => void) | false = false,
+): Sequelize => {
   const sequelize = new Sequelize(testDatabaseUrl(), {
     logging,
     define: { underscored: true },
@@ -145,7 +149,7 @@ describe('PostgreSQL extensions', () => {
     withSchema(async ({ schema, client }) => {
       await client.query(TABLE);
       const logged: string[] = [];
-      connect(schema, (sql) => logged.push(sql));
+      connect(schema, (_sql, options) => logged.push(parameterizedSql(options)));
       const ids = Array.from({ length: 500 }, (_, index) => index + 1);
       await Item.bulkCreate([{ code: 'x' }, { code: 'y' }]);
       expect(await Item.count({ where: { id: ids } })).toBe(2);

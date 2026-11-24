@@ -3,9 +3,14 @@ import type { HooksOption } from '../hooks/hooks.ts';
 import type { RetryOptions } from './retry.ts';
 
 /**
- * Function receiving executed SQL. With `benchmark: true` the second argument is the duration in ms;
- * otherwise it is the query options object (as in Sequelize v6, whose typings declare the parameter
- * as `timing?: number`).
+ * Function receiving executed SQL. The text has the values inlined as literals, like in Sequelize v6,
+ * so it can be run as it is; the statement sent to PostgreSQL keeps its bound parameters.
+ *
+ * With `benchmark: true` the second argument is the duration in ms; otherwise it is an object
+ * `{ bind, parameterizedSql }` (v6 passes its query options there, whose typings declare the parameter
+ * as `timing?: number`): `bind` holds the bound values and `parameterizedSql` the statement as it was
+ * sent (`$1`, `$2`, ...), without the `Executing (...)` prefix. `parameterizedSql` is a postgrelize
+ * extension.
  */
 export type LoggingFunction = (sql: string, timing?: number) => void;
 

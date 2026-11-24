@@ -1,3 +1,4 @@
+import { parameterizedSql } from '../support/parameterized-log.ts';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DataTypes, Op, Sequelize, cast, col } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
@@ -11,7 +12,7 @@ afterEach(async () => {
 const setup = async (schema: string) => {
   const logged: string[] = [];
   const sequelize = new Sequelize(testDatabaseUrl(), {
-    logging: (sql) => logged.push(sql),
+    logging: (_sql, options) => logged.push(parameterizedSql(options)),
     dialectOptions: { options: `-c search_path=${schema}` },
   });
   opened.push(sequelize);
