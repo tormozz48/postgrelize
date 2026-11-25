@@ -40,6 +40,24 @@ const callable = <A extends unknown[], T extends DataType>(
 
 const INTEGER = new IntegerType('INTEGER', 'INTEGER');
 
+/** Element type as the v6 generic interfaces take it (a raw type name stays an untyped element). */
+type Element<T> = T extends DataTypes.AbstractDataType | DataTypes.AbstractDataTypeConstructor
+  ? T
+  : DataTypes.AbstractDataType;
+
+/** `DataTypes.RANGE`: bare, or called with the element type. */
+type RangeFactory = RangeType &
+  (<T extends DataTypeInput = typeof INTEGER>(
+    subtype?: T,
+  ) => RangeType & DataTypes.RangeDataType<Element<T>>);
+
+/** `DataTypes.VIRTUAL`: bare, or called with the type of the computed value and its attributes. */
+type VirtualFactory = VirtualType &
+  (<T extends DataTypeInput = DataTypes.AbstractDataType>(
+    returnType?: T,
+    fields?: readonly string[],
+  ) => VirtualType & DataTypes.VirtualDataType<Element<T>>);
+
 /**
  * Column types, API-compatible with Sequelize v6 `DataTypes` for PostgreSQL.
  *
@@ -176,12 +194,13 @@ export const DataTypes = {
     new SpatialType('GEOGRAPHY'),
   ),
   /** `type[]`, e.g. `DataTypes.ARRAY(DataTypes.TEXT)`. */
-  ARRAY: (subtype: DataTypeInput): ArrayType => new ArrayType(subtype),
+  ARRAY: <T extends DataTypeInput>(subtype: T): ArrayType & DataTypes.ArrayDataType<Element<T>> =>
+    new ArrayType(subtype) as ArrayType & DataTypes.ArrayDataType<Element<T>>,
   /** Range type, e.g. `DataTypes.RANGE(DataTypes.INTEGER)` → `INT4RANGE`. */
   RANGE: callable(
     (subtype: DataTypeInput = INTEGER) => new RangeType(subtype),
     new RangeType(INTEGER),
-  ),
+  ) as unknown as RangeFactory,
   /**
    * Multirange type (PostgreSQL 14+), e.g. `DataTypes.MULTIRANGE(DataTypes.INTEGER)` →
    * `INT4MULTIRANGE`; values are arrays of `[lower, upper]` ranges. PostgreSQL extension.
@@ -197,16 +216,260 @@ export const DataTypes = {
   COMPOSITE: (name: string, fields: Readonly<Record<string, DataTypeInput>>): CompositeType =>
     new CompositeType(name, fields),
   /** Enumerated values: `DataTypes.ENUM('a', 'b')` or `DataTypes.ENUM({ values: ['a', 'b'] })`. */
-  ENUM: (
-    ...args: readonly (string | readonly string[] | Readonly<{ values: readonly string[] }>)[]
-  ): EnumType => new EnumType(...args),
+  ENUM: <T extends string = string>(
+    ...args: readonly (T | readonly T[] | Readonly<{ values: readonly T[] }>)[]
+  ): EnumType & DataTypes.EnumDataType<T> =>
+    new EnumType(...args) as EnumType & DataTypes.EnumDataType<T>,
   /** Attribute that is not stored in the database (computed by getters/setters). */
   VIRTUAL: callable(
     (returnType?: DataTypeInput, fields?: readonly string[]) => new VirtualType(returnType, fields),
     new VirtualType(),
-  ),
+  ) as unknown as VirtualFactory,
   /** Default value: current timestamp. */
   NOW: new DefaultValueGenerator('NOW', () => new Date()),
   /** Default value: random UUID v4 generated on the client. */
   UUIDV4: new DefaultValueGenerator('UUIDV4', () => randomUUID()),
 } as const;
+
+/**
+ * The `DataTypes.<X>DataType` interfaces of Sequelize v6: the types of the values `DataTypes.<X>`
+ * and `DataTypes.<X>(...)` evaluate to, usable as `DataTypes.DecimalDataType` in annotations.
+ *
+ * Only the members postgrelize provides at runtime are declared: `key`, `sqlType`, `toSql()` and the
+ * `options` the type was created with (and `UNSIGNED` / `ZEROFILL` on the integer types).
+ * v6's `dialectTypes`, `stringify`, `validate`, `BINARY` and `escape` are not available.
+ *
+ * @example
+ * ```ts
+ * const scale = (type: DataTypes.DecimalDataType): number | undefined => type.options.scale;
+ * const price: DataTypes.DecimalDataType = DataTypes.DECIMAL(10, 2);
+ * ```
+ */
+// oxlint-disable-next-line typescript/no-namespace -- merges the v6 type names onto the `DataTypes` value
+export namespace DataTypes {
+  /** A data type: its `key`, PostgreSQL column type and `toSql()` (v6 `AbstractDataType`). */
+  export interface AbstractDataType {
+    /** Sequelize v6 type key, e.g. `'DECIMAL'`. */
+    readonly key: string;
+    /** PostgreSQL column type, e.g. `'DECIMAL(10,2)'`. */
+    readonly sqlType: string;
+    /** The PostgreSQL column type. */
+    toSql(): string;
+  }
+  /** A data type or a function that creates one (`DataTypes.STRING` / `DataTypes.STRING(64)`). */
+  export type AbstractDataTypeConstructor = (...args: never[]) => AbstractDataType;
+  /** `VARCHAR` options. */
+  export interface StringDataTypeOptions {
+    /** Maximum length. */
+    length?: number;
+    /** Binary collation (not applied by PostgreSQL). */
+    binary?: boolean;
+  }
+  /** Type of `DataTypes.STRING`. */
+  export interface StringDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: StringDataTypeOptions;
+  }
+  /** `CHAR` options. */
+  export interface CharDataTypeOptions extends StringDataTypeOptions {}
+  /** Type of `DataTypes.CHAR`. */
+  export interface CharDataType extends StringDataType {
+    /** Arguments the type was created with. */
+    readonly options: CharDataTypeOptions;
+  }
+  /** Size names accepted by `TEXT` and `BLOB`. */
+  export type TextLength = 'tiny' | 'medium' | 'long';
+  /** `TEXT` options. */
+  export interface TextDataTypeOptions {
+    /** Size name (ignored by PostgreSQL). */
+    length?: TextLength;
+  }
+  /** Type of `DataTypes.TEXT`. */
+  export interface TextDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: TextDataTypeOptions;
+  }
+  /** Options of the integer types. */
+  export interface IntegerDataTypeOptions {
+    /** Display width. */
+    length?: number;
+    /** `ZEROFILL`. */
+    zerofill?: boolean;
+    /** `UNSIGNED`. */
+    unsigned?: boolean;
+  }
+  /** Options of the numeric types. */
+  export interface NumberDataTypeOptions extends IntegerDataTypeOptions {
+    /** Digits after the decimal point. */
+    decimals?: number;
+    /** Total digits. */
+    precision?: number;
+    /** Digits after the decimal point of a `DECIMAL`. */
+    scale?: number;
+  }
+  /** Type of `DataTypes.NUMBER` and base of the numeric types. */
+  export interface NumberDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: NumberDataTypeOptions;
+  }
+  /** Base of the integer types: they accept `UNSIGNED` and `ZEROFILL`. */
+  export interface IntegerFamilyDataType extends NumberDataType {
+    /** Accepted for compatibility; has no effect in PostgreSQL. */
+    readonly UNSIGNED: this;
+    /** Accepted for compatibility; has no effect in PostgreSQL. */
+    readonly ZEROFILL: this;
+  }
+  /** Type of `DataTypes.TINYINT`. */
+  export interface TinyIntegerDataType extends IntegerFamilyDataType {
+    /** Arguments the type was created with. */
+    readonly options: IntegerDataTypeOptions;
+  }
+  /** Type of `DataTypes.SMALLINT`. */
+  export interface SmallIntegerDataType extends IntegerFamilyDataType {
+    /** Arguments the type was created with. */
+    readonly options: IntegerDataTypeOptions;
+  }
+  /** Type of `DataTypes.MEDIUMINT`. */
+  export interface MediumIntegerDataType extends IntegerFamilyDataType {
+    /** Arguments the type was created with. */
+    readonly options: IntegerDataTypeOptions;
+  }
+  /** Type of `DataTypes.INTEGER`. */
+  export interface IntegerDataType extends IntegerFamilyDataType {
+    /** Arguments the type was created with. */
+    readonly options: NumberDataTypeOptions;
+  }
+  /** Type of `DataTypes.BIGINT`. */
+  export interface BigIntDataType extends IntegerFamilyDataType {
+    /** Arguments the type was created with. */
+    readonly options: IntegerDataTypeOptions;
+  }
+  /** `FLOAT` options. */
+  export interface FloatDataTypeOptions {
+    /** Precision in bits. */
+    length?: number;
+    /** Digits after the decimal point. */
+    decimals?: number;
+  }
+  /** Type of `DataTypes.FLOAT`. */
+  export interface FloatDataType extends NumberDataType {
+    /** Arguments the type was created with. */
+    readonly options: FloatDataTypeOptions;
+  }
+  /** `REAL` options. */
+  export interface RealDataTypeOptions extends FloatDataTypeOptions {}
+  /** Type of `DataTypes.REAL`. */
+  export interface RealDataType extends NumberDataType {
+    /** Arguments the type was created with. */
+    readonly options: RealDataTypeOptions;
+  }
+  /** `DOUBLE PRECISION` options. */
+  export interface DoubleDataTypeOptions extends FloatDataTypeOptions {}
+  /** Type of `DataTypes.DOUBLE`. */
+  export interface DoubleDataType extends NumberDataType {
+    /** Arguments the type was created with. */
+    readonly options: DoubleDataTypeOptions;
+  }
+  /** `DECIMAL` options. */
+  export interface DecimalDataTypeOptions {
+    /** Total digits. */
+    precision?: number;
+    /** Digits after the decimal point. */
+    scale?: number;
+  }
+  /** Type of `DataTypes.DECIMAL` (and `NUMBER` / `NUMERIC` called with arguments). */
+  export interface DecimalDataType extends NumberDataType {
+    /** Arguments the type was created with. */
+    readonly options: DecimalDataTypeOptions;
+  }
+  /** `TIMESTAMP WITH TIME ZONE` options. */
+  export interface DateDataTypeOptions {
+    /** Fractional seconds precision. */
+    length?: string | number;
+  }
+  /** Type of `DataTypes.DATE`. */
+  export interface DateDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: DateDataTypeOptions;
+  }
+  /** Type of `DataTypes.DATEONLY`. */
+  export interface DateOnlyDataType extends AbstractDataType {}
+  /** `BYTEA` options. */
+  export interface BlobDataTypeOptions {
+    /** Size name (ignored by PostgreSQL). */
+    length?: TextLength;
+    /** Escape the value as a literal. */
+    escape?: boolean;
+  }
+  /** Type of `DataTypes.BLOB`. */
+  export interface BlobDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: BlobDataTypeOptions;
+  }
+  /** Element types a range accepts. */
+  export type RangeableDataType = AbstractDataType | AbstractDataTypeConstructor;
+  /** Range options. */
+  export interface RangeDataTypeOptions<T extends RangeableDataType> {
+    /** Element type. */
+    subtype?: T;
+  }
+  /** Type of `DataTypes.RANGE(subtype)`. */
+  export interface RangeDataType<
+    T extends RangeableDataType = AbstractDataType,
+  > extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: RangeDataTypeOptions<T>;
+  }
+  /** Type of `DataTypes.VIRTUAL(returnType, fields)`. */
+  export interface VirtualDataType<
+    T extends AbstractDataType | AbstractDataTypeConstructor = AbstractDataType,
+  > extends AbstractDataType {
+    /** Type of the computed value. */
+    readonly returnType: T | undefined;
+    /** Attributes the value is computed from. */
+    readonly fields: readonly string[];
+  }
+  /** `ENUM` options. */
+  export interface EnumDataTypeOptions<T extends string> {
+    /** Allowed values. */
+    values: readonly T[];
+  }
+  /** Type of `DataTypes.ENUM(...values)`. */
+  export interface EnumDataType<T extends string = string> extends AbstractDataType {
+    /** Allowed values. */
+    readonly values: readonly T[];
+    /** Arguments the type was created with. */
+    readonly options: EnumDataTypeOptions<T>;
+  }
+  /** Array options. */
+  export interface ArrayDataTypeOptions<T extends AbstractDataType | AbstractDataTypeConstructor> {
+    /** Element type. */
+    type: T;
+  }
+  /** Type of `DataTypes.ARRAY(type)`. */
+  export interface ArrayDataType<
+    T extends AbstractDataType | AbstractDataTypeConstructor = AbstractDataType,
+  > extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: ArrayDataTypeOptions<T>;
+  }
+  /** PostGIS `GEOMETRY` options. */
+  export interface GeometryDataTypeOptions {
+    /** Shape, e.g. `'POINT'`. */
+    type?: string;
+    /** Spatial reference id. */
+    srid?: number;
+  }
+  /** Type of `DataTypes.GEOMETRY`. */
+  export interface GeometryDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: GeometryDataTypeOptions;
+  }
+  /** PostGIS `GEOGRAPHY` options. */
+  export interface GeographyDataTypeOptions extends GeometryDataTypeOptions {}
+  /** Type of `DataTypes.GEOGRAPHY`. */
+  export interface GeographyDataType extends AbstractDataType {
+    /** Arguments the type was created with. */
+    readonly options: GeographyDataTypeOptions;
+  }
+}

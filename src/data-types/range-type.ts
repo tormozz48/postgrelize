@@ -31,6 +31,8 @@ const RANGE_PATTERN = /^([[(])"?(.*?)"?,"?(.*?)"?([\])])$/;
 export class RangeType extends AbstractDataType {
   /** Element type. */
   readonly subtype: DataType;
+  /** Arguments the type was created with (v6 `options`). */
+  readonly options: Readonly<{ subtype: DataType }>;
   /** Converts a driver range literal into a pair of bounds (`[]` for `empty`). */
   readonly parse = (value: unknown): unknown => this.#parse(value);
   /** Converts a pair of values or bounds into a range literal. */
@@ -49,6 +51,7 @@ export class RangeType extends AbstractDataType {
     }
     super('RANGE', sqlType);
     this.subtype = element;
+    this.options = Object.freeze({ subtype: element });
     this.#parseBound =
       element.key === 'INTEGER' || element.key === 'BIGINT'
         ? (raw) => (typeof raw === 'string' ? Number.parseInt(raw, 10) : raw)

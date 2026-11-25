@@ -30,6 +30,9 @@ export class SpatialType extends AbstractDataType {
    * @param shape - Geometry type, e.g. `'POINT'`.
    * @param srid - Spatial reference id.
    */
+  /** Arguments the type was created with (v6 `options`). */
+  readonly options: Readonly<{ type?: string; srid?: number }>;
+
   constructor(key: 'GEOMETRY' | 'GEOGRAPHY', shape?: string, srid?: number) {
     super(
       key,
@@ -37,6 +40,10 @@ export class SpatialType extends AbstractDataType {
         ? key
         : `${key}(${SpatialType.#shape(shape)}${srid === undefined ? '' : `,${AbstractDataType.integer(`${key} srid`, srid)}`})`,
     );
+    this.options = Object.freeze({
+      ...(shape === undefined ? {} : { type: shape }),
+      ...(srid === undefined ? {} : { srid }),
+    });
     Object.freeze(this);
   }
 }

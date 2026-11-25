@@ -19,6 +19,16 @@ export class IntegerType extends AbstractDataType implements IntegerDataType {
    * @param key - Sequelize v6 type key.
    * @param sqlType - PostgreSQL column type.
    */
+  /** Arguments the type was created with (v6 `options`); integer types take none. */
+  readonly options: Readonly<{
+    length?: number;
+    zerofill?: boolean;
+    unsigned?: boolean;
+    decimals?: number;
+    precision?: number;
+    scale?: number;
+  }> = Object.freeze({});
+
   constructor(key: string, sqlType: string) {
     super(key, sqlType);
     Object.freeze(this);

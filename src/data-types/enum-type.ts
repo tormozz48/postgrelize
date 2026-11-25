@@ -11,6 +11,8 @@ type EnumArgument = string | readonly string[] | Readonly<{ values: readonly str
 export class EnumType extends AbstractDataType {
   /** Allowed values. */
   readonly values: readonly string[];
+  /** Arguments the type was created with (v6 `options`). */
+  readonly options: Readonly<{ values: readonly string[] }>;
 
   /**
    * @param args - Values, arrays of values or `{ values }`, in any combination.
@@ -24,6 +26,7 @@ export class EnumType extends AbstractDataType {
           ? arg
           : (arg as Readonly<{ values: readonly string[] }>).values,
     );
+    this.options = Object.freeze({ values: this.values });
     Object.freeze(this);
   }
 }

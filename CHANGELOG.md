@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- The `DataTypes.<X>DataType` interface family of Sequelize v6 is exported as types through `DataTypes` (`DataTypes.DecimalDataType`, `StringDataType`, `IntegerDataType`, `EnumDataType<T>`, `ArrayDataType<T>`, … and their `...DataTypeOptions`), so `(type: DataTypes.DecimalDataType) => type.options.scale` compiles like in v6. The data types carry the matching runtime members: `options` (the arguments the type was created with), `toSql()`, and on `VIRTUAL` `returnType` / `fields`. Members postgrelize does not provide (`dialectTypes`, `stringify`, `validate`, `BINARY`, `escape`) are not declared, and v6 has no `JSON` / `UUID` / `JSONB` data type interfaces. ([#180](https://github.com/tormozz48/postgrelize/pull/180))
+
 ## [1.8.5] - 2026-11-25
 
 ### Fixed

@@ -2,7 +2,7 @@
   "causes": {
     "datatypes-namespace": {
       "category": "tracked",
-      "note": "DataTypes is a value only: the type namespace (DataTypes.StringDataType, ...) is missing and DataTypes.X(...) / new DataTypes.X(...) forms are not callable or constructable in types. MySQL-only forms (TINYINT, ZEROFILL) are other-dialect; the rest is real for TypeScript users."
+      "note": "The `DataTypes.<X>DataType` namespace exists now; what is left is that DataTypes.X(...) / new DataTypes.X(...) forms of the integer, float and similar types are not callable or constructable in types (each failing call also makes its expectTypeOf assertion report `Expected 1 arguments`). MySQL-only forms (TINYINT, ZEROFILL) are other-dialect; the rest is real for TypeScript users."
     },
     "missing-export": {
       "category": "tracked",
@@ -124,8 +124,8 @@
     },
     {
       "file": "data-types.ts",
-      "code": "TS2503",
-      "message": "Cannot find namespace 'DataTypes'.",
+      "code": "TS2554",
+      "message": "Expected 1 arguments, but got 0.",
       "count": 34,
       "cause": "datatypes-namespace"
     },
