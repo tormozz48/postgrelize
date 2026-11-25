@@ -299,7 +299,6 @@
         "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
-        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",

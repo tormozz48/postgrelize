@@ -50,6 +50,7 @@ export class AttributeColumns {
     return new WhereCompiler({
       ...(alias === undefined ? {} : { tableAlias: alias }),
       ...(inAsAnyThreshold === undefined ? {} : { inAsAnyThreshold }),
+      primaryKey: definition.primaryKeys[0] ?? 'id',
       resolve: (name) => {
         const attribute = definition.attributes.get(name);
         return attribute === undefined ? undefined : attributeRef(attribute);

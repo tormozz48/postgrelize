@@ -9,6 +9,7 @@ import type { AnyModel, ModelStatic, MutableOptions, UpdateOptions, Values } fro
 import type { ReturningOld } from '../returning-old.ts';
 import type { UpdateQueryBuilder } from '../update-query-builder.ts';
 import type { WrittenRows } from '../written-rows.ts';
+import { WhereCompiler } from '../../where/where.ts';
 import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link UpdateOperation}. */
@@ -74,11 +75,20 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       ...this.services.registry.scoped(model, options),
     };
     this.#expose(model, values, opts);
-    if (opts['where'] === undefined || opts['where'] === null) {
-      throw new AssertionError({ message: 'Missing where attribute in the options parameter' });
-    }
+    UpdateOperation.#assertWhere(opts['where']);
     await this.#validated(model, values, opts);
     return (await this.#bulkUpdate(model, opts, options)) as UpdateResult<M>;
+  }
+
+  static #assertWhere(where: unknown): void {
+    if (where === undefined || where === null) {
+      throw new AssertionError({ message: 'Missing where attribute in the options parameter' });
+    }
+    if (!WhereCompiler.isConditions(where)) {
+      throw new AssertionError({
+        message: 'Expected plain object, array or sequelize method in the options.where parameter',
+      });
+    }
   }
 
   // Like v6, `beforeBulkUpdate` hooks see `fields` (the attributes being updated, plus `updatedAt`)
