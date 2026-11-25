@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
 import {
   baselineFrom,
+  checkCauses,
   compareWithBaseline,
+  summarizeCauses,
   type Baseline,
   type FileResult,
 } from './compare-lib.ts';
@@ -147,6 +149,16 @@ const runAll = async (
 const main = async (): Promise<number> => {
   const [kind = 'integration', ...flags] = process.argv.slice(2);
   const filter = flags.find((flag) => flag.startsWith('--filter='))?.slice('--filter='.length);
+  if (kind === '--summary') {
+    console.log(
+      JSON.stringify(
+        summarizeCauses(JSON.parse(readFileSync(BASELINE, 'utf8')) as Baseline),
+        null,
+        1,
+      ),
+    );
+    return 0;
+  }
   const url = databaseUrl();
   const work = prepare();
   rmSync(join(WORK, 'results'), { recursive: true, force: true });
@@ -159,14 +171,15 @@ const main = async (): Promise<number> => {
   let results = await runAll(work, files, url, config.workers);
   if (flags.includes('--update-baseline')) {
     // two runs: files whose failures vary between them are recorded as unstable
+    const previous: Baseline = existsSync(BASELINE)
+      ? (JSON.parse(readFileSync(BASELINE, 'utf8')) as Baseline)
+      : { version: config.tag.slice(1), files: {} };
     const merged = baselineFrom(
       config.tag.slice(1),
       results,
       await runAll(work, files, url, config.workers),
+      previous,
     );
-    const previous: Baseline = existsSync(BASELINE)
-      ? (JSON.parse(readFileSync(BASELINE, 'utf8')) as Baseline)
-      : { version: merged.version, files: {} };
     const kept = Object.fromEntries(
       // with a filter only the files of this run are replaced
       Object.entries(previous.files).filter(
@@ -174,9 +187,19 @@ const main = async (): Promise<number> => {
           !(file in results) && (filter !== undefined || !file.startsWith(`test/${kind}/`)),
       ),
     );
+    const entries = { ...kept, ...merged.files };
+    const used = new Set(
+      Object.values(entries).flatMap((entry) => [
+        ...Object.values(entry.causes ?? {}),
+        entry.cause,
+      ]),
+    );
+    const causes = Object.fromEntries(
+      Object.entries({ ...previous.causes, ...merged.causes }).filter(([id]) => used.has(id)),
+    );
     writeFileSync(
       BASELINE,
-      `${JSON.stringify({ version: merged.version, files: { ...kept, ...merged.files } }, null, 1)}\n`,
+      `${JSON.stringify({ version: merged.version, causes, files: entries }, null, 1)}\n`,
     );
     console.log(`baseline updated for test/${kind}`);
   }
@@ -218,9 +241,13 @@ const main = async (): Promise<number> => {
       stale: comparison.stale.length,
     }),
   );
+  const unclassified = checkCauses(scoped);
+  console.log(`unclassified/invalid baseline entries: ${unclassified.length}`);
+  for (const line of unclassified.slice(0, 20)) console.log(`CAUSE ${line}`);
   for (const line of comparison.regressions.slice(0, 50)) console.log(`REGRESSION ${line}`);
   for (const line of comparison.stale.slice(0, 20)) console.log(`STALE ${line}`);
   return comparison.regressions.length > 0 ||
+    unclassified.length > 0 ||
     (flags.includes('--strict') && comparison.stale.length > 0)
     ? 1
     : 0;
