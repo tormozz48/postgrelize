@@ -163,16 +163,7 @@ export class HasMany<
    */
   async set(instance: Instance, items: unknown, options: AccessorOptions = {}): Promise<Instance> {
     const wanted = this.#ids(items);
-    await this.target.update(
-      { [this.foreignKey]: null } as never,
-      {
-        ...this.passThrough(options),
-        where: this.andWhere(
-          this.#own(instance),
-          wanted.length === 0 ? undefined : { [this.#targetPk]: { [Op.notIn]: wanted } },
-        ),
-      } as never,
-    );
+    await this.#unlinkOthers(instance, wanted, options);
     if (wanted.length > 0) {
       await this.target.update(
         { ...this.#own(instance), ...this.scope } as never,
@@ -198,6 +189,24 @@ export class HasMany<
     return this.target.create(
       { ...values, ...this.scope, ...this.#own(instance) } as never,
       this.passThrough(options) as never,
+    );
+  }
+
+  async #unlinkOthers(
+    instance: Instance,
+    wanted: readonly unknown[],
+    options: AccessorOptions,
+  ): Promise<void> {
+    await this.target.update(
+      { [this.foreignKey]: null } as never,
+      {
+        ...this.passThrough(options),
+        where: this.andWhere(
+          this.scope,
+          this.#own(instance),
+          wanted.length === 0 ? undefined : { [this.#targetPk]: { [Op.notIn]: wanted } },
+        ),
+      } as never,
     );
   }
 
