@@ -870,4 +870,21 @@ describe('v6 parity: called data types', () => {
       ]);
       expect((await User.findAll()).map((user) => user.get('name'))).toEqual(['live']);
     }));
+
+  it('a bare number where on a paranoid model filters the primary key', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const User = sequelize.define('User', { name: DataTypes.STRING }, { paranoid: true });
+      await sequelize.sync();
+      await User.bulkCreate([{ name: 'a' }, { name: 'b' }]);
+      const names = async (where: unknown) =>
+        (await User.findAll({ where: where as never, order: [['id', 'ASC']] })).map((user) =>
+          user.get('name'),
+        );
+      expect([await names(2), await names(99), await User.count({ where: 1 as never })]).toEqual([
+        ['b'],
+        [],
+        1,
+      ]);
+    }));
 });
