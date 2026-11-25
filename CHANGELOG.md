@@ -44,7 +44,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 - The queries of models, instances and the `QueryInterface` run through `sequelize.query`, like v6, so a wrapper or an override of `sequelize.query` sees the SQL of every statement (it bypassed the method before, going to the connection manager directly). The statement arrives as a string with the bound values in `options.bind`; a wrapper has to hand the options on unchanged. See [Wrapping `sequelize.query`](https://tormozz48.github.io/postgrelize/guide/connection#wrapping-sequelize-query). ([#183](https://github.com/tormozz48/postgrelize/pull/183))
 
-### Added
+### Changed
 
 - Regression tests pin that, with `Sequelize.useCLS()` (AsyncLocalStorage or a namespace), the hooks of `findAll` / `findOne` / `findByPk` / `count` / `create` / `bulkCreate` / `update` / `destroy` / `upsert` / `restore` / aggregates and of the instance `save` / `update` / `destroy` / `reload` receive the ambient transaction in `options.transaction`, like v6; a follow-up query in an `afterFind` hook with it sees the uncommitted rows. This already worked in 1.9.0; an explicit `transaction: null` is respected. ([#183](https://github.com/tormozz48/postgrelize/pull/183))
 
