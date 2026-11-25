@@ -30,34 +30,40 @@ run once more, alone, to rule out timeouts under load.
 
 `--update-baseline` runs the kind twice: a file whose failures differ between the runs, or that has a failing `before`/`after` hook (which
 aborts the rest of a suite at a point that varies), is stored as `unstable` and compared only by its passing tests (10% tolerance).
-The baseline holds 5 such files today; each is a reason to look at why a hook fails.
+The baseline holds 29 such files at 2026-11-25; each is a reason to look at why a hook fails or why a file differs between runs.
 
 `baseline.json` lists the tests expected to fail and the files expected not to load. It only shrinks: a failure that is not listed
 is a **regression** (exit 1); an entry that no longer fails is **stale** (reported, exit 1 with `--strict`): delete it. Do not
-add failures to hide a regression. A failure that is a deliberate difference (ADR-016) needs its own entry in a reviewed list;
-the baseline does not yet separate causes, see the design's staged plan (G5).
+add failures to hide a regression.
+
+### Causes
+
+Every entry has a cause. `baseline.json` has a top-level `causes` object (root causes by id: `cause`, `area`, `note`, plus `risk`,
+`repro` and `test` for a `bug`, `ref` for a `divergence`), and each file points its failing titles at an id in `causes`
+(`"causes": { "<title>": "<id>" }`; a file that does not load has `"cause": "<id>"`). One root cause is recorded once and shared by the
+tests it breaks.
+
+| `cause`        | Meaning                                                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bug`          | Real postgrelize gap, v6 behaviour expected. Needs `risk` (`data-loss`, `wrong-result`, `error`, `wording`, `cosmetic`) and a one-line `repro`.     |
+| `divergence`   | Deliberate difference (ADR-016, postgres-only). Needs `ref`: an ADR or a `docs/sequelize-issues.md` row.                                            |
+| `harness`      | Adapter or test-environment artefact: v6 private internals (`queryGenerator`, `_scope`), stubs of v6 internals, unmapped `sequelize/lib/*` imports. |
+| `unsupported`  | v6 feature postgrelize does not implement: other dialects, PostGIS types in the suite container.                                                    |
+| `flaky`        | Timing or ordering dependent.                                                                                                                       |
+| `triage`       | Assertion difference whose root cause is not found yet. Counts as classified, listed in the report; turn it into one of the above.                  |
+| `unclassified` | Written by `--update-baseline` for a new failure. The run exits 1 until you replace it.                                                             |
+
+`--update-baseline` keeps the cause of every entry that still fails and marks new ones `unclassified`; give each a cause (reuse an id
+of `causes` or add one) before committing. `npm run v6:suite -- --summary` prints the counts by cause and area. The checks live in
+`checkCauses` and `summarizeCauses` (`compare-lib.ts`, tested in `tests/unit/scripts/v6-suite-compare.test.ts`). The first
+classification and the fix order are in `.10x/reviews/2026-11-25-v6-baseline-causes.md`.
 
 CI: `.github/workflows/v6-suite.yml`, nightly and on demand, not a required check.
 
 ## Triage of the baseline (G5)
 
-State at v6.37.8, PostgreSQL 17, postgrelize with the include-alias fix: unit 260 pass / 309 fail (72 of 101 files load), integration
-1067 pass / 435 fail (125 of 135 load). `.v6-suite/last-run-<kind>.json` keeps the first error line of every failing test; the heuristic
-buckets below come from it (counts are tests, unless noted):
-
-| Bucket                                                                                     | Unit | Integration | Meaning                                                                                                                                                                                                                                                |
-| ------------------------------------------------------------------------------------------ | ---- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| v6 query generator internals (`queryGenerator` is undefined in the adapter)                | 74   | 2           | Tests of v6's SQL builders. Not a public API; `internal`.                                                                                                                                                                                              |
-| v6 `Model` internals (`_injectScope`, `_validateIncludedElements`, `beforeAssociate`, ...) | 51   | 0           | `internal`.                                                                                                                                                                                                                                            |
-| Files that do not load (unmapped `sequelize/lib/*` deep imports, other dialects)           | 29   | 10          | Mostly `internal` / `other-dialect`.                                                                                                                                                                                                                   |
-| Return shapes of v6 internals (`expected undefined ...`)                                   | 34   | 27          | Mostly `internal`; look at the integration ones.                                                                                                                                                                                                       |
-| Other dialects (`mysql:` URIs)                                                             | 8    | 0           | `other-dialect`.                                                                                                                                                                                                                                       |
-| Stubs of v6 internals (`sinon.stub(Sequelize, 'Query')`)                                   | 10   | 5           | `internal`.                                                                                                                                                                                                                                            |
-| `type "undefined" does not exist` (a `DataTypes` lookup in DDL)                            | 0    | 19          | Probably a real gap; next family to fix.                                                                                                                                                                                                               |
-| PostGIS types (`geometry`, `geography`)                                                    | 0    | 12          | The suite container has no PostGIS; run it on a PostGIS image to see the real result.                                                                                                                                                                  |
-| Named bind parameter error wording                                                         | 0    | 8           | Message text differs; `wording`.                                                                                                                                                                                                                       |
-| Not bucketed                                                                               | 132  | 362         | Assertion differences. Largest files: `sequelize/query` 43, `model` 29, `model/findAll` 19, `cls` 18, `sequelize` 16, `associations/has-many` 16, `model/scope/associations` 13, `associations/belongs-to-many` 13, `dialects/postgres/data-types` 12. |
-
-Fixed by this triage: an include by model with several associations to the target now picks the one without an explicit alias, as v6
-does (about 20 integration tests); the worker databases get the `hstore` extension.
-Next: the `type "undefined"` family, then `sequelize/query` and the association files, one family per PR; the baseline shrinks with each.
+State at v6.37.8, PostgreSQL 17, postgrelize 1.9.3: unit 261 pass / 332 fail (68 of 101 files load), integration 1289 pass / 316 fail
+(125 of 135 load); 691 baseline entries in all. Every entry has a cause: 267 `bug` (134 root causes), 356 `harness`, 47 `unsupported`,
+18 `divergence`, 3 `triage`. The full report (counts by area, bugs ranked by user risk with reproductions and v6 test names, proposed
+fix order) is `.10x/reviews/2026-11-25-v6-baseline-causes.md`. Fix one `bug` area per PR and delete its entries (the run lists them as
+`STALE`); `.v6-suite/last-run-<kind>.json` keeps the first error line of every failing test.
