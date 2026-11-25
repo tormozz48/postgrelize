@@ -85,9 +85,19 @@ export type IncludeOptions = {
   /** For paranoid targets: `false` includes soft-deleted rows.
    * @defaultValue true */
   paranoid?: boolean;
-  /** Include every association of the model (`{ all: true }`).
+  /**
+   * Include every association of the model (`true`), or those of the given types: `'BelongsTo'`,
+   * `'HasOne'`, `'HasMany'`, `'One'` (belongsTo and hasOne), `'Has'` (hasOne and hasMany), `'Many'`
+   * (hasMany), `'All'`, or a list of them. The other options of the entry (`attributes`, `where`,
+   * ...) apply to every generated include; an association already named in the include list is
+   * not added again.
+   *
+   * @defaultValue false
+   */
+  all?: boolean | string | readonly string[];
+  /** With `all`: also include the associations of the included models, recursively.
    * @defaultValue false */
-  all?: boolean;
+  nested?: boolean;
 };
 
 /**

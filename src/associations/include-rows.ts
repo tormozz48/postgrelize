@@ -60,7 +60,7 @@ export class IncludeRows {
    *
    * @param definition - Model definition.
    * @param values - Attribute values.
-   * @returns Identity, or `undefined` when every value is `null` (no row joined).
+   * @returns Identity, or `undefined` when no row joined (every value, or every primary key value, is `null`).
    */
   identity(
     definition: ModelDefinition,
@@ -72,6 +72,10 @@ export class IncludeRows {
     const keys = definition.primaryKeys;
     if (keys.length === 0 || !keys.every((key) => key in values)) {
       return JSON.stringify(Object.entries(values));
+    }
+    // a selected literal is non-null on an unmatched LEFT JOIN: the key says no row joined
+    if (keys.every((key) => values[key] === null || values[key] === undefined)) {
+      return undefined;
     }
     const single = keys.length === 1 ? values[keys[0] as string] : undefined;
     return typeof single === 'number' ? single : JSON.stringify(keys.map((key) => values[key]));

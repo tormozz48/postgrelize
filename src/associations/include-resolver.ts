@@ -110,7 +110,7 @@ export class IncludeResolver {
     }
     const association = this.#lookup.resolve(source, item);
     const model = item.model ?? association.target;
-    const conformed = { ...item, association, model, as: item.as ?? association.as };
+    const conformed = { ...item, association, model, as: association.as };
     return item.include === undefined
       ? conformed
       : { ...conformed, include: this.conform(model, item.include) as IncludeOption };

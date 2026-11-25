@@ -94,13 +94,27 @@ export class IncludeOrder {
     if (references.length === 0 || typeof attribute !== 'string') {
       return undefined;
     }
-    const node = this.#walk(includes, references);
-    return node === undefined
+    const target = this.#target(includes, references, attribute);
+    return target === undefined
       ? undefined
       : {
-          expr: ast.ident(node.alias, field(node.definition, attribute)),
+          expr: target,
           ...(hasDirection ? OrderDirection.parse(item[item.length - 1]) : {}),
         };
+  }
+
+  // `[Include, ThroughModel, 'attr']` orders by a column of the junction table (v6)
+  #target(includes: readonly IncludeNode[], references: readonly unknown[], attribute: string) {
+    const node = this.#walk(includes, references);
+    if (node !== undefined) {
+      return ast.ident(node.alias, field(node.definition, attribute));
+    }
+    const owner = this.#walk(includes, references.slice(0, -1));
+    const { through } = owner ?? {};
+    const last = references.at(-1);
+    return through !== undefined && (last === through.model || last === through.definition.name)
+      ? ast.ident(through.alias, field(through.definition, attribute))
+      : undefined;
   }
 
   #walk(includes: readonly IncludeNode[], references: readonly unknown[]): IncludeNode | undefined {

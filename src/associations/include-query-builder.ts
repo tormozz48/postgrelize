@@ -4,7 +4,7 @@ import type { IncludeNode } from './include.ts';
 import { IncludeColumns } from './include-columns.ts';
 import { IncludeJoins } from './include-joins.ts';
 import { IncludeOrder, type OrderNodes } from './include-order.ts';
-import { hasRequired, IncludeSubQuery } from './include-sub-query.ts';
+import { exposedDefinition, hasRequired, IncludeSubQuery } from './include-sub-query.ts';
 
 const ast = new SqlAst();
 
@@ -59,7 +59,7 @@ export class IncludeQueryBuilder {
     const order = this.#order.nodes(definition, joined, options.order, alias);
     const parts = { definition, alias, base, joined, order };
     return this.needsSubQuery(joined, options, base.where)
-      ? this.#subQueryForm(parts)
+      ? this.#subQueryForm(parts, options.order)
       : {
           ...base,
           columns: [...base.columns, ...joined.flatMap((node) => this.#columns.columns(node))],
@@ -118,8 +118,9 @@ export class IncludeQueryBuilder {
     };
   }
 
-  #subQueryForm(parts: Parts): SelectNode {
-    const { alias, base, joined, order } = parts;
+  #subQueryForm(parts: Parts, order: unknown): SelectNode {
+    const { alias, base, joined } = parts;
+    const outer = exposedDefinition(parts.definition);
     return {
       kind: 'select',
       columns: [
@@ -127,8 +128,8 @@ export class IncludeQueryBuilder {
         ...joined.flatMap((node) => this.#columns.columns(node)),
       ],
       from: { subquery: this.#innerSelect(parts), alias },
-      joins: this.#joinsOf(parts),
-      orderBy: order.all,
+      joins: this.#joinsOf({ ...parts, definition: outer }),
+      orderBy: this.#order.nodes(outer, parts.joined, order, alias).all,
       ...(base.lock === undefined ? {} : { lock: base.lock }),
     };
   }

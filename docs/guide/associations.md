@@ -50,7 +50,7 @@ Instances get the v6 accessor methods:
 
 <<< @/examples/associations.ts#include{ts}
 
-Include options follow v6: `association` or `model` + `as`, `where`, `required`, `right`, `attributes`, nested `include`, `paranoid`, `through: { attributes, where }` for `belongsToMany`, and `all: true`.
+Include options follow v6: `association` or `model` + `as`, `where`, `required`, `right`, `attributes`, nested `include`, `paranoid`, `through: { attributes, where }` for `belongsToMany`, and `all: true` (or `all: 'BelongsTo'`, `'HasMany'`, … to pick association types, `nested: true` to recurse; other options of that entry apply to every generated include). `as` also takes the v6 `{ singular, plural }` form.
 
 - **`limit` with multi-row includes.** As in v6, a `limit` on the main query together with a `hasMany` / `belongsToMany` include moves the main table into a subquery, so the limit counts parent rows. `subQuery: false` turns this off.
 - **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order` and `limit` (applied per parent, as in Sequelize v6). A `hasMany` include with `limit` is separate unless you pass `separate: false`. This avoids row multiplication when a parent has many children.
