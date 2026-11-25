@@ -710,14 +710,6 @@
       "repro": "Object.keys(u.get()).includes('field1') // true after exclude",
       "test": "Model attributes types VIRTUAL should be able to exclude with attributes"
     },
-    "B-where-number-pk": {
-      "cause": "bug",
-      "area": "where",
-      "note": "A non-object where (e.g. findOne({where: 1}), destroy({where: 1})) is rejected with 'Invalid where value: 1'; v6 treats a number/string as the primary key value.",
-      "risk": "error",
-      "repro": "await U.findOne({ where: 1 })",
-      "test": "Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory"
-    },
     "C-adapter-no-deep-import": {
       "cause": "harness",
       "area": "harness",
@@ -2851,7 +2843,6 @@
         "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
-        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
@@ -2872,7 +2863,6 @@
         "[POSTGRES] Model count aggregate allows grouping by aliased attribute": "B-aggregate-alias-group",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
-        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory": "B-where-number-pk",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",

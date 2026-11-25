@@ -14,6 +14,7 @@ import type {
 import type { RowMapper } from '../row-mapper.ts';
 import type { QueryOptionsBase } from '../runtime.ts';
 import type { UpdateQueryBuilder } from '../update-query-builder.ts';
+import { WhereCompiler } from '../../where/where.ts';
 import { ModelOperation, type OperationServices } from './model-operation.ts';
 
 /** Collaborators of {@link DestroyOperation}. */
@@ -67,12 +68,24 @@ export class DestroyOperation extends ModelOperation<DestroyOperationServices> {
       force: false,
       ...this.services.registry.scoped(model, options),
     };
-    if (!opts['where'] && opts['truncate'] !== true) {
+    DestroyOperation.#assertWhere(opts);
+    return (await this.#bulkDestroy(model, opts, options)) as number | M[];
+  }
+
+  static #assertWhere(opts: MutableOptions): void {
+    if (opts['truncate'] === true) {
+      return;
+    }
+    if (!opts['where']) {
       throw new Error(
         'Missing where or truncate attribute in the options parameter of model.destroy.',
       );
     }
-    return (await this.#bulkDestroy(model, opts, options)) as number | M[];
+    if (!WhereCompiler.isConditions(opts['where'])) {
+      throw new Error(
+        'Expected plain object, array or sequelize method in the options.where parameter of model.destroy.',
+      );
+    }
   }
 
   @ModelOperation.bulkHooks('beforeBulkDestroy', 'afterBulkDestroy')
