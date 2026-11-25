@@ -13,6 +13,9 @@ export class DateType extends AbstractDataType {
   /**
    * @param fsp - Fractional seconds precision.
    */
+  /** Arguments the type was created with (v6 `options`). */
+  readonly options: Readonly<{ length?: string | number }>;
+
   constructor(fsp?: number) {
     super(
       'DATE',
@@ -20,6 +23,7 @@ export class DateType extends AbstractDataType {
         ? 'TIMESTAMP WITH TIME ZONE'
         : `TIMESTAMP(${AbstractDataType.integer('DATE precision', fsp)}) WITH TIME ZONE`,
     );
+    this.options = Object.freeze(fsp === undefined ? {} : { length: fsp });
     Object.freeze(this);
   }
 }

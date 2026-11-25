@@ -48,6 +48,15 @@ export abstract class AbstractDataType implements DataType {
   }
 
   /**
+   * PostgreSQL column type, like Sequelize v6 `toSql()`.
+   *
+   * @returns The SQL type, e.g. `'VARCHAR(255)'`.
+   */
+  toSql(): string {
+    return this.sqlType;
+  }
+
+  /**
    * Validates a numeric type parameter (length, precision, scale, srid) before it reaches SQL.
    *
    * @param name - Parameter name for the error message.
