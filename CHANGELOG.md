@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.4] - 2026-11-25
+
 ### Fixed
 
 - **Data loss:** `hasMany` `setX` and `hasOne` `setX` respect the association `scope`. `setX` on a `hasMany` with `scope` (a polymorphic association) no longer sets the foreign key of rows of another scope to `NULL` (for example comments of a post sharing the id of a question); `hasOne` `setX` looks up the current row inside its scope, so it no longer unlinks an unrelated row and the old scoped row is replaced. Tests in `tests/compat/association-set-scope.test.ts`; two entries leave the v6 suite baseline.
@@ -495,7 +497,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...HEAD
+[1.9.4]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/tormozz48/postgrelize/compare/v1.9.0...v1.9.1
