@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Data loss:** `Model.increment` / `Model.decrement` now apply the active scope like v6: `Model.scope('x').increment(...)` (and a default scope) changed every row matching only the explicit `where`, ignoring the scope's `where`. Without a `where` (no options, or options without `where`, and no scope `where`) they now reject with an `AssertionError` ("Missing where attribute in the options parameter") instead of running `UPDATE` on all rows; `where: {}` still changes every row. Tests in `tests/compat/increment-scope-where.test.ts`; two baseline causes of the v6 suite (`B-increment-scope-ignored`, `D-increment-no-where`) are gone.
+
 ## [1.9.3] - 2026-11-25
 
 ### Fixed

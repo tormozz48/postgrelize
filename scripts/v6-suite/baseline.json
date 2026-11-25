@@ -455,14 +455,6 @@
       "repro": "await u.increment('a',{by:2}); u.a // 0 (v6 2); await u.increment('a',{by:2,where:{b:1}}) // still increments",
       "test": "Instance increment supports where conditions"
     },
-    "B-increment-scope-ignored": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Model.scope(x).increment/decrement ignores the scope's where, so every row of the table is changed.",
-      "risk": "data-loss",
-      "repro": "await S.scope('k1').increment('a',{by:1,where:{}}) // all rows incremented",
-      "test": "Model increment should work with scopes"
-    },
     "B-increment-version": {
       "cause": "bug",
       "area": "model",
@@ -1209,14 +1201,6 @@
       "repro": "U.findAll({include:[{association:null}]})",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
     },
-    "D-increment-no-where": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.increment without where / with options missing is not rejected with 'Missing where attribute in the options parameter passed to increment'; it runs UPDATE on all rows.",
-      "risk": "data-loss",
-      "repro": "await M.increment('n') // updates every row, no rejection",
-      "test": "Model increment options tests should reject if options are missing"
-    },
     "D-index-options-ignored": {
       "cause": "bug",
       "area": "query-interface",
@@ -1487,16 +1471,6 @@
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave": "D-harness-stub-query"
-      }
-    },
-    "test/unit/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Model increment options tests should reject if options are missing",
-        "[POSTGRES] Model increment options tests should reject if options.where are missing"
-      ],
-      "causes": {
-        "[POSTGRES] Model increment options tests should reject if options are missing": "D-increment-no-where",
-        "[POSTGRES] Model increment options tests should reject if options.where are missing": "D-increment-no-where"
       }
     },
     "test/unit/instance-validator.test.js": {
@@ -3085,16 +3059,6 @@
         "[POSTGRES] Model GEOMETRY(POINT) \"before each\" hook for \"should create a geometry object\"": "B-unsupported-postgis",
         "[POSTGRES] Model GEOMETRY(POLYGON) \"before each\" hook for \"should create a geometry object\"": "B-unsupported-postgis",
         "[POSTGRES] Model sql injection attacks \"before each\" hook for \"should properly escape the single quotes\"": "B-unsupported-postgis"
-      }
-    },
-    "test/integration/model/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Model decrement should work with scopes",
-        "[POSTGRES] Model increment should work with scopes"
-      ],
-      "causes": {
-        "[POSTGRES] Model decrement should work with scopes": "B-increment-scope-ignored",
-        "[POSTGRES] Model increment should work with scopes": "B-increment-scope-ignored"
       }
     },
     "test/integration/model/json.test.js": {
