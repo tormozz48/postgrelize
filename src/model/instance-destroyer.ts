@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import type { InstanceLifecycleServices } from './instance-lifecycle-services.ts';
 import type { InstanceLifecycle } from './instance-lifecycle.ts';
 import type { ModelState } from './model-registry.ts';
@@ -73,7 +75,7 @@ export class InstanceDestroyer {
     if (hooks) {
       await this.#lifecycle.runHooks(model, 'beforeRestore', instance, options);
     }
-    instance.setDataValue(deletedAt, null);
+    instance.setDataValue(deletedAt, this.#notDeleted(model));
     await instance.save({ ...this.#services.values.queryOptions(options), hooks: false });
     if (hooks) {
       await this.#lifecycle.runHooks(model, 'afterRestore', instance, options);
@@ -89,8 +91,13 @@ export class InstanceDestroyer {
    * @throws Error when the model is not paranoid.
    */
   isSoftDeleted(instance: AnyModel): boolean {
-    const value = (instance.dataValues as Values)[this.#deletedAt(instance.constructor)];
-    return value !== null && value !== undefined;
+    const model = instance.constructor;
+    const value = (instance.dataValues as Values)[this.#deletedAt(model)] ?? null;
+    return !isDeepStrictEqual(value, this.#notDeleted(model));
+  }
+
+  #notDeleted(model: object): unknown {
+    return this.#services.columns.notDeletedValue(this.#services.registry.state(model).definition);
   }
 
   #deletedAt(model: object): string {
@@ -106,7 +113,12 @@ export class InstanceDestroyer {
     deletedAt: string,
     options: InstanceDestroyOptions,
   ): Promise<void> {
-    instance.setDataValue(deletedAt, new Date());
+    const notDeleted = this.#notDeleted(instance.constructor);
+    const current = (instance.dataValues as Values)[deletedAt] ?? null;
+    // v6: a row that is already soft-deleted keeps its original timestamp.
+    if (isDeepStrictEqual(current, notDeleted)) {
+      instance.setDataValue(deletedAt, new Date());
+    }
     await instance.save({ ...this.#services.values.queryOptions(options), hooks: false });
   }
 

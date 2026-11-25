@@ -222,7 +222,8 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
 
     /**
      * Deletes rows matching `where` (`truncate: true` empties the table instead). For paranoid models
-     * the rows are soft-deleted (`deletedAt` is set) unless `force: true`. Runs bulk destroy hooks
+     * the rows are soft-deleted (`deletedAt` is set) unless `force: true`; `truncate: true` then
+     * soft-deletes every row too, and only `force: true` empties the table (like v6). Runs bulk destroy hooks
      * unless `hooks: false`.
      *
      * @param this - The model class.
@@ -241,7 +242,7 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     }
 
     /**
-     * Restores soft-deleted rows of a paranoid model by setting `deletedAt` back to `NULL`.
+     * Restores soft-deleted rows of a paranoid model by setting `deletedAt` back to `NULL` (or to its `defaultValue` when the attribute declares a truthy one).
      *
      * @param this - The model class.
      * @param options - Rows to restore and hook options.

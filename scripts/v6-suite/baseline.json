@@ -179,7 +179,6 @@
     },
     "test/integration/include/findAll.test.js": {
       "failing": [
-        "[POSTGRES] Include findAll should allow through model to be paranoid",
         "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit",
         "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)",
         "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)",
@@ -213,8 +212,7 @@
         "[POSTGRES] Instance default values uuid should store a string in uuidv1 and uuidv4",
         "[POSTGRES] Instance default values uuid should store a string of length 36 in uuidv1 and uuidv4",
         "[POSTGRES] Instance default values uuid should store a valid uuid if the multiple primary key fields used",
-        "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications",
-        "[POSTGRES] Instance restore supports custom default value"
+        "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications"
       ]
     },
     "test/integration/instance.validations.test.js": {
@@ -228,12 +226,7 @@
       "failing": ["[POSTGRES] Instance decrement supports returning"]
     },
     "test/integration/instance/destroy.test.js": {
-      "failing": [
-        "[POSTGRES] Instance destroy converts Infinity in where clause to a timestamp",
-        "[POSTGRES] Instance destroy delete a record of multiple primary keys table",
-        "[POSTGRES] Instance destroy does not set the deletedAt date in subsequent destroys if dao is paranoid",
-        "[POSTGRES] Instance destroy does not update deletedAt with custom default in subsequent destroys"
-      ]
+      "failing": []
     },
     "test/integration/instance/increment.test.js": {
       "failing": [
@@ -299,7 +292,6 @@
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
         "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options",
-        "[POSTGRES] Model constructor should throw `TypeError` when value for updatedAt, createdAt, or deletedAt is neither string nor boolean",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation is not a function",
@@ -309,7 +301,6 @@
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
-        "[POSTGRES] Model paranoid is true and where is an array should fail when array contains strings",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
         "[POSTGRES] Model should be possible to use a key named UUID as foreign key",

@@ -840,4 +840,34 @@ describe('v6 parity: called data types', () => {
         label: 'Ab',
       });
     }));
+
+  it('(no issue) a soft-deleted row whose deletedAt is -Infinity keeps it and stays hidden', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const User = sequelize.define(
+        'User',
+        {
+          name: { type: DataTypes.STRING, primaryKey: true },
+          deletedAt: {
+            type: DataTypes.DATE,
+            primaryKey: true,
+            allowNull: false,
+            defaultValue: Infinity as never,
+          },
+        },
+        { paranoid: true },
+      );
+      await sequelize.sync();
+      await User.create({ name: 'live' });
+      await User.create({ name: 'gone', deletedAt: -Infinity as never });
+      const stored = await select<{ name: string; deletedAt: string }>(
+        sequelize,
+        'SELECT name, "deletedAt"::text AS "deletedAt" FROM "Users" ORDER BY name',
+      );
+      expect(stored).toEqual([
+        { name: 'gone', deletedAt: '-infinity' },
+        { name: 'live', deletedAt: 'infinity' },
+      ]);
+      expect((await User.findAll()).map((user) => user.get('name'))).toEqual(['live']);
+    }));
 });

@@ -84,6 +84,9 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
     if (Array.isArray(where)) {
       return ast.and(where.map((item: unknown) => this.compile(item)));
     }
+    if (typeof where === 'string') {
+      throw new Error('Support for literal replacements in the `where` object has been removed.');
+    }
     if (!isPlainObject(where)) {
       throw new Error(`Invalid where value: ${String(where)}`);
     }
