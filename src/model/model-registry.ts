@@ -63,7 +63,19 @@ export class ModelRegistry {
     if (state === undefined) {
       throw new Error(NOT_INITIALIZED);
     }
-    return state;
+    return state.definition.name === (base as { name: string }).name
+      ? state
+      : this.#renamed(base as object, state);
+  }
+
+  // v6 reads `Model.name` whenever it builds a query (table alias, include aliases), so a class that
+  // was renamed after `init` (a bundler, a test redefining `name`) keeps the SQL and `Model.name`
+  // in step: raw fragments built from `Model.name` refer to the alias the query emits.
+  #renamed(base: object, state: ModelState): ModelState {
+    const name = (base as { name: string }).name;
+    const renamed = { ...state, definition: { ...state.definition, name } };
+    states.set(base, renamed);
+    return renamed;
   }
 
   /**
