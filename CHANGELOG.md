@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- **Data loss:** `Model.increment` / `Model.decrement` now apply the active scope like v6: `Model.scope('x').increment(...)` (and a default scope) changed every row matching only the explicit `where`, ignoring the scope's `where`. Without a `where` (no options, or options without `where`, and no scope `where`) they now reject with an `AssertionError` ("Missing where attribute in the options parameter") instead of running `UPDATE` on all rows; `where: {}` still changes every row. Tests in `tests/compat/increment-scope-where.test.ts`; two baseline causes of the v6 suite (`B-increment-scope-ignored`, `D-increment-no-where`) are gone.
 - A bare number or bigint as `where` is a primary key lookup like in v6: `findOne({ where: 1 })`, `findAll`, `count` filter the first primary key attribute instead of failing with `Invalid where value`. `destroy` and `update` with such a `where` are rejected with v6's `Expected plain object, array or sequelize method in the options.where parameter` message, and a string `where` gives v6's `Support for `{where: 'raw query'}` has been removed.` On a `paranoid` model v6 silently ignored the number and matched every live row; postgrelize filters by the key (ADR-016). Differential test in `tests/compat/where-pk-shorthand.test.ts`; one `scripts/v6-suite/baseline.json` entry removed.
 
 ## [1.9.3] - 2026-11-25

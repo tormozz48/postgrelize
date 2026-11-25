@@ -70,7 +70,7 @@ PostgreSQL operators that Sequelize v6 leaves to `literal()` have first-class `O
 
 <<< @/examples/querying.ts#aggregates{ts}
 
-`count`, `sum`, `min`, `max` and `aggregate` accept the same `where` as finders; `aggregate` and the helpers convert the result to the type of the attribute (`FLOAT` for `'*'`), `dataType` overrides that, and `plain: false` returns the raw rows with the driver's strings (like v6); `count` also takes `distinct`, `col` and `group`. `increment` and `decrement` work on the model (with `where`) and on instances.
+`count`, `sum`, `min`, `max` and `aggregate` accept the same `where` as finders; `aggregate` and the helpers convert the result to the type of the attribute (`FLOAT` for `'*'`), `dataType` overrides that, and `plain: false` returns the raw rows with the driver's strings (like v6); `count` also takes `distinct`, `col` and `group`. `increment` and `decrement` work on the model and on instances; on the model they need a `where` (or a scope that has one) and reject with an `AssertionError` otherwise, and `where: {}` changes every row.
 
 Build SQL expressions with `fn`, `col`, `literal`, `cast`, `json` and `where`. Values inside them are bound parameters; identifiers are quoted. Use `literal` only with trusted SQL text.
 
