@@ -74,3 +74,15 @@ export const virtual: DataTypes.VirtualDataType<typeof DataTypes.STRING> = DataT
 // every member is also an AbstractDataType
 export const abstract: DataTypes.AbstractDataType[] = [decimal, str, char, text, date];
 export const sql: string = decimal.toSql();
+
+// DataTypes.X(...) / new DataTypes.X(...) forms and the UNSIGNED / ZEROFILL chain
+export const integerCalled: DataTypes.IntegerDataType = DataTypes.INTEGER({ length: 11 });
+export const integerNew: DataTypes.IntegerDataType = new DataTypes.INTEGER();
+export const bigCalled: DataTypes.BigIntDataType = DataTypes.BIGINT({ length: 20 });
+export const smallChain: DataTypes.SmallIntegerDataType = DataTypes.SMALLINT.UNSIGNED.ZEROFILL();
+export const tinyNew: DataTypes.TinyIntegerDataType = new DataTypes.TINYINT.UNSIGNED();
+export const mediumCalled: DataTypes.MediumIntegerDataType = DataTypes.MEDIUMINT({ length: 8 });
+export const uuidCalled: DataTypes.AbstractDataType = DataTypes.UUID();
+export const jsonbNew: DataTypes.AbstractDataType = new DataTypes.JSONB();
+export const doubleCalled: DataTypes.DoubleDataType = DataTypes.DOUBLE(10, 2);
+export const realCalled: DataTypes.RealDataType = DataTypes.REAL(10);

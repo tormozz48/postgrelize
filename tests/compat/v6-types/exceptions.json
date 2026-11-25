@@ -109,34 +109,6 @@
       "cause": "expect-type-mismatch"
     },
     {
-      "file": "data-types.ts",
-      "code": "TS2349",
-      "message": "This expression is not callable.",
-      "count": 12,
-      "cause": "datatypes-namespace"
-    },
-    {
-      "file": "data-types.ts",
-      "code": "TS2351",
-      "message": "This expression is not constructable.",
-      "count": 17,
-      "cause": "datatypes-namespace"
-    },
-    {
-      "file": "data-types.ts",
-      "code": "TS2554",
-      "message": "Expected 1 arguments, but got 0.",
-      "count": 34,
-      "cause": "datatypes-namespace"
-    },
-    {
-      "file": "data-types.ts",
-      "code": "TS6234",
-      "message": "This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?",
-      "count": 5,
-      "cause": "datatypes-namespace"
-    },
-    {
       "file": "define.ts",
       "code": "TS2339",
       "message": "Property 'firstName' does not exist on type 'Model<any, any>'.",
@@ -170,13 +142,6 @@
       "message": "Property 'id' does not exist on type 'Model<any, any>'.",
       "count": 1,
       "cause": "model-typing-misc"
-    },
-    {
-      "file": "e2e/docs-example.ts",
-      "code": "TS7009",
-      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
-      "count": 4,
-      "cause": "datatypes-namespace"
     },
     {
       "file": "findOne.ts",
@@ -429,20 +394,6 @@
       "message": "Module '\"sequelize\"' has no exported member 'Config'. Did you mean to use 'import Config from \"sequelize\"' instead?",
       "count": 1,
       "cause": "missing-export"
-    },
-    {
-      "file": "typescriptDocs/ModelInit.ts",
-      "code": "TS7009",
-      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
-      "count": 6,
-      "cause": "datatypes-namespace"
-    },
-    {
-      "file": "typescriptDocs/ModelInitNoAttributes.ts",
-      "code": "TS7009",
-      "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
-      "count": 2,
-      "cause": "datatypes-namespace"
     },
     {
       "file": "update.ts",

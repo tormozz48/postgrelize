@@ -12,7 +12,7 @@ import { EnumType } from './enum-type.ts';
 import { FloatType } from './float-type.ts';
 import { GeometricType } from './geometric-type.ts';
 import { HstoreType } from './hstore-type.ts';
-import { IntegerType } from './integer-type.ts';
+import { IntegerType, type IntegerArgument } from './integer-type.ts';
 import { JsonType } from './json-type.ts';
 import { MultirangeType } from './multirange-type.ts';
 import { RangeType } from './range-type.ts';
@@ -32,11 +32,65 @@ export type { IntegerDataType } from './integer-type.ts';
 export type { RangeBound } from './range-type.ts';
 export type { DefaultValueGenerator } from './default-value-generator.ts';
 
+/** A type usable bare, called and constructed, like v6: `DataTypes.STRING`, `DataTypes.STRING(64)`, `new DataTypes.STRING(64)`. */
+type Callable<T, A extends unknown[], R = T> = ((...args: A) => R) & (new (...args: A) => R) & T;
+
+/** Integer types and their `UNSIGNED` / `ZEROFILL` chains: `DataTypes.INTEGER.UNSIGNED.ZEROFILL(11)`. */
+type CallableInteger<R extends DataTypes.IntegerFamilyDataType> = Callable<
+  IntegerType,
+  [argument?: IntegerArgument],
+  R
+> &
+  Readonly<{ UNSIGNED: CallableInteger<R>; ZEROFILL: CallableInteger<R> }>;
+
 /** Makes a type usable both bare and called, like `DataTypes.STRING` and `DataTypes.STRING(64)`. */
 const callable = <A extends unknown[], T extends DataType>(
   build: (...args: A) => T,
   bare: T,
-): ((...args: A) => T) & T => Object.freeze(Object.assign((...args: A) => build(...args), bare));
+  extra: PropertyDescriptorMap = {},
+): Callable<T, A> => {
+  // A function expression, so that `new DataTypes.X(...)` works as in v6 (it returns the built type).
+  const fn = function (...args: A): T {
+    return build(...args);
+  };
+  Object.assign(fn, bare);
+  if ('toSql' in bare) {
+    Object.defineProperty(fn, 'toSql', { value: () => bare.sqlType });
+  }
+  Object.defineProperties(fn, extra);
+  return Object.freeze(fn) as unknown as Callable<T, A>;
+};
+
+/** A type that takes no arguments but is callable like in v6 (`DataTypes.UUID()`). */
+const plain = <T extends DataType>(bare: T): Callable<T, [], DataTypes.AbstractDataType> =>
+  callable(() => bare, bare) as unknown as Callable<T, [], DataTypes.AbstractDataType>;
+
+const wrapInteger = <R extends DataTypes.IntegerFamilyDataType>(
+  bare: IntegerType,
+): CallableInteger<R> =>
+  callable((argument?: IntegerArgument) => bare.configured(argument), bare, {
+    UNSIGNED: { get: () => wrapInteger<R>(bare.UNSIGNED) },
+    ZEROFILL: { get: () => wrapInteger<R>(bare.ZEROFILL) },
+  }) as unknown as CallableInteger<R>;
+
+const integer = <R extends DataTypes.IntegerFamilyDataType>(
+  key: string,
+  sqlType: string,
+): CallableInteger<R> => wrapInteger<R>(new IntegerType(key, sqlType));
+
+/** `REAL` / `DOUBLE` called with the arguments v6 takes (length, decimals); PostgreSQL ignores them. */
+const floating = <R extends DataTypes.NumberDataType>(
+  key: string,
+  sqlType: string,
+): Callable<ScalarType, [length?: number, decimals?: number], R> =>
+  callable(
+    (length?: number, decimals?: number) =>
+      new ScalarType(key, sqlType, {
+        ...(length === undefined ? {} : { length }),
+        ...(decimals === undefined ? {} : { decimals }),
+      }),
+    new ScalarType(key, sqlType),
+  ) as unknown as Callable<ScalarType, [length?: number, decimals?: number], R>;
 
 const INTEGER = new IntegerType('INTEGER', 'INTEGER');
 
@@ -76,23 +130,23 @@ export const DataTypes = {
   /** `TEXT`. The size argument is accepted for compatibility and ignored. */
   TEXT: callable((size?: 'tiny' | 'medium' | 'long') => new TextType(size), new TextType()),
   /** `CITEXT` (case-insensitive text, requires the `citext` extension). */
-  CITEXT: new ScalarType('CITEXT', 'CITEXT'),
+  CITEXT: plain(new ScalarType('CITEXT', 'CITEXT')),
   /** `INTEGER`. */
-  INTEGER,
+  INTEGER: integer<DataTypes.IntegerDataType>('INTEGER', 'INTEGER'),
   /** `SMALLINT`. */
-  SMALLINT: new IntegerType('SMALLINT', 'SMALLINT'),
+  SMALLINT: integer<DataTypes.SmallIntegerDataType>('SMALLINT', 'SMALLINT'),
   /** Mapped to `SMALLINT` (PostgreSQL has no `TINYINT`). */
-  TINYINT: new IntegerType('TINYINT', 'SMALLINT'),
+  TINYINT: integer<DataTypes.TinyIntegerDataType>('TINYINT', 'SMALLINT'),
   /** Mapped to `INTEGER` (PostgreSQL has no `MEDIUMINT`). */
-  MEDIUMINT: new IntegerType('MEDIUMINT', 'INTEGER'),
+  MEDIUMINT: integer<DataTypes.MediumIntegerDataType>('MEDIUMINT', 'INTEGER'),
   /** `BIGINT`; values are returned as strings. */
-  BIGINT: new IntegerType('BIGINT', 'BIGINT'),
+  BIGINT: integer<DataTypes.BigIntDataType>('BIGINT', 'BIGINT'),
   /** `FLOAT(precision)`. */
   FLOAT: callable((digits?: number) => new FloatType(digits), new FloatType()),
   /** `REAL`. */
-  REAL: new ScalarType('REAL', 'REAL'),
+  REAL: floating<DataTypes.RealDataType>('REAL', 'REAL'),
   /** `DOUBLE PRECISION`. */
-  DOUBLE: new ScalarType('DOUBLE', 'DOUBLE PRECISION'),
+  DOUBLE: floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `DECIMAL(precision, scale)`; values are returned as strings. */
   DECIMAL: callable(
     (digits?: number, scale?: number) => new DecimalType(digits, scale),
@@ -109,9 +163,9 @@ export const DataTypes = {
     new DecimalType(),
   ),
   /** `DOUBLE PRECISION` (v6 alias of `DOUBLE`). */
-  'DOUBLE PRECISION': new ScalarType('DOUBLE', 'DOUBLE PRECISION'),
+  'DOUBLE PRECISION': floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `BOOLEAN`. */
-  BOOLEAN: new ScalarType('BOOLEAN', 'BOOLEAN'),
+  BOOLEAN: plain(new ScalarType('BOOLEAN', 'BOOLEAN')),
   /** `TIMESTAMP WITH TIME ZONE`; values are `Date` objects. */
   DATE: callable((fsp?: number) => new DateType(fsp), new DateType()),
   /**
@@ -120,24 +174,24 @@ export const DataTypes = {
    */
   TIMESTAMP: callable((fsp?: number) => new TimestampType(fsp), new TimestampType()),
   /** `DATE`; values are `'YYYY-MM-DD'` strings. */
-  DATEONLY: new ScalarType('DATEONLY', 'DATE'),
+  DATEONLY: plain(new ScalarType('DATEONLY', 'DATE')),
   /** `TIME`. */
-  TIME: new ScalarType('TIME', 'TIME'),
+  TIME: plain(new ScalarType('TIME', 'TIME')),
   /** `INTERVAL`; values are PostgreSQL interval strings (e.g. `'1 day 02:00:00'`). PostgreSQL extension. */
   INTERVAL: new ScalarType('INTERVAL', 'INTERVAL'),
   /** `JSON`. */
-  JSON: new JsonType('JSON'),
+  JSON: plain(new JsonType('JSON')),
   /** `JSONB`. */
-  JSONB: new JsonType('JSONB'),
+  JSONB: plain(new JsonType('JSONB')),
   /** `BYTEA`; values are `Buffer`s. */
   BLOB: callable((size?: 'tiny' | 'medium' | 'long') => new BlobType(size), new BlobType()),
   /** `UUID`. */
-  UUID: new ScalarType('UUID', 'UUID'),
+  UUID: plain(new ScalarType('UUID', 'UUID')),
   /**
    * `HSTORE` (requires the `hstore` extension); values are objects of string (or `null`) values,
    * like Sequelize v6.
    */
-  HSTORE: new HstoreType(),
+  HSTORE: plain(new HstoreType()),
   /**
    * `LTREE` label path (requires the `ltree` extension); values are strings like `'Top.Science'`.
    * PostgreSQL extension.
@@ -158,17 +212,17 @@ export const DataTypes = {
    */
   VARBIT: callable((length?: number) => new BitType('VARBIT', length), new BitType('VARBIT')),
   /** `INET`. */
-  INET: new ScalarType('INET', 'INET'),
+  INET: plain(new ScalarType('INET', 'INET')),
   /** `CIDR`. */
-  CIDR: new ScalarType('CIDR', 'CIDR'),
+  CIDR: plain(new ScalarType('CIDR', 'CIDR')),
   /** `MACADDR`. */
-  MACADDR: new ScalarType('MACADDR', 'MACADDR'),
+  MACADDR: plain(new ScalarType('MACADDR', 'MACADDR')),
   /** `MACADDR8` (EUI-64 address). PostgreSQL extension. */
   MACADDR8: new ScalarType('MACADDR8', 'MACADDR8'),
   /** `TSQUERY`; values are full-text query strings. PostgreSQL extension. */
   TSQUERY: new ScalarType('TSQUERY', 'TSQUERY'),
   /** `TSVECTOR`. */
-  TSVECTOR: new ScalarType('TSVECTOR', 'TSVECTOR'),
+  TSVECTOR: plain(new ScalarType('TSVECTOR', 'TSVECTOR')),
   /** `POINT`; values are `{ x, y }`. PostgreSQL extension. */
   POINT: new GeometricType('POINT'),
   /** `LINE` (`a·x + b·y + c = 0`); values are `{ a, b, c }`. PostgreSQL extension. */
