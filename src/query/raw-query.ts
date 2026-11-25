@@ -36,6 +36,22 @@ type TokenContext = Readonly<{
 }>;
 
 /**
+ * Option key that marks a query a model, an instance or the `QueryInterface` runs through
+ * `sequelize.query`: its value is the `'read'` / `'write'` kind. `query` then skips the raw-statement
+ * processing and returns the driver result. Wrappers around `sequelize.query` forward the options
+ * they receive, so the key survives (an internal contract, not public API).
+ *
+ * @internal
+ */
+export const ROUTED_QUERY: unique symbol = Symbol.for('postgrelize.routedQuery') as never;
+
+/** Options of a query routed through `sequelize.query`. @internal */
+export type RoutedQueryOptions = Readonly<{
+  [ROUTED_QUERY]?: 'read' | 'write';
+  bind?: readonly unknown[];
+}>;
+
+/**
  * Converts raw SQL with Sequelize v6 `replacements` and `bind` into a parameterized query.
  * Replacement values of `sequelize.query` are written into the SQL text as escaped literals like v6, so a
  * text may hold several statements (ADR-036); `bind` values and the replacements of a compiled finder
