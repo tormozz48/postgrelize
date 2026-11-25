@@ -134,14 +134,6 @@
       "repro": "P.findAll({attributes:[[fn('COUNT',col('comments.id')),'n']],include:[{association:A,attributes:[]}],group:['Post.id']}) then r[0].get('comments') // []",
       "test": "Include findAll should ignore include with attributes: [] (used for aggregates)"
     },
-    "A-include-limit-implies-separate": {
-      "cause": "bug",
-      "area": "include",
-      "note": "hasMany include with limit and no separate flag ignores the limit; v6 sets separate:true automatically.",
-      "risk": "wrong-result",
-      "repro": "U.findAll({include:[{association:A,limit:2}]})[0].tasks.length // 3, v6 2",
-      "test": "Include separate should run a hasMany association with limit in a separate query"
-    },
     "A-include-merge-same-model": {
       "cause": "bug",
       "area": "scope",
@@ -205,30 +197,6 @@
       "risk": "wrong-result",
       "repro": "F.scope('incBar','incBaz').findOne() // only baz",
       "test": "Model scope simple merge should merge simple scopes correctly"
-    },
-    "A-separate-logging": {
-      "cause": "bug",
-      "area": "include",
-      "note": "Per-query logging option is not passed on to the extra queries of separate includes (logging called once instead of per query).",
-      "risk": "cosmetic",
-      "repro": "n=0; await U.findAll({include:[{association:A,separate:true}],logging:()=>n++}) // n==1, v6 2",
-      "test": "Include separate should run a hasMany association in a separate query"
-    },
-    "A-separate-missing-key": {
-      "cause": "bug",
-      "area": "include",
-      "note": "separate include returns no children when the parent attributes do not select the key (id/sourceKey) or the child attributes do not select the FK; v6 adds the missing key attributes automatically.",
-      "risk": "wrong-result",
-      "repro": "U.findAll({attributes:['name'],include:[{association:A,separate:true}]})[0].tasks.length // 0, v6 3",
-      "test": "Include separate should work even if the id was not included"
-    },
-    "A-separate-nested-order-ignored": {
-      "cause": "bug",
-      "area": "include",
-      "note": "order of a separate include nested under another separate include is ignored (rows come back in insertion order).",
-      "risk": "wrong-result",
-      "repro": "U.findAll({include:[{association:A,separate:true,include:[{association:B,order:[['title','DESC']],separate:true}]}]}) // subtasks not ordered",
-      "test": "HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true"
     },
     "A-subquery-fk-leak": {
       "cause": "bug",
@@ -2396,8 +2364,6 @@
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation",
-        "[POSTGRES] HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true",
-        "[POSTGRES] HasMany get multiple supports schemas",
         "[POSTGRES] HasMany sourceKey with where clause in include should use the specified sourceKey instead of the primary key"
       ],
       "causes": {
@@ -2412,8 +2378,6 @@
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order": "A-association-get-limit",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation": "A-association-get-limit",
-        "[POSTGRES] HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true": "A-separate-nested-order-ignored",
-        "[POSTGRES] HasMany get multiple supports schemas": "A-separate-nested-order-ignored",
         "[POSTGRES] HasMany sourceKey with where clause in include should use the specified sourceKey instead of the primary key": "A-subquery-join-field-name"
       }
     },
@@ -2663,28 +2627,6 @@
       "causes": {
         "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage",
         "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone": "A-date-number"
-      }
-    },
-    "test/integration/include/separate.test.js": {
-      "failing": [
-        "[POSTGRES] Include separate should run a hasMany association in a separate query",
-        "[POSTGRES] Include separate should run a hasMany association with limit in a separate query",
-        "[POSTGRES] Include separate should run a nested (from a non-separate include) hasMany association in a separate query",
-        "[POSTGRES] Include separate should run two nested hasMany association in a separate queries",
-        "[POSTGRES] Include separate should work even if include does not specify foreign key attribute with custom sourceKey",
-        "[POSTGRES] Include separate should work even if the id was not included",
-        "[POSTGRES] Include separate should work having a separate include between a parent and child include",
-        "[POSTGRES] Include separate should work with two schema models in a hasMany association"
-      ],
-      "causes": {
-        "[POSTGRES] Include separate should run a hasMany association in a separate query": "A-separate-logging",
-        "[POSTGRES] Include separate should run a hasMany association with limit in a separate query": "A-include-limit-implies-separate",
-        "[POSTGRES] Include separate should run a nested (from a non-separate include) hasMany association in a separate query": "A-separate-logging",
-        "[POSTGRES] Include separate should run two nested hasMany association in a separate queries": "A-separate-logging",
-        "[POSTGRES] Include separate should work even if include does not specify foreign key attribute with custom sourceKey": "A-separate-missing-key",
-        "[POSTGRES] Include separate should work even if the id was not included": "A-separate-missing-key",
-        "[POSTGRES] Include separate should work having a separate include between a parent and child include": "A-separate-logging",
-        "[POSTGRES] Include separate should work with two schema models in a hasMany association": "A-include-limit-implies-separate"
       }
     },
     "test/integration/instance.test.js": {

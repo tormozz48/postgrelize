@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Separate includes match v6: a `hasMany` include with `limit` and no `separate` is loaded with its own query (the limit was ignored and every child returned); a `separate` include whose parent `attributes` leave out the source key, or whose own `attributes` leave out the foreign key, still finds its children (the key is selected for matching and the foreign key is not left in the result); a `separate` include nested in another `separate` include keeps its `order` and `limit`; the `logging` option reaches the queries of separate includes. Differential tests in `tests/compat/include-separate.test.ts`; ten entries leave the v6 suite baseline (`include` area: four causes gone, the other twelve causes of the area remain).
+
 ## [1.9.4] - 2026-11-25
 
 ### Fixed

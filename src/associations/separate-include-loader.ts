@@ -1,6 +1,7 @@
 import { Op } from '../expressions/op.ts';
 import type { AnyModel } from '../model/options.ts';
 import { AttributeColumns } from '../model/attribute-columns.ts';
+import type { FindAttributeOptions } from '../model/select-options.ts';
 import type { IncludeNode } from './include.ts';
 import type { IncludeResolver } from './include-resolver.ts';
 
@@ -52,6 +53,7 @@ export class SeparateIncludeLoader {
       this.#query(node, keys, options) as never,
     )) as Instance[];
     parents.forEach((parent) => this.#attach(parent, node, rows));
+    this.#dropAddedKey(node, rows);
   }
 
   #loaded(parents: readonly Instance[], node: IncludeNode): Instance[] {
@@ -68,15 +70,32 @@ export class SeparateIncludeLoader {
   #query(node: IncludeNode, keys: readonly unknown[], options: FindOptions): Values {
     return {
       ...(options['transaction'] === undefined ? {} : { transaction: options['transaction'] }),
+      ...(options['logging'] === undefined ? {} : { logging: options['logging'] }),
       ...this.#scope(node, keys),
-      attributes:
-        node.attributes ?? columns.stored(node.definition).map((attribute) => attribute.fieldName),
+      attributes: this.#attributes(node),
       ...(node.order === undefined ? {} : { order: node.order }),
       ...(node.children.length === 0
         ? {}
         : { include: node.children.map((child) => this.#resolver.toOptions(child)) }),
       paranoid: node.paranoid,
     };
+  }
+
+  // the foreign key must be selected to match children to parents, like v6 adds it
+  #attributes(node: IncludeNode): FindAttributeOptions {
+    const all = columns.stored(node.definition).map((attribute) => attribute.fieldName);
+    const { attributes } = node;
+    if (attributes === undefined) {
+      return all;
+    }
+    if (!Array.isArray(attributes)) {
+      return attributes;
+    }
+    const key = node.association.foreignKey;
+    const names = (attributes as FindAttributeOptions & unknown[]).map((entry) =>
+      Array.isArray(entry) ? entry[1] : entry,
+    );
+    return names.includes(key) ? attributes : [...(attributes as string[]), key];
   }
 
   #scope(node: IncludeNode, keys: readonly unknown[]): Values {
@@ -92,6 +111,16 @@ export class SeparateIncludeLoader {
       limit: node.limit,
       lateralKeys: { attribute: node.association.foreignKey, values: keys },
     };
+  }
+
+  // the foreign key selected only for matching is not part of the requested attributes
+  #dropAddedKey(node: IncludeNode, rows: readonly Instance[]): void {
+    const { attributes } = node;
+    const key = node.association.foreignKey;
+    if (!Array.isArray(attributes) || attributes.includes(key)) {
+      return;
+    }
+    rows.forEach((row) => Reflect.deleteProperty(row.dataValues as Values, key));
   }
 
   #attach(parent: Instance, node: IncludeNode, rows: readonly Instance[]): void {

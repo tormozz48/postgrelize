@@ -110,6 +110,8 @@ export class IncludeResolver {
       ...(node.where === undefined ? {} : { where: node.where }),
       ...(node.on === undefined ? {} : { on: node.on }),
       ...(node.attributes === undefined ? {} : { attributes: node.attributes }),
+      ...(node.order === undefined ? {} : { order: node.order }),
+      ...(node.limit === undefined ? {} : { limit: node.limit }),
       ...(node.children.length === 0
         ? {}
         : { include: node.children.map((child) => this.toOptions(child)) }),
@@ -142,12 +144,17 @@ export class IncludeResolver {
       required: item.required ?? item.where !== undefined,
       right: item.right === true,
       attributes: item.attributes,
-      separate: item.separate === true && association.associationType === 'HasMany',
+      separate: this.#separate(item, association),
       lateral: item.lateral === true,
       paranoid: item.paranoid !== false,
       order: item.order,
       limit: item.limit,
     };
+  }
+
+  // like v6, a hasMany include with a `limit` and no explicit `separate` is loaded separately
+  #separate(item: IncludeOptions, association: Association): boolean {
+    return (item.separate ?? item.limit !== undefined) && association.associationType === 'HasMany';
   }
 
   #through(

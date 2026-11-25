@@ -113,7 +113,21 @@ export class FindOperation extends FindLookups {
       where: columns.paranoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
     const nodes = includes.normalize(model, opts['include'] as IncludeOption | undefined);
-    return { model, definition, opts, query: query as FindOptions, includes: nodes };
+    return { model, definition, opts, query: this.#withSourceKeys(query, nodes), includes: nodes };
+  }
+
+  // a separate include matches children by the parent's source key, so it must be selected (v6 adds it)
+  #withSourceKeys(query: Record<string, unknown>, nodes: readonly IncludeNode[]): FindOptions {
+    const { attributes } = query;
+    const keys = nodes.filter((node) => node.separate).map((node) => node.association.sourceKey);
+    if (!Array.isArray(attributes) || keys.length === 0) {
+      return query as FindOptions;
+    }
+    const names = attributes.map((entry) => (Array.isArray(entry) ? entry[1] : entry));
+    const missing = [...new Set(keys)].filter((key) => !names.includes(key));
+    return (
+      missing.length === 0 ? query : { ...query, attributes: [...attributes, ...missing] }
+    ) as FindOptions;
   }
 
   async #found(call: FindCall, rows: QueryResult['rows']): Promise<AnyModel[]> {
