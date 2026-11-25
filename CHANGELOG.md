@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.3] - 2026-11-25
+
 ### Fixed
 
 - Soft delete (`paranoid`) matches v6 in five places: `Model.destroy({ truncate: true })` soft-deletes the rows instead of emptying the table (only `force: true` truncates); destroying an already soft-deleted instance keeps its first `deletedAt`; a `deletedAt` attribute with a truthy `defaultValue` (for example `new Date(0)` or `Infinity`) marks "not deleted" in finders, includes, `destroy`, `restore` and `isSoftDeleted`; the through model of a `belongsToMany` include hides its soft-deleted junction rows; a `DATE` default of `Infinity` / `-Infinity` is created by `sync`. Also the v6 messages for a string in a `where` array and for a `createdAt` / `updatedAt` / `deletedAt` option that is neither a string nor a boolean. A row created with `deletedAt: -Infinity` is no longer stored as `Infinity` (v6 did). Parity audit, tests in `tests/compat/paranoid-parity.test.ts`.
@@ -487,7 +489,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...HEAD
+[1.9.3]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/tormozz48/postgrelize/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/tormozz48/postgrelize/compare/v1.8.5...v1.9.0
