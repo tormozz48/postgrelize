@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- The table alias of a query (main table and includes) follows the model's current `Model.name`, like v6, which reads it whenever it builds a query: a class renamed after `init` (a bundler, a test redefining `name`) still emits the alias raw SQL fragments built from `Model.name` refer to.
+
 ## [1.8.4] - 2026-11-24
 
 ### Fixed
