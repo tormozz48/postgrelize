@@ -1,6 +1,6 @@
 {
   "name": "postgrelize",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "PostgreSQL-only ORM, drop-in compatible with the Sequelize v6 API. Ships llm/USAGE.md and an Agent Skill for LLMs.",
   "keywords": [
     "jsonb",
