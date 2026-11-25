@@ -265,8 +265,9 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
      *
      * @param this - The model class.
      * @param fields - Attribute name(s), or a map of attribute to amount.
-     * @param options - Increment options (`where`, `by` default 1, `silent`, query options).
+     * @param options - Increment options (`where`, `by` default 1, `silent`, query options). The active scope's `where` is applied.
      * @returns `[affectedRows, affectedCount]`: the updated instances and their number.
+     * @throws AssertionError when neither `options.where` nor the active scope gives a `where` (pass `where: {}` to change every row).
      * @example
      * ```ts
      * await Post.increment('views', { by: 1, where: { id: 5 } });
@@ -290,8 +291,9 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
      *
      * @param this - The model class.
      * @param fields - Attribute name(s), or a map of attribute to amount.
-     * @param options - Decrement options (`where`, `by` default 1, `silent`, query options).
+     * @param options - Decrement options (`where`, `by` default 1, `silent`, query options). The active scope's `where` is applied.
      * @returns `[affectedRows, affectedCount]`: the updated instances and their number.
+     * @throws AssertionError when neither `options.where` nor the active scope gives a `where` (pass `where: {}` to change every row).
      * @example
      * ```ts
      * await Product.decrement({ stock: 3 }, { where: { id: 7 } });

@@ -439,14 +439,6 @@
       "repro": "await u.increment('a',{by:2}); u.a // 0 (v6 2); await u.increment('a',{by:2,where:{b:1}}) // still increments",
       "test": "Instance increment supports where conditions"
     },
-    "B-increment-scope-ignored": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Model.scope(x).increment/decrement ignores the scope's where, so every row of the table is changed.",
-      "risk": "data-loss",
-      "repro": "await S.scope('k1').increment('a',{by:1,where:{}}) // all rows incremented",
-      "test": "Model increment should work with scopes"
-    },
     "B-increment-version": {
       "cause": "bug",
       "area": "model",
@@ -701,14 +693,6 @@
       "risk": "cosmetic",
       "repro": "Object.keys(u.get()).includes('field1') // true after exclude",
       "test": "Model attributes types VIRTUAL should be able to exclude with attributes"
-    },
-    "B-where-number-pk": {
-      "cause": "bug",
-      "area": "where",
-      "note": "A non-object where (e.g. findOne({where: 1}), destroy({where: 1})) is rejected with 'Invalid where value: 1'; v6 treats a number/string as the primary key value.",
-      "risk": "error",
-      "repro": "await U.findOne({ where: 1 })",
-      "test": "Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory"
     },
     "C-adapter-no-deep-import": {
       "cause": "harness",
@@ -1193,14 +1177,6 @@
       "repro": "U.findAll({include:[{association:null}]})",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
     },
-    "D-increment-no-where": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.increment without where / with options missing is not rejected with 'Missing where attribute in the options parameter passed to increment'; it runs UPDATE on all rows.",
-      "risk": "data-loss",
-      "repro": "await M.increment('n') // updates every row, no rejection",
-      "test": "Model increment options tests should reject if options are missing"
-    },
     "D-index-options-ignored": {
       "cause": "bug",
       "area": "query-interface",
@@ -1471,16 +1447,6 @@
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave": "D-harness-stub-query"
-      }
-    },
-    "test/unit/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Model increment options tests should reject if options are missing",
-        "[POSTGRES] Model increment options tests should reject if options.where are missing"
-      ],
-      "causes": {
-        "[POSTGRES] Model increment options tests should reject if options are missing": "D-increment-no-where",
-        "[POSTGRES] Model increment options tests should reject if options.where are missing": "D-increment-no-where"
       }
     },
     "test/unit/instance-validator.test.js": {
@@ -2857,7 +2823,6 @@
         "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
-        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
@@ -2878,7 +2843,6 @@
         "[POSTGRES] Model count aggregate allows grouping by aliased attribute": "B-aggregate-alias-group",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
-        "[POSTGRES] Model destroy can find paranoid records if paranoid is marked as false in query with the DAOFactory": "B-where-number-pk",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
@@ -3065,16 +3029,6 @@
         "[POSTGRES] Model GEOMETRY(POINT) \"before each\" hook for \"should create a geometry object\"": "B-unsupported-postgis",
         "[POSTGRES] Model GEOMETRY(POLYGON) \"before each\" hook for \"should create a geometry object\"": "B-unsupported-postgis",
         "[POSTGRES] Model sql injection attacks \"before each\" hook for \"should properly escape the single quotes\"": "B-unsupported-postgis"
-      }
-    },
-    "test/integration/model/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Model decrement should work with scopes",
-        "[POSTGRES] Model increment should work with scopes"
-      ],
-      "causes": {
-        "[POSTGRES] Model decrement should work with scopes": "B-increment-scope-ignored",
-        "[POSTGRES] Model increment should work with scopes": "B-increment-scope-ignored"
       }
     },
     "test/integration/model/json.test.js": {

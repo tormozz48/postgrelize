@@ -1,3 +1,4 @@
+import { AssertionError } from 'node:assert';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { ModelDefinition } from '../model-definition.ts';
@@ -48,6 +49,7 @@ export class IncrementOperation {
    * @param options - Increment options.
    * @param sign - `1` or `-1`.
    * @returns Updated instances and the affected row count.
+   * @throws AssertionError when neither `options.where` nor the active scope gives a `where`.
    */
   async change<M extends AnyModel>(
     model: ModelStatic<M>,
@@ -57,9 +59,13 @@ export class IncrementOperation {
   ): Promise<[M[], number]> {
     const { definition, runtime } = this.#services.registry.state(model);
     const { compiler, rows, updates } = this.#services;
-    const set = this.#setItems(definition, fields, options, sign);
-    const node = updates.build(definition, set, options.where ?? {}, { returning: true });
-    const result = await runtime.execute(compiler.compile(node), options);
+    const scoped = this.#services.registry.scoped(model, options);
+    if (scoped.where === undefined || scoped.where === null) {
+      throw new AssertionError({ message: 'Missing where attribute in the options parameter' });
+    }
+    const set = this.#setItems(definition, fields, scoped, sign);
+    const node = updates.build(definition, set, scoped.where, { returning: true });
+    const result = await runtime.execute(compiler.compile(node), scoped);
     return [result.rows.map((row) => rows.instance(model, row)), result.rowCount];
   }
 

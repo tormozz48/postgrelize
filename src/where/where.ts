@@ -76,21 +76,37 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
     );
   }
 
+  /** True for the `where` shapes the writers accept: plain object, array or expression builder. */
+  static isConditions(where: unknown): boolean {
+    return where instanceof SqlExpression || Array.isArray(where) || isPlainObject(where);
+  }
+
   /** Compiles a Sequelize v6 `where` value (object, array or expression) into an AST condition. */
   compile(where: unknown): ExprNode {
     if (where instanceof SqlExpression) {
       return where.accept(this);
     }
     if (Array.isArray(where)) {
-      return ast.and(where.map((item: unknown) => this.compile(item)));
+      return ast.and(where.map((item: unknown) => this.#arrayItem(item)));
+    }
+    if (typeof where === 'number' || typeof where === 'bigint') {
+      // like v6: a bare number filters the first primary key
+      return this.compile({ [this.context.primaryKey ?? 'id']: where });
     }
     if (typeof where === 'string') {
-      throw new Error('Support for literal replacements in the `where` object has been removed.');
+      throw new Error("Support for `{where: 'raw query'}` has been removed.");
     }
     if (!isPlainObject(where)) {
       throw new Error(`Invalid where value: ${String(where)}`);
     }
     return ast.and(ownKeys(where).map((key) => this.#entry(where, key)));
+  }
+
+  #arrayItem(item: unknown): ExprNode {
+    if (typeof item === 'string') {
+      throw new Error('Support for literal replacements in the `where` object has been removed.');
+    }
+    return this.compile(item);
   }
 
   #entry(where: Readonly<Record<string | symbol, unknown>>, key: string | symbol): ExprNode {

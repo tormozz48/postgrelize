@@ -15,6 +15,8 @@ export type WhereContext = Readonly<{
   tableAlias?: string;
   resolve: (attribute: string) => AttributeRef | undefined;
   inAsAnyThreshold?: number;
+  /** Attribute a bare number or bigint `where` filters, like v6's primary key shorthand (default `id`). */
+  primaryKey?: string;
   /** Allows `excluded()` (only inside `ON CONFLICT DO UPDATE`). */
   allowExcluded?: boolean;
 }>;
