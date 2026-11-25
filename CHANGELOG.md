@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.8.5] - 2026-11-25
+
 ### Fixed
 
 - The table alias of a query (main table and includes) follows the model's current `Model.name`, like v6, which reads it whenever it builds a query: a class renamed after `init` (a bundler, a test redefining `name`) still emits the alias raw SQL fragments built from `Model.name` refer to. ([#178](https://github.com/tormozz48/postgrelize/pull/178))
@@ -459,7 +461,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.4...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.8.5...HEAD
+[1.8.5]: https://github.com/tormozz48/postgrelize/compare/v1.8.4...v1.8.5
 [1.8.4]: https://github.com/tormozz48/postgrelize/compare/v1.8.3...v1.8.4
 [1.8.3]: https://github.com/tormozz48/postgrelize/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/tormozz48/postgrelize/compare/v1.8.1...v1.8.2
