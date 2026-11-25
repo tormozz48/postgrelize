@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
-- The queries of models, instances and the `QueryInterface` run through `sequelize.query`, like v6, so a wrapper or an override of `sequelize.query` sees the SQL of every statement (it bypassed the method before, going to the connection manager directly). The statement arrives as a string with the bound values in `options.bind`; a wrapper has to hand the options on unchanged. See [Wrapping `sequelize.query`](docs/guide/connection.md#wrapping-sequelize-query). ([#183](https://github.com/tormozz48/postgrelize/pull/183))
+- The queries of models, instances and the `QueryInterface` run through `sequelize.query`, like v6, so a wrapper or an override of `sequelize.query` sees the SQL of every statement (it bypassed the method before, going to the connection manager directly). The statement arrives as a string with the bound values in `options.bind`; a wrapper has to hand the options on unchanged. See [Wrapping `sequelize.query`](https://tormozz48.github.io/postgrelize/guide/connection#wrapping-sequelize-query). ([#183](https://github.com/tormozz48/postgrelize/pull/183))
 
 ### Added
 
