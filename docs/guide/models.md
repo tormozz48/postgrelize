@@ -27,7 +27,7 @@ Models can also be declared with decorators (`@Table`, `@Column`, `@HasMany`, â€
 
 <<< @/examples/models.ts#define{ts}
 
-`paranoid: true` adds `deletedAt`: `destroy()` sets it instead of deleting the row, finders skip such rows, and `paranoid: false` in find options includes them. `restore()` brings them back; `destroy({ force: true })` deletes for real.
+`paranoid: true` adds `deletedAt`: `destroy()` sets it instead of deleting the row, finders skip such rows, and `paranoid: false` in find options includes them. `restore()` brings them back; `destroy({ force: true })` deletes for real. A `deletedAt` attribute with a truthy `defaultValue` (for example `new Date(0)`) marks live rows instead of `NULL`; `restore()` sets it back to that value. Destroying a soft-deleted instance again keeps its first `deletedAt`, and `destroy({ truncate: true })` soft-deletes the rows (only `force: true` empties the table).
 
 ## Using instances
 

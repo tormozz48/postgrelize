@@ -144,11 +144,10 @@ export class IncludeJoins {
   #notDeleted(definition: ModelDefinition, alias: string): ExprNode | undefined {
     return definition.deletedAt === undefined
       ? undefined
-      : ({
-          kind: 'postfix',
-          op: 'IS NULL',
-          expr: ast.ident(alias, field(definition, definition.deletedAt)),
-        } as const);
+      : attributeColumns.where(
+          attributeColumns.paranoid(definition, undefined, true),
+          attributeColumns.whereCompiler(definition, alias),
+        );
   }
 
   #scopeCondition(

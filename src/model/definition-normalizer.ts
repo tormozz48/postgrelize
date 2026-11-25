@@ -80,6 +80,7 @@ export class DefinitionNormalizer {
 
   #specialAttributes(): SpecialAttributes {
     const options = this.#options;
+    this.#assertTimestampOptions();
     const timestamps = options.timestamps === true;
     return {
       createdAt: timestamps ? this.#timestampName(options.createdAt, 'createdAt') : undefined,
@@ -95,6 +96,20 @@ export class DefinitionNormalizer {
             ? options.version
             : 'version',
     };
+  }
+
+  #assertTimestampOptions(): void {
+    for (const key of ['createdAt', 'updatedAt', 'deletedAt'] as const) {
+      this.#assertTimestampOption(key, this.#options[key]);
+    }
+  }
+
+  #assertTimestampOption(key: string, value: unknown): void {
+    if (value !== undefined && typeof value !== 'string' && typeof value !== 'boolean') {
+      throw new Error(
+        `Value for "${key}" option must be a string or a boolean, got ${typeof value}`,
+      );
+    }
   }
 
   #timestampName(option: string | boolean | undefined, fallback: string): string | undefined {

@@ -109,7 +109,7 @@ export class DestroyOperation extends ModelOperation<DestroyOperationServices> {
 
   async #delete(call: DestroyCall): Promise<number | AnyModel[]> {
     const { model, options } = call;
-    if (options.truncate === true) {
+    if (options.truncate === true && !call.soft) {
       await model.truncate(options);
       return 0;
     }
@@ -170,7 +170,7 @@ export class DestroyOperation extends ModelOperation<DestroyOperationServices> {
     const { columns, compiler, lifecycle, updates } = this.services;
     const targets = await this.#targets(model, opts, opts['where'], options);
     await lifecycle.runEach(model, 'beforeRestore', targets, opts);
-    const set = columns.setItems(definition, { [deletedAt]: null });
+    const set = columns.setItems(definition, { [deletedAt]: columns.notDeletedValue(definition) });
     const inAsAny = DestroyOperation.#inAsAny(runtime.inAsAnyThreshold);
     const node = updates.build(definition, set, opts['where'], inAsAny);
     await runtime.execute(compiler.compile(node), options);

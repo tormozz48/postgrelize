@@ -120,7 +120,8 @@ describe('whereToAst', () => {
   });
 
   it('rejects invalid input', () => {
-    expect(() => sql('id = 1')).toThrow(/Invalid where/);
+    expect(() => sql('id = 1')).toThrow(/literal replacements/);
+    expect(() => sql(1)).toThrow(/Invalid where/);
     expect(() => sql({ id: { [Op.between]: [1] } })).toThrow(/two values/);
   });
 });

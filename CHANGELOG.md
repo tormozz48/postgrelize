@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Soft delete (`paranoid`) matches v6 in five places: `Model.destroy({ truncate: true })` soft-deletes the rows instead of emptying the table (only `force: true` truncates); destroying an already soft-deleted instance keeps its first `deletedAt`; a `deletedAt` attribute with a truthy `defaultValue` (for example `new Date(0)` or `Infinity`) marks "not deleted" in finders, includes, `destroy`, `restore` and `isSoftDeleted`; the through model of a `belongsToMany` include hides its soft-deleted junction rows; a `DATE` default of `Infinity` / `-Infinity` is created by `sync`. Also the v6 messages for a string in a `where` array and for a `createdAt` / `updatedAt` / `deletedAt` option that is neither a string nor a boolean. A row created with `deletedAt: -Infinity` is no longer stored as `Infinity` (v6 did). Parity audit, tests in `tests/compat/paranoid-parity.test.ts`.
+
 ## [1.9.2] - 2026-11-25
 
 ### Fixed

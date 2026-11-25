@@ -1,10 +1,12 @@
 import type { AnyModel, ModelStatic } from '../model/options.ts';
+import { AttributeColumns } from '../model/attribute-columns.ts';
 import { ModelRegistry } from '../model/model-registry.ts';
 import type { IncludeNode, IncludeOption, IncludeOptions } from './include.ts';
 import { AssociationLookup } from './association-lookup.ts';
 import type { Association } from './types.ts';
 
 const registry = new ModelRegistry();
+const attributeColumns = new AttributeColumns();
 
 type Model = ModelStatic<AnyModel>;
 type Position = Readonly<{ alias: string; path: string }>;
@@ -164,7 +166,7 @@ export class IncludeResolver {
       alias: `${position.alias}->${definition.name}`,
       path: `${position.path}.${definition.name}`,
       attributes: item.through?.attributes,
-      where: item.through?.where,
+      where: attributeColumns.paranoid(definition, item.through?.where, item.paranoid),
     };
   }
 

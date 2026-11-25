@@ -100,9 +100,14 @@ export class ColumnDdl {
     if (column.type.isJson === true) {
       return sqlLiteral.escape(JSON.stringify(value));
     }
-    return sqlLiteral.escape(
-      SERIALIZED_DEFAULTS.test(column.type.key) ? column.type.serialize?.(value) : value,
-    );
+    return this.#literalDefault(column.type, value);
+  }
+
+  #literalDefault(type: ColumnDefinition['type'], value: unknown): string {
+    if (type.key === 'DATE' && (value === Infinity || value === -Infinity)) {
+      return value > 0 ? "'infinity'" : "'-infinity'";
+    }
+    return sqlLiteral.escape(SERIALIZED_DEFAULTS.test(type.key) ? type.serialize?.(value) : value);
   }
 
   /**
