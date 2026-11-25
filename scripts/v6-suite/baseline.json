@@ -394,10 +394,10 @@
     "B-include-option-propagation": {
       "cause": "bug",
       "area": "include",
-      "note": "Custom options set on an include entry (include:[{model:User, myOption:'option'}]) are not passed to the hooks' options of the nested create / bulkCreate (user.createOptions.myOption is undefined).",
+      "note": "Model.bulkCreate with include saves each parent with individual hooks instead of v6's nested Model.bulkCreate of the children: the children's beforeBulkCreate hook never fires, so the include entry options (include:[{model:User, myOption:'option'}]) never reach it.",
       "risk": "wrong-result",
-      "repro": "User.beforeCreate((u,o)=>{u.o=o}); const p=await Product.create({User:{}},{include:[{model:User,myOption:'x'}]}); p.User.o.myOption // undefined",
-      "test": "Model create include should create data for HasMany relations"
+      "repro": "User.beforeBulkCreate((us,o)=>{us.forEach(u=>{u.o=o})}); const [p]=await Product.bulkCreate([{User:{}}],{include:[{model:User,myOption:'x'}]}); p.User.o // undefined, v6 has myOption",
+      "test": "Model bulkCreate include should bulkCreate data for HasMany relations"
     },
     "B-increment-instance": {
       "cause": "bug",
@@ -2869,17 +2869,11 @@
     },
     "test/integration/model/create/include.test.js": {
       "failing": [
-        "[POSTGRES] Model create include should create data for BelongsTo relations",
         "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK",
-        "[POSTGRES] Model create include should create data for BelongsToMany relations",
-        "[POSTGRES] Model create include should create data for HasMany relations",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
       ],
       "causes": {
-        "[POSTGRES] Model create include should create data for BelongsTo relations": "B-include-option-propagation",
         "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK": "B-belongsto-include-notnull-fk",
-        "[POSTGRES] Model create include should create data for BelongsToMany relations": "B-include-option-propagation",
-        "[POSTGRES] Model create include should create data for HasMany relations": "B-include-option-propagation",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },

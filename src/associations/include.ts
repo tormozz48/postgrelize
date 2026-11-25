@@ -125,6 +125,8 @@ export type IncludeNode = Readonly<{
   paranoid: boolean;
   order: unknown;
   limit: number | undefined;
+  /** Options of the include entry that postgrelize does not know; nested creation hands them to the hooks. */
+  custom: Readonly<Record<string, unknown>>;
   through:
     | Readonly<{
         model: Model;

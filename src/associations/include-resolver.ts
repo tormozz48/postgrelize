@@ -10,6 +10,28 @@ const attributeColumns = new AttributeColumns();
 
 type Model = ModelStatic<AnyModel>;
 type Position = Readonly<{ alias: string; path: string }>;
+const KNOWN_INCLUDE_KEYS: ReadonlySet<string> = new Set([
+  'model',
+  'as',
+  'association',
+  'where',
+  'on',
+  'required',
+  'right',
+  'attributes',
+  'include',
+  'separate',
+  'through',
+  'lateral',
+  'order',
+  'limit',
+  'paranoid',
+  'all',
+]);
+
+const customOptions = (item: IncludeOptions): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(Object.entries(item).filter(([key]) => !KNOWN_INCLUDE_KEYS.has(key)));
+
 type BaseNode = Omit<IncludeNode, 'alias' | 'path' | 'through' | 'children'>;
 
 const isModel = (value: unknown): value is Model => typeof value === 'function';
@@ -149,6 +171,7 @@ export class IncludeResolver {
       paranoid: item.paranoid !== false,
       order: item.order,
       limit: item.limit,
+      custom: customOptions(item),
     };
   }
 
