@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-11-25
+
 ### Fixed
 
 - The data types are callable and constructable like in v6: `DataTypes.INTEGER(11)`, `DataTypes.BIGINT({ length: 20 })`, `new DataTypes.INTEGER()`, `DataTypes.SMALLINT.UNSIGNED.ZEROFILL()`, `DataTypes.UUID()`, `new DataTypes.JSONB()`, `DataTypes.DOUBLE(10, 2)` (also `TINYINT`, `MEDIUMINT`, `REAL`, `BOOLEAN`, `TIME`, `DATEONLY`, `CITEXT`, `INET`, `CIDR`, `MACADDR`, `TSVECTOR`, `HSTORE`, `JSON`); they were not, and calling `DataTypes.INTEGER(11)` threw. The arguments are recorded in `type.options` and PostgreSQL ignores them, as in v6; `UNSIGNED` / `ZEROFILL` record a flag in `options` (still no effect on the column). The calls return the `DataTypes.<X>DataType` interface types. The bare `DataTypes.STRING` and similar types now have `toSql()` too, as their types already claimed. ([#182](https://github.com/tormozz48/postgrelize/pull/182))
@@ -481,7 +483,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...HEAD
+[1.9.2]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...v1.9.2
 [1.9.1]: https://github.com/tormozz48/postgrelize/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/tormozz48/postgrelize/compare/v1.8.5...v1.9.0
 [1.8.5]: https://github.com/tormozz48/postgrelize/compare/v1.8.4...v1.8.5
