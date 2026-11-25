@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Data loss:** `hasMany` `setX` and `hasOne` `setX` respect the association `scope`. `setX` on a `hasMany` with `scope` (a polymorphic association) no longer sets the foreign key of rows of another scope to `NULL` (for example comments of a post sharing the id of a question); `hasOne` `setX` looks up the current row inside its scope, so it no longer unlinks an unrelated row and the old scoped row is replaced. Tests in `tests/compat/association-set-scope.test.ts`; two entries leave the v6 suite baseline.
+
 ## [1.9.3] - 2026-11-25
 
 ### Fixed

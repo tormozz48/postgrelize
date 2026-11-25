@@ -102,14 +102,6 @@
       "area": "query-interface",
       "note": "Test calls private queryInterface.queryGenerator.addSchema."
     },
-    "A-hasmany-set-ignores-scope": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasMany setX un-links rows with UPDATE ... WHERE fk = x without the association scope, nulling rows of other scopes (polymorphic comments of another commentable).",
-      "risk": "data-loss",
-      "repro": "Q.hasMany(C,{foreignKey:'cid',scope:{commentable:'question'}}); await q.setComments([b]) // also nulls cid of the post comment sharing id 1",
-      "test": "associations scope 1:M should create, find and include associations with scope values"
-    },
     "A-hasmany-write-applies-default-scope": {
       "cause": "bug",
       "area": "scope",
@@ -125,14 +117,6 @@
       "risk": "error",
       "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
       "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
-    },
-    "A-hasone-set-ignores-scope": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasOne setX looks up the current associated row without the association scope, so it nulls the FK of an unrelated row and leaves the old scoped row linked.",
-      "risk": "data-loss",
-      "repro": "P.hasOne(C,{as:'main',scope:{kind:'main'}}); other row with same FK; await p.setMain(c2) // other row FK -> NULL, old main kept",
-      "test": "associations scope 1:1 should create, find and include associations with scope values"
     },
     "A-include-as-object-alias": {
       "cause": "bug",
@@ -2495,14 +2479,10 @@
       "unstable": true,
       "pass": 5,
       "failing": [
-        "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values",
-        "[POSTGRES] associations scope 1:M should create, find and include associations with scope values",
         "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values",
         "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
       ],
       "causes": {
-        "[POSTGRES] associations scope 1:1 should create, find and include associations with scope values": "A-hasone-set-ignores-scope",
-        "[POSTGRES] associations scope 1:M should create, find and include associations with scope values": "A-hasmany-set-ignores-scope",
         "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values": "A-triage",
         "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values": "A-references-null-crash"
       }

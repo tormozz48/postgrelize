@@ -168,6 +168,7 @@ export class HasMany<
       {
         ...this.passThrough(options),
         where: this.andWhere(
+          this.scope,
           this.#own(instance),
           wanted.length === 0 ? undefined : { [this.#targetPk]: { [Op.notIn]: wanted } },
         ),
