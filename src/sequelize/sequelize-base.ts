@@ -24,7 +24,7 @@ import {
   type QueryOptionsWithType,
   type TypedQueryResults,
 } from '../query/query-result-shaper.ts';
-import { RawQuery } from '../query/raw-query.ts';
+import { RawQuery, ROUTED_QUERY, type RoutedQueryOptions } from '../query/raw-query.ts';
 import { QueryInterface } from '../query-interface/query-interface.ts';
 import { RowMapper } from '../model/row-mapper.ts';
 import { ModelManager } from './model-manager.ts';
@@ -375,6 +375,14 @@ export class SequelizeBase {
    */
   query(sql: string | Literal, options?: QueryOptions): Promise<[unknown[], unknown]>;
   async query(sql: string | Literal, options: QueryOptions = {}): Promise<unknown> {
+    const routed = (options as RoutedQueryOptions)[ROUTED_QUERY];
+    if (routed !== undefined) {
+      return this.internals.execute(
+        { text: String(sql), values: (options as RoutedQueryOptions).bind ?? [] },
+        options,
+        routed,
+      );
+    }
     const { text, ...parameters } = rawQuery.statement(sql, options);
     const prepared = rawQuery.prepare(text, parameters);
     const kind = resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write';

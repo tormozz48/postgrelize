@@ -36,6 +36,16 @@ The same settings can be given as separate options, together with the pool, sess
 
 <<< @/examples/connection.ts#logging{ts}
 
+## Wrapping `sequelize.query`
+
+Like in Sequelize v6, the queries of models, instances and the `QueryInterface` run through the instance method `sequelize.query`, so a wrapper or an override of it sees the SQL of every statement (to add a route comment, to measure, to trace). The wrapper receives the SQL as a string and the bound values in `options.bind`; it must hand `options` on to the original method unchanged (the options carry what tells `query` that the statement comes from a model). A wrapper written for v6 that also handles a `{ query, bind }` object as the first argument works with both libraries.
+
+```ts
+const original = sequelize.query.bind(sequelize);
+sequelize.query = (sql, options) =>
+  original(typeof sql === 'string' ? `/* route:web */ ${sql}` : sql, options);
+```
+
 ## Prepared statements and long `IN` lists <Ext />
 
 Two constructor options exist only in postgrelize. `statementCache` turns on named prepared statements, `inAsAnyThreshold` makes long `IN` lists use one statement shape:

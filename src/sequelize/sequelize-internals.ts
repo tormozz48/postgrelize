@@ -14,7 +14,7 @@ import { HookRegistry } from '../hooks/hooks.ts';
 import type { ModelAttributes } from '../model/model-definition.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
-import { RawQuery } from '../query/raw-query.ts';
+import { RawQuery, ROUTED_QUERY } from '../query/raw-query.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
 import type { CompiledQuery } from '../sql/compile.ts';
 import type { Transaction, TransactionOptions } from '../transaction/transaction.ts';
@@ -29,6 +29,7 @@ export type InternalsOwner = Readonly<{
   config: ConnectionSettings;
   define: (name: string, attributes: ModelAttributes, options?: Record<string, unknown>) => object;
   getQueryInterface: () => QueryInterface;
+  query: (sql: string, options: object) => Promise<unknown>;
 }>;
 
 /**
@@ -220,8 +221,16 @@ export class SequelizeInternals {
 
   #queryRuntime(): Pick<ModelRuntime, 'execute' | 'copyFrom' | 'copyTo' | 'serverVersion'> {
     return {
-      execute: (query, options, kind) =>
-        this.execute(rawQuery.inject(query, options.replacements), options, kind),
+      // Through `sequelize.query` (like v6), so a wrapper or override of it sees the SQL of every model
+      // query; the routed marker makes `query` run the statement as it is and return the driver result.
+      execute: (query, options, kind = 'write') => {
+        const injected = rawQuery.inject(query, options.replacements);
+        return this.#owner.query(injected.text, {
+          ...options,
+          bind: injected.values,
+          [ROUTED_QUERY]: kind,
+        }) as Promise<QueryResult>;
+      },
       copyFrom: (text, lines, options) =>
         this.connections.copyFrom(text, lines, this.executeOptions(options)),
       copyTo: (text, options, kind) =>

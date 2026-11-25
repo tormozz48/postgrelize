@@ -42,6 +42,16 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 - The data types are callable and constructable like in v6: `DataTypes.INTEGER(11)`, `DataTypes.BIGINT({ length: 20 })`, `new DataTypes.INTEGER()`, `DataTypes.SMALLINT.UNSIGNED.ZEROFILL()`, `DataTypes.UUID()`, `new DataTypes.JSONB()`, `DataTypes.DOUBLE(10, 2)` (also `TINYINT`, `MEDIUMINT`, `REAL`, `BOOLEAN`, `TIME`, `DATEONLY`, `CITEXT`, `INET`, `CIDR`, `MACADDR`, `TSVECTOR`, `HSTORE`, `JSON`); they were not, and calling `DataTypes.INTEGER(11)` threw. The arguments are recorded in `type.options` and PostgreSQL ignores them, as in v6; `UNSIGNED` / `ZEROFILL` record a flag in `options` (still no effect on the column). The calls return the `DataTypes.<X>DataType` interface types. The bare `DataTypes.STRING` and similar types now have `toSql()` too, as their types already claimed. ([#182](https://github.com/tormozz48/postgrelize/pull/182))
 
+## [1.9.1] - 2026-11-25
+
+### Fixed
+
+- The queries of models, instances and the `QueryInterface` run through `sequelize.query`, like v6, so a wrapper or an override of `sequelize.query` sees the SQL of every statement (it bypassed the method before, going to the connection manager directly). The statement arrives as a string with the bound values in `options.bind`; a wrapper has to hand the options on unchanged. See [Wrapping `sequelize.query`](https://tormozz48.github.io/postgrelize/guide/connection#wrapping-sequelize-query). ([#183](https://github.com/tormozz48/postgrelize/pull/183))
+
+### Changed
+
+- Regression tests pin that, with `Sequelize.useCLS()` (AsyncLocalStorage or a namespace), the hooks of `findAll` / `findOne` / `findByPk` / `count` / `create` / `bulkCreate` / `update` / `destroy` / `upsert` / `restore` / aggregates and of the instance `save` / `update` / `destroy` / `reload` receive the ambient transaction in `options.transaction`, like v6; a follow-up query in an `afterFind` hook with it sees the uncommitted rows. This already worked in 1.9.0; an explicit `transaction: null` is respected. ([#183](https://github.com/tormozz48/postgrelize/pull/183))
+
 ## [1.9.0] - 2026-11-25
 
 ### Added
@@ -471,7 +481,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/tormozz48/postgrelize/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/tormozz48/postgrelize/compare/v1.8.5...v1.9.0
 [1.8.5]: https://github.com/tormozz48/postgrelize/compare/v1.8.4...v1.8.5
 [1.8.4]: https://github.com/tormozz48/postgrelize/compare/v1.8.3...v1.8.4
