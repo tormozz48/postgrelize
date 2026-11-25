@@ -806,3 +806,38 @@ describe('v6 parity: logging', () => {
 
 const runSelect = (sequelize: Sequelize, sql: string) =>
   sequelize.query(sql, { type: 'SELECT' }) as Promise<unknown[]>;
+
+describe('v6 parity: called data types', () => {
+  it('models sync and run with DataTypes.X(...) and new DataTypes.X() columns', () =>
+    withSchema(async ({ schema }) => {
+      const sequelize = connect(schema);
+      const Item = sequelize.define('Item', {
+        qty: DataTypes.INTEGER(11),
+        big: DataTypes.BIGINT({ length: 20 } as never),
+        flag: { type: DataTypes.SMALLINT.UNSIGNED.ZEROFILL(3), defaultValue: 1 },
+        ref: DataTypes.UUID(),
+        doc: new DataTypes.JSONB(),
+        ratio: DataTypes.DOUBLE(10, 2),
+        label: DataTypes.CITEXT(),
+      });
+      await sequelize.query('CREATE EXTENSION IF NOT EXISTS citext');
+      await sequelize.sync();
+      const created = await Item.create({
+        qty: 5,
+        big: '9007199254740993',
+        ref: '6f9619ff-8b86-d011-b42d-00c04fc964ff',
+        doc: { a: 1 },
+        ratio: 1.5,
+        label: 'Ab',
+      });
+      const found = await Item.findByPk(created.get('id') as number, { raw: true });
+      expect(found).toMatchObject({
+        qty: 5,
+        big: '9007199254740993',
+        flag: 1,
+        doc: { a: 1 },
+        ratio: 1.5,
+        label: 'Ab',
+      });
+    }));
+});

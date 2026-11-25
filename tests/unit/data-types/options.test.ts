@@ -36,3 +36,39 @@ describe('data type options and toSql (v6 DataTypes.<X>DataType members)', () =>
     expect(DataTypes.INTEGER.toSql()).toBe('INTEGER');
   });
 });
+
+describe('data types called and constructed like in v6', () => {
+  it('integer types take a width and chain UNSIGNED / ZEROFILL', () => {
+    expect(DataTypes.INTEGER(11).options).toEqual({ length: 11 });
+    expect(DataTypes.INTEGER(11).toSql()).toBe('INTEGER');
+    expect(new DataTypes.INTEGER().key).toBe('INTEGER');
+    expect(DataTypes.BIGINT(20).toSql()).toBe('BIGINT');
+    expect(DataTypes.SMALLINT.UNSIGNED.ZEROFILL(5).options).toEqual({
+      length: 5,
+      unsigned: true,
+      zerofill: true,
+    });
+    expect(DataTypes.INTEGER.UNSIGNED.options).toEqual({ unsigned: true });
+    expect(DataTypes.INTEGER.options).toEqual({});
+    expect(DataTypes.INTEGER({ length: 4, zerofill: true }).options).toEqual({
+      length: 4,
+      zerofill: true,
+    });
+    expect(DataTypes.INTEGER(11).UNSIGNED.options).toEqual({ length: 11, unsigned: true });
+  });
+
+  it('the bare and the called forms describe the same column', () => {
+    expect(DataTypes.INTEGER.sqlType).toBe('INTEGER');
+    expect(DataTypes.INTEGER.toSql()).toBe('INTEGER');
+    expect(DataTypes.STRING.toSql()).toBe('VARCHAR(255)');
+    expect(DataTypes.TINYINT.sqlType).toBe('SMALLINT');
+  });
+
+  it('types without arguments are callable and constructable', () => {
+    expect(DataTypes.UUID().toSql()).toBe('UUID');
+    expect(new DataTypes.JSONB().key).toBe('JSONB');
+    expect(DataTypes.CITEXT().sqlType).toBe('CITEXT');
+    expect(DataTypes.DOUBLE(10, 2).options).toEqual({ length: 10, decimals: 2 });
+    expect(DataTypes.REAL(8).options).toEqual({ length: 8 });
+  });
+});

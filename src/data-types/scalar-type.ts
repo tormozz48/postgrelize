@@ -11,10 +11,15 @@ export class ScalarType extends AbstractDataType {
    * @param sqlType - PostgreSQL column type.
    */
   /** Arguments the type was created with (v6 `options`); these types take none. */
-  readonly options: Readonly<{ length?: number; decimals?: number }> = Object.freeze({});
+  readonly options: Readonly<{ length?: number; decimals?: number }>;
 
-  constructor(key: string, sqlType: string) {
+  constructor(
+    key: string,
+    sqlType: string,
+    options: Readonly<{ length?: number; decimals?: number }> = {},
+  ) {
     super(key, sqlType);
+    this.options = Object.freeze({ ...options });
     Object.freeze(this);
   }
 }

@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- The data types are callable and constructable like in v6: `DataTypes.INTEGER(11)`, `DataTypes.BIGINT({ length: 20 })`, `new DataTypes.INTEGER()`, `DataTypes.SMALLINT.UNSIGNED.ZEROFILL()`, `DataTypes.UUID()`, `new DataTypes.JSONB()`, `DataTypes.DOUBLE(10, 2)` (also `TINYINT`, `MEDIUMINT`, `REAL`, `BOOLEAN`, `TIME`, `DATEONLY`, `CITEXT`, `INET`, `CIDR`, `MACADDR`, `TSVECTOR`, `HSTORE`, `JSON`); they were not, and calling `DataTypes.INTEGER(11)` threw. The arguments are recorded in `type.options` and PostgreSQL ignores them, as in v6; `UNSIGNED` / `ZEROFILL` record a flag in `options` (still no effect on the column). The calls return the `DataTypes.<X>DataType` interface types. The bare `DataTypes.STRING` and similar types now have `toSql()` too, as their types already claimed. ([#182](https://github.com/tormozz48/postgrelize/pull/182))
+
 ## [1.9.1] - 2026-11-25
 
 ### Fixed
