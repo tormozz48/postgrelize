@@ -167,7 +167,9 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
     if (value.conditions !== undefined) {
       return this.compile(value.conditions);
     }
-    const accessor = operands.operand(this.context, value.path ?? '').node;
+    // like v6 (`_.toPath`), `a.list[0].name` reads the array element
+    const path = (value.path ?? '').replace(/\[(\w+)\]/g, '.$1');
+    const accessor = operands.operand(this.context, path).node;
     return value.value === undefined ? accessor : ast.binary('=', accessor, ast.param(value.value));
   }
 
