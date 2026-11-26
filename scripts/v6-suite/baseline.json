@@ -311,14 +311,6 @@
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
     },
-    "B-increment-instance": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.increment/decrement does not update the instance's own value after the UPDATE (v6 on PG uses RETURNING and refreshes it) and ignores the where option, so the row is incremented even when where does not match.",
-      "risk": "wrong-result",
-      "repro": "await u.increment('a',{by:2}); u.a // 0 (v6 2); await u.increment('a',{by:2,where:{b:1}}) // still increments",
-      "test": "Instance increment supports where conditions"
-    },
     "B-increment-version": {
       "cause": "bug",
       "area": "model",
@@ -2468,20 +2460,12 @@
       }
     },
     "test/integration/instance/decrement.test.js": {
-      "failing": ["[POSTGRES] Instance decrement supports returning"],
-      "causes": {
-        "[POSTGRES] Instance decrement supports returning": "B-increment-instance"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Instance increment supports returning",
-        "[POSTGRES] Instance increment supports where conditions"
-      ],
-      "causes": {
-        "[POSTGRES] Instance increment supports returning": "B-increment-instance",
-        "[POSTGRES] Instance increment supports where conditions": "B-increment-instance"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/reload.test.js": {
       "failing": ["[POSTGRES] Instance reload should update internal options of the instance"],
