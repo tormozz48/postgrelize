@@ -504,14 +504,6 @@
       "repro": "U.findOrCreate({where:{name:'K'},logging:x=>l.push(x)}) -> first log line is 'Executing (default): SELECT', v6 logs the transaction id for both",
       "test": "CLS does not leak outside findOrCreate"
     },
-    "C-fk-default-constraint-name": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "addConstraint type foreign key without name uses PG default (posts_username_fkey); v6 names it <table>_<field>_<reftable>_fk, so removeConstraint by the v6 name fails.",
-      "risk": "wrong-result",
-      "repro": "await qi.addConstraint('posts',{fields:['username'],references:{table:'users',field:'username'},type:'foreign key'});(await qi.showConstraint('posts')).map(c=>c.constraintName) // posts_username_fkey, v6 posts_username_users_fk",
-      "test": "constraints foreign key should add, read & remove foreign key constraint"
-    },
     "C-fk-field-collision": {
       "cause": "bug",
       "area": "associations",
@@ -2561,7 +2553,6 @@
       "failing": [
         "[POSTGRES] QueryInterface addColumn addColumn expected error",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type",
-        "[POSTGRES] QueryInterface constraints foreign key should add, read & remove foreign key constraint",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
@@ -2571,7 +2562,6 @@
       "causes": {
         "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface constraints foreign key should add, read & remove foreign key constraint": "C-fk-default-constraint-name",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError": "C-unknown-constraint-error",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table": "C-fk-references-fields",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
