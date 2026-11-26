@@ -62,7 +62,7 @@ describe('constraint DDL', () => {
         },
       ),
     ).toBe(
-      'ALTER TABLE "s"."Posts" ADD CONSTRAINT "Posts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users" ("id") ON DELETE CASCADE ON UPDATE SET NULL DEFERRABLE INITIALLY DEFERRED',
+      'ALTER TABLE "s"."Posts" ADD CONSTRAINT "Posts_userId_Users_fk" FOREIGN KEY ("userId") REFERENCES "Users" ("id") ON DELETE CASCADE ON UPDATE SET NULL DEFERRABLE INITIALLY DEFERRED',
     );
   });
 
