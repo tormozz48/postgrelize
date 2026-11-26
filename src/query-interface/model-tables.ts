@@ -1,9 +1,12 @@
+import { ModelIndexes } from '../model/model-indexes.ts';
 import { DdlGenerator, type ColumnDefinition, type IndexField } from '../ddl/ddl-generator.ts';
 import type { TableName } from '../ddl/sql-literal.ts';
 import type { ModelDefinition } from '../model/model-definition.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 
 const ddl = new DdlGenerator();
+
+const modelIndexes = new ModelIndexes();
 
 /**
  * Table, column, index and foreign key DDL derived from a model definition for `sync()`.
@@ -83,7 +86,7 @@ export class ModelTables {
    */
   indexStatements(definition: ModelDefinition): readonly string[] {
     const table = this.tableOf(definition);
-    return (definition.options.indexes ?? []).map((index) =>
+    return modelIndexes.of(definition).map((index) =>
       ddl.createIndexSql(table, {
         ...index,
         ifNotExists: true,
