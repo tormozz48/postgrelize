@@ -26,6 +26,8 @@ Default aliases and foreign keys come from the model's `name` init option when i
 
 Nested creation works for all four association types and for multiple levels (`include: [{ association: 'posts', include: ['comments'] }]`). For `belongsToMany`, the junction row can carry values: `{ label: 'admin', UserRoles: { level: 'high' } }`.
 
+`bulkCreate` with `include` creates the nested records with one nested `bulkCreate` per include, like v6: the `beforeBulkCreate` / `afterBulkCreate` hooks of the nested model run once with all its rows and receive the options of their include entry (`include: [{ model: User, myOption: 'x' }]` reaches them as `options.myOption`). It does not run the per-row `beforeCreate` / `afterCreate` hooks; pass `individualHooks: true` for those.
+
 ## Accessors
 
 Instances get the v6 accessor methods:

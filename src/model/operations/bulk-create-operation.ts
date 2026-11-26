@@ -1,3 +1,5 @@
+import type { IncludeResolver } from '../../associations/include-resolver.ts';
+import type { NestedBulkCreator } from '../../associations/nested-bulk-creator.ts';
 import type { BulkInsertBuilder } from '../bulk-insert-builder.ts';
 import type { ModelDefinition } from '../model-definition.ts';
 import type { ModelRegistry } from '../model-registry.ts';
@@ -10,6 +12,8 @@ import type {
   MutableOptions,
   Values,
 } from '../options.ts';
+import type { IncludeOption } from '../../associations/include.ts';
+import type { BulkRun } from '../../associations/nested-bulk-creator.ts';
 import type { WrittenRows } from '../written-rows.ts';
 import type { InsertOperation } from './insert-operation.ts';
 import { ModelOperation, type OperationServices } from './model-operation.ts';
@@ -29,6 +33,10 @@ export type BulkCreateOperationServices = OperationServices &
     inserter: InsertOperation;
     /** Alignment of `ignoreDuplicates` results. */
     written: WrittenRows;
+    /** Resolves the `include` option. */
+    includes: IncludeResolver;
+    /** Creates nested records. */
+    nested: NestedBulkCreator;
   }>;
 
 // One `Model.bulkCreate` call: the built instances, hook-visible options and caller's options.
@@ -59,9 +67,21 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
     records: readonly Values[],
     options: BulkCreateOptions,
   ): Promise<M[]> {
+    return (await this.#run(
+      model,
+      BulkCreateOperation.#instances(model, records, options),
+      options,
+    )) as M[];
+  }
+
+  // one level of `bulkCreate`: nested levels run through here again with their own options
+  async #run(
+    model: ModelStatic<AnyModel>,
+    instances: AnyModel[],
+    options: BulkCreateOptions,
+  ): Promise<AnyModel[]> {
     const { definition } = this.services.registry.state(model);
     const opts = BulkCreateOperation.#options(options);
-    const instances = BulkCreateOperation.#instances(model, records, options);
     if (instances.length === 0) {
       return [];
     }
@@ -71,7 +91,7 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
     if (opts['hooks'] === true) {
       await this.services.lifecycle.runHooks(model, 'afterBulkCreate', created, opts);
     }
-    return created as M[];
+    return created;
   }
 
   static #options(options: BulkCreateOptions): MutableOptions {
@@ -86,7 +106,7 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
     return {
       hooks: true,
       validate: false,
-      individualHooks: options.include !== undefined,
+      individualHooks: false,
       ...options,
     };
   }
@@ -114,7 +134,18 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
   #create(call: BulkCreateCall): Promise<AnyModel[]> {
     return call.opts['individualHooks'] === true
       ? BulkCreateOperation.#saveEach(call)
-      : this.#insert(call);
+      : this.#insertNested(call);
+  }
+
+  async #insertNested(call: BulkCreateCall): Promise<AnyModel[]> {
+    const { model, instances, options } = call;
+    const nodes = this.services.includes.normalize(model, options.include as IncludeOption);
+    const run: BulkRun = (target, nested, nestedOptions) =>
+      this.#run(target, nested, nestedOptions);
+    await this.services.nested.parents(instances, nodes, options, run);
+    const created = await this.#insert(call);
+    await this.services.nested.children(instances, nodes, options, run);
+    return created;
   }
 
   static async #saveEach({ instances, opts }: BulkCreateCall): Promise<AnyModel[]> {

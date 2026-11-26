@@ -9,6 +9,7 @@ import {
   includeLoader,
   includeQueries,
   includeResolver,
+  nestedBulkCreator,
   insertQueries,
   joinSources,
   lifecycle,
@@ -92,6 +93,8 @@ export const bulkCreator = new BulkCreateOperation({
   conflicts: onConflictBuilder,
   inserter,
   written: writtenRows,
+  includes: includeResolver,
+  nested: nestedBulkCreator,
 });
 export const upserter = new UpsertOperation({
   registry,

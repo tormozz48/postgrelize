@@ -343,14 +343,6 @@
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
     },
-    "B-include-option-propagation": {
-      "cause": "bug",
-      "area": "include",
-      "note": "Model.bulkCreate with include saves each parent with individual hooks instead of v6's nested Model.bulkCreate of the children: the children's beforeBulkCreate hook never fires, so the include entry options (include:[{model:User, myOption:'option'}]) never reach it.",
-      "risk": "wrong-result",
-      "repro": "User.beforeBulkCreate((us,o)=>{us.forEach(u=>{u.o=o})}); const [p]=await Product.bulkCreate([{User:{}}],{include:[{model:User,myOption:'x'}]}); p.User.o // undefined, v6 has myOption",
-      "test": "Model bulkCreate include should bulkCreate data for HasMany relations"
-    },
     "B-increment-instance": {
       "cause": "bug",
       "area": "instance",
@@ -2745,15 +2737,9 @@
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsTo relations",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsToMany relations",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for HasMany relations",
         "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations"
       ],
       "causes": {
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsTo relations": "B-include-option-propagation",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsToMany relations": "B-include-option-propagation",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for HasMany relations": "B-include-option-propagation",
         "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },

@@ -137,6 +137,7 @@ export class IncludeResolver {
    */
   toOptions(node: IncludeNode): IncludeOptions {
     return {
+      ...node.custom,
       association: node.association,
       required: node.required,
       separate: node.separate,

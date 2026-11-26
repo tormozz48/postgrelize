@@ -104,8 +104,11 @@ export const ModelWriters = <TBase extends ModelConstructor>(Base: TBase) => {
     /**
      * Inserts many rows with one multi-row `INSERT ... RETURNING`. Runs `beforeBulkCreate` and
      * `afterBulkCreate` hooks; rows are not validated unless `validate: true`. `ignoreDuplicates`,
-     * `updateOnDuplicate` and `onConflict` map to `ON CONFLICT`; `individualHooks` or `include`
-     * insert row by row like Sequelize v6.
+     * `updateOnDuplicate` and `onConflict` map to `ON CONFLICT`; `individualHooks` inserts row
+     * by row. With `include`, the nested records of every row are created by one nested `bulkCreate`
+     * per include (belongsTo parents first, then the rows, then hasOne / hasMany / belongsToMany
+     * children and junction rows) like Sequelize v6; the `beforeBulkCreate` / `afterBulkCreate`
+     * hooks of the nested models receive the options of their include entry.
      *
      * @param this - The model class.
      * @param records - Attribute values per row.
