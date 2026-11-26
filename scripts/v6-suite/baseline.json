@@ -512,14 +512,6 @@
       "repro": "UV=define('UV',{userId:{type:STRING,field:'user_id'}}); U.hasMany(UV,{foreignKey:'user_id'}); await UV.sync({force:true}) // column \"user_id\" specified more than once",
       "test": "stacktraces emits raw errors if requested"
     },
-    "C-fk-references-fields": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "getForeignKeyReferencesForTable returns only constraintName/columnName/referencedTableName/referencedColumnName; v6 also tableName, tableSchema, tableCatalog, constraintSchema/Catalog, referencedTableSchema/Catalog.",
-      "risk": "wrong-result",
-      "repro": "(await qi.getForeignKeyReferencesForTable('hosts'))[0].tableName // undefined (v6 'hosts')",
-      "test": "describeForeignKeys should get a list of foreign key references details for the table"
-    },
     "C-log-default-noop": {
       "cause": "bug",
       "area": "config",
@@ -2554,7 +2546,6 @@
         "[POSTGRES] QueryInterface addColumn addColumn expected error",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
         "[POSTGRES] QueryInterface indexes works with schemas",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
@@ -2563,7 +2554,6 @@
         "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError": "C-unknown-constraint-error",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table": "C-fk-references-fields",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
         "[POSTGRES] QueryInterface indexes works with schemas": "C-addindex-null-options",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing": "C-qi-argument-errors"
