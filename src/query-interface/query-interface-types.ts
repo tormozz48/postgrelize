@@ -1,3 +1,4 @@
+import type { DeferrableValue } from '../ddl/ddl-types.ts';
 import type { UniqueKeys } from '../ddl/ddl-types.ts';
 import type { PartitionKey } from '../ddl/partition-types.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
@@ -28,6 +29,22 @@ export type ForeignKeyReference = Readonly<{
   referencedTableName: string;
   /** Referenced column. */
   referencedColumnName: string;
+  /** Schema of the constraint. */
+  constraintSchema: string;
+  /** Database of the constraint. */
+  constraintCatalog: string;
+  /** Referencing table. */
+  tableName: string;
+  /** Schema of the referencing table. */
+  tableSchema: string;
+  /** Database of the referencing table. */
+  tableCatalog: string;
+  /** Schema of the referenced table. */
+  referencedTableSchema: string;
+  /** Database of the referenced table. */
+  referencedTableCatalog: string;
+  /** `Deferrable.NOT`, `INITIALLY_IMMEDIATE` or `INITIALLY_DEFERRED`. */
+  deferrable: DeferrableValue;
 }>;
 
 /**
