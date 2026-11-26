@@ -283,14 +283,6 @@
       "repro": "new Sequelize(url,{pool:{max:5}}); await Promise.all(Array.from({length:50},()=>U.findOrCreate({where:{email:'e',companyId:2}}))) // hangs",
       "test": "Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
     },
-    "B-getter-setter-methods": {
-      "cause": "bug",
-      "area": "model",
-      "note": "The define option getterMethods / setterMethods is not implemented: virtual getters/setters never run (get('price'), toJSON, setting a key that only a setter handles); no docs mention it.",
-      "risk": "wrong-result",
-      "repro": "P=sq.define('p',{c:DataTypes.INTEGER},{getterMethods:{price(){return this.c/100}}}); P.build({c:1000}).get('price') // undefined",
-      "test": "Model build attaches getter and setter methods from options"
-    },
     "B-harness-aggregate-error-map": {
       "cause": "harness",
       "area": "model",
@@ -2588,23 +2580,17 @@
     "test/integration/instance/values.test.js": {
       "failing": [
         "[POSTGRES] DAO Values get can pass parameters to getters",
-        "[POSTGRES] DAO Values get should custom virtual getters in get(key)",
-        "[POSTGRES] DAO Values get should use custom getters in toJSON",
         "[POSTGRES] DAO Values set doesn't overwrite defined primary keys",
         "[POSTGRES] DAO Values set doesn't overwrite generated primary keys",
         "[POSTGRES] DAO Values set doesn't set timestamps",
-        "[POSTGRES] DAO Values set doesn't set value if not a dynamic setter or a model attribute",
         "[POSTGRES] DAO Values set includes should support basic includes",
         "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)"
       ],
       "causes": {
-        "[POSTGRES] DAO Values get can pass parameters to getters": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values get should custom virtual getters in get(key)": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values get should use custom getters in toJSON": "B-getter-setter-methods",
+        "[POSTGRES] DAO Values get can pass parameters to getters": "B-instance-set-include",
         "[POSTGRES] DAO Values set doesn't overwrite defined primary keys": "B-set-readonly-pk-timestamps",
         "[POSTGRES] DAO Values set doesn't overwrite generated primary keys": "B-set-readonly-pk-timestamps",
         "[POSTGRES] DAO Values set doesn't set timestamps": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't set value if not a dynamic setter or a model attribute": "B-getter-setter-methods",
         "[POSTGRES] DAO Values set includes should support basic includes": "B-instance-set-include",
         "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)": "B-instance-set-include"
       }
@@ -2631,7 +2617,6 @@
     },
     "test/integration/model.test.js": {
       "failing": [
-        "[POSTGRES] Model build attaches getter and setter methods from options",
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
         "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
@@ -2651,7 +2636,6 @@
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ],
       "causes": {
-        "[POSTGRES] Model build attaches getter and setter methods from options": "B-getter-setter-methods",
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt": "B-updatedat-default",
