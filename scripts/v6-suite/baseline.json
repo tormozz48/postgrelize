@@ -754,14 +754,6 @@
       "repro": "DataTypes.STRING({length:1234})",
       "test": "(file does not load) sql/data-types"
     },
-    "D-define-hooks-merge": {
-      "cause": "bug",
-      "area": "hooks",
-      "note": "Hooks from the sequelize `define: {hooks}` option still run when the model passes its own hook of the same name; v6 lets the model hook replace the global one, so both run.",
-      "risk": "wrong-result",
-      "repro": "new Sequelize(url,{define:{hooks:{beforeCreate:g}}}).define('M',{},{hooks:{beforeCreate:l}}).runHooks('beforeCreate') // g and l both called",
-      "test": "Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook"
-    },
     "D-define-no-validation": {
       "cause": "bug",
       "area": "model",
@@ -1077,13 +1069,11 @@
     },
     "test/unit/hooks.test.js": {
       "failing": [
-        "[POSTGRES] Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook",
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave"
       ],
       "causes": {
-        "[POSTGRES] Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook": "D-define-hooks-merge",
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave": "D-harness-stub-query"

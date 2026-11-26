@@ -70,6 +70,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - The `fieldMap` option of `sequelize.query` renames the columns of SELECT rows like v6 (it was ignored). Differential test in `tests/compat/query-field-map.test.ts`; two v6 suite baseline entries and the cause `C-query-fieldmap` are gone. ([#226](https://github.com/tormozz48/postgrelize/pull/226))
 - **Behaviour change:** `sequelize.query('SHOW ...')` without a `type` resolves to the rows alone, like v6, instead of `[rows, result]`. Differential test in `tests/compat/query-show-result.test.ts`; three v6 suite baseline entries (two of them filed under `C-client-min-messages`) and the cause `C-raw-show-result-shape` are gone. ([#227](https://github.com/tormozz48/postgrelize/pull/227))
 - Parameters of a connection URI's query string that `pg` understands (`options`, `application_name`, `statement_timeout`, ...) and `host` are used like in v6 (they were ignored). Differential test in `tests/compat/connection-uri-options.test.ts`; one v6 suite baseline entry and the cause `C-uri-query-options` are gone. ([#228](https://github.com/tormozz48/postgrelize/pull/228))
+- **Behaviour change:** like v6, a hook in the model options replaces the `define.hooks` hook of the same name instead of running after it. Differential test in `tests/compat/define-hooks-override.test.ts`; one v6 suite baseline entry and the cause `D-define-hooks-merge` are gone. ([#229](https://github.com/tormozz48/postgrelize/pull/229))
 
 ## [1.9.5] - 2026-11-26
 
