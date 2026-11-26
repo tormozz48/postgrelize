@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.9] - 2026-11-26
+
 ### Fixed
 
 - A cast suffix on a nested JSON `where` key (`{ meta: { 'level::integer': { [Op.gt]: 3 } } }`) casts the value like v6 instead of being part of the key name (which matched no rows); unknown cast types are rejected with `Invalid cast type`. Differential test in `tests/compat/json-where-cast.test.ts`; three v6 suite baseline entries and the cause `B-json-key-cast` are gone. ([#208](https://github.com/tormozz48/postgrelize/pull/208))
@@ -558,7 +560,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...HEAD
+[1.9.9]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...v1.9.8
 [1.9.7]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...v1.9.6
