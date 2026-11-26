@@ -223,12 +223,8 @@ export class ScopeRegistry {
     if (scope === undefined) {
       throw new Error(`Invalid scope ${selector} called.`);
     }
-    if (typeof scope === 'function') {
-      throw new Error(
-        `Scope "${selector}" is a function; use { method: ['${selector}', ...args] }`,
-      );
-    }
-    return scope;
+    // like v6, a scope function selected by name is called without arguments
+    return typeof scope === 'function' ? (scope as () => ScopeOptions)() : scope;
   }
 
   #resolveMethod(selector: ScopeMethodSelector): ScopeOptions {
