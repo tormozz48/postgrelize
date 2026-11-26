@@ -57,7 +57,7 @@ export class RoutineCommands {
   ): Promise<void> {
     await this.#runner.run(
       functions.createSql(name, params, returnType, language, body, optionsArray, options),
-      options,
+      options ?? {},
     );
   }
 
@@ -73,7 +73,7 @@ export class RoutineCommands {
     params: readonly FunctionParam[],
     options: DropFunctionOptions & QueryOptionsBase,
   ): Promise<void> {
-    await this.#runner.run(functions.dropSql(name, params, options), options);
+    await this.#runner.run(functions.dropSql(name, params, options ?? {}), options ?? {});
   }
 
   /**
