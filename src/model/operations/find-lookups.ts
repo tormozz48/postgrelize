@@ -82,14 +82,14 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
    * @throws EmptyResultError or the given error.
    */
   protected rejectEmpty(model: object, options: object, found: readonly unknown[]): void {
-    const reject = Object.hasOwn(options, 'rejectOnEmpty')
+    const reject: unknown = Object.hasOwn(options, 'rejectOnEmpty')
       ? (options as FindOptions).rejectOnEmpty
       : this.services.registry.definition(model).options.rejectOnEmpty;
     if (found.length > 0 || reject === undefined || reject === false) {
       return;
     }
     if (typeof reject === 'function') {
-      throw new reject();
+      throw new (reject as new () => Error)();
     }
     throw typeof reject === 'object' ? reject : new EmptyResultError();
   }
