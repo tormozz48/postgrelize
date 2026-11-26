@@ -255,14 +255,6 @@
       "repro": "sq.define('m',{a:DataTypes.INTEGER,e:DataTypes.STRING},{indexes:[{name:'ix',fields:['a',{attribute:'e',order:'DESC'}]}]}); await sq.sync()",
       "test": "Model constructor should allow the user to specify indexes in options"
     },
-    "B-instance-set-include": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set({tags:[...], user:{...}}) on a built instance with include does not build the nested instances (build(values,{include}) does); v6 set() handles included data.",
-      "risk": "wrong-result",
-      "repro": "p=Product.build({},{include:[User,Tag]}); p.set({tags:[{id:1}],user:{id:1}}); p.tags // undefined",
-      "test": "DAO Values set includes should support basic includes"
-    },
     "B-invalid-attr-message": {
       "cause": "bug",
       "area": "query",
@@ -2334,16 +2326,8 @@
       "causes": {}
     },
     "test/integration/instance/values.test.js": {
-      "failing": [
-        "[POSTGRES] DAO Values get can pass parameters to getters",
-        "[POSTGRES] DAO Values set includes should support basic includes",
-        "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)"
-      ],
-      "causes": {
-        "[POSTGRES] DAO Values get can pass parameters to getters": "B-instance-set-include",
-        "[POSTGRES] DAO Values set includes should support basic includes": "B-instance-set-include",
-        "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)": "B-instance-set-include"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/json.test.js": {
       "failing": ["model json should use a placeholder for json with insert"],

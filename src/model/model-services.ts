@@ -52,7 +52,9 @@ export const includeLoader = new IncludeLoader(includeResolver);
 export const nestedCreator = new NestedCreator(includeResolver, isInstance);
 export const nestedBulkCreator = new NestedBulkCreator(includeResolver, isInstance);
 export const findQueries = new FindQueryBuilder(selectQueries, cteBuilder, includeQueries);
-export const instanceValues = new InstanceValues(registry, modelValues, isInstance);
+export const instanceValues = new InstanceValues(registry, modelValues, isInstance, (node, value) =>
+  nestedCreator.build(node, value),
+);
 export const lifecycle = new InstanceLifecycle({
   registry,
   values: modelValues,
