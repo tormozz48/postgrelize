@@ -121,7 +121,7 @@ export class HasOne<
   }
 
   async #current(value: unknown, options: AccessorOptions): Promise<Instance | null> {
-    return (await this.target.findOne({
+    return (await this.target.unscoped().findOne({
       ...this.passThrough(options),
       where: this.andWhere(this.scope, { [this.foreignKey]: value }),
     } as never)) as Instance | null;

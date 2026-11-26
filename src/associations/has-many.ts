@@ -120,7 +120,7 @@ export class HasMany<
   async has(instance: Instance, item: unknown, options: AccessorOptions = {}): Promise<boolean> {
     const wanted = this.#ids(item);
     return (
-      (await this.target.count({
+      (await this.target.unscoped().count({
         ...this.passThrough(options),
         where: this.andWhere(this.scope, this.#own(instance), { [this.#targetPk]: wanted }),
       } as CountOptions)) === wanted.length
@@ -138,10 +138,12 @@ export class HasMany<
   async add(instance: Instance, items: unknown, options: AccessorOptions = {}): Promise<Instance> {
     const wanted = this.#ids(items);
     if (wanted.length > 0) {
-      await this.target.update(
-        { ...this.#own(instance), ...this.scope } as never,
-        { ...this.passThrough(options), where: { [this.#targetPk]: wanted } } as never,
-      );
+      await this.target
+        .unscoped()
+        .update(
+          { ...this.#own(instance), ...this.scope } as never,
+          { ...this.passThrough(options), where: { [this.#targetPk]: wanted } } as never,
+        );
     }
     return instance;
   }
@@ -161,7 +163,7 @@ export class HasMany<
   ): Promise<Instance> {
     const wanted = this.#ids(items);
     if (wanted.length > 0) {
-      await this.target.update(
+      await this.target.unscoped().update(
         { [this.foreignKey]: null } as never,
         {
           ...this.passThrough(options),
@@ -184,10 +186,12 @@ export class HasMany<
     const wanted = this.#ids(items);
     await this.#unlinkOthers(instance, wanted, options);
     if (wanted.length > 0) {
-      await this.target.update(
-        { ...this.#own(instance), ...this.scope } as never,
-        { ...this.passThrough(options), where: { [this.#targetPk]: wanted } } as never,
-      );
+      await this.target
+        .unscoped()
+        .update(
+          { ...this.#own(instance), ...this.scope } as never,
+          { ...this.passThrough(options), where: { [this.#targetPk]: wanted } } as never,
+        );
     }
     return instance;
   }
@@ -216,7 +220,7 @@ export class HasMany<
     wanted: readonly unknown[],
     options: AccessorOptions,
   ): Promise<void> {
-    await this.target.update(
+    await this.target.unscoped().update(
       { [this.foreignKey]: null } as never,
       {
         ...this.passThrough(options),
