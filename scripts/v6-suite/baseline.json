@@ -239,14 +239,6 @@
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
     },
-    "B-hook-changes-not-revalidated": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "Attributes changed in beforeUpdate hooks are not re-validated when default fields are saved, so an invalid value set by a hook (email 'B') is persisted; v6 re-runs validation for hook-changed fields.",
-      "risk": "wrong-result",
-      "repro": "U.beforeUpdate(i=>i.set('email','B')); await u.set({email:'ok@x.co'}).save() // saved 'B' without ValidationError",
-      "test": "Instance save hooks should validate attributes changed in hooks when default fields are used"
-    },
     "B-include-attr-bare-literal": {
       "cause": "bug",
       "area": "include",
@@ -2356,12 +2348,8 @@
       }
     },
     "test/integration/instance/save.test.js": {
-      "failing": [
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used"
-      ],
-      "causes": {
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/to-json.test.js": {
       "failing": [
@@ -2374,12 +2362,8 @@
       }
     },
     "test/integration/instance/update.test.js": {
-      "failing": [
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
-        "[POSTGRES] Instance update should only save passed attributes"
-      ],
+      "failing": ["[POSTGRES] Instance update should only save passed attributes"],
       "causes": {
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated",
         "[POSTGRES] Instance update should only save passed attributes": "B-update-saves-all-changed"
       }
     },
