@@ -102,10 +102,14 @@ export class AlterPlanner {
           column.generated === undefined &&
           column.identity === undefined,
       )
-      .flatMap((column) => [
-        ...ddl.addEnumValuesSql(table, column),
-        ...ddl.changeColumnSql(table, column),
-      ]);
+      .flatMap((column) => {
+        // foreign keys of altered columns are reconciled separately
+        const { references: _added, ...altered } = column;
+        return [
+          ...ddl.addEnumValuesSql(table, column),
+          ...ddl.changeColumnSql(table, altered as typeof column),
+        ];
+      });
   }
 
   #references(
