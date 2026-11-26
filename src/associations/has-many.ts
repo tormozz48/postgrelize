@@ -62,10 +62,7 @@ export class HasMany<
     options: AccessorOptions,
   ): Promise<Record<string, Instance[]>> {
     const values = instances.map((instance) => instance.get(this.sourceKey));
-    const found = await this.scopedTarget(options).findAll({
-      ...options,
-      where: this.andWhere(options.where, this.scope, { [this.foreignKey]: { [Op.in]: values } }),
-    } as never);
+    const found = await this.#rowsOf(values, options);
     const result: Record<string, Instance[]> = {};
     for (const key of values) {
       result[String(key)] = [];
@@ -74,6 +71,28 @@ export class HasMany<
       result[String(row.get(this.foreignKey))]?.push(row);
     }
     return result;
+  }
+
+  // like v6 (`groupedLimit`), `limit` applies to the rows of each source instance
+  async #rowsOf(values: readonly unknown[], options: AccessorOptions): Promise<unknown> {
+    const target = this.scopedTarget(options);
+    const find = (key: unknown, extra: Values = {}) =>
+      target.findAll({
+        ...options,
+        ...extra,
+        where: this.andWhere(
+          options.where,
+          this.scope,
+          key === undefined ? undefined : { [this.foreignKey]: key },
+        ),
+      } as never);
+    if (options['limit'] === undefined || values.length < 2) {
+      return find({ [Op.in]: values });
+    }
+    // a lateral read cannot join includes, so those are read key by key
+    return options['include'] === undefined
+      ? find(undefined, { lateralKeys: { attribute: this.foreignKey, values } })
+      : (await Promise.all(values.map((value) => find(value)))).flat();
   }
 
   /**
