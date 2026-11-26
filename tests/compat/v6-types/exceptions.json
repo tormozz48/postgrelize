@@ -202,13 +202,6 @@
     {
       "file": "model.ts",
       "code": "TS2353",
-      "message": "Object literal may only specify known properties, and 'paranoid' does not exist in type 'ModelStatic<AnyModel> | Readonl",
-      "count": 2,
-      "cause": "option-keys"
-    },
-    {
-      "file": "model.ts",
-      "code": "TS2353",
       "message": "Object literal may only specify known properties, and 'searchPath' does not exist in type 'BulkCreateOptions<any>'.",
       "count": 1,
       "cause": "option-keys"

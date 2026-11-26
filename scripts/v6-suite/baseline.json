@@ -25,14 +25,6 @@
       "repro": "U.belongsToMany(G,{through:UG,foreignKey:'id_user'});G.belongsToMany(U,{through:UG,foreignKey:'id_group'}); await u.addGroup(g) // null value in column id_group",
       "test": "BelongsToMany getAssociations supports custom primary keys and foreign keys"
     },
-    "A-btm-timestamps-option": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "belongsToMany option timestamps:false is not applied to the auto-created through model (createdAt/updatedAt columns still added).",
-      "risk": "wrong-result",
-      "repro": "A.belongsToMany(B,{through:'AB',timestamps:false}); Object.keys(s.models.AB.rawAttributes) // includes createdAt, updatedAt",
-      "test": "BelongsTo foreign key should set foreignKey on foreign table"
-    },
     "A-date-number": {
       "cause": "bug",
       "area": "datatypes",
@@ -2084,15 +2076,13 @@
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates",
-        "[POSTGRES] BelongsTo foreign key constraints can restrict updates",
-        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
+        "[POSTGRES] BelongsTo foreign key constraints can restrict updates"
       ],
       "causes": {
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table": "A-btm-timestamps-option"
+        "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/has-many.test.js": {
