@@ -1,3 +1,4 @@
+import type { UniqueKeys } from '../ddl/ddl-types.ts';
 import type { PartitionKey } from '../ddl/partition-types.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 
@@ -44,6 +45,8 @@ export type CreateTableOptions = QueryOptionsBase &
   Readonly<{
     /** Schema of a table given by name alone. */
     schema?: string;
+    /** Composite unique constraints: any name → the columns (Sequelize v6). */
+    uniqueKeys?: UniqueKeys;
     /** Table comment. */
     comment?: string;
     /** `CREATE UNLOGGED TABLE`: not written to the WAL, faster writes, emptied after a crash and not replicated. */

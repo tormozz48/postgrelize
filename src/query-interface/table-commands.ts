@@ -66,8 +66,9 @@ export class TableCommands {
     const columns = Object.entries(attributes).map(([name, attribute]) =>
       ddl.columnOf(ModelDefinition.attribute(name, attribute, false)),
     );
-    const { comment, unlogged, temporary, partitionBy } = options;
+    const { comment, unlogged, temporary, partitionBy, uniqueKeys } = options;
     const persistence = {
+      ...(uniqueKeys === undefined ? {} : { uniqueKeys }),
       ...(comment === undefined ? {} : { comment }),
       ...(unlogged === undefined ? {} : { unlogged }),
       ...(temporary === undefined ? {} : { temporary }),
