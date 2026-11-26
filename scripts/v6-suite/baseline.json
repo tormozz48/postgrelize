@@ -203,14 +203,6 @@
       "repro": "sq.define('a',{x:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true},y:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true}}) // does not throw",
       "test": "Model constructor throws an error if 2 autoIncrements are passed"
     },
-    "B-describetable-schema-arg": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "queryInterface.describeTable(tableName, 'schemaName') (schema string as 2nd argument, v6 form) ignores the schema and reports 'No description found'; the {tableName, schema} object form works.",
-      "risk": "error",
-      "repro": "await qi.describeTable('Task2s','s_two')",
-      "test": "Model schemas regressions should be able to sync model with schema"
-    },
     "B-findorcreate-pool-deadlock": {
       "cause": "bug",
       "area": "model",
@@ -471,14 +463,6 @@
       "cause": "harness",
       "area": "connection",
       "note": "Test uses connectionManager internals (_clearDynamicOIDs, validate, _connect stubs, pool.read/write, getConnection hacks, queryGenerator)."
-    },
-    "C-createtable-schema-option": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createTable(name, attrs, {schema}) creates the table in public instead of the given schema (describeTable/enum lookups in that schema then fail).",
-      "risk": "wrong-result",
-      "repro": "await qi.createTable('table',{name:STRING},{schema:'sch'}); // information_schema shows table_schema=public",
-      "test": "createTable enums should work with enums (4)"
     },
     "C-createtable-uniquekeys": {
       "cause": "bug",
@@ -2451,16 +2435,14 @@
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two",
-        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276",
-        "[POSTGRES] Model schemas regressions should be able to sync model with schema"
+        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276"
       ],
       "causes": {
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"": "B-harness-private-internals",
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option": "B-harness-private-internals",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one": "B-schema-clone-include",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two": "B-schema-clone-include",
-        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276": "B-sync-schema-option-references",
-        "[POSTGRES] Model schemas regressions should be able to sync model with schema": "B-describetable-schema-arg"
+        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276": "B-sync-schema-option-references"
       }
     },
     "test/integration/model/scope/aggregate.test.js": {
@@ -2621,23 +2603,17 @@
       "unstable": true,
       "pass": 5,
       "failing": [
-        "[POSTGRES] QueryInterface createTable enums should work with enums (4)",
         "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys"
       ],
       "causes": {
-        "[POSTGRES] QueryInterface createTable enums should work with enums (4)": "C-createtable-schema-option",
         "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys": "C-createtable-uniquekeys"
       }
     },
     "test/integration/query-interface/describeTable.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] QueryInterface describeTable reads the metadata of the table with schema",
-        "[POSTGRES] QueryInterface describeTable rejects when no data is available"
-      ],
+      "failing": ["[POSTGRES] QueryInterface describeTable rejects when no data is available"],
       "causes": {
-        "[POSTGRES] QueryInterface describeTable reads the metadata of the table with schema": "C-createtable-schema-option",
         "[POSTGRES] QueryInterface describeTable rejects when no data is available": "C-qi-argument-errors"
       }
     },
