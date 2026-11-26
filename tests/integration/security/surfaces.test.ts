@@ -169,3 +169,17 @@ describe('payloads on PostgreSQL-specific surfaces', () => {
       }
     }));
 });
+
+describe('cast suffix of a nested JSON where key', () => {
+  it('accepts only allowlisted types; payloads in the key stay out of the SQL', () =>
+    withCanary(async ({ sequelize }) => {
+      const Stock = await defineStock(sequelize);
+      for (const payload of PAYLOADS) {
+        const result = await settle(
+          Stock.findAll({ where: { meta: { [`level::${payload}`]: 1 } } as never }),
+        );
+        expect(syntaxError(result)).toBe(false);
+        await settle(Stock.findAll({ where: { meta: { [`${payload}::integer`]: 1 } } as never }));
+      }
+    }));
+});

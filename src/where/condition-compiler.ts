@@ -12,6 +12,7 @@ import {
   CONTAINMENT_OPERATORS,
   KEY_OPERATORS,
   operatorFamilies,
+  validCastType,
 } from './operator-allowlist.ts';
 import {
   columnPath,
@@ -24,6 +25,7 @@ import {
   type ExprConverter,
   type JsonAccess,
   type Operand,
+  withCast,
 } from './where-support.ts';
 
 const ast = new SqlAst();
@@ -155,12 +157,15 @@ export class ConditionCompiler {
     const access: JsonAccess = left.json ?? { base: left.node, path: [] };
     return ast.and(
       Object.entries(value).map(([key, nested]) =>
-        this.condition(
-          compiler,
-          jsonOperand({ base: access.base, path: [...access.path, key] }),
-          nested,
-        ),
+        this.condition(compiler, this.#jsonKey(access, key), nested),
       ),
     );
+  }
+
+  // `{ 'level::integer': ... }`: the cast of a nested key applies to its text value, like v6
+  #jsonKey(access: JsonAccess, key: string): Operand {
+    const [name = key, cast] = key.split('::');
+    const operand = jsonOperand({ base: access.base, path: [...access.path, name] });
+    return withCast(operand, cast === undefined ? undefined : validCastType(cast));
   }
 }

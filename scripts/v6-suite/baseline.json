@@ -343,14 +343,6 @@
       "repro": "await E.findAll({where:{json:{lastLogin:now}}}) // 0 rows",
       "test": "Model JSON find should be possible to query dates with array operators"
     },
-    "B-json-key-cast": {
-      "cause": "bug",
-      "area": "json",
-      "note": "A cast suffix in a nested JSON where key ({ md: { 'level::integer': {[Op.gt]:3} } }) is treated as part of the key name (0 rows); v6 casts, and rejects invalid cast types with 'Invalid cast type'. Malicious keys are harmless (bound) but are not rejected.",
-      "risk": "wrong-result",
-      "repro": "await U.findAll({where:{md:{'level::integer':{[Op.gt]:3}}}}) // [] instead of matching rows",
-      "test": "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation"
-    },
     "B-json-order-injection": {
       "cause": "divergence",
       "area": "json",
@@ -2507,18 +2499,12 @@
     },
     "test/integration/json.test.js": {
       "failing": [
-        "model json cast type SQL injection should reject UNION-based cross-table data exfiltration via JSON cast type",
-        "model json cast type SQL injection should reject WHERE bypass via OR 1=1 injection in JSON cast type",
-        "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation",
         "model json should be able to query array using property accessor",
         "model json should be able to retrieve element of array by index",
         "model json should be able to retrieve nested value of an object by path",
         "model json should use a placeholder for json with insert"
       ],
       "causes": {
-        "model json cast type SQL injection should reject UNION-based cross-table data exfiltration via JSON cast type": "B-json-key-cast",
-        "model json cast type SQL injection should reject WHERE bypass via OR 1=1 injection in JSON cast type": "B-json-key-cast",
-        "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation": "B-json-key-cast",
         "model json should be able to query array using property accessor": "B-json-path-index",
         "model json should be able to retrieve element of array by index": "B-json-path-index",
         "model json should be able to retrieve nested value of an object by path": "B-json-path-index",
