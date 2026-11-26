@@ -26,7 +26,7 @@
     },
     "option-keys": {
       "category": "tracked",
-      "note": "Option key declared by v6 and missing here (fields, isNewRecord, paranoid, duplicating, getterMethods, as, delimiter, length, type, searchPath)."
+      "note": "Option key declared by v6 and missing here (fields, isNewRecord, paranoid, duplicating, as, delimiter, length, type, searchPath)."
     },
     "option-keys-other-dialect": {
       "category": "other-dialect",
@@ -187,22 +187,8 @@
     },
     {
       "file": "model.ts",
-      "code": "TS2339",
-      "message": "Property 'num' does not exist on type '{ multiply: () => any; }'.",
-      "count": 1,
-      "cause": "model-typing-misc"
-    },
-    {
-      "file": "model.ts",
       "code": "TS2353",
       "message": "Object literal may only specify known properties, and 'fields' does not exist in type 'FindOrCreateOptions<InferAttribut",
-      "count": 1,
-      "cause": "option-keys"
-    },
-    {
-      "file": "model.ts",
-      "code": "TS2353",
-      "message": "Object literal may only specify known properties, and 'getterMethods' does not exist in type 'InitOptions'.",
       "count": 1,
       "cause": "option-keys"
     },
@@ -254,27 +240,6 @@
       "message": "'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.",
       "count": 1,
       "cause": "datatypes-namespace"
-    },
-    {
-      "file": "model.ts",
-      "code": "TS7023",
-      "message": "'multiply' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly",
-      "count": 1,
-      "cause": "model-typing-misc"
-    },
-    {
-      "file": "models/User.ts",
-      "code": "TS2339",
-      "message": "Property 'username' does not exist on type '{ b(val: string): void; }'.",
-      "count": 1,
-      "cause": "model-typing-misc"
-    },
-    {
-      "file": "models/User.ts",
-      "code": "TS2353",
-      "message": "Object literal may only specify known properties, and 'getterMethods' does not exist in type 'InitOptions'.",
-      "count": 1,
-      "cause": "option-keys"
     },
     {
       "file": "query-interface.ts",

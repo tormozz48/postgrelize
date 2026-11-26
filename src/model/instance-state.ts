@@ -49,6 +49,8 @@ export class InstanceState {
   includes: readonly IncludeNode[] = NO_INCLUDES;
   /** Include tree the instance was loaded with by a finder; `reload()` loads it again (v6 `_options.include`). */
   loadedIncludes: readonly IncludeNode[] = NO_INCLUDES;
+  /** Built from a query row; like v6, such instances do not list the virtual `getterMethods`. */
+  queried = false;
   /** Whether the row was inserted (`true`) or updated (`false`) by an `ON CONFLICT` write. */
   wasInserted: boolean | undefined = undefined;
   /** Pre-statement values from `returningOld`, `null` for inserted rows. */

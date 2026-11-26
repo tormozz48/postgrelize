@@ -1,9 +1,12 @@
+import { MethodLookup } from './method-lookup.ts';
 import type { ModelDefinition } from './model-definition.ts';
 
 type AttributeHost = Readonly<{
   get: (name: string) => unknown;
   set: (name: string, value: unknown) => unknown;
 }>;
+
+const methods = new MethodLookup();
 
 type AssociationHost = Readonly<{ dataValues: Record<string, unknown> }>;
 
@@ -20,7 +23,7 @@ export class ModelAccessors {
    * @param definition - Model definition.
    */
   defineAttributes(prototype: object, definition: ModelDefinition): void {
-    [...definition.attributes.keys()]
+    [...new Set([...definition.attributes.keys(), ...methods.virtualNames(definition)])]
       .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
       .forEach((name) =>
         Object.defineProperty(prototype, name, {
