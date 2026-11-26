@@ -419,14 +419,6 @@
       "repro": "s.define('o',{bla:{type:DataTypes.ARRAY}}) // no throw",
       "test": "raises an error if no values are defined"
     },
-    "C-bind-dollar-escape": {
-      "cause": "bug",
-      "area": "query",
-      "note": "`$$` escape in bind-enabled queries is not unescaped to `$` (v6 yields \"$ / $1\").",
-      "risk": "wrong-result",
-      "repro": "await s.query(\"select 1 as foo, '$$ / $$1' as bar\",{type:'SELECT',bind:[]}) // bar '$$ / $$1'",
-      "test": "binds named parameters array handles escaped $$"
-    },
     "C-bind-dollar-in-identifier": {
       "cause": "bug",
       "area": "query",
@@ -2817,8 +2809,6 @@
       "pass": 0,
       "failing": [
         "[POSTGRES] Sequelize query arbitrarily map the field names",
-        "[POSTGRES] Sequelize query binds named parameters array handles escaped $$",
-        "[POSTGRES] Sequelize query binds named parameters object handles escaped $$",
         "[POSTGRES] Sequelize query binds named parameters with the passed object",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice",
         "[POSTGRES] Sequelize query binds token with the passed array",
@@ -2837,8 +2827,6 @@
       ],
       "causes": {
         "[POSTGRES] Sequelize query arbitrarily map the field names": "C-query-fieldmap",
-        "[POSTGRES] Sequelize query binds named parameters array handles escaped $$": "C-bind-dollar-escape",
-        "[POSTGRES] Sequelize query binds named parameters object handles escaped $$": "C-bind-dollar-escape",
         "[POSTGRES] Sequelize query binds named parameters with the passed object": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
