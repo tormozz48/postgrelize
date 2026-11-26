@@ -119,7 +119,8 @@ export class ColumnDdl {
    */
   referencesSql(column: ColumnDefinition, defaultSchema?: string): string | undefined {
     const references = column.references;
-    if (references === undefined) {
+    // `references: null` switches the foreign key off, like v6
+    if (!references) {
       return undefined;
     }
     const key = typeof references === 'string' ? 'id' : (references.key ?? 'id');
