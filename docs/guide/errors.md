@@ -38,7 +38,7 @@ Validators run before the query; the error lists every failing attribute, not ju
 
 ## Missing rows
 
-`findOne`, `findByPk` and `findAll` resolve to `null` or `[]` by default. Pass `rejectOnEmpty: true` (or an `Error` instance to throw your own) to turn a missing row into an exception:
+`findOne`, `findByPk` and `findAll` resolve to `null` or `[]` by default. Pass `rejectOnEmpty: true` (or an error instance or class to throw your own) to the query or to the model options to turn a missing row into an exception:
 
 <<< @/examples/errors.ts#not-found{ts}
 

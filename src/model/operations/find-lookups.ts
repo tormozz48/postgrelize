@@ -53,7 +53,7 @@ export type FindOperationServices = OperationServices &
  */
 export abstract class FindLookups extends ModelOperation<FindOperationServices> {
   /**
-   * `Model.findOne`: `findAll` with `limit: 1` (unless given), honouring `rejectOnEmpty`.
+   * `Model.findOne`: `findAll` with `limit: 1` (unless given); `findAll` applies `rejectOnEmpty`.
    *
    * @param model - Model class.
    * @param options - Find options.
@@ -62,21 +62,36 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
    */
   async findOne<M extends AnyModel>(
     model: ModelStatic<M>,
-    options: FindOptions & Readonly<{ rejectOnEmpty?: boolean | Error }>,
+    options: FindOptions,
   ): Promise<M | null> {
     const [first] = await model.findAll({
       ...options,
       limit: options.limit ?? 1,
       plain: true,
     } as never);
-    if (
-      first === undefined &&
-      options.rejectOnEmpty !== undefined &&
-      options.rejectOnEmpty !== false
-    ) {
-      throw options.rejectOnEmpty instanceof Error ? options.rejectOnEmpty : new EmptyResultError();
-    }
     return first ?? null;
+  }
+
+  /**
+   * Throws for an empty result when the query option, else the model option `rejectOnEmpty`, asks
+   * for it (v6): an error class is instantiated, an error is thrown as it is.
+   *
+   * @param model - Model class.
+   * @param options - Find options.
+   * @param found - Result of the finder.
+   * @throws EmptyResultError or the given error.
+   */
+  protected rejectEmpty(model: object, options: object, found: readonly unknown[]): void {
+    const reject: unknown = Object.hasOwn(options, 'rejectOnEmpty')
+      ? (options as FindOptions).rejectOnEmpty
+      : this.services.registry.definition(model).options.rejectOnEmpty;
+    if (found.length > 0 || reject === undefined || reject === false) {
+      return;
+    }
+    if (typeof reject === 'function') {
+      throw new (reject as new () => Error)();
+    }
+    throw typeof reject === 'object' ? reject : new EmptyResultError();
   }
 
   /**
