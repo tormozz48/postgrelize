@@ -9,14 +9,6 @@
       "repro": "U.aggregate('u.id','count',{include:[{model:C,where:{p:1}}],includeIgnoreAttributes:false,plain:true}) // 2, v6 1",
       "test": "Model scope aggregate should be able to use where on include"
     },
-    "A-association-get-limit": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "association.get(instances, {limit, order}) applies the limit globally/incorrectly: v6 returns up to limit rows per source instance, postgrelize returns 1 each.",
-      "risk": "wrong-result",
-      "repro": "await A.get([u1,u2],{limit:2,order:[['title','ASC']]}) // 1 task per user, expected 2",
-      "test": "HasMany get multiple should fetch associations for multiple instances with limit and order"
-    },
     "A-btm-add-existing-no-update": {
       "cause": "bug",
       "area": "associations",
@@ -2143,9 +2135,7 @@
         "[POSTGRES] HasMany count should not fail due to ambiguous field",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation"
+        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false"
       ],
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
@@ -2154,9 +2144,7 @@
         "[POSTGRES] HasMany count should not fail due to ambiguous field": "A-primarykeyfield-missing",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order": "A-association-get-limit",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation": "A-association-get-limit"
+        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
       }
     },
     "test/integration/associations/has-one.test.js": {
