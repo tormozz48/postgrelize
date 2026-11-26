@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.10] - 2026-11-26
+
 ### Fixed
 
 - An index declared with a truthy `unique` that is not `true` (`indexes: [{ unique: 'users_name_address', fields }]`) is created as a unique index and used as the conflict target of `upsert` and `updateOnDuplicate`, like v6 (`upsert` inserted a duplicate row). Differential test in `tests/compat/upsert-named-unique-index.test.ts`; one v6 suite baseline entry and the cause `B-upsert-named-unique-index` are gone. ([#224](https://github.com/tormozz48/postgrelize/pull/224))
@@ -570,7 +572,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...HEAD
+[1.9.10]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...v1.9.10
 [1.9.9]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...v1.9.8
 [1.9.7]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...v1.9.7
