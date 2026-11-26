@@ -72,6 +72,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - Parameters of a connection URI's query string that `pg` understands (`options`, `application_name`, `statement_timeout`, ...) and `host` are used like in v6 (they were ignored). Differential test in `tests/compat/connection-uri-options.test.ts`; one v6 suite baseline entry and the cause `C-uri-query-options` are gone. ([#228](https://github.com/tormozz48/postgrelize/pull/228))
 - **Behaviour change:** like v6, a hook in the model options replaces the `define.hooks` hook of the same name instead of running after it. Differential test in `tests/compat/define-hooks-override.test.ts`; one v6 suite baseline entry and the cause `D-define-hooks-merge` are gone. ([#229](https://github.com/tormozz48/postgrelize/pull/229))
 - `Model.removeAttribute('id')` leaves a model without a primary key, like v6 (the generated `id` stayed the primary key), and `Model.primaryKeys` exists. Differential test in `tests/compat/remove-attribute-pk.test.ts`; one v6 suite baseline entry and the cause `D-remove-attribute-pk` are gone. ([#230](https://github.com/tormozz48/postgrelize/pull/230))
+- A string or number assigned to a `DATE` attribute becomes a `Date` like in v6 (`'infinity'` stays an infinity), so a number saved by `create` or `update` is no longer bound as `bigint`. Differential test in `tests/compat/set-date-sanitize.test.ts`; one v6 suite baseline entry and the cause `D-set-date-string-null` are gone. ([#231](https://github.com/tormozz48/postgrelize/pull/231))
 
 ## [1.9.5] - 2026-11-26
 

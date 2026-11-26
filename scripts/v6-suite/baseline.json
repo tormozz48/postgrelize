@@ -847,14 +847,6 @@
       "note": "postgrelize accepts a missing dialect (defaults to postgres) and rejects any non-postgres dialect/URI (mysql:, pool:false test uses dialect mysql) with its own message.",
       "ref": "docs/guide/migrating.md section 3 ('Omit dialect or set it to postgres; any other value throws'), docs/guide/migrating.md Other dialects row"
     },
-    "D-set-date-string-null": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set('date','1970-01-01') on a null DATE attribute leaves a string instead of a Date.",
-      "risk": "wrong-result",
-      "repro": "u=M.build({});u.set('date','1970-01-01');typeof u.get('date').getTime",
-      "test": "Instance set sets the date \"1970-01-01\" to previously null field"
-    },
     "D-unsupported-dialects": {
       "cause": "unsupported",
       "area": "config",
@@ -1102,13 +1094,11 @@
     "test/unit/instance/set.test.js": {
       "failing": [
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"",
-        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"",
-        "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field"
+        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\""
       ],
       "causes": {
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"": "D-harness-stub-query",
-        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"": "D-harness-stub-query",
-        "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field": "D-set-date-string-null"
+        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"": "D-harness-stub-query"
       }
     },
     "test/unit/model/bulk-create.test.js": {

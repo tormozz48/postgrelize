@@ -157,8 +157,9 @@ export class InstanceValues {
       setter.call(instance, value, key);
       this.#track(instance, key, original, values[key]);
     } else if (!this.#readOnly(instance, definition, key, original)) {
-      this.#track(instance, key, original, value);
-      values[key] = value;
+      const sanitized = this.#sanitized(definition, key, value);
+      this.#track(instance, key, original, sanitized);
+      values[key] = sanitized;
     }
   }
 
@@ -191,6 +192,22 @@ export class InstanceValues {
     ) {
       InstanceState.of(instance).mark(name, true);
     }
+  }
+
+  // like v6, a string or number assigned to a date attribute becomes a `Date`
+  #sanitized(definition: ModelDefinition, key: string, value: unknown): unknown {
+    const type = definition.attributes.get(key)?.type.key;
+    const isDate = type === 'DATE' || type === 'TIMESTAMP';
+    return isDate && Boolean(value) ? this.#date(value) : value;
+  }
+
+  // 'infinity' / '-infinity' stay timestamp infinities
+  #date(value: unknown): unknown {
+    if (typeof value === 'string' && /^-?infinity$/i.test(value)) {
+      return value.startsWith('-') ? -Infinity : Infinity;
+    }
+    const parsed = typeof value === 'string' || Number.isFinite(value);
+    return parsed ? new Date(value as string | number) : value;
   }
 
   // v6: a primary key that has a value, and the timestamps / version of a persisted record
