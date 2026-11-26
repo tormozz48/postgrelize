@@ -202,11 +202,12 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
   }
 
   /**
-   * Increments numeric attributes of this row in the database (`SET x = x + by`). The instance values are
-   * not reloaded; call {@link Model.reload} to read the new numbers.
+   * Increments numeric attributes of this row in the database (`SET x = x + by`) and takes the new
+   * values from the returned row (not with `returning: false`).
    *
    * @param fields - Attribute name(s) or map of amounts.
-   * @param options - `by` (default 1), `silent`, and query options.
+   * @param options - `by` (default 1), `silent`, `where` (added to the primary key condition),
+   * `returning`, and query options.
    * @returns This instance.
    * @example
    * ```ts
@@ -216,20 +217,20 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    */
   async increment(
     fields: AttributeAmounts<TAttributes>,
-    options: Omit<IncrementOptions<TAttributes>, 'where'> = {},
+    options: IncrementOptions<TAttributes> = {},
   ): Promise<this> {
     await lifecycle.changeBy(
       this as unknown as AnyModel,
       'increment',
       fields as AttributeAmounts<Values>,
-      options as Omit<IncrementOptions, 'where'>,
+      options as IncrementOptions,
     );
     return this;
   }
 
   /**
-   * Decrements numeric attributes of this row in the database (`SET x = x - by`). The instance values are
-   * not reloaded; call {@link Model.reload} to read the new numbers.
+   * Decrements numeric attributes of this row in the database (`SET x = x - by`) and takes the new
+   * values from the returned row (not with `returning: false`).
    *
    * @param fields - Attribute name(s) or map of amounts.
    * @param options - `by` (default 1), `silent`, and query options.
@@ -241,13 +242,13 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
    */
   async decrement(
     fields: AttributeAmounts<TAttributes>,
-    options: Omit<IncrementOptions<TAttributes>, 'where'> = {},
+    options: IncrementOptions<TAttributes> = {},
   ): Promise<this> {
     await lifecycle.changeBy(
       this as unknown as AnyModel,
       'decrement',
       fields as AttributeAmounts<Values>,
-      options as Omit<IncrementOptions, 'where'>,
+      options as IncrementOptions,
     );
     return this;
   }
