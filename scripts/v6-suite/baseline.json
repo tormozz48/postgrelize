@@ -62,14 +62,6 @@
       "area": "query-interface",
       "note": "Test calls private queryInterface.queryGenerator.addSchema."
     },
-    "A-hasmany-write-applies-default-scope": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "hasMany/belongsToMany set/add apply the target default scope to the UPDATE/lookup, so rows outside the default scope are silently not (un)linked. Hit by the scope test fixtures (c1.setUsers); the include-scoped-model failure is a consequence.",
-      "risk": "wrong-result",
-      "repro": "U defaultScope lvl>=5; await c.setUsers([u(lvl5),u(lvl3),u(lvl1)]); (await c.getUsers({scope:false})).length // 1, v6 3",
-      "test": "Model scope associations include should be able to include a scoped model"
-    },
     "A-hasone-hasmany-cascade-default": {
       "cause": "bug",
       "area": "associations",
@@ -2655,14 +2647,12 @@
       "unstable": true,
       "pass": 7,
       "failing": [
-        "[POSTGRES] Model scope associations include should be able to include a scoped model",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly",
         "[POSTGRES] Model scope associations scope with includes with different format should not throw error",
         "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly"
       ],
       "causes": {
-        "[POSTGRES] Model scope associations include should be able to include a scoped model": "A-hasmany-write-applies-default-scope",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name",
         "[POSTGRES] Model scope associations scope with includes with different format should not throw error": "A-include-merge-same-model",
