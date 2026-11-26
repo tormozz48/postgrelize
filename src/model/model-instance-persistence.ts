@@ -108,8 +108,31 @@ export class ModelInstancePersistence<TAttributes extends object = Values> {
       ? maybeOptions
       : (valueOrOptions as SaveOptions<TAttributes> | undefined);
     const fields = options?.fields as readonly string[] | undefined;
+    const changedBefore = ModelInstancePersistence.#changed(instance);
     ModelInstancePersistence.#assign(instance, values, fields);
-    return this.save(options);
+    if (fields !== undefined || instance.isNewRecord) {
+      return this.save(options);
+    }
+    const defaultFields = ModelInstancePersistence.#passed(instance, values, changedBefore);
+    return this.save({ ...options, defaultFields } as SaveOptions<TAttributes>);
+  }
+
+  static #changed(instance: AnyModel): readonly string[] {
+    const changed = instance.changed();
+    return changed === false ? [] : changed;
+  }
+
+  // like v6, `update` saves the changed ones among the passed keys and the setters' side effects,
+  // not what was already unsaved
+  static #passed(
+    instance: AnyModel,
+    values: Values,
+    changedBefore: readonly string[],
+  ): readonly string[] {
+    const given = Object.keys(values).filter((name) => values[name] !== undefined);
+    return ModelInstancePersistence.#changed(instance).filter(
+      (name) => given.includes(name) || !changedBefore.includes(name),
+    );
   }
 
   // like v6, `undefined` values and attributes outside `options.fields` are not assigned
