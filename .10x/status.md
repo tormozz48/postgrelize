@@ -98,9 +98,9 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
-## Release 1.9.9 (2026-11-26, in progress)
+## Release 1.9.9 (2026-11-26, released)
 
-v6 suite baseline fixes: where, raw query and connection parity with v6. Changelog lines list the pull requests.
+v6 suite baseline fixes: where, raw query and connection parity with v6. Changelog lines list the pull requests. Tag `v1.9.9` on `50b3306` (PR #246), release.yml run 45861749685: all jobs green.
 
 ## Release 1.9.8 (2026-11-26, released)
 
