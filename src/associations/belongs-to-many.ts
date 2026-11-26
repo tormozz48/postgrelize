@@ -96,7 +96,7 @@ export class BelongsToMany<
    * @returns Number of associated rows.
    */
   async count(instance: Instance, options: AccessorOptions = {}): Promise<number> {
-    const linked = (await this.#links(instance, options)).map((link) => link.get(this.#otherKey));
+    const linked = await this.#linkedKeys(instance, options);
     return this.scopedTarget(options).count({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: linked }),
@@ -112,9 +112,8 @@ export class BelongsToMany<
    * @returns True when every item is associated.
    */
   async has(instance: Instance, items: unknown, options: AccessorOptions = {}): Promise<boolean> {
-    return (
-      (await this.#links(instance, options, this.#ids(items))).length === this.#ids(items).length
-    );
+    const wanted = this.#ids(items);
+    return (await this.#linkedKeys(instance, options, wanted)).length === wanted.length;
   }
 
   /**
@@ -195,13 +194,25 @@ export class BelongsToMany<
     return this.toArray(items).map((item) => this.keyOf(item, this.targetKey));
   }
 
+  // like v6, counting and checking read no through attributes (the table may lack timestamps)
+  async #linkedKeys(
+    instance: Instance,
+    options: AccessorOptions,
+    wanted?: readonly unknown[],
+  ): Promise<readonly unknown[]> {
+    const links = await this.#links(instance, options, wanted, [this.#otherKey]);
+    return links.map((link) => link.get(this.#otherKey));
+  }
+
   #links(
     instance: Instance,
     options: AccessorOptions,
     wanted?: readonly unknown[],
+    attributes?: readonly string[],
   ): Promise<Instance[]> {
     return this.#junction.findAll({
       ...this.passThrough(options),
+      ...(attributes === undefined ? {} : { attributes }),
       where: this.andWhere(
         this.#own(instance),
         wanted === undefined ? undefined : { [this.#otherKey]: wanted },
