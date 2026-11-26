@@ -8,6 +8,15 @@ import { registry } from '../model-services.ts';
 import type { AnyModel, ModelStatic } from '../options.ts';
 import type { ModelConstructor } from './model-constructor.ts';
 
+const assertModel = (source: Readonly<{ name: string }>, target: unknown, method: string): void => {
+  const prototype = (target as { prototype?: object } | null | undefined)?.prototype;
+  if (typeof target !== 'function' || prototype === undefined || !('getDataValue' in prototype)) {
+    throw new Error(
+      `${source.name}.${method} called with something that's not a subclass of Sequelize.Model`,
+    );
+  }
+};
+
 /**
  * Association statics of `Model`: `associations`, `belongsTo`, `hasOne`, `hasMany`, `belongsToMany`.
  *
@@ -96,6 +105,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       target: ModelStatic<T>,
       options?: AssociationOptions,
     ): BelongsTo<M, T> {
+      assertModel(this, target, 'belongsTo');
       return new BelongsTo(this, target, options);
     }
 
@@ -117,6 +127,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       target: ModelStatic<T>,
       options?: AssociationOptions,
     ): HasOne<M, T> {
+      assertModel(this, target, 'hasOne');
       return new HasOne(this, target, options);
     }
 
@@ -138,6 +149,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       target: ModelStatic<T>,
       options?: AssociationOptions,
     ): HasMany<M, T> {
+      assertModel(this, target, 'hasMany');
       return new HasMany(this, target, options);
     }
 
@@ -158,6 +170,7 @@ export const ModelAssociations = <TBase extends ModelConstructor>(Base: TBase) =
       target: ModelStatic<T>,
       options: BelongsToManyOptions,
     ): BelongsToMany<M, T> {
+      assertModel(this, target, 'belongsToMany');
       return new BelongsToMany(this, target, options);
     }
   };

@@ -28,6 +28,7 @@ export class OwnerKeys {
   belongsTo(source: Model, target: Model, options: AssociationOptions): TargetKeys {
     const keys = this.#keys;
     const name = keys.aliasNames(options.as, keys.modelName(target), false);
+    this.#assertKey(target, options.targetKey, 'targetKey');
     const targetKey = options.targetKey ?? keys.primaryKey(target);
     const foreignKey =
       keys.foreignKeyName(options.foreignKey) ??
@@ -53,6 +54,7 @@ export class OwnerKeys {
     options: AssociationOptions,
   ): TargetKeys {
     const keys = this.#keys;
+    this.#assertKey(source, options.sourceKey, 'sourceKey');
     const sourceKey = options.sourceKey ?? keys.primaryKey(source);
     const foreignKey =
       keys.foreignKeyName(options.foreignKey) ??
@@ -62,6 +64,14 @@ export class OwnerKeys {
       name: keys.aliasNames(options.as, keys.modelName(target), multi),
       keys: this.#fields(target, foreignKey, sourceKey, foreignKey),
     };
+  }
+
+  #assertKey(model: Model, key: string | undefined, option: string): void {
+    if (key !== undefined && this.#keys.attributeOf(model, key) === undefined) {
+      throw new Error(
+        `Unknown attribute "${key}" passed as ${option}, define this attribute on model "${this.#keys.nameOf(model)}" first`,
+      );
+    }
   }
 
   #fields(
