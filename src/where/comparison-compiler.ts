@@ -22,7 +22,9 @@ const jsonCastFor = (value: unknown): string | undefined =>
     ? 'double precision'
     : typeof value === 'boolean'
       ? 'boolean'
-      : undefined;
+      : value instanceof Date
+        ? 'timestamptz'
+        : undefined;
 
 const quantifierOf = (value: unknown): 'ANY' | 'ALL' | undefined =>
   isPlainObject(value)
@@ -87,8 +89,10 @@ export class ComparisonCompiler {
         ast.fnCall(quantifier, [this.#quantifiedOperand(compiler, left, items)]),
       );
     }
-    const operand = left.json === undefined ? left : withCast(left, jsonCastFor(value));
-    return ast.binary(sqlOp, operand.node, this.#valueNode(compiler, left, value));
+    const operand = this.#castByValue(left, value);
+    // v6 does not type-check the pattern of a LIKE or regular expression match
+    const checked = /LIKE|~/.test(sqlOp) ? this.#unchecked(left) : left;
+    return ast.binary(sqlOp, operand.node, this.#valueNode(compiler, checked, value));
   }
 
   /** `Op.startsWith` / `Op.endsWith` / `Op.substring` as `LIKE`. */
@@ -107,10 +111,11 @@ export class ComparisonCompiler {
     if (items.length === 0) {
       return ast.raw(negated ? 'TRUE' : 'FALSE');
     }
+    const operand = this.#castByValue(left, items[0]);
     if (items.length > (compiler.context.inAsAnyThreshold ?? DEFAULT_IN_AS_ANY_THRESHOLD)) {
-      return this.#inAsArray(left, items, negated);
+      return this.#inAsArray(operand, items, negated);
     }
-    return ast.binary(negated ? 'NOT IN' : 'IN', left.node, {
+    return ast.binary(negated ? 'NOT IN' : 'IN', operand.node, {
       kind: 'list',
       items: items.map((item) => compiler.toExpr(item, left.ref)),
     });
@@ -121,7 +126,7 @@ export class ComparisonCompiler {
     const [low, high] = pairOf(value);
     return {
       kind: 'between',
-      expr: left.node,
+      expr: this.#castByValue(left, low).node,
       low: compiler.toExpr(low, left.ref),
       high: compiler.toExpr(high, left.ref),
       negated,
@@ -155,8 +160,18 @@ export class ComparisonCompiler {
     );
   }
 
+  // like v6 (`_castKey`), the text of a JSON path is cast by the type of the compared value
+  #castByValue(left: Operand, value: unknown): Operand {
+    return left.json === undefined ? left : withCast(left, jsonCastFor(value));
+  }
+
+  #unchecked(left: Operand): Operand {
+    return left.ref === undefined ? left : { ...left, ref: { ...left.ref, check: () => {} } };
+  }
+
   #valueNode(compiler: ExprConverter, left: Operand, value: unknown): ExprNode {
-    return left.json !== undefined && !(value instanceof SqlExpression)
+    // a date is compared as a timestamp, not as its quoted JSON text
+    return left.json !== undefined && !(value instanceof SqlExpression || value instanceof Date)
       ? ast.param(
           typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value),
         )
