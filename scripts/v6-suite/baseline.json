@@ -9,14 +9,6 @@
       "repro": "U.aggregate('u.id','count',{include:[{model:C,where:{p:1}}],includeIgnoreAttributes:false,plain:true}) // 2, v6 1",
       "test": "Model scope aggregate should be able to use where on include"
     },
-    "A-btm-add-existing-no-update": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "add/setX on an existing through row with new through attributes does not update the row (and so never inside a transaction); the later after-each failure is a left-open transaction.",
-      "risk": "wrong-result",
-      "repro": "await t.addU(u,{through:{status:'pending'}}); await t.addU(u,{through:{status:'completed'}}); (await u.getTs())[0].UT.status // pending",
-      "test": "BelongsToMany addAssociations supports transactions when updating a through model"
-    },
     "A-btm-identifier-props": {
       "cause": "bug",
       "area": "associations",
@@ -2081,8 +2073,6 @@
       "unstable": true,
       "pass": 35,
       "failing": [
-        "\"after each\" hook for \"supports transactions when updating a through model\"",
-        "[POSTGRES] BelongsToMany addAssociations supports transactions when updating a through model",
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key",
@@ -2096,8 +2086,6 @@
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object"
       ],
       "causes": {
-        "\"after each\" hook for \"supports transactions when updating a through model\"": "A-btm-add-existing-no-update",
-        "[POSTGRES] BelongsToMany addAssociations supports transactions when updating a through model": "A-btm-add-existing-no-update",
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields": "A-instance-rawattributes",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in": "A-op-not-array",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key": "A-op-not-array",
