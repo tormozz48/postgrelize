@@ -137,18 +137,29 @@ export class CountOperation extends ModelOperation<CountOperationServices> {
     options: AggregateOptions,
   ): Promise<unknown> {
     const { definition, runtime } = this.services.registry.state(model);
-    const { compiler, registry, selects } = this.services;
+    const { compiler, registry } = this.services;
     const query = this.#filtered(definition, registry.scoped(model, options));
-    const threshold = runtime.inAsAnyThreshold;
-    const select = selects.aggregate(
-      definition,
-      field,
-      aggregateFunction,
-      query as SelectOptions,
-      threshold,
-    );
+    const select = this.#aggregateSelect(model, field, aggregateFunction, query as SelectOptions);
     const result = await runtime.execute(compiler.compile(select), query, 'read');
     return this.#aggregated(definition, field, aggregateFunction, options, result.rows);
+  }
+
+  // like v6, the includes (also those of the scope) are joined, so their `where` filters the rows
+  #aggregateSelect(
+    model: ModelStatic<AnyModel>,
+    field: string,
+    aggregateFunction: string,
+    query: SelectOptions,
+  ) {
+    const { definition, runtime } = this.services.registry.state(model);
+    const { includes, includeQueries, selects } = this.services;
+    const threshold = runtime.inAsAnyThreshold;
+    const select = selects.aggregate(definition, field, aggregateFunction, query, threshold);
+    const option = (query as Readonly<{ include?: IncludeOption }>).include;
+    const nodes = includes.normalize(model, option);
+    return nodes.length === 0
+      ? select
+      : { ...select, joins: includeQueries.countJoins(definition, nodes) };
   }
 
   #aggregated(
