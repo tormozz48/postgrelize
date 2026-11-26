@@ -38,6 +38,16 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- An index declared with a truthy `unique` that is not `true` (`indexes: [{ unique: 'users_name_address', fields }]`) is created as a unique index and used as the conflict target of `upsert` and `updateOnDuplicate`, like v6 (`upsert` inserted a duplicate row). Differential test in `tests/compat/upsert-named-unique-index.test.ts`; one v6 suite baseline entry and the cause `B-upsert-named-unique-index` are gone. ([#224](https://github.com/tormozz48/postgrelize/pull/224))
+- `queryInterface.createTable(name, attributes, { schema })` creates the table (and its enum types) in that schema, and `describeTable(name, 'schema')` reads it, like v6 (the table went to the default schema). Differential test in `tests/compat/create-table-schema.test.ts`; three v6 suite baseline entries and the causes `C-createtable-schema-option` and `B-describetable-schema-arg` are gone. ([#232](https://github.com/tormozz48/postgrelize/pull/232))
+- `queryInterface.createTable(name, attributes, { uniqueKeys })` creates the composite unique constraints, like v6 (the option was ignored). Differential test in `tests/compat/create-table-unique-keys.test.ts`; one v6 suite baseline entry and the cause `C-createtable-uniquekeys` are gone. ([#232](https://github.com/tormozz48/postgrelize/pull/232))
+- **Behaviour change:** a foreign key added by `addConstraint` without a `name` is called `<table>_<fields>_<referenced table>_fk` like in v6 (it was `<table>_<fields>_fkey`), so migrations that remove it by the v6 name work. Differential test in `tests/compat/constraint-default-name.test.ts`; one v6 suite baseline entry and the cause `C-fk-default-constraint-name` are gone. ([#234](https://github.com/tormozz48/postgrelize/pull/234))
+- `getForeignKeyReferencesForTable` returns every field of v6 (`tableName`, `tableSchema`, `tableCatalog`, `constraintSchema`, `constraintCatalog`, `referencedTableSchema`, `referencedTableCatalog`, `deferrable`) besides the four it had. Differential test in `tests/compat/foreign-key-references.test.ts`; one v6 suite baseline entry and the cause `C-fk-references-fields` are gone. ([#232](https://github.com/tormozz48/postgrelize/pull/232))
+- `queryInterface.changeColumn` with `references` adds the foreign key (with `onDelete` / `onUpdate`), like v6, which then leaves the type and defaults of the column as they are (the references were ignored). Differential test in `tests/compat/change-column-references.test.ts`; two v6 suite baseline entries and the cause `C-changecolumn-references` are gone. ([#236](https://github.com/tormozz48/postgrelize/pull/236))
+- An index with `type: 'unique'` is created unique, and a `JSONB` attribute declared with `index: true` gets a `gin` index at `sync`, like v6. Differential test in `tests/compat/index-conform.test.ts`; the cause `D-index-options-ignored` is gone (its two v6 titles read the private `Model._indexes` and are filed as harness). ([#224](https://github.com/tormozz48/postgrelize/pull/224))
+
 ## [1.9.9] - 2026-11-26
 
 ### Fixed

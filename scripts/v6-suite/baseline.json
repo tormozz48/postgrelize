@@ -203,14 +203,6 @@
       "repro": "sq.define('a',{x:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true},y:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true}}) // does not throw",
       "test": "Model constructor throws an error if 2 autoIncrements are passed"
     },
-    "B-describetable-schema-arg": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "queryInterface.describeTable(tableName, 'schemaName') (schema string as 2nd argument, v6 form) ignores the schema and reports 'No description found'; the {tableName, schema} object form works.",
-      "risk": "error",
-      "repro": "await qi.describeTable('Task2s','s_two')",
-      "test": "Model schemas regressions should be able to sync model with schema"
-    },
     "B-findorcreate-pool-deadlock": {
       "cause": "bug",
       "area": "model",
@@ -382,14 +374,6 @@
       "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
       "test": "Model update skips update query if no data to update"
     },
-    "B-upsert-named-unique-index": {
-      "cause": "bug",
-      "area": "upsert",
-      "note": "upsert with a composite unique index declared as indexes:[{unique:'users_name_address',fields:[..]}] (string unique name) does not use it as conflict target: a second upsert inserts a duplicate row (only unique:true is recognised).",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{name:DataTypes.STRING,address:DataTypes.STRING,city:DataTypes.STRING},{indexes:[{unique:'ix',fields:['name','address']}]}); await U.upsert({name:'u',address:'a',city:'C'}); await U.upsert({name:'u',address:'a',city:'N'}) // 2 rows",
-      "test": "Model upsert works when composite indexes are created via indexes array"
-    },
     "B-validator-extend": {
       "cause": "bug",
       "area": "validation",
@@ -454,14 +438,6 @@
       "area": "query-interface",
       "note": "Test creates EXCLUDE USING gist on integer; needs CREATE EXTENSION btree_gist which the test DB does not have (v6 CI installs it)."
     },
-    "C-changecolumn-references": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "changeColumn ignores references/onUpdate/onDelete: no foreign key is added.",
-      "risk": "wrong-result",
-      "repro": "await qi.changeColumn('users','level_id',{type:DataTypes.INTEGER,references:{model:'level',key:'id'},onDelete:'cascade'}) // pg_constraint has no FK",
-      "test": "changeColumn should support foreign keys able to change column to foreign key"
-    },
     "C-client-min-messages": {
       "cause": "bug",
       "area": "connection",
@@ -479,22 +455,6 @@
       "cause": "harness",
       "area": "connection",
       "note": "Test uses connectionManager internals (_clearDynamicOIDs, validate, _connect stubs, pool.read/write, getConnection hacks, queryGenerator)."
-    },
-    "C-createtable-schema-option": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createTable(name, attrs, {schema}) creates the table in public instead of the given schema (describeTable/enum lookups in that schema then fail).",
-      "risk": "wrong-result",
-      "repro": "await qi.createTable('table',{name:STRING},{schema:'sch'}); // information_schema shows table_schema=public",
-      "test": "createTable enums should work with enums (4)"
-    },
-    "C-createtable-uniquekeys": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createTable ignores options.uniqueKeys: no UNIQUE constraint is created.",
-      "risk": "wrong-result",
-      "repro": "await qi.createTable('tt',{id:{type:INTEGER,primaryKey:true},name:STRING},{uniqueKeys:{u:{fields:['name']}}}) // only tt_pkey exists",
-      "test": "createTable should create unique constraint with uniqueKeys"
     },
     "C-database-error-sql-params": {
       "cause": "bug",
@@ -536,14 +496,6 @@
       "repro": "U.findOrCreate({where:{name:'K'},logging:x=>l.push(x)}) -> first log line is 'Executing (default): SELECT', v6 logs the transaction id for both",
       "test": "CLS does not leak outside findOrCreate"
     },
-    "C-fk-default-constraint-name": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "addConstraint type foreign key without name uses PG default (posts_username_fkey); v6 names it <table>_<field>_<reftable>_fk, so removeConstraint by the v6 name fails.",
-      "risk": "wrong-result",
-      "repro": "await qi.addConstraint('posts',{fields:['username'],references:{table:'users',field:'username'},type:'foreign key'});(await qi.showConstraint('posts')).map(c=>c.constraintName) // posts_username_fkey, v6 posts_username_users_fk",
-      "test": "constraints foreign key should add, read & remove foreign key constraint"
-    },
     "C-fk-field-collision": {
       "cause": "bug",
       "area": "associations",
@@ -551,14 +503,6 @@
       "risk": "error",
       "repro": "UV=define('UV',{userId:{type:STRING,field:'user_id'}}); U.hasMany(UV,{foreignKey:'user_id'}); await UV.sync({force:true}) // column \"user_id\" specified more than once",
       "test": "stacktraces emits raw errors if requested"
-    },
-    "C-fk-references-fields": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "getForeignKeyReferencesForTable returns only constraintName/columnName/referencedTableName/referencedColumnName; v6 also tableName, tableSchema, tableCatalog, constraintSchema/Catalog, referencedTableSchema/Catalog.",
-      "risk": "wrong-result",
-      "repro": "(await qi.getForeignKeyReferencesForTable('hosts'))[0].tableName // undefined (v6 'hosts')",
-      "test": "describeForeignKeys should get a list of foreign key references details for the table"
     },
     "C-log-default-noop": {
       "cause": "bug",
@@ -818,6 +762,11 @@
       "area": "config",
       "note": "Tests inspect v6 internals: ignored-export list containing _clsRun, or imports sequelize/lib/model deep path."
     },
+    "D-harness-model-indexes": {
+      "cause": "harness",
+      "area": "query-interface",
+      "note": "Test reads the v6 private Model._indexes; the behaviour (unique type, gin index) is covered by tests/compat/index-conform.test.ts."
+    },
     "D-harness-model-internals": {
       "cause": "harness",
       "area": "model",
@@ -840,14 +789,6 @@
       "risk": "cosmetic",
       "repro": "Sequelize.Model._conformIncludes({include:[{model:null}]}, Company) // TypeError: not a function",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
-    },
-    "D-index-options-ignored": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "Model indexes with type:'unique'/'UNIQUE' are created as plain (non-unique) indexes, and a JSONB attribute with index:true gets no gin index at sync (only the pkey exists).",
-      "risk": "wrong-result",
-      "repro": "s.define('m',{name:STRING},{indexes:[{type:'unique',fields:['name']}]}).sync() // CREATE INDEX not UNIQUE",
-      "test": "Model indexes should set the unique property when type is unique"
     },
     "D-no-dialect-config": {
       "cause": "divergence",
@@ -1278,8 +1219,8 @@
         "[POSTGRES] Model indexes should set the unique property when type is unique"
       ],
       "causes": {
-        "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes": "D-index-options-ignored",
-        "[POSTGRES] Model indexes should set the unique property when type is unique": "D-index-options-ignored"
+        "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes": "D-harness-model-indexes",
+        "[POSTGRES] Model indexes should set the unique property when type is unique": "D-harness-model-indexes"
       }
     },
     "test/unit/model/overwriting-builtins.test.js": {
@@ -2459,16 +2400,14 @@
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two",
-        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276",
-        "[POSTGRES] Model schemas regressions should be able to sync model with schema"
+        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276"
       ],
       "causes": {
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"": "B-harness-private-internals",
         "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option": "B-harness-private-internals",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one": "B-schema-clone-include",
         "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_two": "B-schema-clone-include",
-        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276": "B-sync-schema-option-references",
-        "[POSTGRES] Model schemas regressions should be able to sync model with schema": "B-describetable-schema-arg"
+        "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276": "B-sync-schema-option-references"
       }
     },
     "test/integration/model/scope/aggregate.test.js": {
@@ -2551,11 +2490,9 @@
       "unstable": true,
       "pass": 9,
       "failing": [
-        "[POSTGRES] Model upsert works when composite indexes are created via indexes array",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key"
       ],
       "causes": {
-        "[POSTGRES] Model upsert works when composite indexes are created via indexes array": "B-upsert-named-unique-index",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key": "B-triage-upsert-infinity-pk"
       }
     },
@@ -2597,9 +2534,7 @@
       "failing": [
         "[POSTGRES] QueryInterface addColumn addColumn expected error",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type",
-        "[POSTGRES] QueryInterface constraints foreign key should add, read & remove foreign key constraint",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
         "[POSTGRES] QueryInterface indexes works with schemas",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
@@ -2607,9 +2542,7 @@
       "causes": {
         "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface constraints foreign key should add, read & remove foreign key constraint": "C-fk-default-constraint-name",
         "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError": "C-unknown-constraint-error",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign key references details for the table": "C-fk-references-fields",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
         "[POSTGRES] QueryInterface indexes works with schemas": "C-addindex-null-options",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing": "C-qi-argument-errors"
@@ -2618,36 +2551,20 @@
     "test/integration/query-interface/changeColumn.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column property without affecting other properties",
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column to foreign key"
-      ],
-      "causes": {
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column property without affecting other properties": "C-changecolumn-references",
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column to foreign key": "C-changecolumn-references"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/query-interface/createTable.test.js": {
       "unstable": true,
       "pass": 5,
-      "failing": [
-        "[POSTGRES] QueryInterface createTable enums should work with enums (4)",
-        "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys"
-      ],
-      "causes": {
-        "[POSTGRES] QueryInterface createTable enums should work with enums (4)": "C-createtable-schema-option",
-        "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys": "C-createtable-uniquekeys"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/query-interface/describeTable.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] QueryInterface describeTable reads the metadata of the table with schema",
-        "[POSTGRES] QueryInterface describeTable rejects when no data is available"
-      ],
+      "failing": ["[POSTGRES] QueryInterface describeTable rejects when no data is available"],
       "causes": {
-        "[POSTGRES] QueryInterface describeTable reads the metadata of the table with schema": "C-createtable-schema-option",
         "[POSTGRES] QueryInterface describeTable rejects when no data is available": "C-qi-argument-errors"
       }
     },
@@ -2688,7 +2605,6 @@
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
