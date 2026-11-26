@@ -82,6 +82,14 @@ export class ModelBase {
     return registry.state(this).definition.primaryKeys;
   }
 
+  /** Primary key attribute definitions by name (Sequelize v6 `Model.primaryKeys`). */
+  static get primaryKeys(): Readonly<Record<string, AttributeDefinition>> {
+    const { primaryKeys, attributes } = registry.state(this).definition;
+    return Object.fromEntries(
+      primaryKeys.map((name) => [name, attributes.get(name) as AttributeDefinition]),
+    );
+  }
+
   /** Model options after defaults were applied. */
   static get options(): DefinitionOptions {
     return registry.state(this).definition.options;
