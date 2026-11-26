@@ -144,6 +144,10 @@ export class ConditionCompiler {
   }
 
   #negation(compiler: ExprConverter, left: Operand, value: unknown): ExprNode {
+    // like v6, `{ [Op.not]: [..] }` is `NOT IN`
+    if (Array.isArray(value)) {
+      return this.#comparisons.inList(compiler, left, value, true);
+    }
     return isNullOrBoolean(value)
       ? isCheck(left, value, true)
       : isPlainObject(value)
