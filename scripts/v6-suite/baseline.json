@@ -1055,14 +1055,6 @@
       "note": "postgrelize accepts a missing dialect (defaults to postgres) and rejects any non-postgres dialect/URI (mysql:, pool:false test uses dialect mysql) with its own message.",
       "ref": "docs/guide/migrating.md section 3 ('Omit dialect or set it to postgres; any other value throws'), docs/guide/migrating.md Other dialects row"
     },
-    "D-rawattributes-copy": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.rawAttributes returns a fresh copy each access, so assigning Model.rawAttributes.x = {...} followed by refreshAttributes() is lost (v6 mutable object used by plugins and the underscored/field tests).",
-      "risk": "wrong-result",
-      "repro": "M.rawAttributes.foo={type:DataTypes.STRING};M.refreshAttributes();Object.keys(M.rawAttributes)",
-      "test": "Model options.underscored hasOne does not override already defined field"
-    },
     "D-remove-attribute-pk": {
       "cause": "bug",
       "area": "model",
@@ -1664,18 +1656,8 @@
       }
     },
     "test/unit/model/underscored.test.js": {
-      "failing": [
-        "[POSTGRES] Model options.underscored belongsTo does not override already defined field",
-        "[POSTGRES] Model options.underscored hasMany does not override already defined field",
-        "[POSTGRES] Model options.underscored hasOne does not override already defined field",
-        "[POSTGRES] Model options.underscored hasOne/belongsTo does not override already defined field"
-      ],
-      "causes": {
-        "[POSTGRES] Model options.underscored belongsTo does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasMany does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasOne does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasOne/belongsTo does not override already defined field": "D-rawattributes-copy"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/model/update.test.js": {
       "failing": [
