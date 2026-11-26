@@ -25,14 +25,6 @@
       "repro": "A.belongsToMany(L,{through:T1}); A.belongsToMany(L,{through:T2}) // throws",
       "test": "BelongsToMany hasAssociations answers true for labels that have been assigned multitple times"
     },
-    "A-group-nested-array": {
-      "cause": "bug",
-      "area": "query",
-      "note": "group:[['col']] (array form v6 accepts) is bound as a parameter (GROUP BY $1) instead of a quoted identifier.",
-      "risk": "error",
-      "repro": "await U.findAll({attributes:['userId'],group:[['userId']]}) // must appear in the GROUP BY clause",
-      "test": "HasMany Association options should ignore group from ancestor on deep separated query"
-    },
     "A-harness-queryGenerator-addSchema": {
       "cause": "harness",
       "area": "query-interface",
@@ -66,14 +58,6 @@
       "cause": "triage",
       "area": "associations",
       "note": "Not individually analysed (catch-all for remaining tests of the slice files)."
-    },
-    "B-aggregate-alias-group": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Model.aggregate / count with attributes:[['id','id2']] and group:['id2'] fails with 'column id2 does not exist': the alias is not accepted as GROUP BY target.",
-      "risk": "error",
-      "repro": "await U.aggregate('id','count',{attributes:[['id','id2']],group:['id2']})",
-      "test": "Model count aggregate allows grouping by aliased attribute"
     },
     "B-attributes-empty": {
       "cause": "bug",
@@ -283,14 +267,6 @@
       "repro": "await qi.addIndex({schema:'schema',tableName:'table'},['name','isAdmin'],null,'schema_table') // TypeError Cannot read properties of null (reading 'replacements')",
       "test": "QueryInterface indexes works with schemas"
     },
-    "C-bind-dollar-in-identifier": {
-      "cause": "bug",
-      "area": "query",
-      "note": "A `$` inside an identifier/alias (`as foo$bar`) is tokenised as bind parameter $bar and throws.",
-      "risk": "error",
-      "repro": "await s.query('select $one::int as foo$bar',{type:'SELECT',bind:{one:1}}) // Named bind parameter \"$bar\" has no value",
-      "test": "escape where has $ on the middle of characters"
-    },
     "C-bind-log-inlined": {
       "cause": "bug",
       "area": "query",
@@ -397,14 +373,6 @@
       "area": "associations",
       "note": "Support.clearDatabase replaces sequelize.models with a new object, detaching postgrelize ModelManager from sequelize.models, so modelManager.getModel finds nothing; real code unaffected (getModel works after define)."
     },
-    "C-nested-array-replacements": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Nested array replacement (VALUES ?) is flattened to a comma list instead of ((..),(..)) row tuples.",
-      "risk": "error",
-      "repro": "await s.query('select * from (values ?) t',{replacements:[[['a','b'],['c','d']]],type:'SELECT'}) // syntax error at or near 'a'",
-      "test": "executes a query if a placeholder value is an array"
-    },
     "C-no-logging-on-failed-query": {
       "cause": "bug",
       "area": "query",
@@ -425,14 +393,6 @@
       "cause": "harness",
       "area": "query-interface",
       "note": "Test uses queryInterface.pgListEnums (postgres dialect-private helper, not typed in v6)."
-    },
-    "C-pool-no-evict-dead-connection": {
-      "cause": "bug",
-      "area": "connection",
-      "note": "A pooled connection that was ended is handed out again (\"Client was closed\"), and an error event (ECONNRESET) on a checked-out connection with max:1 leaves the pool exhausted so the next getConnection hangs; v6 destroys such connections and opens a new one.",
-      "risk": "error",
-      "repro": "c=await cm.getConnection();await cm.releaseConnection(c);c.end();await sleep(200);await s.query('select 1') // Client was closed and is not queryable",
-      "test": "should obtain new connection when released connection dies inside pool"
     },
     "C-postgis-missing": {
       "cause": "unsupported",
@@ -1698,7 +1658,6 @@
       "failing": [
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false"
@@ -1706,7 +1665,6 @@
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query": "A-group-nested-array",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
@@ -1988,7 +1946,6 @@
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define",
-        "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
@@ -2002,7 +1959,6 @@
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define": "B-harness-private-internals",
-        "[POSTGRES] Model count aggregate allows grouping by aliased attribute": "B-aggregate-alias-group",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
@@ -2229,17 +2185,13 @@
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection",
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection for transaction",
         "[POSTGRES] Pooling idle [MSSQL Flaky] should get new connection beyond idle range",
-        "[POSTGRES] Pooling idle should maintain connection within idle range",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when old connection is abruptly closed",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when released connection dies inside pool"
+        "[POSTGRES] Pooling idle should maintain connection within idle range"
       ],
       "causes": {
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection": "C-connmanager-internals",
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection for transaction": "C-connmanager-internals",
         "[POSTGRES] Pooling idle [MSSQL Flaky] should get new connection beyond idle range": "C-connmanager-internals",
-        "[POSTGRES] Pooling idle should maintain connection within idle range": "C-connmanager-internals",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when old connection is abruptly closed": "C-pool-no-evict-dead-connection",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when released connection dies inside pool": "C-pool-no-evict-dead-connection"
+        "[POSTGRES] Pooling idle should maintain connection within idle range": "C-connmanager-internals"
       }
     },
     "test/integration/query-interface.test.js": {
@@ -2390,8 +2342,6 @@
         "[POSTGRES] Sequelize query binds token with the passed array",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
-        "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
-        "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
@@ -2406,8 +2356,6 @@
         "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest": "C-sequelize-internals",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest": "C-sequelize-internals",
-        "[POSTGRES] Sequelize query escape where has $ on the middle of characters": "C-bind-dollar-in-identifier",
-        "[POSTGRES] Sequelize query executes a query if a placeholder value is an array": "C-nested-array-replacements",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql": "C-logqueryparameters",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value": "C-logqueryparameters",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",

@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 64. Open: 52 (includes causes found while fixing).
+Fixed: 69. Open: 47 (includes causes found while fixing).
 
 ## Fixed
 
@@ -72,6 +72,11 @@ Fixed: 64. Open: 52 (includes causes found while fixing).
 | `B-define-time-validation` | error | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
 | `D-define-no-validation` | wording | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
 | `D-attr-named-set` | error | [#269](https://github.com/tormozz48/postgrelize/pull/269) |
+| `A-group-nested-array` | error | [#260](https://github.com/tormozz48/postgrelize/pull/260) |
+| `C-bind-dollar-in-identifier` | error | [#267](https://github.com/tormozz48/postgrelize/pull/267) |
+| `C-nested-array-replacements` | error | [#267](https://github.com/tormozz48/postgrelize/pull/267) |
+| `B-aggregate-alias-group` | error | [#273](https://github.com/tormozz48/postgrelize/pull/273) |
+| `C-pool-no-evict-dead-connection` | error | [#276](https://github.com/tormozz48/postgrelize/pull/276) |
 
 ## Not fixed
 
@@ -80,11 +85,9 @@ Fixed: 64. Open: 52 (includes causes found while fixing).
 | `A-btm-identifier-props` | error | BelongsToMany lacks v6 public properties foreignIdentifier, identifier (and sourceKeyField, foreignIdentifierField). |
 | `A-btm-paired-otherkey` | error | Two paired belongsToMany declaring foreignKey/sourceKey do not take otherKey from the paired association foreignKey; an extra auto-named otherKey column is generated and the real one stays NULL, so add/set fail. |
 | `A-default-alias-redefine` | error | Re-declaring an association with the default alias throws "alias in two separate associations"; v6 only checks explicit aliases and silently replaces the default one. |
-| `A-group-nested-array` | error | group:[['col']] (array form v6 accepts) is bound as a parameter (GROUP BY $1) instead of a quoted identifier. |
 | `A-hasone-hasmany-cascade-default` | error | hasOne/hasMany FK with allowNull:false gets ON DELETE NO ACTION; v6 uses CASCADE (NO ACTION is only the belongsTo default); docs/guide/associations.md states the belongsTo default for all. |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
 | `A-references-null-crash` | error | Attribute with references:null (opt out of FK) crashes sync with "Cannot read properties of null (reading key)". |
-| `B-aggregate-alias-group` | error | Model.aggregate / count with attributes:[['id','id2']] and group:['id2'] fails with 'column id2 does not exist': the alias is not accepted as GROUP BY target. |
 | `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
 | `B-btm-count-through-timestamps` | error | instance.countX() on a belongsToMany with a string through selects the auto-created through model's createdAt/updatedAt, failing when the join table has no timestamp columns; v6 selects no through attributes for count. |
 | `B-btm-duplicate-auto-alias` | error | Declaring two belongsToMany to the same target without `as` (different through) throws 'You have used the alias projects in two separate associations'; v6 only checks explicitly given aliases (the second overwrites the first). |
@@ -102,7 +105,6 @@ Fixed: 64. Open: 52 (includes causes found while fixing).
 | `B-unique-msg-option` | wording | unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message. |
 | `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
 | `C-addindex-null-options` | error | queryInterface.addIndex(table, fields, null, name) throws TypeError (options null) while v6 accepts null options. |
-| `C-bind-dollar-in-identifier` | error | A `$` inside an identifier/alias (`as foo$bar`) is tokenised as bind parameter $bar and throws. |
 | `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
 | `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
@@ -111,10 +113,8 @@ Fixed: 64. Open: 52 (includes causes found while fixing).
 | `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
 | `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
 | `C-modelmanager-all-findmodel` | cosmetic | ModelManager lacks typed v6 members `all` and `findModel`. |
-| `C-nested-array-replacements` | error | Nested array replacement (VALUES ?) is flattened to a comma list instead of ((..),(..)) row tuples. |
 | `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
-| `C-pool-no-evict-dead-connection` | error | A pooled connection that was ended is handed out again ("Client was closed"), and an error event (ECONNRESET) on a checked-out connection with max:1 leaves the pool exhausted so the next getConnection hangs; v6 destroys such connections and opens a new one. |
 | `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
 | `C-qi-function-args` | error | createFunction/dropFunction/renameFunction do not accept null or non-array optionsArray (TypeError options.map / null .schema) and validation messages differ from v6; a rejected-with TypeError in the test also crashes the mocha process via unhandled rejection. |
 | `C-references-without-model-drop` | error | Attribute with references:{deferrable} but no model (filled by belongsTo) makes sync/drop throw TypeError in referencedTable. |

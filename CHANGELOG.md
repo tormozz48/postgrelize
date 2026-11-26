@@ -38,6 +38,13 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `group: [['col']]` groups by the column (the value was bound as a parameter). Differential test in `tests/compat/group-nested-array.test.ts`. ([#260](https://github.com/tormozz48/postgrelize/pull/260))
+- In raw queries a `$` inside an identifier (`foo$bar`) is no longer read as a bind parameter, and an array inside an array replacement is written as a row `(..)` instead of being flattened. Differential tests in `tests/compat/raw-query-tokens.test.ts`. ([#267](https://github.com/tormozz48/postgrelize/pull/267))
+- `aggregate` selects the given `attributes` next to the aggregate, so `group` may name an alias, and a query with the deprecated `logging: true` logs to `console.log` instead of failing. Differential test in `tests/compat/aggregate-alias-group.test.ts`. ([#273](https://github.com/tormozz48/postgrelize/pull/273))
+- A pooled connection that was closed while idle is no longer handed out, a connection that fails while checked out leaves the pool at once (with `pool.max: 1` the pool stayed exhausted), and `connectionManager.validate` is available. Differential test in `tests/compat/pool-dead-connection.test.ts`. ([#276](https://github.com/tormozz48/postgrelize/pull/276))
+
 ## [1.9.13] - 2026-11-27
 
 ### Fixed
