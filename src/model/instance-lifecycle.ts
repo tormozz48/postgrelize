@@ -115,6 +115,7 @@ export class InstanceLifecycle {
         ([key, value]) => value !== undefined || !(key in instance.dataValues),
       ),
     );
+    this.#dropKeyDefaults(instance, definition, defined);
     state.includes = this.#assign(instance, model, defined, options);
     if (!instance.isNewRecord || options.raw === true) {
       instance._previousDataValues = { ...instance.dataValues };
@@ -182,6 +183,13 @@ export class InstanceLifecycle {
     InstanceState.of(instance).reset();
     InstanceState.of(instance).loadedIncludes = InstanceState.of(reloaded).loadedIncludes;
     return instance;
+  }
+
+  // like v6, a given primary key replaces its default (a set key is read-only afterwards)
+  #dropKeyDefaults(instance: AnyModel, definition: ModelDefinition, given: Values): void {
+    definition.primaryKeys
+      .filter((key) => given[key] !== undefined)
+      .forEach((key) => delete (instance.dataValues as Values)[key]);
   }
 
   // v6 `reload` defaults `include` to the include the instance was loaded with.

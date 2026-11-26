@@ -199,7 +199,7 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
       ...queryOptions,
       paranoid: false,
     });
-    targets.forEach((instance) => instance.set(opts['attributes'] as Values));
+    targets.forEach((instance) => UpdateOperation.#assign(instance, opts['attributes'] as Values));
     await this.services.lifecycle.runEach(model, 'beforeUpdate', targets, opts);
     const changes = targets.map((instance) => UpdateOperation.#changedValues(instance));
     if (changes.some((entry) => !isDeepStrictEqual(entry, changes[0]))) {
@@ -207,6 +207,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     }
     UpdateOperation.#adopt(call, changes[0] ?? {});
     return { saved: undefined, targets };
+  }
+
+  // v6 assigns the values without setters or read-only checks (the setters already ran)
+  static #assign(instance: AnyModel, values: Values): void {
+    Object.entries(values).forEach(([name, value]) => instance.setDataValue(name, value as never));
   }
 
   static async #saveEach(targets: readonly AnyModel[], queryOptions: object): Promise<UpdateRows> {
