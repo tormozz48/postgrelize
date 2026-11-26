@@ -62,14 +62,6 @@
       "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
       "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
     },
-    "A-include-merge-same-model": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Default scope/scope include plus another include (or two scopes) of the same model are concatenated, not merged by model: SQL joins the table twice (table name specified more than once).",
-      "risk": "error",
-      "repro": "Pa defaultScope include [Ch]; await Pa.findAll({include:[Ch]}) // table name \"Child\" specified more than once",
-      "test": "Model scope associations scope with includes with find options should merge includes correctly"
-    },
     "A-instance-rawattributes": {
       "cause": "bug",
       "area": "instance",
@@ -117,14 +109,6 @@
       "risk": "error",
       "repro": "define('U',{},{scopes:{s(){return {}}}}).scope('s') .findAll() // throws",
       "test": "Model scope associations scope with includes should scope columns properly"
-    },
-    "A-scope-include-replaced": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Merging two scopes (or a scope and find options) that each have an include keeps only the last include instead of concatenating them.",
-      "risk": "wrong-result",
-      "repro": "F.scope('incBar','incBaz').findOne() // only baz",
-      "test": "Model scope simple merge should merge simple scopes correctly"
     },
     "A-subquery-join-field-name": {
       "cause": "bug",
@@ -263,14 +247,6 @@
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
     },
-    "B-hook-changes-not-revalidated": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "Attributes changed in beforeUpdate hooks are not re-validated when default fields are saved, so an invalid value set by a hook (email 'B') is persisted; v6 re-runs validation for hook-changed fields.",
-      "risk": "wrong-result",
-      "repro": "U.beforeUpdate(i=>i.set('email','B')); await u.set({email:'ok@x.co'}).save() // saved 'B' without ValidationError",
-      "test": "Instance save hooks should validate attributes changed in hooks when default fields are used"
-    },
     "B-include-attr-bare-literal": {
       "cause": "bug",
       "area": "include",
@@ -294,14 +270,6 @@
       "risk": "wording",
       "repro": "await U.findOne({attributes:['id',['username']]})",
       "test": "Model findOne general / basic function should fail with meaningful error message on invalid attributes definition"
-    },
-    "B-json-date-where": {
-      "cause": "bug",
-      "area": "json",
-      "note": "where: { json: { lastLogin: new Date() } } serialises the date as a JSON string with quotes and compares it with #>> text, so equality never matches.",
-      "risk": "wrong-result",
-      "repro": "await E.findAll({where:{json:{lastLogin:now}}}) // 0 rows",
-      "test": "Model JSON find should be possible to query dates with array operators"
     },
     "B-json-key-cast": {
       "cause": "bug",
@@ -766,14 +734,6 @@
       "repro": "await new Sequelize('cyber_bird','user','pass',{dialect:'postgres'}).sync({force:true}) // resolves",
       "test": "sync fails for incorrect connection even when no models are defined"
     },
-    "C-typevalidation-option": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "typeValidation option is not implemented: invalid ENUM/INTEGER values reach PostgreSQL and fail as DatabaseError instead of v6 ValidationError (\"fnord\" is not a valid choice in [...]).",
-      "risk": "wording",
-      "repro": "new Sequelize(url,{typeValidation:true}).define('R',{s:ENUM('a','b')}).create({s:'x'}) // DatabaseError (v6 ValidationError)",
-      "test": "enum doesn't save an instance if value is not in the range of enums"
-    },
     "C-unknown-constraint-error": {
       "cause": "bug",
       "area": "query-interface",
@@ -857,14 +817,6 @@
       "risk": "error",
       "repro": "DataTypes.STRING({length:1234})",
       "test": "(file does not load) sql/data-types"
-    },
-    "D-define-hooks-merge": {
-      "cause": "bug",
-      "area": "hooks",
-      "note": "Hooks from the sequelize `define: {hooks}` option still run when the model passes its own hook of the same name; v6 lets the model hook replace the global one, so both run.",
-      "risk": "wrong-result",
-      "repro": "new Sequelize(url,{define:{hooks:{beforeCreate:g}}}).define('M',{},{hooks:{beforeCreate:l}}).runHooks('beforeCreate') // g and l both called",
-      "test": "Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook"
     },
     "D-define-no-validation": {
       "cause": "bug",
@@ -958,14 +910,6 @@
       "area": "config",
       "note": "postgrelize accepts a missing dialect (defaults to postgres) and rejects any non-postgres dialect/URI (mysql:, pool:false test uses dialect mysql) with its own message.",
       "ref": "docs/guide/migrating.md section 3 ('Omit dialect or set it to postgres; any other value throws'), docs/guide/migrating.md Other dialects row"
-    },
-    "D-typevalidation-ignored": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "sequelize option typeValidation:true is not implemented: wrong-typed values (string for INTEGER/DECIMAL, number for STRING) are not rejected with ValidationError (DB error or silently accepted).",
-      "risk": "wrong-result",
-      "repro": "new Sequelize(url,{typeValidation:true}).define('u',{name:STRING}).create({name:12}) // succeeds",
-      "test": "InstanceValidator datatype validations should throw validationerror create should throw when passing string"
     },
     "D-unsupported-dialects": {
       "cause": "unsupported",
@@ -1173,13 +1117,11 @@
     },
     "test/unit/hooks.test.js": {
       "failing": [
-        "[POSTGRES] Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook",
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave"
       ],
       "causes": {
-        "[POSTGRES] Hooks global hooks using define hooks does not run the global hook when the model specifies its own hook": "D-define-hooks-merge",
         "[POSTGRES] Hooks proxies defined by addHook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by hook method calls beforeSave/afterSave": "D-harness-stub-query",
         "[POSTGRES] Hooks proxies defined by options.hooks calls beforeSave/afterSave": "D-harness-stub-query"
@@ -1579,11 +1521,7 @@
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow string as a number",
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow true/false string as a boolean",
         "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $in",
-        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing decimal",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing string",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing decimal",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing string"
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid"
       ],
       "causes": {
         "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to false should call validator and not throw on create": "D-harness-stub-query",
@@ -1604,11 +1542,7 @@
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow string as a number": "D-harness-stub-query",
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow true/false string as a boolean": "D-harness-stub-query",
         "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $in": "D-harness-stub-query",
-        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid": "D-harness-stub-query",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing decimal": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing string": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing decimal": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing string": "D-typevalidation-ignored"
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid": "D-harness-stub-query"
       }
     },
     "test/unit/query-interface/bulk-delete.test.js": {
@@ -2372,12 +2306,8 @@
       }
     },
     "test/integration/instance/save.test.js": {
-      "failing": [
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used"
-      ],
-      "causes": {
-        "[POSTGRES] Instance save hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/to-json.test.js": {
       "failing": [
@@ -2390,12 +2320,8 @@
       }
     },
     "test/integration/instance/update.test.js": {
-      "failing": [
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used"
-      ],
-      "causes": {
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/values.test.js": {
       "failing": [],
@@ -2597,11 +2523,9 @@
     },
     "test/integration/model/json.test.js": {
       "failing": [
-        "[POSTGRES] Model JSON find should be possible to query dates with array operators",
         "[POSTGRES] Model JSON sql injection attacks should query an instance with JSONB data and order while trying to inject"
       ],
       "causes": {
-        "[POSTGRES] Model JSON find should be possible to query dates with array operators": "B-json-date-where",
         "[POSTGRES] Model JSON sql injection attacks should query an instance with JSONB data and order while trying to inject": "B-json-order-injection"
       }
     },
@@ -2638,15 +2562,11 @@
       "pass": 7,
       "failing": [
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly",
-        "[POSTGRES] Model scope associations scope with includes with different format should not throw error",
-        "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly"
+        "[POSTGRES] Model scope associations scope with includes should scope columns properly"
       ],
       "causes": {
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes with different format should not throw error": "A-include-merge-same-model",
-        "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly": "A-include-merge-same-model"
+        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name"
       }
     },
     "test/integration/model/scope/count.test.js": {
@@ -2662,16 +2582,8 @@
     "test/integration/model/scope/merge.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"",
-        "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
-        "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
-      ],
-      "causes": {
-        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"": "A-include-merge-same-model",
-        "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order": "A-include-merge-same-model",
-        "[POSTGRES] Model scope simple merge should merge simple scopes correctly": "A-scope-include-replaced"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/scope/update.test.js": {
       "failing": ["[POSTGRES] Model scope update should work with empty where"],
@@ -2858,7 +2770,6 @@
         "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
         "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
@@ -2874,7 +2785,6 @@
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)": "C-uri-query-options",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums": "C-typevalidation-option",
         "[POSTGRES] Sequelize define raises an error if no values are defined": "C-array-no-type",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions": "C-sequelize-internals",

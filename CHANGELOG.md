@@ -38,6 +38,14 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- The `typeValidation` Sequelize option works like in v6: a value that does not fit the data type of its attribute (a string for `INTEGER` or `DECIMAL`, an unknown `ENUM` label, ...) is rejected with `ValidationError` on writes and in `where` before the statement runs. Differential test in `tests/compat/type-validation.test.ts`; five v6 suite baseline entries and the causes `D-typevalidation-ignored` and `C-typevalidation-option` are gone. ([#205](https://github.com/tormozz48/postgrelize/pull/205))
+- Includes of merged scopes and find options behave like v6: includes of different models are all kept (a non-array `include` replaced the other one) and entries of the same model and alias become one (the table was joined twice: `table name specified more than once`). Differential test in `tests/compat/scope-include-merge.test.ts`; five v6 suite baseline entries and the causes `A-scope-include-replaced` and `A-include-merge-same-model` are gone. ([#217](https://github.com/tormozz48/postgrelize/pull/217))
+- When `save()` writes the changed attributes, a new value that a `beforeUpdate` hook gives to any of them is validated again, like v6; an invalid value set by a hook on an attribute that was already changed was saved. Differential test in `tests/compat/hook-changes-revalidated.test.ts`; two v6 suite baseline entries and the cause `B-hook-changes-not-revalidated` are gone. ([#218](https://github.com/tormozz48/postgrelize/pull/218))
+- A `Date` in a nested JSON `where` is compared as `timestamptz` like v6 (it was bound as quoted JSON text and never matched), and `IN` / `BETWEEN` on a JSON path cast by the type of their values. Differential test in `tests/compat/json-date-where.test.ts`; one v6 suite baseline entry and the cause `B-json-date-where` are gone. ([#205](https://github.com/tormozz48/postgrelize/pull/205))
+- **Behaviour change:** like v6, a hook in the model options replaces the `define.hooks` hook of the same name instead of running after it. Differential test in `tests/compat/define-hooks-override.test.ts`; one v6 suite baseline entry and the cause `D-define-hooks-merge` are gone. ([#229](https://github.com/tormozz48/postgrelize/pull/229))
+
 ## [1.9.7] - 2026-11-26
 
 ### Fixed
