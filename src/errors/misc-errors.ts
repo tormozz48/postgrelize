@@ -113,12 +113,29 @@ export class AggregateError extends BaseError {
    *
    * @param errors - Collected errors.
    */
-  constructor(errors: readonly Error[]) {
+  constructor(errors: readonly Error[] = []) {
     super(errors.map((error) => error.message).join('\n'));
     this.name = 'AggregateError';
     this.errors = errors;
   }
 }
+
+// like v6, `String(error)` lists the collected errors, indented; not a declared member (v6 declares none)
+const indented = (error: Error, parent: Error): string => {
+  if (error === parent) {
+    return '[Circular AggregateError]';
+  }
+  return error instanceof AggregateError
+    ? String(error).replace(/\n$/, '').replace(/^/gm, '  ')
+    : String(error).replace(/^/gm, '    ').slice(2);
+};
+Object.defineProperty(AggregateError.prototype, 'toString', {
+  configurable: true,
+  writable: true,
+  value(this: AggregateError): string {
+    return `AggregateError of:\n${this.errors.map((error) => indented(error, this)).join('\n')}\n`;
+  },
+});
 
 /**
  * Thrown by finders called with `rejectOnEmpty: true` when no row matches.

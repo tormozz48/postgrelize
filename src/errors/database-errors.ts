@@ -46,8 +46,10 @@ export class DatabaseError extends BaseError {
     this.name = 'SequelizeDatabaseError';
     this.parent = driverError;
     this.original = driverError;
-    this.sql = context.sql ?? '';
-    this.parameters = context.parameters ?? [];
+    // like v6, the SQL and parameters of the parent are kept
+    const given = driverError as Readonly<QueryErrorContext>;
+    this.sql = context.sql ?? given.sql ?? '';
+    this.parameters = context.parameters ?? given.parameters ?? [];
   }
 }
 
@@ -182,7 +184,7 @@ export class ForeignKeyConstraintError extends DatabaseError {
    *
    * @param options - Driver error, fields and context.
    */
-  constructor(options: ConstraintErrorOptions) {
+  constructor(options: ConstraintErrorOptions = {}) {
     super(options.parent, options);
     this.name = 'SequelizeForeignKeyConstraintError';
     this.fields = options.fields;
@@ -220,7 +222,7 @@ export class ExclusionConstraintError extends DatabaseError {
    *
    * @param options - Driver error, fields and context.
    */
-  constructor(options: ConstraintErrorOptions) {
+  constructor(options: ConstraintErrorOptions = {}) {
     super(options.parent, options);
     this.name = 'SequelizeExclusionConstraintError';
     this.constraint = options.constraint;
