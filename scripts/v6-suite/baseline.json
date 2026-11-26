@@ -382,14 +382,6 @@
       "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
       "test": "Model update skips update query if no data to update"
     },
-    "B-upsert-named-unique-index": {
-      "cause": "bug",
-      "area": "upsert",
-      "note": "upsert with a composite unique index declared as indexes:[{unique:'users_name_address',fields:[..]}] (string unique name) does not use it as conflict target: a second upsert inserts a duplicate row (only unique:true is recognised).",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{name:DataTypes.STRING,address:DataTypes.STRING,city:DataTypes.STRING},{indexes:[{unique:'ix',fields:['name','address']}]}); await U.upsert({name:'u',address:'a',city:'C'}); await U.upsert({name:'u',address:'a',city:'N'}) // 2 rows",
-      "test": "Model upsert works when composite indexes are created via indexes array"
-    },
     "B-validator-extend": {
       "cause": "bug",
       "area": "validation",
@@ -2619,11 +2611,9 @@
       "unstable": true,
       "pass": 9,
       "failing": [
-        "[POSTGRES] Model upsert works when composite indexes are created via indexes array",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key"
       ],
       "causes": {
-        "[POSTGRES] Model upsert works when composite indexes are created via indexes array": "B-upsert-named-unique-index",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key": "B-triage-upsert-infinity-pk"
       }
     },

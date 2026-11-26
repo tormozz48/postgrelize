@@ -15,7 +15,8 @@ const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefi
 /** Attribute names (and partial-index predicate) of each unique index declared in `indexes`. */
 const uniqueIndexKeys = (definition: ModelDefinition, withPartial: boolean): readonly UniqueKey[] =>
   (definition.options.indexes ?? [])
-    .filter((index) => index.unique === true && (withPartial || index.where === undefined))
+    // like v6, any truthy `unique` (a name string too) makes a unique index
+    .filter((index) => Boolean(index.unique) && (withPartial || index.where === undefined))
     .filter((index) =>
       (index.fields ?? []).every((field) => typeof field === 'string' || field.name !== undefined),
     )
