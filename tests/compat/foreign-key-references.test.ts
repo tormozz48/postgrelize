@@ -14,9 +14,9 @@ const portable = (reference: Reference): Reference =>
 
 describe('compat: getForeignKeyReferencesForTable', () => {
   it('returns every field of v6', () =>
-    expectSameResult('', async (lib, sequelize) => {
+    expectSameResult('', async (_lib, sequelize) => {
       const User = sequelize.define('user', {});
-      const Host = sequelize.define('host', { owner: lib.DataTypes.INTEGER });
+      const Host = sequelize.define('host', {});
       Host.belongsTo(User, { foreignKey: 'owner' });
       await sequelize.sync({ force: true });
       const queryInterface = sequelize.getQueryInterface();
