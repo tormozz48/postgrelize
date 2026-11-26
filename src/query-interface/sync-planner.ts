@@ -78,8 +78,8 @@ export class SyncPlanner {
   }
 
   #referencedTable(references: AttributeDefinition['references']): string | undefined {
-    if (references === undefined || typeof references === 'string') {
-      return references;
+    if (!references || typeof references === 'string') {
+      return references || undefined;
     }
     const model = references.model;
     if (typeof model === 'string') {

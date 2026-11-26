@@ -24,7 +24,6 @@ export class BelongsToMany<
 > extends Association<S, T> {
   readonly #junction: Model;
   readonly #junctionName: string;
-  readonly #otherKey: string;
 
   /**
    * Adds the foreign key attributes to the junction model and registers the association.
@@ -39,8 +38,12 @@ export class BelongsToMany<
     super('BelongsToMany', source, target, options, resolved.name, resolved.keys);
     this.#junction = model;
     this.#junctionName = registry.state(model).definition.name;
-    this.#otherKey = resolved.keys.otherKey as string;
     this.install();
+  }
+
+  // read from the field: the other side of the junction may rename it later
+  get #linkKey(): string {
+    return this.otherKey as string;
   }
 
   /**
@@ -53,7 +56,7 @@ export class BelongsToMany<
    */
   async get(instance: Instance, options: AccessorOptions = {}): Promise<Instance[]> {
     const joined = await this.#links(instance, options);
-    const byKey = new Map(joined.map((link) => [link.get(this.#otherKey), link]));
+    const byKey = new Map(joined.map((link) => [link.get(this.#linkKey), link]));
     const rows = (await this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: [...byKey.keys()] }),
@@ -158,7 +161,7 @@ export class BelongsToMany<
   async set(instance: Instance, items: unknown, options: LinkOptions = {}): Promise<Instance> {
     const wanted = new Set(this.#ids(items));
     const stale = (await this.#links(instance, options))
-      .map((link) => link.get(this.#otherKey))
+      .map((link) => link.get(this.#linkKey))
       .filter((id) => !wanted.has(id));
     await this.#removeLinks(instance, stale, options);
     await this.#addLinks(instance, items, options, false);
@@ -200,8 +203,8 @@ export class BelongsToMany<
     options: AccessorOptions,
     wanted?: readonly unknown[],
   ): Promise<readonly unknown[]> {
-    const links = await this.#links(instance, options, wanted, [this.#otherKey]);
-    return links.map((link) => link.get(this.#otherKey));
+    const links = await this.#links(instance, options, wanted, [this.#linkKey]);
+    return links.map((link) => link.get(this.#linkKey));
   }
 
   #links(
@@ -215,7 +218,7 @@ export class BelongsToMany<
       ...(attributes === undefined ? {} : { attributes }),
       where: this.andWhere(
         this.#own(instance),
-        wanted === undefined ? undefined : { [this.#otherKey]: wanted },
+        wanted === undefined ? undefined : { [this.#linkKey]: wanted },
       ),
     } as never) as Promise<Instance[]>;
   }
@@ -231,12 +234,12 @@ export class BelongsToMany<
     const given = this.#given(items, options);
     const links = await this.#links(instance, options, [...given.keys()]);
     for (const link of links) {
-      const values = given.get(link.get(this.#otherKey)) ?? {};
+      const values = given.get(link.get(this.#linkKey)) ?? {};
       if (this.#needsUpdate(link, values, onlyChanged)) {
         await this.#updateLink(instance, link, values, options);
       }
     }
-    const existing = new Set(links.map((link) => link.get(this.#otherKey)));
+    const existing = new Set(links.map((link) => link.get(this.#linkKey)));
     const missing = [...given].filter(([id]) => !existing.has(id));
     await this.#createLinks(instance, missing, options);
   }
@@ -265,7 +268,7 @@ export class BelongsToMany<
         missing.map(([id, values]) => ({
           ...values,
           ...this.#own(instance),
-          [this.#otherKey]: id,
+          [this.#linkKey]: id,
         })) as never,
         { ...this.passThrough(options), validate: true } as never,
       );
@@ -285,7 +288,7 @@ export class BelongsToMany<
   ): Promise<void> {
     const where = {
       [this.foreignKey]: instance.get(this.sourceKey),
-      [this.#otherKey]: link.get(this.#otherKey),
+      [this.#linkKey]: link.get(this.#linkKey),
     };
     await this.#junction.update(values as never, { ...this.passThrough(options), where } as never);
   }
@@ -295,7 +298,7 @@ export class BelongsToMany<
     if (wanted.length > 0) {
       await this.#junction.destroy({
         ...this.passThrough(options),
-        where: this.andWhere(this.#own(instance), { [this.#otherKey]: wanted }),
+        where: this.andWhere(this.#own(instance), { [this.#linkKey]: wanted }),
       } as never);
     }
   }
