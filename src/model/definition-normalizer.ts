@@ -1,6 +1,7 @@
 import inflection from 'inflection';
 import type { ModelDefaults } from '../connection/options.ts';
 import { DataTypes } from '../data-types/data-types.ts';
+import { AttributeMerger } from './attribute-merger.ts';
 import { AttributeNormalizer } from './attribute-normalizer.ts';
 import type { AttributeDefinition, ModelAttributes } from './attribute-options.ts';
 import type { DefinitionOptions, ModelDefinitionFields } from './model-definition.ts';
@@ -13,6 +14,7 @@ type SpecialAttributes = Readonly<{
 }>;
 
 const attributes = new AttributeNormalizer();
+const merger = new AttributeMerger(attributes);
 
 /**
  * Normalizes `Model.init` arguments into the fields of a model definition, applying Sequelize v6
@@ -130,7 +132,7 @@ export class DefinitionNormalizer {
     ]);
     const all: ModelAttributes = {
       ...this.#autoPrimaryKey(withAssociations),
-      ...this.#attributes,
+      ...merger.merge(this.#attributes, this.#associationAttributes),
       ...this.#undeclared(this.#timestampAttributes(special)),
       ...this.#undeclared(this.#associationAttributes),
     };

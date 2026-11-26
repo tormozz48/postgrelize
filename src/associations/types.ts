@@ -28,6 +28,8 @@ export type ForeignKeyOptions = Readonly<{
   field?: string;
   /** Whether the key may be `NULL`. */
   allowNull?: boolean;
+  /** Default value of the foreign key attribute. */
+  defaultValue?: unknown;
 }>;
 
 /**
