@@ -53,11 +53,9 @@ describe('where merging with expressions', () => {
   });
 });
 
-describe('scope selection errors', () => {
-  it('rejects a function scope selected by name', () => {
-    expect(() => registry.resolve(['byName'])).toThrow(
-      `Scope "byName" is a function; use { method: ['byName', ...args] }`,
-    );
+describe('scope selection', () => {
+  it('calls a function scope selected by name without arguments', () => {
+    expect(registry.resolve(['byName'])).toEqual(registry.resolve([{ method: ['byName'] }]));
   });
 
   it('rejects a method selector for an unknown or non-function scope', () => {
