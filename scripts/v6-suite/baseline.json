@@ -62,14 +62,6 @@
       "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
       "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
     },
-    "A-include-merge-same-model": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Default scope/scope include plus another include (or two scopes) of the same model are concatenated, not merged by model: SQL joins the table twice (table name specified more than once).",
-      "risk": "error",
-      "repro": "Pa defaultScope include [Ch]; await Pa.findAll({include:[Ch]}) // table name \"Child\" specified more than once",
-      "test": "Model scope associations scope with includes with find options should merge includes correctly"
-    },
     "A-instance-rawattributes": {
       "cause": "bug",
       "area": "instance",
@@ -109,14 +101,6 @@
       "risk": "error",
       "repro": "define('U',{},{scopes:{s(){return {}}}}).scope('s') .findAll() // throws",
       "test": "Model scope associations scope with includes should scope columns properly"
-    },
-    "A-scope-include-replaced": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Merging two scopes (or a scope and find options) that each have an include keeps only the last include instead of concatenating them.",
-      "risk": "wrong-result",
-      "repro": "F.scope('incBar','incBaz').findOne() // only baz",
-      "test": "Model scope simple merge should merge simple scopes correctly"
     },
     "A-subquery-join-field-name": {
       "cause": "bug",
@@ -2638,15 +2622,11 @@
       "pass": 7,
       "failing": [
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly",
-        "[POSTGRES] Model scope associations scope with includes with different format should not throw error",
-        "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly"
+        "[POSTGRES] Model scope associations scope with includes should scope columns properly"
       ],
       "causes": {
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes with different format should not throw error": "A-include-merge-same-model",
-        "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly": "A-include-merge-same-model"
+        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name"
       }
     },
     "test/integration/model/scope/count.test.js": {
@@ -2662,16 +2642,8 @@
     "test/integration/model/scope/merge.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"",
-        "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order",
-        "[POSTGRES] Model scope simple merge should merge simple scopes correctly"
-      ],
-      "causes": {
-        "\"after each\" hook for \"should merge complex scopes correctly regardless of their order\"": "A-include-merge-same-model",
-        "[POSTGRES] Model scope complex merge should merge complex scopes correctly regardless of their order": "A-include-merge-same-model",
-        "[POSTGRES] Model scope simple merge should merge simple scopes correctly": "A-scope-include-replaced"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/scope/update.test.js": {
       "failing": ["[POSTGRES] Model scope update should work with empty where"],
