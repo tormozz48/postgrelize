@@ -1,8 +1,10 @@
 import { SqlExpression } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
+import { ScopeIncludes } from './scope-includes.ts';
 import { ValuesWriter } from './values-writer.ts';
 
 const writer = new ValuesWriter();
+const includes = new ScopeIncludes();
 
 /**
  * Find options stored in a scope (`where`, `attributes`, `order`, `limit`, ...).
@@ -78,6 +80,9 @@ const mergeValue = (
   if (key === 'where' || key === 'having') {
     return mergeWhere(left, right, strategy);
   }
+  if (key === 'include' && (left !== undefined || right !== undefined)) {
+    return includes.merge(left, right, (a, b) => mergeOptions(a, b, strategy));
+  }
   if (Array.isArray(left) && Array.isArray(right)) {
     return union(left, right);
   }
@@ -85,6 +90,20 @@ const mergeValue = (
     return mergeAttributes(left, right);
   }
   return right === undefined ? left : right;
+};
+
+const mergeOptions = (
+  left: ScopeOptions,
+  right: ScopeOptions,
+  strategy: WhereMergeStrategy,
+): ScopeOptions => {
+  const merged: Record<string, unknown> = {};
+  for (const key of [...Object.keys(left), ...Object.keys(right)]) {
+    if (!Object.hasOwn(merged, key)) {
+      writer.set(merged, key, mergeValue(key, left[key], right[key], strategy));
+    }
+  }
+  return merged;
 };
 
 /**
@@ -127,14 +146,7 @@ export class ScopeRegistry {
    * @returns Merged options.
    */
   merge(left: ScopeOptions, right: ScopeOptions): ScopeOptions {
-    const strategy = this.whereMergeStrategy;
-    const merged: Record<string, unknown> = {};
-    for (const key of [...Object.keys(left), ...Object.keys(right)]) {
-      if (!Object.hasOwn(merged, key)) {
-        writer.set(merged, key, mergeValue(key, left[key], right[key], strategy));
-      }
-    }
-    return merged;
+    return mergeOptions(left, right, this.whereMergeStrategy);
   }
 
   /**
