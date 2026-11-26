@@ -118,7 +118,8 @@ export class BelongsToMany<
   }
 
   /**
-   * Creates the missing junction rows (`addX` / `addXs`).
+   * Creates the missing junction rows and updates the through values of existing ones (`addX` /
+   * `addXs`).
    *
    * @param instance - Source instance.
    * @param items - Instance(s) or target key value(s).
@@ -126,7 +127,7 @@ export class BelongsToMany<
    * @returns The source instance.
    */
   async add(instance: Instance, items: unknown, options: LinkOptions = {}): Promise<Instance> {
-    await this.#addLinks(instance, items, options);
+    await this.#addLinks(instance, items, options, true);
     return instance;
   }
 
@@ -161,7 +162,7 @@ export class BelongsToMany<
       .map((link) => link.get(this.#otherKey))
       .filter((id) => !wanted.has(id));
     await this.#removeLinks(instance, stale, options);
-    await this.#addLinks(instance, items, options);
+    await this.#addLinks(instance, items, options, false);
     return instance;
   }
 
@@ -182,7 +183,7 @@ export class BelongsToMany<
       { ...values, ...this.scope } as never,
       this.passThrough(options) as never,
     )) as Instance;
-    await this.#addLinks(instance, created, options);
+    await this.#addLinks(instance, created, options, true);
     return created;
   }
 
@@ -208,22 +209,74 @@ export class BelongsToMany<
     } as never) as Promise<Instance[]>;
   }
 
-  async #addLinks(instance: Instance, items: unknown, options: LinkOptions): Promise<void> {
-    const wanted = this.#ids(items);
-    const existing = new Set(
-      (await this.#links(instance, options, wanted)).map((link) => link.get(this.#otherKey)),
+  // creates the missing junction rows and updates the through attributes of the existing ones (v6:
+  // `add` only when one differs, `set` whenever some are given)
+  async #addLinks(
+    instance: Instance,
+    items: unknown,
+    options: LinkOptions,
+    onlyChanged: boolean,
+  ): Promise<void> {
+    const given = this.#given(items, options);
+    const links = await this.#links(instance, options, [...given.keys()]);
+    for (const link of links) {
+      const values = given.get(link.get(this.#otherKey)) ?? {};
+      if (this.#needsUpdate(link, values, onlyChanged)) {
+        await this.#updateLink(instance, link, values, options);
+      }
+    }
+    const existing = new Set(links.map((link) => link.get(this.#otherKey)));
+    const missing = [...given].filter(([id]) => !existing.has(id));
+    await this.#createLinks(instance, missing, options);
+  }
+
+  // junction values by target key: `options.through`, overridden by those set on the item
+  #given(items: unknown, options: LinkOptions): ReadonlyMap<unknown, Values> {
+    const list = this.toArray(items);
+    return new Map(
+      this.#ids(items).map((id, index) => {
+        const item = list[index];
+        const own =
+          typeof item === 'object' && item !== null && (item as Values)[this.#junctionName];
+        const values = own instanceof this.#junction ? {} : (own as Values);
+        return [id, { ...options.through, ...values }];
+      }),
     );
-    const missing = wanted.filter((id) => !existing.has(id));
+  }
+
+  async #createLinks(
+    instance: Instance,
+    missing: readonly (readonly [unknown, Values])[],
+    options: LinkOptions,
+  ): Promise<void> {
     if (missing.length > 0) {
       await this.#junction.bulkCreate(
-        missing.map((id) => ({
-          ...options.through,
+        missing.map(([id, values]) => ({
+          ...values,
           ...this.#own(instance),
           [this.#otherKey]: id,
         })) as never,
-        this.passThrough(options) as never,
+        { ...this.passThrough(options), validate: true } as never,
       );
     }
+  }
+
+  #needsUpdate(link: Instance, values: Values, onlyChanged: boolean): boolean {
+    const entries = Object.entries(values);
+    return entries.length > 0 && (!onlyChanged || entries.some(([k, v]) => link.get(k) !== v));
+  }
+
+  async #updateLink(
+    instance: Instance,
+    link: Instance,
+    values: Values,
+    options: LinkOptions,
+  ): Promise<void> {
+    const where = {
+      [this.foreignKey]: instance.get(this.sourceKey),
+      [this.#otherKey]: link.get(this.#otherKey),
+    };
+    await this.#junction.update(values as never, { ...this.passThrough(options), where } as never);
   }
 
   async #removeLinks(instance: Instance, items: unknown, options: AccessorOptions): Promise<void> {
