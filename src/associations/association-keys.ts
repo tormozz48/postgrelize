@@ -191,9 +191,18 @@ export class AssociationKeys {
       [foreignKey]: this.keyAttribute(
         this.attributeOf(referenced, referencedKey),
         extras,
-        this.reference(spec, extras.allowNull !== false, { onDelete: 'auto', onUpdate: 'CASCADE' }),
+        this.#keyColumn(spec, extras, options),
       ),
     } as ModelAttributes);
+  }
+
+  // reference of the new foreign key, with the data type of `keyType` when given
+  #keyColumn(spec: ReferenceSpec, extras: ForeignKeyOptions, options: AssociationOptions): Values {
+    const defaults = { onDelete: 'auto', onUpdate: 'CASCADE' } as const;
+    return {
+      ...this.reference(spec, extras.allowNull !== false, defaults),
+      ...(options.keyType === undefined ? {} : { type: options.keyType }),
+    };
   }
 
   #actions(options: AssociationOptions): Omit<ReferenceSpec, 'model' | 'key'> {

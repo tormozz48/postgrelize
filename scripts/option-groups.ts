@@ -144,6 +144,7 @@ export const UNLISTED_OPTION_TYPES: readonly string[] = [
  */
 export const V6_RUNTIME_OPTIONS: readonly string[] = [
   'retry',
+  'keyType',
   'tableAs',
   'nested',
   'replacements',
