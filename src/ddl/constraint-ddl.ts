@@ -31,7 +31,7 @@ export class ConstraintDdl {
    */
   addConstraintSql(table: TableName, options: ConstraintOptions, defaultSchema?: string): string {
     const type = options.type.toLowerCase();
-    const name = options.name ?? this.#defaultName(table, this.#nameFields(type, options), type);
+    const name = options.name ?? this.#defaultName(table, type, options);
     const fields = this.#fieldList(type, options);
     const body = this.#body(type, fields, options, defaultSchema);
     return `ALTER TABLE ${sqlLiteral.quoteTable(table, defaultSchema)} ADD CONSTRAINT ${SqlCompiler.quoteIdent(name)} ${body}${this.#attributes(type, options)}`;
@@ -97,15 +97,19 @@ export class ConstraintDdl {
     return [...names.slice(0, -1), mark(last)].join(', ');
   }
 
-  #defaultName(table: TableName, fields: readonly string[], type: string): string {
-    const suffix = type
-      .replace(' ', '_')
-      .replace('primary_key', 'pk')
-      .replace('foreign_key', 'fkey')
-      .replace('check', 'ck')
-      .replace('unique', 'uk')
-      .replace('exclude', 'excl');
-    return `${sqlLiteral.tableParts(table).name}_${fields.join('_')}_${suffix}`;
+  // v6 names: `<table>_<fields>_pk|uk|ck`, `<table>_<fields>_<referenced table>_fk`
+  #defaultName(table: TableName, type: string, options: ConstraintOptions): string {
+    const referenced = options.references?.table;
+    const suffix =
+      type === 'foreign key' && referenced !== undefined
+        ? `${sqlLiteral.tableParts(referenced).name}_fk`
+        : type
+            .replace('primary key', 'pk')
+            .replace('check', 'ck')
+            .replace('unique', 'uk')
+            .replace('exclude', 'excl');
+    const fields = this.#nameFields(type, options).join('_');
+    return `${sqlLiteral.tableParts(table).name}_${fields}_${suffix}`;
   }
 
   #body(
