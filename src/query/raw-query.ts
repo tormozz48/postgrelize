@@ -9,8 +9,9 @@ export type Replacements = readonly unknown[] | Readonly<Record<string, unknown>
 /** Bind parameters for raw SQL: `$1` for arrays, `$name` for objects. */
 export type BindParameters = readonly unknown[] | Readonly<Record<string, unknown>>;
 
+// a `$` inside an identifier (`foo$bar`) starts neither a dollar quote nor a bind parameter
 const TOKEN =
-  /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\/|\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$|::|:([A-Za-z_]\w*)|\?(?![|&])|\$([A-Za-z_]\w*|\d+)/g;
+  /'(?:[^']|'')*'|"(?:[^"]|"")*"|--[^\n]*|\/\*[\s\S]*?\*\/|(?<![\p{L}\p{N}_$])\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$|::|:([A-Za-z_]\w*)|\?(?![|&])|(?<![\p{L}\p{N}_$])\$([A-Za-z_]\w*|\d+)/gu;
 
 // A statement given as an object: `{ query, values }` or `{ query, bind }`, also a class instance with these properties.
 type TaggedStatement = Readonly<{
@@ -211,11 +212,17 @@ export class RawQuery {
       return [compiled.text];
     }
     if (Array.isArray(value)) {
-      return value.flatMap((item: unknown, index) =>
-        index === 0 ? this.#valueChunks(item) : [', ', ...this.#valueChunks(item)],
-      );
+      return value.flatMap((item: unknown, index) => [
+        ...(index === 0 ? [] : [', ']),
+        ...this.#listItemChunks(item),
+      ]);
     }
     return [literals.escape(value)];
+  }
+
+  // like v6, an array inside a list is a row: `(..), (..)`
+  #listItemChunks(item: unknown): Chunks {
+    return Array.isArray(item) ? ['(', ...this.#valueChunks(item), ')'] : this.#valueChunks(item);
   }
 
   #lookup(source: Replacements | BindParameters, key: string | number, kind: string): unknown {
