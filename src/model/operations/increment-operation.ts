@@ -69,18 +69,26 @@ export class IncrementOperation {
     return [result.rows.map((row) => rows.instance(model, row)), result.rowCount];
   }
 
+  // like v6, the version of optimistic locking goes up on `decrement` too
+  #amounts(definition: ModelDefinition, given: Readonly<Record<string, number>>, sign: 1 | -1) {
+    const { updates } = this.#services;
+    const { version } = definition;
+    const { [version ?? '']: _own, ...amounts } = given;
+    const bumped = version === undefined ? [] : updates.increment(definition, { [version]: 1 }, 1);
+    return [...updates.increment(definition, amounts, sign), ...bumped];
+  }
+
   #setItems(
     definition: ModelDefinition,
     fields: AttributeAmounts<Values>,
     options: IncrementOptions,
     sign: 1 | -1,
   ) {
-    const { columns, updates, values } = this.#services;
-    const amounts = values.amounts(fields, options.by ?? 1);
+    const { columns, values } = this.#services;
     const silent = options.silent === true;
     const timestamp = values.withTimestamps(definition, {}, new Date(), false, silent);
     return [
-      ...updates.increment(definition, amounts, sign),
+      ...this.#amounts(definition, values.amounts(fields, options.by ?? 1), sign),
       ...columns.setItems(definition, timestamp),
     ];
   }
