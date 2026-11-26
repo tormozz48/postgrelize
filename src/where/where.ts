@@ -138,7 +138,8 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
 
   /** @internal */
   visitLiteral(value: Literal): ExprNode {
-    return ast.raw(value.val);
+    // v6 accepts `literal(2020)`; a number must not reach the compiler as a segment
+    return ast.raw(String(value.val));
   }
 
   /** @internal */

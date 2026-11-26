@@ -285,14 +285,6 @@
       "note": "order:[[\"data.name.first}'); ...\"]] is treated as a (bound) JSON path and returns rows; v6 throws.",
       "ref": "docs/sequelize-issues.md (#9040 order by a JSON path); docs/security.md (ADR-020)"
     },
-    "B-literal-default-not-returned": {
-      "cause": "bug",
-      "area": "model",
-      "note": "An attribute whose defaultValue is literal() is left null on the instance after create/save/upsert/bulkCreate (the DB computed it but RETURNING is not applied); v6 reloads it.",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{code:{type:DataTypes.INTEGER,defaultValue:Sequelize.literal(2020)}}); (await U.create({})).code // null",
-      "test": "Model should return default value set by the database (create)"
-    },
     "B-logging-interpolated": {
       "cause": "bug",
       "area": "query",
@@ -2460,13 +2452,11 @@
       "pass": 10,
       "failing": [
         "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction",
-        "[POSTGRES] Model should return default value set by the database (create)"
+        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
       ],
       "causes": {
         "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"": "B-findorcreate-pool-deadlock",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock",
-        "[POSTGRES] Model should return default value set by the database (create)": "B-literal-default-not-returned"
+        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock"
       }
     },
     "test/integration/model/create/include.test.js": {
@@ -2655,12 +2645,10 @@
       "unstable": true,
       "pass": 9,
       "failing": [
-        "[POSTGRES] Model upsert returns values should return default value set by the database (upsert)",
         "[POSTGRES] Model upsert works when composite indexes are created via indexes array",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key"
       ],
       "causes": {
-        "[POSTGRES] Model upsert returns values should return default value set by the database (upsert)": "B-literal-default-not-returned",
         "[POSTGRES] Model upsert works when composite indexes are created via indexes array": "B-upsert-named-unique-index",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key": "B-triage-upsert-infinity-pk"
       }
