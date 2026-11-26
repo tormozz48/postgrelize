@@ -245,7 +245,15 @@ export class RawQuery {
     }
     return bindName !== undefined && ctx.bind !== undefined
       ? this.#bindTokenChunks(token, bindName, ctx.bind, ctx)
-      : [token];
+      : [this.#unescaped(token, ctx)];
+  }
+
+  // like v6, `$$` in a string literal of a statement with `bind` stands for `$`; a statement of the
+  // query builder (`lenient`) is left as it is, and so are dollar-quoted blocks
+  #unescaped(token: string, ctx: TokenContext): string {
+    return ctx.bind !== undefined && !ctx.lenient && token.startsWith("'")
+      ? token.replace(/\B\$\$/g, () => '$')
+      : token;
   }
 
   #bindTokenChunks(
