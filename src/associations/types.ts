@@ -95,6 +95,11 @@ export type ThroughOptions = Readonly<{
   model: string | ModelStatic<AnyModel>;
   /** Attribute values applied to junction rows. */
   scope?: Readonly<Record<string, unknown>>;
+  /**
+   * Soft deletes on a junction model created from a name.
+   * @defaultValue false
+   */
+  paranoid?: boolean;
 }>;
 
 /**
@@ -116,6 +121,11 @@ export type BelongsToManyOptions = AssociationOptions &
     through: string | ModelStatic<AnyModel> | ThroughOptions;
     /** Junction foreign key pointing at the target. Default: derived from the target model name. */
     otherKey?: string | ForeignKeyOptions;
+    /**
+     * `timestamps` of a junction model created from a name.
+     * @defaultValue the `define` default, else true
+     */
+    timestamps?: boolean;
   }>;
 
 /** Resolved junction of a belongsToMany association. */
