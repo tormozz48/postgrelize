@@ -854,14 +854,6 @@
       "repro": "await new Sequelize('cyber_bird','user','pass',{dialect:'postgres'}).sync({force:true}) // resolves",
       "test": "sync fails for incorrect connection even when no models are defined"
     },
-    "C-typevalidation-option": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "typeValidation option is not implemented: invalid ENUM/INTEGER values reach PostgreSQL and fail as DatabaseError instead of v6 ValidationError (\"fnord\" is not a valid choice in [...]).",
-      "risk": "wording",
-      "repro": "new Sequelize(url,{typeValidation:true}).define('R',{s:ENUM('a','b')}).create({s:'x'}) // DatabaseError (v6 ValidationError)",
-      "test": "enum doesn't save an instance if value is not in the range of enums"
-    },
     "C-unknown-constraint-error": {
       "cause": "bug",
       "area": "query-interface",
@@ -1070,14 +1062,6 @@
       "risk": "wrong-result",
       "repro": "u=M.build({});u.set('date','1970-01-01');typeof u.get('date').getTime",
       "test": "Instance set sets the date \"1970-01-01\" to previously null field"
-    },
-    "D-typevalidation-ignored": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "sequelize option typeValidation:true is not implemented: wrong-typed values (string for INTEGER/DECIMAL, number for STRING) are not rejected with ValidationError (DB error or silently accepted).",
-      "risk": "wrong-result",
-      "repro": "new Sequelize(url,{typeValidation:true}).define('u',{name:STRING}).create({name:12}) // succeeds",
-      "test": "InstanceValidator datatype validations should throw validationerror create should throw when passing string"
     },
     "D-unsupported-dialects": {
       "cause": "unsupported",
@@ -1703,11 +1687,7 @@
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow string as a number",
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow true/false string as a boolean",
         "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $in",
-        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing decimal",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing string",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing decimal",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing string"
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid"
       ],
       "causes": {
         "[POSTGRES] InstanceValidator custom validation functions and null values with allowNull set to false should call validator and not throw on create": "D-harness-stub-query",
@@ -1728,11 +1708,7 @@
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow string as a number": "D-harness-stub-query",
         "[POSTGRES] InstanceValidator datatype validations should not throw create should allow true/false string as a boolean": "D-harness-stub-query",
         "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $in": "D-harness-stub-query",
-        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid": "D-harness-stub-query",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing decimal": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror create should throw when passing string": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing decimal": "D-typevalidation-ignored",
-        "[POSTGRES] InstanceValidator datatype validations should throw validationerror update should throw when passing string": "D-typevalidation-ignored"
+        "[POSTGRES] InstanceValidator datatype validations should not throw findAll should allow $like for uuid": "D-harness-stub-query"
       }
     },
     "test/unit/query-interface/bulk-delete.test.js": {
@@ -3027,8 +3003,6 @@
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
         "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
@@ -3044,7 +3018,6 @@
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)": "C-uri-query-options",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums": "C-typevalidation-option",
         "[POSTGRES] Sequelize define raises an error if no values are defined": "C-array-no-type",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions": "C-sequelize-internals",

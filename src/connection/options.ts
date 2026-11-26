@@ -153,6 +153,12 @@ export type SequelizeOptions = Readonly<{
   timezone?: string;
   /** Defaults for all models. */
   define?: ModelDefaults;
+  /**
+   * Check that every value bound for a model attribute fits its data type before the statement
+   * runs (a string for `INTEGER`, an unknown `ENUM` label), and reject it with `ValidationError`.
+   * @defaultValue false
+   */
+  typeValidation?: boolean;
   /** Read replicas and writer (Sequelize v6 `replication`); entries inherit missing connection settings. */
   replication?: ReplicationOptions;
   /** Sequelize-level hooks run for every model (and `beforeConnect`). */

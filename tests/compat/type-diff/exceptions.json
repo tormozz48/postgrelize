@@ -328,7 +328,6 @@
       "Options.storage": "other-dialect",
       "Options.sync": "option-keys",
       "Options.transactionType": "option-keys",
-      "Options.typeValidation": "option-keys",
       "PoolOptions.validate": "option-keys",
       "QueryInterface.commitTransaction": "query-interface-members",
       "QueryInterface.delete": "query-interface-members",
