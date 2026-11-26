@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Regression since 1.9.7: after `update()` (or `save({ fields })`) on a model with `version`, the next `save` of the same instance threw `OptimisticLockError`. Differential test in `tests/compat/version-after-update.test.ts`. ([#277](https://github.com/tormozz48/postgrelize/pull/277))
+
 ## [1.9.10] - 2026-11-26
 
 ### Fixed
