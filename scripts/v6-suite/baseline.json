@@ -427,14 +427,6 @@
       "repro": "R1=R.schema('s_one'); E1=E.schema('s_one'); await R1.findOne({include:[{model:E1,as:'employees'}]})",
       "test": "Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one"
     },
-    "B-set-readonly-pk-timestamps": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set / update changes the primary key of a persisted record and createdAt/updatedAt (even via update()); v6 ignores PK changes once set and treats timestamps as read-only.",
-      "risk": "wrong-result",
-      "repro": "b=P.build({id:1},{isNewRecord:false}); b.set({id:2}); b.id // 2, v6: 1; u.update({createdAt:new Date(2000,1,1),ident:'x'}) changes both",
-      "test": "DAO Values set doesn't overwrite generated primary keys"
-    },
     "B-sync-schema-option-references": {
       "cause": "bug",
       "area": "ddl",
@@ -2559,12 +2551,10 @@
     },
     "test/integration/instance/update.test.js": {
       "failing": [
-        "[POSTGRES] Instance update doesn't update primary keys or timestamps",
         "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
         "[POSTGRES] Instance update should only save passed attributes"
       ],
       "causes": {
-        "[POSTGRES] Instance update doesn't update primary keys or timestamps": "B-set-readonly-pk-timestamps",
         "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated",
         "[POSTGRES] Instance update should only save passed attributes": "B-update-saves-all-changed"
       }
@@ -2572,17 +2562,11 @@
     "test/integration/instance/values.test.js": {
       "failing": [
         "[POSTGRES] DAO Values get can pass parameters to getters",
-        "[POSTGRES] DAO Values set doesn't overwrite defined primary keys",
-        "[POSTGRES] DAO Values set doesn't overwrite generated primary keys",
-        "[POSTGRES] DAO Values set doesn't set timestamps",
         "[POSTGRES] DAO Values set includes should support basic includes",
         "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)"
       ],
       "causes": {
         "[POSTGRES] DAO Values get can pass parameters to getters": "B-instance-set-include",
-        "[POSTGRES] DAO Values set doesn't overwrite defined primary keys": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't overwrite generated primary keys": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't set timestamps": "B-set-readonly-pk-timestamps",
         "[POSTGRES] DAO Values set includes should support basic includes": "B-instance-set-include",
         "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)": "B-instance-set-include"
       }

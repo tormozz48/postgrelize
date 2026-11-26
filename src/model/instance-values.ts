@@ -2,6 +2,7 @@ import { SqlExpression } from '../expressions/methods.ts';
 import { InstanceState } from './instance-state.ts';
 import { MethodLookup } from './method-lookup.ts';
 import type { ModelRegistry } from './model-registry.ts';
+import type { ModelDefinition } from './model-definition.ts';
 import type { ModelValues } from './model-values.ts';
 import type { AnyModel, Values } from './options.ts';
 
@@ -139,10 +140,24 @@ export class InstanceValues {
     if (setter !== undefined) {
       setter.call(instance, value, key);
       this.#track(instance, key, original, values[key]);
-      return;
+    } else if (!this.#readOnly(instance, definition, key, original)) {
+      this.#track(instance, key, original, value);
+      values[key] = value;
     }
-    this.#track(instance, key, original, value);
-    values[key] = value;
+  }
+
+  // v6: a primary key that has a value, and the timestamps / version of a persisted record
+  #readOnly(
+    instance: AnyModel,
+    definition: ModelDefinition,
+    key: string,
+    original: unknown,
+  ): boolean {
+    const { createdAt, updatedAt, deletedAt, version, primaryKeys } = definition;
+    return (
+      (primaryKeys.includes(key) && Boolean(original)) ||
+      (!instance.isNewRecord && [createdAt, updatedAt, deletedAt, version].includes(key))
+    );
   }
 
   /** v6 `set`: an attribute that differs from its value before the call stays changed for good. */
