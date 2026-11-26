@@ -406,14 +406,6 @@
       "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
       "test": "Model update skips update query if no data to update"
     },
-    "B-updatedat-default": {
-      "cause": "bug",
-      "area": "model",
-      "note": "A user-declared updatedAt attribute with defaultValue is overwritten with now on create; v6 uses the declared default (createdAt default is honoured).",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{n:DataTypes.INTEGER,updatedAt:{type:DataTypes.DATE,defaultValue:new Date('2012-01-02')}}); await sq.sync(); (await U.create({n:1})).updatedAt  // now, v6: 2012-01-02",
-      "test": "Model constructor should allow me to set a default value for createdAt and updatedAt"
-    },
     "B-upsert-named-unique-index": {
       "cause": "bug",
       "area": "upsert",
@@ -2379,7 +2371,6 @@
       "failing": [
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
-        "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field",
@@ -2398,7 +2389,6 @@
       "causes": {
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
-        "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt": "B-updatedat-default",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed": "B-define-time-validation",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field": "B-define-time-validation",

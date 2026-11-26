@@ -161,15 +161,23 @@ export class ModelValues {
       (values[createdAt] === undefined || values[createdAt] === null);
     return {
       ...values,
-      ...(setCreatedAt ? { [createdAt]: now } : {}),
+      ...(setCreatedAt ? { [createdAt]: this.#stamp(definition, createdAt, now) } : {}),
       ...(updatedAt !== undefined && (!silent || creating)
-        ? { [updatedAt]: this.#updatedAt(values[updatedAt], now, creating, silent) }
+        ? { [updatedAt]: this.#updatedAt(definition, values, now, creating && silent) }
         : {}),
     };
   }
 
-  #updatedAt(current: unknown, now: Date, creating: boolean, silent: boolean): unknown {
-    return creating && current instanceof Date && silent ? current : now;
+  // a silent insert keeps the date the instance already has
+  #updatedAt(definition: ModelDefinition, values: Values, now: Date, keep: boolean): unknown {
+    const name = definition.updatedAt as string;
+    return keep && values[name] instanceof Date ? values[name] : this.#stamp(definition, name, now);
+  }
+
+  // like v6, a timestamp attribute with its own (truthy) `defaultValue` takes it instead of now
+  #stamp(definition: ModelDefinition, name: string, now: Date): unknown {
+    const attribute = definition.attributes.get(name);
+    return attribute?.defaultValue ? this.#defaultValueOf(attribute) : now;
   }
 
   /**
