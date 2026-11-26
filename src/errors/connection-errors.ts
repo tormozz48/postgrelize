@@ -28,7 +28,8 @@ export class ConnectionError extends BaseError {
    * @param parent - Original driver error.
    */
   constructor(parent: Error) {
-    super(parent.message, { cause: parent });
+    // like v6, no parent (`new ConnectionError(null)`) gives an empty message
+    super((parent as Error | null)?.message ?? '', { cause: parent });
     this.name = 'SequelizeConnectionError';
     this.parent = parent;
     this.original = parent;

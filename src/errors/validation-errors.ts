@@ -245,7 +245,7 @@ export class UniqueConstraintError extends ValidationError {
       Readonly<{
         fields?: Readonly<Record<string, string>>;
         errors?: readonly ValidationErrorItem[];
-      }>,
+      }> = {},
   ) {
     super(options.message ?? 'Validation error', options.errors);
     this.name = 'SequelizeUniqueConstraintError';
