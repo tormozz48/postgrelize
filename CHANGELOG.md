@@ -38,6 +38,15 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Model.aggregate` joins its `include` (also the one of a scope), so a `where` on the include filters the rows, like v6. Differential test in `tests/compat/aggregate-include.test.ts`. ([#250](https://github.com/tormozz48/postgrelize/pull/250))
+- `Model.update` ignores `undefined` values and keys that are no attribute (they became `NULL` or a missing column), sends no query and resolves to `[0]` when nothing is left, and without options throws v6's `Missing where attribute` error instead of a `TypeError`. Differential test in `tests/compat/update-values.test.ts`. ([#251](https://github.com/tormozz48/postgrelize/pull/251))
+- `Model.primaryKeyField` and `instance.rawAttributes` exist like in v6, and `countXs` of a `hasMany` association with `group` resolves to the count of the first group. Differential test in `tests/compat/model-v6-properties.test.ts`. ([#252](https://github.com/tormozz48/postgrelize/pull/252))
+- Connection, constraint and aggregate errors can be constructed without arguments or with `null` like in v6 (they threw `TypeError`), `DatabaseError` keeps the `sql` and `parameters` of its parent, and `String(aggregateError)` lists the errors like v6. Differential test in `tests/compat/error-constructors.test.ts`. ([#255](https://github.com/tormozz48/postgrelize/pull/255))
+- `define` / `init` throw v6's errors for an unknown data type, `ARRAY` without an element type, a `notNull` validator on a nullable attribute, two auto increment attributes and invalid `validate` entries, and accept `unique: null` (it threw `TypeError`). **Behaviour change:** such definitions were accepted before. Differential test in `tests/compat/definition-checks.test.ts`. ([#256](https://github.com/tormozz48/postgrelize/pull/256))
+- An attribute named like an instance method (`set`, `where`, `changed`) no longer replaces the method; read and write it with `get` / `set`, as in Sequelize v6. **Behaviour change:** `instance.<name>` is the method, not the value. Differential test in `tests/compat/attribute-named-like-method.test.ts`. ([#269](https://github.com/tormozz48/postgrelize/pull/269))
+
 ## [1.9.12] - 2026-11-26
 
 ### Fixed
