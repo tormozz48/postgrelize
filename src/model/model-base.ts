@@ -93,6 +93,12 @@ export class ModelBase {
     );
   }
 
+  /** Column of the first primary key (Sequelize v6 `Model.primaryKeyField`). */
+  static get primaryKeyField(): string | undefined {
+    const { primaryKeys, attributes } = registry.state(this).definition;
+    return attributes.get(primaryKeys[0] ?? '')?.field;
+  }
+
   /** Model options after defaults were applied. */
   static get options(): DefinitionOptions {
     return registry.state(this).definition.options;
@@ -174,3 +180,12 @@ export class ModelBase {
         };
   }
 }
+
+// v6 sets `Model.prototype.rawAttributes`; not declared as a member, so it does not enter the
+// attribute types inferred from instances
+Object.defineProperty(ModelBase.prototype, 'rawAttributes', {
+  configurable: true,
+  get(this: ModelBase) {
+    return (this.constructor as typeof ModelBase).rawAttributes;
+  },
+});
