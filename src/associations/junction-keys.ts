@@ -46,7 +46,7 @@ export class JunctionKeys {
   resolve(source: Model, target: Model, options: BelongsToManyOptions): TargetKeys {
     const names = this.#names(source, target, options);
     const through = this.#through(options);
-    const model = this.#throughModel(source, through.model, {
+    const model = this.#throughModel(source, through.model, this.#modelOptions(through, options), {
       [names.foreignKey]: this.#attribute(source, names.sourceKey, options.foreignKey, options),
       [names.otherKey]: this.#attribute(target, names.targetKey, options.otherKey, options),
     } as ModelAttributes);
@@ -106,12 +106,26 @@ export class JunctionKeys {
     });
   }
 
-  #throughModel(source: Model, through: string | Model, attributes: ModelAttributes): Model {
+  // model options a junction defined by name takes from the association (v6 passes them on)
+  #modelOptions(through: ThroughOptions, options: BelongsToManyOptions): Values {
+    const picked = ['timestamps', 'createdAt', 'updatedAt', 'deletedAt', 'underscored', 'schema'];
+    return {
+      ...Object.fromEntries(Object.entries(options).filter(([key]) => picked.includes(key))),
+      paranoid: through.paranoid === true,
+    };
+  }
+
+  #throughModel(
+    source: Model,
+    through: string | Model,
+    options: Values,
+    attributes: ModelAttributes,
+  ): Model {
     const { runtime } = registry.state(source);
     const model =
       typeof through === 'string'
         ? ((runtime.models()[through] as Model | undefined) ??
-          (runtime.defineModel(through, {}, { tableName: through }) as Model))
+          (runtime.defineModel(through, {}, { ...options, tableName: through }) as Model))
         : through;
     registry.addAssociationAttributes(model, attributes);
     return model;
