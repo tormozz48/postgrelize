@@ -102,7 +102,7 @@ export class JunctionKeys {
     return keys.keyAttribute(keys.attributeOf(model, key), keys.foreignKeyExtras(option), {
       primaryKey: true,
       allowNull: false,
-      ...keys.reference(spec, false, { onDelete: 'CASCADE', onUpdate: 'CASCADE' }),
+      ...keys.reference(spec, { onDelete: 'CASCADE', onUpdate: 'CASCADE' }),
     });
   }
 

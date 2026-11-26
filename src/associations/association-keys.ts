@@ -126,11 +126,10 @@ export class AssociationKeys {
    * `references` / `onDelete` / `onUpdate` attribute options of a foreign key.
    *
    * @param spec - Referenced model and key, with the actions from the options.
-   * @param allowNull - Whether the key may be `NULL` (for the `auto` delete action).
    * @param defaults - Actions used when the options give none.
    * @returns Attribute options (empty with `constraints: false`).
    */
-  reference(spec: ReferenceSpec, allowNull: boolean, defaults: ReferenceDefaults): Values {
+  reference(spec: ReferenceSpec, defaults: ReferenceDefaults): Values {
     if (spec.constraints === false) {
       return {};
     }
@@ -143,9 +142,7 @@ export class AssociationKeys {
         },
         key: definition.attributes.get(spec.key)?.field ?? spec.key,
       },
-      onDelete:
-        spec.onDelete ??
-        (defaults.onDelete === 'auto' ? (allowNull ? 'SET NULL' : 'NO ACTION') : defaults.onDelete),
+      onDelete: spec.onDelete ?? defaults.onDelete,
       onUpdate: spec.onUpdate ?? defaults.onUpdate,
     };
   }
@@ -183,6 +180,7 @@ export class AssociationKeys {
    * @param referencedKey - Referenced attribute.
    * @param foreignKey - Foreign key attribute name.
    * @param options - Association options.
+   * @param notNullAction - `ON DELETE` of a key that cannot be `NULL`, when none is given.
    */
   addForeignKey(
     owner: Model,
@@ -190,14 +188,16 @@ export class AssociationKeys {
     referencedKey: string,
     foreignKey: string,
     options: AssociationOptions,
+    notNullAction: 'CASCADE' | 'NO ACTION',
   ): void {
     const extras = this.foreignKeyExtras(options.foreignKey);
     const spec = { model: referenced, key: referencedKey, ...this.#actions(options) };
+    const onDelete = this.#nullable(owner, foreignKey, extras) ? 'SET NULL' : notNullAction;
     registry.addAssociationAttributes(owner, {
       [foreignKey]: this.keyAttribute(
         this.attributeOf(referenced, referencedKey),
         extras,
-        this.#keyColumn(spec, this.#nullable(owner, foreignKey, extras), options),
+        this.#keyColumn(spec, onDelete, options),
       ),
     } as ModelAttributes);
   }
@@ -212,10 +212,9 @@ export class AssociationKeys {
   }
 
   // reference of the new foreign key, with the data type of `keyType` when given
-  #keyColumn(spec: ReferenceSpec, nullable: boolean, options: AssociationOptions): Values {
-    const defaults = { onDelete: 'auto', onUpdate: 'CASCADE' } as const;
+  #keyColumn(spec: ReferenceSpec, onDelete: string, options: AssociationOptions): Values {
     return {
-      ...this.reference(spec, nullable, defaults),
+      ...this.reference(spec, { onDelete, onUpdate: 'CASCADE' }),
       ...(options.keyType === undefined ? {} : { type: options.keyType }),
     };
   }

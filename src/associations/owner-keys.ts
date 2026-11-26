@@ -32,7 +32,7 @@ export class OwnerKeys {
     const foreignKey =
       keys.foreignKeyName(options.foreignKey) ??
       keys.camelize(`${name.singular}_${keys.primaryKey(target)}`);
-    keys.addForeignKey(source, target, targetKey, foreignKey, options);
+    keys.addForeignKey(source, target, targetKey, foreignKey, options, 'NO ACTION');
     return { name, keys: this.#fields(source, foreignKey, foreignKey, targetKey) };
   }
 
@@ -57,7 +57,7 @@ export class OwnerKeys {
     const foreignKey =
       keys.foreignKeyName(options.foreignKey) ??
       keys.camelize(`${this.#sourcePrefix(multi, source, options)}_${keys.primaryKey(source)}`);
-    keys.addForeignKey(target, source, sourceKey, foreignKey, options);
+    keys.addForeignKey(target, source, sourceKey, foreignKey, options, 'CASCADE');
     return {
       name: keys.aliasNames(options.as, keys.modelName(target), multi),
       keys: this.#fields(target, foreignKey, sourceKey, foreignKey),
