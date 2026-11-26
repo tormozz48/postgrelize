@@ -25,14 +25,6 @@
       "repro": "U.belongsToMany(G,{through:UG,foreignKey:'id_user'});G.belongsToMany(U,{through:UG,foreignKey:'id_group'}); await u.addGroup(g) // null value in column id_group",
       "test": "BelongsToMany getAssociations supports custom primary keys and foreign keys"
     },
-    "A-date-number": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "A number (ms epoch) assigned to a DATE attribute is bound as bigint (create and where) instead of being converted to a Date as v6 does.",
-      "risk": "error",
-      "repro": "await U.create({d:Date.UTC(2014,1,20)}) // column d is of type timestamp with time zone but expression is of type bigint",
-      "test": "Include findAll should support including date fields, with the correct timeszone"
-    },
     "A-default-alias-redefine": {
       "cause": "bug",
       "area": "associations",
@@ -94,22 +86,6 @@
       "repro": "IT=define('it',{tid:{type:INTEGER,references:null}}); P.belongsToMany(T,{through:IT,foreignKey:'tid'}); await IT.sync({force:true})",
       "test": "associations scope N:M on the through model should create, find and include associations with scope values"
     },
-    "A-scope-fn-by-name": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Model.scope(\"name\") where the scope is a function throws \"is a function; use {method:[..]}\"; v6 calls the function with no arguments.",
-      "risk": "error",
-      "repro": "define('U',{},{scopes:{s(){return {}}}}).scope('s') .findAll() // throws",
-      "test": "Model scope associations scope with includes should scope columns properly"
-    },
-    "A-subquery-join-field-name": {
-      "cause": "bug",
-      "area": "include",
-      "note": "findOne/limit with a required or m:n include over a sub-query joins on the column name of a key whose field differs from its attribute name (\"U\".\"user_id\") instead of the sub-query alias.",
-      "risk": "error",
-      "repro": "U=define('User',{id:{type:INTEGER,primaryKey:true,field:'main_id'}}); U.hasMany(T,{foreignKey:'userId'}); await U.findOne({include:[T]}) // column User.main_id does not exist",
-      "test": "Include findOne should include a model with a where clause when the PK field name and attribute name are different"
-    },
     "A-triage": {
       "cause": "triage",
       "area": "associations",
@@ -138,14 +114,6 @@
       "risk": "wording",
       "repro": "await U.findAll({attributes:[]})",
       "test": "Model findAll should throw on an attempt to fetch no attributes"
-    },
-    "B-belongsto-include-notnull-fk": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Nested create of a belongsTo include whose foreign key is allowNull:false fails with 'notNull Violation: Product.UserId cannot be null' because validation runs before the parent row is created and the FK copied.",
-      "risk": "error",
-      "repro": "Product.belongsTo(User,{foreignKey:{allowNull:false}}); await Product.create({User:{first_name:'M'}},{include:[{model:User}]})",
-      "test": "Model create include should create data for BelongsTo relations with no nullable FK"
     },
     "B-btm-count-through-timestamps": {
       "cause": "bug",
@@ -178,14 +146,6 @@
       "risk": "cosmetic",
       "repro": "Object.keys(U.build({a:'x'}).toJSON()) // ['isUser','id','a'], v6: ['id','a','isUser']",
       "test": "Instance toJSON build returns a response that can be stringified"
-    },
-    "B-date-number-bound-bigint": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "A number (epoch ms, e.g. Date.UTC() or new Date().setFullYear()) assigned to a DATE attribute is bound as bigint, so PostgreSQL rejects it; v6 converts it with moment.",
-      "risk": "error",
-      "repro": "const U=sq.define('u',{d:DataTypes.DATE},{timestamps:false}); await sq.sync(); await U.create({d:Date.UTC(2014,1,20)})  // column \"d\" is of type timestamp with time zone but expression is of type bigint",
-      "test": "Include find should support including date fields, with the correct timeszone"
     },
     "B-deferrable-callable": {
       "cause": "bug",
@@ -230,14 +190,6 @@
       "cause": "harness",
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
-    },
-    "B-include-attr-bare-literal": {
-      "cause": "bug",
-      "area": "include",
-      "note": "A bare literal() (not [literal, alias]) in the attributes of an include or of a model throws TypeError 'item is not iterable' in the SELECT builder; v6 passes literals through as raw select items.",
-      "risk": "error",
-      "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
-      "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
     },
     "B-index-field-attribute-key": {
       "cause": "bug",
@@ -373,14 +325,6 @@
       "risk": "error",
       "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
       "test": "Model update skips update query if no data to update"
-    },
-    "B-validator-extend": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "sequelize.Validator / Sequelize.Validator (the validator.js instance with extend()) is not exposed.",
-      "risk": "error",
-      "repro": "Sequelize.Validator.extend('f',()=>true)",
-      "test": "InstanceValidator allows me to add custom validation functions to validator.js"
     },
     "B-virtual-exclude": {
       "cause": "bug",
@@ -1870,7 +1814,6 @@
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)",
-        "[POSTGRES] BelongsToMany getAssociations supports primary key attributes with different field and attribute names",
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times",
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object"
       ],
@@ -1881,7 +1824,6 @@
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports primary key attributes with different field and attribute names": "A-subquery-join-field-name",
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times": "A-default-alias-redefine",
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object": "A-default-alias-redefine"
       }
@@ -2110,34 +2052,20 @@
         "[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks": "B-unsupported-pool-acquire-hooks"
       }
     },
-    "test/integration/include.test.js": {
-      "failing": [
-        "[POSTGRES] Include find should support including date fields, with the correct timeszone"
-      ],
-      "causes": {
-        "[POSTGRES] Include find should support including date fields, with the correct timeszone": "B-date-number-bound-bigint"
-      }
-    },
     "test/integration/include/findAll.test.js": {
       "unstable": true,
       "pass": 34,
-      "failing": [
-        "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
-      ],
-      "causes": {
-        "[POSTGRES] Include findAll should support including date fields, with the correct timeszone": "A-date-number"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/include/schema.test.js": {
       "unstable": true,
       "pass": 17,
       "failing": [
-        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes",
-        "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone"
+        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes"
       ],
       "causes": {
-        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage",
-        "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone": "A-date-number"
+        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage"
       }
     },
     "test/integration/instance.test.js": {
@@ -2157,13 +2085,11 @@
     "test/integration/instance.validations.test.js": {
       "failing": [
         "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly",
-        "[POSTGRES] InstanceValidator allows me to add custom validation functions to validator.js"
+        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly"
       ],
       "causes": {
         "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message": "B-unique-msg-option",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly": "B-unique-msg-option",
-        "[POSTGRES] InstanceValidator allows me to add custom validation functions to validator.js": "B-validator-extend"
+        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly": "B-unique-msg-option"
       }
     },
     "test/integration/instance/decrement.test.js": {
@@ -2268,11 +2194,9 @@
       "unstable": true,
       "pass": 3,
       "failing": [
-        "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values",
         "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes"
       ],
       "causes": {
-        "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values": "B-include-attr-bare-literal",
         "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes": "B-virtual-exclude"
       }
     },
@@ -2290,12 +2214,6 @@
         "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },
-    "test/integration/model/count.test.js": {
-      "failing": ["[POSTGRES] Model count should count groups correctly and return attributes"],
-      "causes": {
-        "[POSTGRES] Model count should count groups correctly and return attributes": "B-date-number-bound-bigint"
-      }
-    },
     "test/integration/model/create.test.js": {
       "unstable": true,
       "pass": 10,
@@ -2310,11 +2228,9 @@
     },
     "test/integration/model/create/include.test.js": {
       "failing": [
-        "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
       ],
       "causes": {
-        "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK": "B-belongsto-include-notnull-fk",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },
@@ -2419,24 +2335,8 @@
     "test/integration/model/scope/associations.test.js": {
       "unstable": true,
       "pass": 7,
-      "failing": [
-        "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly"
-      ],
-      "causes": {
-        "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name"
-      }
-    },
-    "test/integration/model/scope/count.test.js": {
-      "failing": [
-        "[POSTGRES] Model scope count should be able to use include with function scope",
-        "[POSTGRES] Model scope count should be able to use include with function scope and string association"
-      ],
-      "causes": {
-        "[POSTGRES] Model scope count should be able to use include with function scope": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope count should be able to use include with function scope and string association": "A-scope-fn-by-name"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/scope/merge.test.js": {
       "unstable": true,

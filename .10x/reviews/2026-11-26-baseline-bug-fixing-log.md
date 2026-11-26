@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 42. Open: 74.
+Fixed: 49. Open: 67 (includes causes found while fixing).
 
 ## Fixed
 
@@ -50,82 +50,82 @@ Fixed: 42. Open: 74.
 | `C-fk-references-fields` | wrong-result | [#232](https://github.com/tormozz48/postgrelize/pull/232) |
 | `C-fk-default-constraint-name` | wrong-result | [#234](https://github.com/tormozz48/postgrelize/pull/234) |
 | `C-changecolumn-references` | wrong-result | [#236](https://github.com/tormozz48/postgrelize/pull/236) |
+| `A-date-number` | error | earlier release |
+| `B-date-number-bound-bigint` | error | earlier release |
+| `B-validator-extend` | error | [#253](https://github.com/tormozz48/postgrelize/pull/253) |
+| `A-scope-fn-by-name` | error | [#258](https://github.com/tormozz48/postgrelize/pull/258) |
+| `A-subquery-join-field-name` | error | earlier release |
+| `B-include-attr-bare-literal` | error | earlier release |
+| `B-belongsto-include-notnull-fk` | error | [#274](https://github.com/tormozz48/postgrelize/pull/274) |
 
 ## Not fixed
 
-| cause | risk | status |
+| cause | risk | note |
 | --- | --- | --- |
-| `A-aggregate-ignores-include` | wrong-result | stopped: written and locally committed (branch `fix/aggregate-ignores-include`), not verified, not pushed |
-| `A-btm-identifier-props` | error | not started: work stopped on request to rework the PRs |
-| `A-btm-paired-otherkey` | error | not started: work stopped on request to rework the PRs |
-| `A-date-number` | error | not started: work stopped on request to rework the PRs |
-| `A-default-alias-redefine` | error | not started: work stopped on request to rework the PRs |
-| `A-group-nested-array` | error | not started: work stopped on request to rework the PRs |
-| `A-hasone-hasmany-cascade-default` | error | not started: work stopped on request to rework the PRs |
-| `A-instance-rawattributes` | error | not started: work stopped on request to rework the PRs |
-| `A-primarykeyfield-missing` | error | not started: work stopped on request to rework the PRs |
-| `A-references-model-object` | cosmetic | not started: work stopped on request to rework the PRs |
-| `A-references-null-crash` | error | not started: work stopped on request to rework the PRs |
-| `A-scope-fn-by-name` | error | not started: work stopped on request to rework the PRs |
-| `A-subquery-join-field-name` | error | not started: work stopped on request to rework the PRs |
-| `A-update-no-options` | error | not started: work stopped on request to rework the PRs |
-| `B-aggregate-alias-group` | error | not started: work stopped on request to rework the PRs |
-| `B-attributes-empty` | wording | not started: work stopped on request to rework the PRs |
-| `B-belongsto-include-notnull-fk` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-count-through-timestamps` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-duplicate-auto-alias` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-paired-otherkey` | error | not started: work stopped on request to rework the PRs |
-| `B-datavalues-key-order` | cosmetic | not started: work stopped on request to rework the PRs |
-| `B-date-number-bound-bigint` | error | not started: work stopped on request to rework the PRs |
-| `B-deferrable-callable` | error | not started: work stopped on request to rework the PRs |
-| `B-define-time-validation` | error | not started: work stopped on request to rework the PRs |
-| `B-findorcreate-pool-deadlock` | error | not started: work stopped on request to rework the PRs |
-| `B-include-attr-bare-literal` | error | not started: work stopped on request to rework the PRs |
-| `B-index-field-attribute-key` | error | not started: work stopped on request to rework the PRs |
-| `B-invalid-attr-message` | wording | not started: work stopped on request to rework the PRs |
-| `B-logging-interpolated` | cosmetic | not started: work stopped on request to rework the PRs |
-| `B-references-null` | error | not started: work stopped on request to rework the PRs |
-| `B-schema-clone-include` | error | not started: work stopped on request to rework the PRs |
-| `B-sync-schema-option-references` | error | not started: work stopped on request to rework the PRs |
-| `B-sync-two-models-one-table` | error | not started: work stopped on request to rework the PRs |
-| `B-unique-msg-option` | wording | not started: work stopped on request to rework the PRs |
-| `B-update-no-args` | wording | not started: work stopped on request to rework the PRs |
-| `B-update-undefined-values` | error | not started: work stopped on request to rework the PRs |
-| `B-update-unknown-fields` | error | not started: work stopped on request to rework the PRs |
-| `B-validator-extend` | error | not started: work stopped on request to rework the PRs |
-| `B-virtual-exclude` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-addindex-null-options` | error | not started: work stopped on request to rework the PRs |
-| `C-array-no-type` | error | not started: work stopped on request to rework the PRs |
-| `C-bind-dollar-in-identifier` | error | not started: work stopped on request to rework the PRs |
-| `C-bind-log-inlined` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-client-min-messages` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-database-error-sql-params` | wording | not started: work stopped on request to rework the PRs |
-| `C-datatypes-abstract` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-findorcreate-find-outside-tx` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-fk-field-collision` | error | not started: work stopped on request to rework the PRs |
-| `C-log-default-noop` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-logqueryparameters` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-modelmanager-all-findmodel` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-nested-array-replacements` | error | not started: work stopped on request to rework the PRs |
-| `C-no-logging-on-failed-query` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-options-define-late` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-pool-no-evict-dead-connection` | error | not started: work stopped on request to rework the PRs |
-| `C-qi-argument-errors` | wording | not started: work stopped on request to rework the PRs |
-| `C-qi-function-args` | error | not started: work stopped on request to rework the PRs |
-| `C-references-without-model-drop` | error | not started: work stopped on request to rework the PRs |
-| `C-sequelize-instance-sequelize-prop` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-sync-no-models-connection` | error | not started: work stopped on request to rework the PRs |
-| `C-unknown-constraint-error` | error | not started: work stopped on request to rework the PRs |
-| `C-validation-error-item-api` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-aggregate-error-message` | wording | not started: work stopped on request to rework the PRs |
-| `D-assoc-invalid-model-arg` | wording | not started: work stopped on request to rework the PRs |
-| `D-assoc-unknown-key-option` | error | not started: work stopped on request to rework the PRs |
-| `D-attr-named-set` | error | not started: work stopped on request to rework the PRs |
-| `D-config-dialectoptions-missing` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-data-types-string-options` | error | not started: work stopped on request to rework the PRs |
-| `D-define-no-validation` | wording | not started: work stopped on request to rework the PRs |
-| `D-define-tinyint-warn` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-define-unique-null` | error | not started: work stopped on request to rework the PRs |
-| `D-error-ctor-no-args` | error | not started: work stopped on request to rework the PRs |
-| `D-getattributes-shape` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-include-invalid-element` | cosmetic | not started: work stopped on request to rework the PRs |
+| `A-aggregate-ignores-include` | wrong-result | Model.aggregate ignores the include option (also from a scope), so where on the include is not applied. |
+| `A-btm-identifier-props` | error | BelongsToMany lacks v6 public properties foreignIdentifier, identifier (and sourceKeyField, foreignIdentifierField). |
+| `A-btm-paired-otherkey` | error | Two paired belongsToMany declaring foreignKey/sourceKey do not take otherKey from the paired association foreignKey; an extra auto-named otherKey column is generated and the real one stays NULL, so add/set fail. |
+| `A-default-alias-redefine` | error | Re-declaring an association with the default alias throws "alias in two separate associations"; v6 only checks explicit aliases and silently replaces the default one. |
+| `A-group-nested-array` | error | group:[['col']] (array form v6 accepts) is bound as a parameter (GROUP BY $1) instead of a quoted identifier. |
+| `A-hasone-hasmany-cascade-default` | error | hasOne/hasMany FK with allowNull:false gets ON DELETE NO ACTION; v6 uses CASCADE (NO ACTION is only the belongsTo default); docs/guide/associations.md states the belongsTo default for all. |
+| `A-instance-rawattributes` | error | Model instances have no rawAttributes property (v6 sets Model.prototype.rawAttributes). |
+| `A-primarykeyfield-missing` | error | Model.primaryKeyField is undefined (v6 sets it; used for count col and in user code). |
+| `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
+| `A-references-null-crash` | error | Attribute with references:null (opt out of FK) crashes sync with "Cannot read properties of null (reading key)". |
+| `A-update-no-options` | error | Model.update(values) without an options argument throws TypeError (v6 defaults options). |
+| `B-aggregate-alias-group` | error | Model.aggregate / count with attributes:[['id','id2']] and group:['id2'] fails with 'column id2 does not exist': the alias is not accepted as GROUP BY target. |
+| `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
+| `B-btm-count-through-timestamps` | error | instance.countX() on a belongsToMany with a string through selects the auto-created through model's createdAt/updatedAt, failing when the join table has no timestamp columns; v6 selects no through attributes for count. |
+| `B-btm-duplicate-auto-alias` | error | Declaring two belongsToMany to the same target without `as` (different through) throws 'You have used the alias projects in two separate associations'; v6 only checks explicitly given aliases (the second overwrites the first). |
+| `B-btm-paired-otherkey` | error | Two belongsToMany with the same through model and explicit foreignKey on each side are not paired: otherKey is derived from the target name (courseNo) instead of the counterpart's foreignKey (CourseId), so the through table gets extra columns and add() inserts NULL into CourseId. |
+| `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
+| `B-deferrable-callable` | error | Deferrable.INITIALLY_IMMEDIATE() / INITIALLY_DEFERRED() (v6 allows the call form) throws 'is not a function': postgrelize exposes plain objects. |
+| `B-define-time-validation` | error | sequelize.define does not throw for two autoIncrement attributes, for a non-function entry in options.validate, or a model validator named like a field (v6 throws at definition time). |
+| `B-findorcreate-pool-deadlock` | error | 50 concurrent findOrCreate calls hang forever with the default pool (max 5): each takes a pooled connection for its transaction while inner queries wait for another, exhausting the pool. v6 completes. |
+| `B-index-field-attribute-key` | error | Index field objects in define({indexes:[{fields:[{attribute:'email',collate,order,length}]}]}) use v6's `attribute` key; postgrelize only reads `name`, so sync crashes with TypeError reading replaceAll of undefined. |
+| `B-invalid-attr-message` | wording | An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '["username"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests. |
+| `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
+| `B-references-null` | error | An attribute with references: null (v6 way to switch the FK off, used by polymorphic belongsToMany through models) crashes sync with TypeError reading 'key'. |
+| `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
+| `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
+| `B-sync-two-models-one-table` | error | Two models mapped to the same table are both synced (v6 keeps only the last one per table), so the FK to the second model's column is created against the first model's table and sync fails (edge case). |
+| `B-unique-msg-option` | wording | unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message. |
+| `B-update-no-args` | wording | Model.update() with no arguments throws a raw TypeError (reading 'fields') instead of v6's 'Missing where attribute in the options parameter'. |
+| `B-update-undefined-values` | error | Model.update ignores nothing: a key with value undefined ({ownerId: undefined}) is sent as NULL and fails notNull validation; v6 ignores undefined values. |
+| `B-update-unknown-fields` | error | Model.update with a key that is not an attribute emits SET on a non-existent column (v6 drops unknown keys and skips the query when nothing is left, returning [0]). |
+| `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
+| `C-addindex-null-options` | error | queryInterface.addIndex(table, fields, null, name) throws TypeError (options null) while v6 accepts null options. |
+| `C-array-no-type` | error | DataTypes.ARRAY without element type is accepted at define(); v6 throws "ARRAY is missing type definition for its values." (fails later at sync). |
+| `C-bind-dollar-in-identifier` | error | A `$` inside an identifier/alias (`as foo$bar`) is tokenised as bind parameter $bar and throws. |
+| `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
+| `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
+| `C-database-error-sql-params` | wording | new DatabaseError(parent) does not copy parent.sql / parent.parameters ("" and []). |
+| `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
+| `C-findorcreate-find-outside-tx` | cosmetic | findOrCreate runs its initial find outside the transaction (only the create is in one); v6 wraps find+create in one, so CLS/log shows the find on the default connection. |
+| `C-fk-field-collision` | error | hasMany/belongsTo foreignKey equal to the column name (field) of an existing attribute creates a duplicate column in CREATE TABLE ("user_id" specified more than once); v6 merges by field. |
+| `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
+| `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
+| `C-modelmanager-all-findmodel` | cosmetic | ModelManager lacks typed v6 members `all` and `findModel`. |
+| `C-nested-array-replacements` | error | Nested array replacement (VALUES ?) is flattened to a comma list instead of ((..),(..)) row tuples. |
+| `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
+| `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
+| `C-pool-no-evict-dead-connection` | error | A pooled connection that was ended is handed out again ("Client was closed"), and an error event (ECONNRESET) on a checked-out connection with max:1 leaves the pool exhausted so the next getConnection hangs; v6 destroys such connections and opens a new one. |
+| `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
+| `C-qi-function-args` | error | createFunction/dropFunction/renameFunction do not accept null or non-array optionsArray (TypeError options.map / null .schema) and validation messages differ from v6; a rejected-with TypeError in the test also crashes the mocha process via unhandled rejection. |
+| `C-references-without-model-drop` | error | Attribute with references:{deferrable} but no model (filled by belongsTo) makes sync/drop throw TypeError in referencedTable. |
+| `C-sequelize-instance-sequelize-prop` | cosmetic | Instance property `sequelize.Sequelize` (typed public in v6, the class) is undefined. |
+| `C-sync-no-models-connection` | error | sequelize.sync({force:true}) with no models and an unreachable database resolves successfully; v6 rejects (ConnectionError). |
+| `C-unknown-constraint-error` | error | removeConstraint of a non-existent constraint throws SequelizeDatabaseError; v6 throws UnknownConstraintError. |
+| `C-validation-error-item-api` | cosmetic | ValidationErrorItem lacks getValidatorKey() and static Origins (typed public in v6). |
+| `D-aggregate-error-message` | wording | AggregateError.message is the plain concatenation of the inner messages; v6 builds 'AggregateError of:\n  Error: foo\n ...' with indentation. |
+| `D-assoc-invalid-model-arg` | wording | Model.belongsTo()/hasMany()/hasOne() with no/invalid target throw 'Cannot convert undefined or null to object' instead of v6 'X.belongsTo called with something that's not a subclass of Sequelize.Model'. |
+| `D-assoc-unknown-key-option` | error | hasOne/hasMany sourceKey and belongsTo targetKey naming an attribute that does not exist is accepted silently; v6 throws 'Unknown attribute "x" passed as sourceKey/targetKey, define this attribute on model "M" first'. |
+| `D-attr-named-set` | error | Defining an attribute named `set` clobbers instance.set. |
+| `D-config-dialectoptions-missing` | cosmetic | sequelize.config lacks dialectOptions (and options like dialectModulePath are ignored), v6 exposes config.dialectOptions. |
+| `D-data-types-string-options` | error | DataTypes.STRING({length:1234}) options-object form throws 'STRING length must be a non-negative integer'; sql/data-types.test.js cannot load. |
+| `D-define-no-validation` | wording | define() does not throw for an unknown/undefined data type ('Unrecognized datatype for attribute "bar.name"') nor for a notNull validator without allowNull:false. |
+| `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
+| `D-define-unique-null` | error | define() with a null/undefined `unique` attribute option throws TypeError. |
+| `D-error-ctor-no-args` | error | UniqueConstraintError/ForeignKeyConstraintError/ExclusionConstraintError/ConnectionError and subclasses/AggregateError constructors throw TypeError when called with no args or null; v6 accepts them (tests use new UniqueConstraintError(), new ConnectionError(null)). |
+| `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
+| `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
