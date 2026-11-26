@@ -69,13 +69,14 @@ export class InstanceSaver {
     return untouched && fields.length === 0;
   }
 
-  // With a `fields` option only those attributes (and the timestamps the save wrote) become unchanged.
+  // With a `fields` option only those attributes (and the timestamps and version the save wrote)
+  // become unchanged.
   #settled(context: SaveContext, written: readonly string[]): readonly string[] | undefined {
     if (context.explicitFields === undefined && context.defaultFields === undefined) {
       return undefined;
     }
-    const { createdAt, updatedAt } = context.definition;
-    return [...written, ...[createdAt, updatedAt].filter((name) => name !== undefined)];
+    const { createdAt, updatedAt, version } = context.definition;
+    return [...written, ...[createdAt, updatedAt, version].filter((name) => name !== undefined)];
   }
 
   // Like v6, a new record gets its `createdAt` / `updatedAt` before validation, so a timestamp attribute
