@@ -73,6 +73,14 @@ export class TableDdl {
   ): readonly string[] {
     const qualified = sqlLiteral.quoteTable(table, defaultSchema);
     const target = `ALTER TABLE ${qualified} ALTER COLUMN ${SqlCompiler.quoteIdent(column.field)}`;
+    const references = this.#columns.referencesSql(column, defaultSchema);
+    if (references !== undefined) {
+      return this.#addForeignKey(table, column, qualified, references);
+    }
+    return this.#alterColumn(table, column, target);
+  }
+
+  #alterColumn(table: TableName, column: ColumnDefinition, target: string): readonly string[] {
     const value = this.#columns.defaultSql(column);
     const enumSql = this.#enums.createSql(table, column);
     const type = this.#columns.columnType(table, { ...column, autoIncrement: false });
@@ -83,6 +91,25 @@ export class TableDdl {
         : [value === undefined ? `${target} DROP DEFAULT` : `${target} SET DEFAULT ${value}`]),
       ...(enumSql === undefined ? [] : [enumSql]),
       `${target} TYPE ${type}${column.type.key === 'ENUM' ? ` USING (${SqlCompiler.quoteIdent(column.field)}::${type})` : ''}`,
+      ...this.#columns.commentSql(table, column),
+    ];
+  }
+
+  // like v6, a column with `references` gets the foreign key (and NOT NULL / DEFAULT when given)
+  // and keeps its type and everything else
+  #addForeignKey(
+    table: TableName,
+    column: ColumnDefinition,
+    qualified: string,
+    references: string,
+  ): readonly string[] {
+    const name = SqlCompiler.quoteIdent(column.field);
+    const target = `ALTER TABLE ${qualified} ALTER COLUMN ${name}`;
+    const value = this.#columns.defaultSql(column);
+    return [
+      ...(column.allowNull ? [] : [`${target} SET NOT NULL`]),
+      ...(value === undefined ? [] : [`${target} SET DEFAULT ${value}`]),
+      `ALTER TABLE ${qualified} ADD FOREIGN KEY (${name}) ${references}`,
       ...this.#columns.commentSql(table, column),
     ];
   }
