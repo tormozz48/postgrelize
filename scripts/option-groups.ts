@@ -179,6 +179,7 @@ export const V6_RUNTIME_MEMBERS: readonly string[] = [
   'Model.queryInterface',
   'Model.dropSchema',
   'Model.refreshAttributes',
+  'Model.primaryKeys',
   'Model.getAssociations',
   'Model.getAssociationForAlias',
   'Model.hasAlias',
