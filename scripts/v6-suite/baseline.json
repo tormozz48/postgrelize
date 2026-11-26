@@ -762,6 +762,11 @@
       "area": "config",
       "note": "Tests inspect v6 internals: ignored-export list containing _clsRun, or imports sequelize/lib/model deep path."
     },
+    "D-harness-model-indexes": {
+      "cause": "harness",
+      "area": "query-interface",
+      "note": "Test reads the v6 private Model._indexes; the behaviour (unique type, gin index) is covered by tests/compat/index-conform.test.ts."
+    },
     "D-harness-model-internals": {
       "cause": "harness",
       "area": "model",
@@ -784,14 +789,6 @@
       "risk": "cosmetic",
       "repro": "Sequelize.Model._conformIncludes({include:[{model:null}]}, Company) // TypeError: not a function",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
-    },
-    "D-index-options-ignored": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "Model indexes with type:'unique'/'UNIQUE' are created as plain (non-unique) indexes, and a JSONB attribute with index:true gets no gin index at sync (only the pkey exists).",
-      "risk": "wrong-result",
-      "repro": "s.define('m',{name:STRING},{indexes:[{type:'unique',fields:['name']}]}).sync() // CREATE INDEX not UNIQUE",
-      "test": "Model indexes should set the unique property when type is unique"
     },
     "D-no-dialect-config": {
       "cause": "divergence",
@@ -1222,8 +1219,8 @@
         "[POSTGRES] Model indexes should set the unique property when type is unique"
       ],
       "causes": {
-        "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes": "D-index-options-ignored",
-        "[POSTGRES] Model indexes should set the unique property when type is unique": "D-index-options-ignored"
+        "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes": "D-harness-model-indexes",
+        "[POSTGRES] Model indexes should set the unique property when type is unique": "D-harness-model-indexes"
       }
     },
     "test/unit/model/overwriting-builtins.test.js": {

@@ -1,8 +1,11 @@
 import type { ConflictTarget, ExprNode, OnConflictNode } from '../sql/ast.ts';
 import { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
+import { ModelIndexes } from './model-indexes.ts';
 import type { ModelDefinition } from './model-definition.ts';
 import type { BulkCreateOptions, Values } from './options.ts';
+
+const modelIndexes = new ModelIndexes();
 
 type UniqueKey = Readonly<{ fields: readonly string[]; where?: unknown }>;
 
@@ -14,7 +17,8 @@ const firstUniqueKey = (definition: ModelDefinition): readonly string[] | undefi
 
 /** Attribute names (and partial-index predicate) of each unique index declared in `indexes`. */
 const uniqueIndexKeys = (definition: ModelDefinition, withPartial: boolean): readonly UniqueKey[] =>
-  (definition.options.indexes ?? [])
+  modelIndexes
+    .of(definition)
     // like v6, any truthy `unique` (a name string too) makes a unique index
     .filter((index) => Boolean(index.unique) && (withPartial || index.where === undefined))
     .filter((index) =>
