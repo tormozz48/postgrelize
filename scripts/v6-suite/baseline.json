@@ -70,14 +70,6 @@
       "repro": "(await T.findOne()).rawAttributes // undefined",
       "test": "BelongsToMany getAssociations gets all associated objects with all fields"
     },
-    "A-op-not-array": {
-      "cause": "bug",
-      "area": "where",
-      "note": "{[Op.not]: [..]} compiles to <> ARRAY[..] (and binds an array to an integer column) instead of NOT IN.",
-      "risk": "wrong-result",
-      "repro": "await T.findAll({where:{id:{[Op.not]:[1]}}}) // invalid input syntax for type integer",
-      "test": "BelongsToMany getAssociations supports a where not in"
-    },
     "A-primarykeyfield-missing": {
       "cause": "bug",
       "area": "model",
@@ -271,27 +263,11 @@
       "repro": "await U.findOne({attributes:['id',['username']]})",
       "test": "Model findOne general / basic function should fail with meaningful error message on invalid attributes definition"
     },
-    "B-json-key-cast": {
-      "cause": "bug",
-      "area": "json",
-      "note": "A cast suffix in a nested JSON where key ({ md: { 'level::integer': {[Op.gt]:3} } }) is treated as part of the key name (0 rows); v6 casts, and rejects invalid cast types with 'Invalid cast type'. Malicious keys are harmless (bound) but are not rejected.",
-      "risk": "wrong-result",
-      "repro": "await U.findAll({where:{md:{'level::integer':{[Op.gt]:3}}}}) // [] instead of matching rows",
-      "test": "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation"
-    },
     "B-json-order-injection": {
       "cause": "divergence",
       "area": "json",
       "note": "order:[[\"data.name.first}'); ...\"]] is treated as a (bound) JSON path and returns rows; v6 throws.",
       "ref": "docs/sequelize-issues.md (#9040 order by a JSON path); docs/security.md (ADR-020)"
-    },
-    "B-json-path-index": {
-      "cause": "bug",
-      "area": "json",
-      "note": "sequelize.json('col.arr[1]') and where: json('col[0].name', v) / json('col.0',v): array indexes in the path are turned into key names ('phones[1]'), giving null / 'column col[0] does not exist'.",
-      "risk": "wrong-result",
-      "repro": "U.findOne({attributes:[[Sequelize.json('ec.phones[1]'),'n']]}) // n is null; U.findOne({where:Sequelize.json('ec[0].name','joe')}) // error",
-      "test": "model json should be able to retrieve element of array by index"
     },
     "B-logging-interpolated": {
       "cause": "bug",
@@ -450,14 +426,6 @@
       "risk": "error",
       "repro": "s.define('o',{bla:{type:DataTypes.ARRAY}}) // no throw",
       "test": "raises an error if no values are defined"
-    },
-    "C-bind-dollar-escape": {
-      "cause": "bug",
-      "area": "query",
-      "note": "`$$` escape in bind-enabled queries is not unescaped to `$` (v6 yields \"$ / $1\").",
-      "risk": "wrong-result",
-      "repro": "await s.query(\"select 1 as foo, '$$ / $$1' as bar\",{type:'SELECT',bind:[]}) // bar '$$ / $$1'",
-      "test": "binds named parameters array handles escaped $$"
     },
     "C-bind-dollar-in-identifier": {
       "cause": "bug",
@@ -679,26 +647,10 @@
       "repro": "await qi.createFunction('f',[{type:'varchar',name:'t'}],'varchar','plpgsql','return t;',null) // TypeError Cannot read properties of null (reading 'map')",
       "test": "createFunction treats options as optional"
     },
-    "C-query-fieldmap": {
-      "cause": "bug",
-      "area": "query",
-      "note": "query option fieldMap (SELECT type) is ignored: result keys are not renamed.",
-      "risk": "wrong-result",
-      "repro": "await s.query('select user_name from \"Us\"',{type:'SELECT',fieldMap:{user_name:'name'}}) // [{user_name:'john'}]",
-      "test": "arbitrarily map the field names"
-    },
     "C-querygenerator-internals": {
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls queryInterface.queryGenerator.* (getForeignKeysQuery, selectQuery) which postgrelize does not expose."
-    },
-    "C-raw-show-result-shape": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Raw `sequelize.query(\"SHOW ...\")` (no type) returns [rows, meta] instead of v6 rows array (v6 treats SHOW/DESCRIBE as show queries and returns rows).",
-      "risk": "wrong-result",
-      "repro": "await s.query('SHOW client_min_messages') // v6: [{client_min_messages:'warning'}], pgz: [[{...}],{rows,...}]",
-      "test": "should allow overriding session variables through the `options` param"
     },
     "C-references-without-model-drop": {
       "cause": "bug",
@@ -741,14 +693,6 @@
       "risk": "error",
       "repro": "await qi.removeConstraint('users','nope',{type:'unique'}) // DatabaseError (v6 UnknownConstraintError)",
       "test": "unknown constraint should throw non existent constraints as UnknownConstraintError"
-    },
-    "C-uri-query-options": {
-      "cause": "bug",
-      "area": "config",
-      "note": "Query-string options in the connection URL (?options=-c search_path=..., ?application_name=...) are not passed to pg; v6 passes them as dialectOptions.",
-      "risk": "wrong-result",
-      "repro": "new Sequelize('postgres://u:p@h/db?options=-c%20search_path%3dtest_schema').query('SHOW search_path',{type:'SELECT'}) // \"$user\", public",
-      "test": "should work with options in the connection string (postgresql protocol)"
     },
     "C-validate-alias-identity": {
       "cause": "harness",
@@ -1980,8 +1924,6 @@
       "pass": 35,
       "failing": [
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key",
         "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
@@ -1993,8 +1935,6 @@
       ],
       "causes": {
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields": "A-instance-rawattributes",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in": "A-op-not-array",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key": "A-op-not-array",
         "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)": "A-btm-paired-otherkey",
@@ -2136,9 +2076,6 @@
         "Dynamic OIDs should fetch regular dynamic oids and create parsers",
         "[POSTGRES] Sequelize should allow overriding client_min_messages",
         "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)",
-        "[POSTGRES] Sequelize should allow overriding session variables through the `options` param",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is false (deprecated in v7)",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is ignore",
         "[POSTGRES] Sequelize should set client_min_messages to warning by default"
       ],
       "causes": {
@@ -2147,9 +2084,6 @@
         "Dynamic OIDs should fetch regular dynamic oids and create parsers": "C-connmanager-internals",
         "[POSTGRES] Sequelize should allow overriding client_min_messages": "C-client-min-messages",
         "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)": "C-client-min-messages",
-        "[POSTGRES] Sequelize should allow overriding session variables through the `options` param": "C-raw-show-result-shape",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is false (deprecated in v7)": "C-client-min-messages",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is ignore": "C-client-min-messages",
         "[POSTGRES] Sequelize should set client_min_messages to warning by default": "C-client-min-messages"
       }
     },
@@ -2328,22 +2262,8 @@
       "causes": {}
     },
     "test/integration/json.test.js": {
-      "failing": [
-        "model json cast type SQL injection should reject UNION-based cross-table data exfiltration via JSON cast type",
-        "model json cast type SQL injection should reject WHERE bypass via OR 1=1 injection in JSON cast type",
-        "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation",
-        "model json should be able to query array using property accessor",
-        "model json should be able to retrieve element of array by index",
-        "model json should be able to retrieve nested value of an object by path",
-        "model json should use a placeholder for json with insert"
-      ],
+      "failing": ["model json should use a placeholder for json with insert"],
       "causes": {
-        "model json cast type SQL injection should reject UNION-based cross-table data exfiltration via JSON cast type": "B-json-key-cast",
-        "model json cast type SQL injection should reject WHERE bypass via OR 1=1 injection in JSON cast type": "B-json-key-cast",
-        "model json cast type SQL injection should still allow legitimate JSON queries with valid :: cast notation": "B-json-key-cast",
-        "model json should be able to query array using property accessor": "B-json-path-index",
-        "model json should be able to retrieve element of array by index": "B-json-path-index",
-        "model json should be able to retrieve nested value of an object by path": "B-json-path-index",
         "model json should use a placeholder for json with insert": "B-logging-interpolated"
       }
     },
@@ -2767,7 +2687,6 @@
       "failing": [
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
-        "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
         "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
@@ -2783,7 +2702,6 @@
       "causes": {
         "\"after each\" hook for \"correctly handles multiple transactions\"": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
-        "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)": "C-uri-query-options",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize define raises an error if no values are defined": "C-array-no-type",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",
@@ -2839,9 +2757,6 @@
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] Sequelize query arbitrarily map the field names",
-        "[POSTGRES] Sequelize query binds named parameters array handles escaped $$",
-        "[POSTGRES] Sequelize query binds named parameters object handles escaped $$",
         "[POSTGRES] Sequelize query binds named parameters with the passed object",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice",
         "[POSTGRES] Sequelize query binds token with the passed array",
@@ -2849,7 +2764,6 @@
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
         "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
         "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
-        "[POSTGRES] Sequelize query keeps field names that are mapped to the same name",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
@@ -2859,9 +2773,6 @@
         "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
       ],
       "causes": {
-        "[POSTGRES] Sequelize query arbitrarily map the field names": "C-query-fieldmap",
-        "[POSTGRES] Sequelize query binds named parameters array handles escaped $$": "C-bind-dollar-escape",
-        "[POSTGRES] Sequelize query binds named parameters object handles escaped $$": "C-bind-dollar-escape",
         "[POSTGRES] Sequelize query binds named parameters with the passed object": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
@@ -2869,7 +2780,6 @@
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest": "C-sequelize-internals",
         "[POSTGRES] Sequelize query escape where has $ on the middle of characters": "C-bind-dollar-in-identifier",
         "[POSTGRES] Sequelize query executes a query if a placeholder value is an array": "C-nested-array-replacements",
-        "[POSTGRES] Sequelize query keeps field names that are mapped to the same name": "C-query-fieldmap",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql": "C-logqueryparameters",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value": "C-logqueryparameters",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",

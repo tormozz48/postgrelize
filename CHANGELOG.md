@@ -38,6 +38,16 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- A cast suffix on a nested JSON `where` key (`{ meta: { 'level::integer': { [Op.gt]: 3 } } }`) casts the value like v6 instead of being part of the key name (which matched no rows); unknown cast types are rejected with `Invalid cast type`. Differential test in `tests/compat/json-where-cast.test.ts`; three v6 suite baseline entries and the cause `B-json-key-cast` are gone. ([#208](https://github.com/tormozz48/postgrelize/pull/208))
+- `sequelize.json('col.list[0].name')` reads the array element like v6, in `attributes` and `where`, instead of treating `list[0]` as a key name. Differential test in `tests/compat/json-path-index.test.ts`; three v6 suite baseline entries and the cause `B-json-path-index` are gone. ([#209](https://github.com/tormozz48/postgrelize/pull/209))
+- `{ id: { [Op.not]: [1, 2] } }` is `NOT IN` like v6, instead of comparing the column with an array. Differential test in `tests/compat/where-op-not-array.test.ts`; two v6 suite baseline entries and the cause `A-op-not-array` are gone. ([#214](https://github.com/tormozz48/postgrelize/pull/214))
+- In a `sequelize.query` with `bind`, `$$` inside a string literal stands for `$` like v6 (it stayed doubled); dollar-quoted blocks are left as they are. Differential test in `tests/compat/bind-dollar-escape.test.ts`; two v6 suite baseline entries and the cause `C-bind-dollar-escape` are gone. ([#225](https://github.com/tormozz48/postgrelize/pull/225))
+- The `fieldMap` option of `sequelize.query` renames the columns of SELECT rows like v6 (it was ignored). Differential test in `tests/compat/query-field-map.test.ts`; two v6 suite baseline entries and the cause `C-query-fieldmap` are gone. ([#226](https://github.com/tormozz48/postgrelize/pull/226))
+- **Behaviour change:** `sequelize.query('SHOW ...')` without a `type` resolves to the rows alone, like v6, instead of `[rows, result]`. Differential test in `tests/compat/query-show-result.test.ts`; three v6 suite baseline entries (two of them filed under `C-client-min-messages`) and the cause `C-raw-show-result-shape` are gone. ([#226](https://github.com/tormozz48/postgrelize/pull/226))
+- Parameters of a connection URI's query string that `pg` understands (`options`, `application_name`, `statement_timeout`, ...) and `host` are used like in v6 (they were ignored). Differential test in `tests/compat/connection-uri-options.test.ts`; one v6 suite baseline entry and the cause `C-uri-query-options` are gone. ([#228](https://github.com/tormozz48/postgrelize/pull/228))
+
 ## [1.9.8] - 2026-11-26
 
 ### Fixed
