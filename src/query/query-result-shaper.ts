@@ -101,6 +101,8 @@ export type QueryOptions = QueryOptionsBase &
     plain?: boolean;
     /** Build instances of this model from SELECT rows. */
     model?: ModelStatic<AnyModel>;
+    /** Renames columns of SELECT rows: column name → key of the result. */
+    fieldMap?: Readonly<Record<string, string>>;
     /** Map column names to attribute names of `model`. */
     mapToModel?: boolean;
     /** Return plain rows even with `model`. */
@@ -206,7 +208,7 @@ export class QueryResultShaper {
    * @param options - Query options.
    * @returns Shaped result.
    */
-  shape(result: QueryResult, options: QueryOptions): unknown {
+  shape(result: QueryResult, options: QueryOptions, sql = ''): unknown {
     const rows = this.#shapeRows(result, options);
     switch (this.type(options)) {
       case QueryTypes.SELECT:
@@ -222,18 +224,41 @@ export class QueryResultShaper {
       case QueryTypes.BULKUPDATE:
         return result.rowCount;
       default:
-        return options.plain === true ? (rows[0] ?? null) : [rows, result];
+        return this.#raw(rows, result, options, sql);
     }
+  }
+
+  // like v6, SHOW and DESCRIBE statements answer with the rows alone
+  #raw(rows: readonly unknown[], result: QueryResult, options: QueryOptions, sql: string): unknown {
+    if (options.plain === true) {
+      return rows[0] ?? null;
+    }
+    return /^\s*(?:show|describe)/i.test(sql) ? rows : [rows, result];
+  }
+
+  // the `fieldMap` option of a SELECT
+  #renamed(rows: QueryResult['rows'], options: QueryOptions): QueryResult['rows'] {
+    const { fieldMap } = options;
+    if (fieldMap === undefined || this.type(options) !== QueryTypes.SELECT) {
+      return rows;
+    }
+    return rows.map((row) =>
+      Object.fromEntries(
+        Object.entries(row as Values).map(([key, value]) => [
+          Object.hasOwn(fieldMap, key) ? (fieldMap[key] as string) : key,
+          value,
+        ]),
+      ),
+    ) as QueryResult['rows'];
   }
 
   #shapeRows(result: QueryResult, options: QueryOptions): readonly unknown[] {
     const model = options.model;
+    const found = this.#renamed(result.rows, options);
     if (model === undefined || options.raw === true) {
-      return options.nest === true
-        ? result.rows.map((row) => this.#rows.nest(row as Values))
-        : result.rows;
+      return options.nest === true ? found.map((row) => this.#rows.nest(row as Values)) : found;
     }
-    return result.rows.map((row) =>
+    return found.map((row) =>
       model.build(options.mapToModel === true ? this.#rows.parseModel(model, row) : row, {
         isNewRecord: false,
         raw: true,
