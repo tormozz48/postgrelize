@@ -54,7 +54,7 @@ export class BelongsToMany<
   async get(instance: Instance, options: AccessorOptions = {}): Promise<Instance[]> {
     const joined = await this.#links(instance, options);
     const byKey = new Map(joined.map((link) => [link.get(this.#otherKey), link]));
-    const rows = (await this.target.findAll({
+    const rows = (await this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: [...byKey.keys()] }),
     } as never)) as Instance[];
@@ -97,7 +97,7 @@ export class BelongsToMany<
    */
   async count(instance: Instance, options: AccessorOptions = {}): Promise<number> {
     const linked = (await this.#links(instance, options)).map((link) => link.get(this.#otherKey));
-    return this.target.count({
+    return this.scopedTarget(options).count({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: linked }),
     } as CountOptions);
