@@ -4,7 +4,7 @@ One `Sequelize` instance owns one connection pool (or one pool per replica, see 
 
 ## Connection URI
 
-A URI carries host, port, database and credentials. Options given next to it override the values in the URI:
+A URI carries host, port, database and credentials, and its query string may add `sslmode`, `host` and `pg` parameters such as `options`, `application_name` or `statement_timeout` (they become `dialectOptions`, as in Sequelize v6). The values of the URI win over options given next to it:
 
 <<< @/examples/connection.ts#url{ts}
 
