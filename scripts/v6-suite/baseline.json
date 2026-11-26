@@ -311,14 +311,6 @@
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
     },
-    "B-increment-version": {
-      "cause": "bug",
-      "area": "model",
-      "note": "increment()/decrement() on a model with a version attribute (optimistic locking) does not bump the version column.",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{a:DataTypes.INTEGER},{version:'v'}); await u.increment('a'); (await U.findByPk(u.id)).v // 0, v6: 1",
-      "test": "Model optimistic locking increment() also increments the version"
-    },
     "B-index-field-attribute-key": {
       "cause": "bug",
       "area": "ddl",
@@ -2726,14 +2718,8 @@
       }
     },
     "test/integration/model/optimistic_locking.test.js": {
-      "failing": [
-        "[POSTGRES] Model optimistic locking decrement() also increments the version",
-        "[POSTGRES] Model optimistic locking increment() also increments the version"
-      ],
-      "causes": {
-        "[POSTGRES] Model optimistic locking decrement() also increments the version": "B-increment-version",
-        "[POSTGRES] Model optimistic locking increment() also increments the version": "B-increment-version"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/schema.test.js": {
       "failing": [
