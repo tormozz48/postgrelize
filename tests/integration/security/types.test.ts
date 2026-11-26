@@ -8,6 +8,10 @@ import {
   textValue,
   withCanary,
 } from '../../support/injection.ts';
+import { registerFileDatabase } from '../../support/file-database-hooks.ts';
+
+// Extensions are database-wide: a parallel file that creates the same one would break this file.
+registerFileDatabase();
 
 describe('S14 data types keep values bound and DDL escaped', () => {
   it('round-trips arbitrary HSTORE keys and values, including where operators', () =>

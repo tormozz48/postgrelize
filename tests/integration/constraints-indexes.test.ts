@@ -11,6 +11,10 @@ import {
 } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
+import { registerFileDatabase } from '../support/file-database-hooks.ts';
+
+// Extensions are database-wide: a parallel file that creates the same one would break this file.
+registerFileDatabase();
 
 const opened: Sequelize[] = [];
 afterEach(async () => {
