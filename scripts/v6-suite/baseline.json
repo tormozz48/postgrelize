@@ -686,14 +686,6 @@
       "repro": "await qi.removeConstraint('users','nope',{type:'unique'}) // DatabaseError (v6 UnknownConstraintError)",
       "test": "unknown constraint should throw non existent constraints as UnknownConstraintError"
     },
-    "C-uri-query-options": {
-      "cause": "bug",
-      "area": "config",
-      "note": "Query-string options in the connection URL (?options=-c search_path=..., ?application_name=...) are not passed to pg; v6 passes them as dialectOptions.",
-      "risk": "wrong-result",
-      "repro": "new Sequelize('postgres://u:p@h/db?options=-c%20search_path%3dtest_schema').query('SHOW search_path',{type:'SELECT'}) // \"$user\", public",
-      "test": "should work with options in the connection string (postgresql protocol)"
-    },
     "C-validate-alias-identity": {
       "cause": "harness",
       "area": "config",
@@ -2715,7 +2707,6 @@
       "failing": [
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
-        "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
@@ -2730,7 +2721,6 @@
       "causes": {
         "\"after each\" hook for \"correctly handles multiple transactions\"": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
-        "[POSTGRES] Sequelize constructor should work with options in the connection string (postgresql protocol)": "C-uri-query-options",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize define raises an error if no values are defined": "C-array-no-type",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",

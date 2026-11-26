@@ -10,6 +10,18 @@ type ConstructorArgs =
   | readonly [string, SequelizeOptions?]
   | readonly [string, string | null | undefined, (string | null | undefined)?, SequelizeOptions?];
 
+// connection string parameters handed to `pg` (the ones v6 forwards from `dialectOptions`)
+const URI_PARAMETERS: ReadonlySet<string> = new Set([
+  'application_name',
+  'client_encoding',
+  'connectionTimeoutMillis',
+  'idle_in_transaction_session_timeout',
+  'lock_timeout',
+  'options',
+  'query_timeout',
+  'statement_timeout',
+]);
+
 /**
  * Connection configuration of a `Sequelize` instance: normalizes the overloaded Sequelize v6
  * constructor arguments and derives the `pg` pool configurations (writer and read replicas).
@@ -74,7 +86,7 @@ export class ConnectionConfig {
     }
     const secondOptions = typeof second === 'object' && second !== null ? second : {};
     return ConnectionConfig.#isUri(first)
-      ? { ...secondOptions, ...ConnectionConfig.#fromUri(first) }
+      ? ConnectionConfig.#fromUri(first, secondOptions)
       : {
           ...(fourth ?? secondOptions),
           ...ConnectionConfig.#definedOnly({
@@ -85,7 +97,7 @@ export class ConnectionConfig {
         };
   }
 
-  static #fromUri(uri: string): SequelizeOptions {
+  static #fromUri(uri: string, given: SequelizeOptions): SequelizeOptions {
     const url = new URL(uri);
     if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
       throw new Error(`postgrelize supports only postgres:// connection URIs, got ${url.protocol}`);
@@ -93,13 +105,23 @@ export class ConnectionConfig {
     const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
     const sslmode = url.searchParams.get('sslmode');
     return {
-      host: url.hostname,
+      ...given,
+      ...ConnectionConfig.#fromQuery(url.searchParams, given),
+      host: url.searchParams.get('host') ?? url.hostname,
       ...(url.port === '' ? {} : { port: Number(url.port) }),
       ...(database === '' ? {} : { database }),
       ...(url.username === '' ? {} : { username: decodeURIComponent(url.username) }),
       ...(url.password === '' ? {} : { password: decodeURIComponent(url.password) }),
       ...(sslmode === null || sslmode === 'disable' ? {} : { ssl: true }),
     };
+  }
+
+  // like v6, parameters of the query string that `pg` understands become `dialectOptions`
+  static #fromQuery(query: URLSearchParams, given: SequelizeOptions): SequelizeOptions {
+    const passed = [...query].filter(([name]) => URI_PARAMETERS.has(name));
+    return passed.length === 0
+      ? {}
+      : { dialectOptions: { ...given.dialectOptions, ...Object.fromEntries(passed) } };
   }
 
   static #isUri(value: string): boolean {
