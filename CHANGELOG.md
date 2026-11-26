@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.12] - 2026-11-26
+
 ### Fixed
 
 - `Validator` (also `Sequelize.Validator` and `sequelize.Validator`) is a copy of validator.js with the v6 additions and `extend()`, and validators registered with it work in `validate` of attributes. Differential test in `tests/compat/validator-extend.test.ts`. ([#253](https://github.com/tormozz48/postgrelize/pull/253))
@@ -584,7 +586,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.12...HEAD
+[1.9.12]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...v1.9.12
 [1.9.11]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...v1.9.11
 [1.9.10]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...v1.9.10
 [1.9.9]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...v1.9.9
