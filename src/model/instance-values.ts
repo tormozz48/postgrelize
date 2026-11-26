@@ -1,3 +1,4 @@
+import type { IncludeNode } from '../associations/include.ts';
 import { SqlExpression } from '../expressions/methods.ts';
 import { InstanceState } from './instance-state.ts';
 import { MethodLookup } from './method-lookup.ts';
@@ -9,6 +10,9 @@ import type { AnyModel, Values } from './options.ts';
 
 const methods = new MethodLookup();
 const nested = new NestedJson();
+
+/** Builds the nested instances of an include. */
+export type NestedBuild = (node: IncludeNode, value: unknown) => unknown;
 
 /** Tells model instances apart from plain values (injected to avoid importing `Model`). */
 export type InstanceCheck = (value: unknown) => value is AnyModel;
@@ -29,15 +33,24 @@ export class InstanceValues {
   readonly #values: ModelValues;
   readonly #isInstance: InstanceCheck;
 
+  readonly #buildNested: NestedBuild;
+
   /**
    * @param registry - Model definitions.
    * @param values - Value equality.
    * @param isInstance - Checks whether a value is a model instance.
+   * @param buildNested - Builds the instances of an include (injected, like `isInstance`).
    */
-  constructor(registry: ModelRegistry, values: ModelValues, isInstance: InstanceCheck) {
+  constructor(
+    registry: ModelRegistry,
+    values: ModelValues,
+    isInstance: InstanceCheck,
+    buildNested: NestedBuild,
+  ) {
     this.#registry = registry;
     this.#values = values;
     this.#isInstance = isInstance;
+    this.#buildNested = buildNested;
   }
 
   /**
@@ -54,7 +67,9 @@ export class InstanceValues {
     options: SetOptions,
   ): unknown {
     if (typeof keyOrOptions === 'string') {
-      return this.#getOne(instance, keyOrOptions, options);
+      // like v6, `get(include, { plain: true })` hands out plain objects
+      const value = this.#getOne(instance, keyOrOptions, options);
+      return this.#plain(value, options as GetOptions);
     }
     return this.#getAll(instance, keyOrOptions);
   }
@@ -75,7 +90,7 @@ export class InstanceValues {
   ): void {
     if (typeof keyOrValues === 'object') {
       const options = (valueOrOptions ?? {}) as SetOptions;
-      if (options.raw === true) {
+      if (options.raw === true && InstanceState.of(instance).includes.length === 0) {
         // Raw values bypass setters, so they can be copied in one step (as v6 does).
         Object.assign(instance.dataValues as Values, keyOrValues);
         return;
@@ -97,7 +112,6 @@ export class InstanceValues {
 
   #getAll(instance: AnyModel, options: GetOptions | number | symbol | undefined): Values {
     const raw = typeof options === 'object' && options.raw === true;
-    const plain = typeof options === 'object' && options.plain === true;
     const passed = typeof options === 'object' ? options : {};
     const definition = this.#registry.definition(instance.constructor);
     const keys = new Set([
@@ -109,27 +123,27 @@ export class InstanceValues {
         key,
         this.#plain(
           raw ? (instance.dataValues as Values)[key] : this.#getOne(instance, key, passed),
-          plain,
+          passed,
         ),
       ]),
     );
   }
 
-  #plain(value: unknown, plain: boolean): unknown {
-    if (!plain) {
+  // nested instances get the caller's options too (v6 getters receive them)
+  #plain(value: unknown, options: GetOptions): unknown {
+    if (options.plain !== true) {
       return value;
     }
     if (this.#isInstance(value)) {
-      return value.get({ plain: true });
+      return value.get(options as never);
     }
     return Array.isArray(value) && value.some((item) => this.#isInstance(item))
-      ? value.map((item) => this.#plain(item, plain))
+      ? value.map((item) => this.#plain(item, options))
       : value;
   }
 
   #setOne(instance: AnyModel, key: string, value: unknown, options: SetOptions): void {
-    if (options.raw === true) {
-      (instance.dataValues as Values)[key] = value;
+    if (this.#setInclude(instance, key, value) || this.#setRaw(instance, key, value, options)) {
       return;
     }
     const definition = this.#registry.definition(instance.constructor);
@@ -146,6 +160,23 @@ export class InstanceValues {
       this.#track(instance, key, original, value);
       values[key] = value;
     }
+  }
+
+  #setRaw(instance: AnyModel, key: string, value: unknown, options: SetOptions): boolean {
+    if (options.raw === true) {
+      (instance.dataValues as Values)[key] = value;
+    }
+    return options.raw === true;
+  }
+
+  // like v6, an included association of a built instance takes instances built from the data
+  #setInclude(instance: AnyModel, key: string, value: unknown): boolean {
+    const node = InstanceState.of(instance).includes.find((include) => include.as === key);
+    if (node === undefined || value === undefined) {
+      return false;
+    }
+    (instance.dataValues as Values)[key] = this.#buildNested(node, value);
+    return true;
   }
 
   // `set('meta.city', value)` writes into the JSON attribute `meta`
