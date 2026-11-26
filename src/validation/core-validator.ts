@@ -34,7 +34,8 @@ export class CoreValidator {
     attribute: AttributeDefinition,
     value: unknown,
   ): ValidationErrorItem | undefined {
-    if (attribute.allowNull !== false || (value !== null && value !== undefined)) {
+    const missing = attribute.allowNull === false && (value === null || value === undefined);
+    if (!missing || CoreValidator.#awaitsParent(target.instance, attribute.fieldName)) {
       return undefined;
     }
     const message = CoreValidator.#notNullMessage(target, attribute);
@@ -45,6 +46,21 @@ export class CoreValidator {
       value,
       target.instance,
       'is_null',
+    );
+  }
+
+  // like v6, a foreign key may be empty while its `belongsTo` parent is set: saving it fills the key
+  static #awaitsParent(instance: object, attribute: string): boolean {
+    const { associations = {} } = instance.constructor as Readonly<{
+      associations?: Readonly<
+        Record<string, Readonly<{ associationType: string; foreignKey: string; as: string }>>
+      >;
+    }>;
+    return Object.values(associations).some(
+      (association) =>
+        association.associationType === 'BelongsTo' &&
+        association.foreignKey === attribute &&
+        Boolean((instance as { get(name: string): unknown }).get(association.as)),
     );
   }
 
