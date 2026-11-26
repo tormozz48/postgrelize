@@ -644,14 +644,6 @@
       "area": "query-interface",
       "note": "Test calls queryInterface.queryGenerator.* (getForeignKeysQuery, selectQuery) which postgrelize does not expose."
     },
-    "C-raw-show-result-shape": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Raw `sequelize.query(\"SHOW ...\")` (no type) returns [rows, meta] instead of v6 rows array (v6 treats SHOW/DESCRIBE as show queries and returns rows).",
-      "risk": "wrong-result",
-      "repro": "await s.query('SHOW client_min_messages') // v6: [{client_min_messages:'warning'}], pgz: [[{...}],{rows,...}]",
-      "test": "should allow overriding session variables through the `options` param"
-    },
     "C-references-without-model-drop": {
       "cause": "bug",
       "area": "associations",
@@ -2114,9 +2106,6 @@
         "Dynamic OIDs should fetch regular dynamic oids and create parsers",
         "[POSTGRES] Sequelize should allow overriding client_min_messages",
         "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)",
-        "[POSTGRES] Sequelize should allow overriding session variables through the `options` param",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is false (deprecated in v7)",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is ignore",
         "[POSTGRES] Sequelize should set client_min_messages to warning by default"
       ],
       "causes": {
@@ -2125,9 +2114,6 @@
         "Dynamic OIDs should fetch regular dynamic oids and create parsers": "C-connmanager-internals",
         "[POSTGRES] Sequelize should allow overriding client_min_messages": "C-client-min-messages",
         "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)": "C-client-min-messages",
-        "[POSTGRES] Sequelize should allow overriding session variables through the `options` param": "C-raw-show-result-shape",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is false (deprecated in v7)": "C-client-min-messages",
-        "[POSTGRES] Sequelize should not set client_min_messages if clientMinMessages is ignore": "C-client-min-messages",
         "[POSTGRES] Sequelize should set client_min_messages to warning by default": "C-client-min-messages"
       }
     },
