@@ -1,5 +1,7 @@
 import { HookRegistry, type HookFunction, type HookType } from '../hooks/hooks.ts';
 import { DefineHooks } from './define-hooks.ts';
+import { RawAttributes } from './raw-attributes.ts';
+import type { AttributeDefinition } from './attribute-options.ts';
 import type { ModelAttributes, ModelDefinition } from './model-definition.ts';
 import { ModelAccessors } from './model-accessors.ts';
 import { ModelStateFactory, type ModelState } from './model-state.ts';
@@ -8,6 +10,8 @@ import type { RuntimeOwner } from './runtime.ts';
 import type { ScopeDefinition, ScopeOptions, ScopeSelector } from './scope-registry.ts';
 
 export type { ModelState } from './model-state.ts';
+
+const raw = new RawAttributes();
 
 const NOT_INITIALIZED = 'Model is not initialized. Call Model.init() or sequelize.define() first.';
 
@@ -226,6 +230,16 @@ export class ModelRegistry {
   }
 
   /**
+   * The mutable `Model.rawAttributes` object of the model.
+   *
+   * @param model - Model class.
+   * @returns Attribute entries by name.
+   */
+  rawAttributes(model: object): Record<string, AttributeDefinition> {
+    return raw.of(this.state(model).definition) as unknown as Record<string, AttributeDefinition>;
+  }
+
+  /**
    * Defines `instance.<attribute>` getters / setters on the model prototype (once per attribute).
    *
    * @param prototype - Model prototype.
@@ -253,7 +267,7 @@ export class ModelRegistry {
    * @returns The new definition.
    */
   addAssociationAttributes(model: object, attributes: ModelAttributes): ModelDefinition {
-    this.update(model, (state) => factory.withAssociationAttributes(state, attributes));
+    this.update(model, (state) => factory.withAssociationAttributes(raw.apply(state), attributes));
     const { definition } = this.state(model);
     this.defineAttributeAccessors((model as { prototype: object }).prototype, definition);
     return definition;
@@ -266,7 +280,7 @@ export class ModelRegistry {
    * @param attribute - Attribute name.
    */
   removeAttribute(model: object, attribute: string): void {
-    this.update(model, (state) => factory.withoutAttribute(state, attribute));
+    this.update(model, (state) => factory.withoutAttribute(raw.apply(state), attribute));
   }
 
   /**
