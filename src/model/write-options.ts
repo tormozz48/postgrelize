@@ -175,6 +175,11 @@ export type InsertFromOptions<T = Values> = QueryOptionsBase &
  */
 export type IncrementOptions<T = Values> = QueryOptionsBase &
   Readonly<{
+    /**
+     * `instance.increment` / `decrement` take the new values from the returned row.
+     * @defaultValue true
+     */
+    returning?: boolean;
     /** Rows to change; required for the static form, ignored on instances. */
     where?: WhereOptions<T>;
     /** Amount to add (`increment`) or subtract (`decrement`).

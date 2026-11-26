@@ -256,27 +256,30 @@ export class InstanceLifecycle {
   }
 
   /**
-   * Increments / decrements attributes of the instance's row through the model static.
+   * Increments / decrements attributes of the instance's row through the model static, and takes
+   * the new values from the returned row unless `returning: false` (v6).
    *
    * @param instance - Instance.
    * @param method - `'increment'` or `'decrement'`.
    * @param fields - Attribute name(s) or map of amounts.
-   * @param options - Options.
-   * @returns Result of the model static.
+   * @param options - Options; `where` narrows the primary key condition.
    */
-  changeBy(
+  async changeBy(
     instance: AnyModel,
     method: 'increment' | 'decrement',
     fields: AttributeAmounts<Values>,
-    options: Omit<IncrementOptions, 'where'>,
-  ): Promise<unknown> {
+    options: IncrementOptions,
+  ): Promise<void> {
     const model = instance.constructor as ModelStatic<AnyModel>;
     const { definition } = this.#services.registry.state(model);
-    const where = this.#services.columns.primaryKeyWhere(definition, instance.dataValues as Values);
-    return model[method](fields, {
-      ...(options as IncrementOptions),
-      where: where as WhereOptions,
-    });
+    const key = this.#services.columns.primaryKeyWhere(definition, instance.dataValues as Values);
+    const where = { ...(options.where as Values | undefined), ...key } as WhereOptions;
+    const [rows] = await model[method](fields, { ...options, where });
+    const row = rows[0]?.dataValues as Values | undefined;
+    if (row !== undefined && options.returning !== false) {
+      instance.set(row, { raw: true });
+      this.settle(instance, Object.keys(row));
+    }
   }
 
   /**
