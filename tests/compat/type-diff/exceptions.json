@@ -198,7 +198,6 @@
       "FindOrCreateOptions.validate": "option-keys",
       "ForeignKeyConstraintError.reltype": "error-members",
       "ForeignKeyConstraintError.value": "error-members",
-      "ForeignKeyOptions.defaultValue": "option-keys",
       "HasMany.identifier": "association-members",
       "HasMany.inspect": "association-members",
       "HasMany.isSelfAssociation": "association-members",

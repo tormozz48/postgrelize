@@ -84,7 +84,10 @@ export class AssociationKeys {
    * @returns Attribute name, if given.
    */
   foreignKeyName(option: string | ForeignKeyOptions | undefined): string | undefined {
-    return option === undefined ? undefined : typeof option === 'string' ? option : option.name;
+    // an existing attribute (`Model.rawAttributes.x`) is accepted too: it is named by `fieldName`
+    return typeof option === 'object'
+      ? (option.name ?? (option as Readonly<{ fieldName?: string }>).fieldName)
+      : option;
   }
 
   /**
@@ -148,24 +151,27 @@ export class AssociationKeys {
   }
 
   /**
-   * Attribute options of a foreign key.
+   * Attribute options of a foreign key. Like v6, the object form of the option may carry any
+   * attribute option (`type`, `defaultValue`, ...).
    *
    * @param type - Referenced attribute (its data type is reused).
-   * @param extras - Object form of the foreign key option.
-   * @param base - Further attribute options.
+   * @param option - Object form of the foreign key option.
+   * @param base - Further attribute options; its `references` and actions win.
    * @returns Attribute options.
    */
   keyAttribute(
     type: AttributeDefinition | undefined,
-    extras: ForeignKeyOptions,
+    option: ForeignKeyOptions,
     base: Values = {},
   ): Values {
+    const { name: _name, fieldName: _fieldName, ...extras } = option as Values;
+    const given = Object.entries(extras).filter(([, value]) => value !== undefined);
+    const fixed = ['references', 'onDelete', 'onUpdate'].filter((key) => key in base);
     return {
       type: type?.type,
       allowNull: true,
       ...base,
-      ...(extras.field === undefined ? {} : { field: extras.field }),
-      ...(extras.allowNull === undefined ? {} : { allowNull: extras.allowNull }),
+      ...Object.fromEntries(given.filter(([key]) => !fixed.includes(key))),
     };
   }
 
@@ -191,9 +197,27 @@ export class AssociationKeys {
       [foreignKey]: this.keyAttribute(
         this.attributeOf(referenced, referencedKey),
         extras,
-        this.reference(spec, extras.allowNull !== false, { onDelete: 'auto', onUpdate: 'CASCADE' }),
+        this.#keyColumn(spec, this.#nullable(owner, foreignKey, extras), options),
       ),
     } as ModelAttributes);
+  }
+
+  // v6 derives the delete action from the `allowNull` of an attribute the model already declares
+  #nullable(owner: Model, foreignKey: string, extras: ForeignKeyOptions): boolean {
+    const { input } = registry.state(owner);
+    const existing = input.attributes[foreignKey] ?? input.extra[foreignKey];
+    return existing === undefined
+      ? extras.allowNull !== false
+      : Boolean((existing as ForeignKeyOptions).allowNull);
+  }
+
+  // reference of the new foreign key, with the data type of `keyType` when given
+  #keyColumn(spec: ReferenceSpec, nullable: boolean, options: AssociationOptions): Values {
+    const defaults = { onDelete: 'auto', onUpdate: 'CASCADE' } as const;
+    return {
+      ...this.reference(spec, nullable, defaults),
+      ...(options.keyType === undefined ? {} : { type: options.keyType }),
+    };
   }
 
   #actions(options: AssociationOptions): Omit<ReferenceSpec, 'model' | 'key'> {

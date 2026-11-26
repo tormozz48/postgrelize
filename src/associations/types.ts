@@ -1,3 +1,4 @@
+import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 
 /** Kind of association (Sequelize v6 `associationType`). */
@@ -27,6 +28,8 @@ export type ForeignKeyOptions = Readonly<{
   field?: string;
   /** Whether the key may be `NULL`. */
   allowNull?: boolean;
+  /** Default value of the foreign key attribute. */
+  defaultValue?: unknown;
 }>;
 
 /**
@@ -55,6 +58,11 @@ export type AssociationOptions = Readonly<{
   sourceKey?: string;
   /** Attribute of the target referenced by the foreign key (belongsTo / belongsToMany). */
   targetKey?: string;
+  /**
+   * Data type of the generated foreign key (belongsTo / hasOne / hasMany).
+   * @defaultValue the type of the referenced key
+   */
+  keyType?: DataTypeInput;
   /** Attribute values applied to associated rows (filter on read, values on write). */
   scope?: Readonly<Record<string, unknown>>;
   /** Create foreign key constraints on `sync()`.

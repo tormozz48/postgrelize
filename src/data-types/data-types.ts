@@ -5,6 +5,7 @@ import { BitType } from './bit-type.ts';
 import { BlobType } from './blob-type.ts';
 import { CharType } from './char-type.ts';
 import { CompositeType } from './composite-type.ts';
+import { DataTypeIdentity } from './data-type-identity.ts';
 import { DateType } from './date-type.ts';
 import { DecimalType } from './decimal-type.ts';
 import { DefaultValueGenerator } from './default-value-generator.ts';
@@ -43,11 +44,14 @@ type CallableInteger<R extends DataTypes.IntegerFamilyDataType> = Callable<
 > &
   Readonly<{ UNSIGNED: CallableInteger<R>; ZEROFILL: CallableInteger<R> }>;
 
+const identity = new DataTypeIdentity();
+
 /** Makes a type usable both bare and called, like `DataTypes.STRING` and `DataTypes.STRING(64)`. */
 const callable = <A extends unknown[], T extends DataType>(
   build: (...args: A) => T,
   bare: T,
   extra: PropertyDescriptorMap = {},
+  key: string = bare.key,
 ): Callable<T, A> => {
   // A function expression, so that `new DataTypes.X(...)` works as in v6 (it returns the built type).
   const fn = function (...args: A): T {
@@ -58,7 +62,17 @@ const callable = <A extends unknown[], T extends DataType>(
     Object.defineProperty(fn, 'toSql', { value: () => bare.sqlType });
   }
   Object.defineProperties(fn, extra);
+  identity.mark(fn, key);
   return Object.freeze(fn) as unknown as Callable<T, A>;
+};
+
+/** A factory without a bare form (`ARRAY`, `ENUM`), constructible and usable with `instanceof`. */
+const factory = <F extends (...args: never[]) => DataType>(key: string, build: F): F => {
+  const fn = function (...args: Parameters<F>): DataType {
+    return build(...args);
+  };
+  identity.mark(fn, key);
+  return fn as unknown as F;
 };
 
 /** A type that takes no arguments but is callable like in v6 (`DataTypes.UUID()`). */
@@ -156,6 +170,8 @@ export const DataTypes = {
   NUMBER: callable(
     (digits?: number, scale?: number) => new DecimalType(digits, scale),
     new DecimalType(),
+    {},
+    'NUMBER',
   ),
   /** Alias of `DECIMAL` (v6 `NUMERIC`). */
   NUMERIC: callable(
@@ -248,8 +264,11 @@ export const DataTypes = {
     new SpatialType('GEOGRAPHY'),
   ),
   /** `type[]`, e.g. `DataTypes.ARRAY(DataTypes.TEXT)`. */
-  ARRAY: <T extends DataTypeInput>(subtype: T): ArrayType & DataTypes.ArrayDataType<Element<T>> =>
-    new ArrayType(subtype) as ArrayType & DataTypes.ArrayDataType<Element<T>>,
+  ARRAY: factory(
+    'ARRAY',
+    <T extends DataTypeInput>(subtype: T): ArrayType & DataTypes.ArrayDataType<Element<T>> =>
+      new ArrayType(subtype) as ArrayType & DataTypes.ArrayDataType<Element<T>>,
+  ),
   /** Range type, e.g. `DataTypes.RANGE(DataTypes.INTEGER)` → `INT4RANGE`. */
   RANGE: callable(
     (subtype: DataTypeInput = INTEGER) => new RangeType(subtype),
@@ -270,10 +289,13 @@ export const DataTypes = {
   COMPOSITE: (name: string, fields: Readonly<Record<string, DataTypeInput>>): CompositeType =>
     new CompositeType(name, fields),
   /** Enumerated values: `DataTypes.ENUM('a', 'b')` or `DataTypes.ENUM({ values: ['a', 'b'] })`. */
-  ENUM: <T extends string = string>(
-    ...args: readonly (T | readonly T[] | Readonly<{ values: readonly T[] }>)[]
-  ): EnumType & DataTypes.EnumDataType<T> =>
-    new EnumType(...args) as EnumType & DataTypes.EnumDataType<T>,
+  ENUM: factory(
+    'ENUM',
+    <T extends string = string>(
+      ...args: readonly (T | readonly T[] | Readonly<{ values: readonly T[] }>)[]
+    ): EnumType & DataTypes.EnumDataType<T> =>
+      new EnumType(...args) as EnumType & DataTypes.EnumDataType<T>,
+  ),
   /** Attribute that is not stored in the database (computed by getters/setters). */
   VIRTUAL: callable(
     (returnType?: DataTypeInput, fields?: readonly string[]) => new VirtualType(returnType, fields),
