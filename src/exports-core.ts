@@ -1,8 +1,8 @@
-import validatorJs from 'validator';
+import { validator } from './validation/validator.ts';
 import { DataTypes } from './data-types/data-types.ts';
 
 /** The `validator` (validator.js) library used by the built-in validators, e.g. `Validator.isEmail(value)` (Sequelize v6 `Validator`). */
-export const Validator = validatorJs;
+export const Validator = validator;
 export { DataTypes };
 /** Alias of `DataTypes.ARRAY` (Sequelize v6 module export). */
 export const ARRAY = DataTypes.ARRAY;

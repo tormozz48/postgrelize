@@ -1,10 +1,10 @@
-import validatorJs from 'validator';
 import { Association } from '../associations/association.ts';
 import { SqlLiteral } from '../ddl/sql-literal.ts';
 import { and, or } from '../expressions/logic.ts';
 import { fn, type Fn } from '../expressions/methods.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 import { QueryTypes } from '../query/query-result-shaper.ts';
+import { validator } from '../validation/validator.ts';
 import type { QueryInterface } from '../query-interface/query-interface.ts';
 import type { SequelizeBase } from './sequelize-base.ts';
 import type { SequelizeConstructor } from './sequelize-constructor.ts';
@@ -25,7 +25,7 @@ export const SequelizeHelpers = <TBase extends SequelizeConstructor>(Base: TBase
     /** Base class of the association classes. */
     readonly Association = Association;
     /** The `validator` library used by the built-in validators. */
-    readonly Validator = validatorJs;
+    readonly Validator = validator;
     /** Combines conditions with `AND`. */
     readonly and = and;
     /** Combines conditions with `OR`. */
