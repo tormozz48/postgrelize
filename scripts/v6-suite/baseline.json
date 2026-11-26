@@ -639,14 +639,6 @@
       "repro": "await qi.createFunction('f',[{type:'varchar',name:'t'}],'varchar','plpgsql','return t;',null) // TypeError Cannot read properties of null (reading 'map')",
       "test": "createFunction treats options as optional"
     },
-    "C-query-fieldmap": {
-      "cause": "bug",
-      "area": "query",
-      "note": "query option fieldMap (SELECT type) is ignored: result keys are not renamed.",
-      "risk": "wrong-result",
-      "repro": "await s.query('select user_name from \"Us\"',{type:'SELECT',fieldMap:{user_name:'name'}}) // [{user_name:'john'}]",
-      "test": "arbitrarily map the field names"
-    },
     "C-querygenerator-internals": {
       "cause": "harness",
       "area": "query-interface",
@@ -2808,7 +2800,6 @@
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] Sequelize query arbitrarily map the field names",
         "[POSTGRES] Sequelize query binds named parameters with the passed object",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice",
         "[POSTGRES] Sequelize query binds token with the passed array",
@@ -2816,7 +2807,6 @@
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
         "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
         "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
-        "[POSTGRES] Sequelize query keeps field names that are mapped to the same name",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
@@ -2826,7 +2816,6 @@
         "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
       ],
       "causes": {
-        "[POSTGRES] Sequelize query arbitrarily map the field names": "C-query-fieldmap",
         "[POSTGRES] Sequelize query binds named parameters with the passed object": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
@@ -2834,7 +2823,6 @@
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest": "C-sequelize-internals",
         "[POSTGRES] Sequelize query escape where has $ on the middle of characters": "C-bind-dollar-in-identifier",
         "[POSTGRES] Sequelize query executes a query if a placeholder value is an array": "C-nested-array-replacements",
-        "[POSTGRES] Sequelize query keeps field names that are mapped to the same name": "C-query-fieldmap",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql": "C-logqueryparameters",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value": "C-logqueryparameters",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",
