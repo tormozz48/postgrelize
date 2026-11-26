@@ -98,9 +98,9 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
-## Release 1.9.6 (2026-11-26, in progress)
+## Release 1.9.6 (2026-11-26, released)
 
-v6 suite baseline fixes: associations parity with v6. Changelog lines list the pull requests.
+v6 suite baseline fixes: associations parity with v6. Changelog lines list the pull requests. Tag `v1.9.6` on `5a41f72` (PR #240), release.yml run 45846992527: all jobs green.
 
 ## Release 0.1.0 (2026-11-14)
 - Tag `v0.1.0` → release.yml: CI matrix green, published `@tormozz48/postgrelize@0.1.0` to npm.pkg.github.com (dist-tag `latest`, 46 files).

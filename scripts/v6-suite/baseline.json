@@ -243,14 +243,6 @@
       "repro": "new Sequelize(url,{pool:{max:5}}); await Promise.all(Array.from({length:50},()=>U.findOrCreate({where:{email:'e',companyId:2}}))) // hangs",
       "test": "Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
     },
-    "B-getter-setter-methods": {
-      "cause": "bug",
-      "area": "model",
-      "note": "The define option getterMethods / setterMethods is not implemented: virtual getters/setters never run (get('price'), toJSON, setting a key that only a setter handles); no docs mention it.",
-      "risk": "wrong-result",
-      "repro": "P=sq.define('p',{c:DataTypes.INTEGER},{getterMethods:{price(){return this.c/100}}}); P.build({c:1000}).get('price') // undefined",
-      "test": "Model build attaches getter and setter methods from options"
-    },
     "B-harness-aggregate-error-map": {
       "cause": "harness",
       "area": "model",
@@ -287,22 +279,6 @@
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
     },
-    "B-increment-instance": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.increment/decrement does not update the instance's own value after the UPDATE (v6 on PG uses RETURNING and refreshes it) and ignores the where option, so the row is incremented even when where does not match.",
-      "risk": "wrong-result",
-      "repro": "await u.increment('a',{by:2}); u.a // 0 (v6 2); await u.increment('a',{by:2,where:{b:1}}) // still increments",
-      "test": "Instance increment supports where conditions"
-    },
-    "B-increment-version": {
-      "cause": "bug",
-      "area": "model",
-      "note": "increment()/decrement() on a model with a version attribute (optimistic locking) does not bump the version column.",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{a:DataTypes.INTEGER},{version:'v'}); await u.increment('a'); (await U.findByPk(u.id)).v // 0, v6: 1",
-      "test": "Model optimistic locking increment() also increments the version"
-    },
     "B-index-field-attribute-key": {
       "cause": "bug",
       "area": "ddl",
@@ -310,14 +286,6 @@
       "risk": "error",
       "repro": "sq.define('m',{a:DataTypes.INTEGER,e:DataTypes.STRING},{indexes:[{name:'ix',fields:['a',{attribute:'e',order:'DESC'}]}]}); await sq.sync()",
       "test": "Model constructor should allow the user to specify indexes in options"
-    },
-    "B-instance-set-include": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set({tags:[...], user:{...}}) on a built instance with include does not build the nested instances (build(values,{include}) does); v6 set() handles included data.",
-      "risk": "wrong-result",
-      "repro": "p=Product.build({},{include:[User,Tag]}); p.set({tags:[{id:1}],user:{id:1}}); p.tags // undefined",
-      "test": "DAO Values set includes should support basic includes"
     },
     "B-invalid-attr-message": {
       "cause": "bug",
@@ -357,14 +325,6 @@
       "repro": "U.findOne({attributes:[[Sequelize.json('ec.phones[1]'),'n']]}) // n is null; U.findOne({where:Sequelize.json('ec[0].name','joe')}) // error",
       "test": "model json should be able to retrieve element of array by index"
     },
-    "B-literal-default-not-returned": {
-      "cause": "bug",
-      "area": "model",
-      "note": "An attribute whose defaultValue is literal() is left null on the instance after create/save/upsert/bulkCreate (the DB computed it but RETURNING is not applied); v6 reloads it.",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{code:{type:DataTypes.INTEGER,defaultValue:Sequelize.literal(2020)}}); (await U.create({})).code // null",
-      "test": "Model should return default value set by the database (create)"
-    },
     "B-logging-interpolated": {
       "cause": "bug",
       "area": "query",
@@ -387,14 +347,6 @@
       "repro": "sq.define('M',{x:{type:DataTypes.INTEGER,references:null}}); await sq.sync()",
       "test": "Model create include should create data for polymorphic BelongsToMany relations"
     },
-    "B-rejectOnEmpty-findall": {
-      "cause": "bug",
-      "area": "model",
-      "note": "rejectOnEmpty is ignored by findAll (query option and model option) and by findOne/findByPk when set only as a model option; only the per-query option on findOne/findByPk works. Also custom Error instances/classes are not thrown. Contradicts docs/guide/errors.md.",
-      "risk": "wrong-result",
-      "repro": "R=sq.define('r',{u:DataTypes.STRING},{rejectOnEmpty:true}); await R.findAll({where:{u:'z'}}) // [] ; await R.findOne({where:{u:'z'}}) // null",
-      "test": "Model rejectOnEmpty mode works from model options"
-    },
     "B-schema-clone-include": {
       "cause": "bug",
       "area": "associations",
@@ -402,14 +354,6 @@
       "risk": "error",
       "repro": "R1=R.schema('s_one'); E1=E.schema('s_one'); await R1.findOne({include:[{model:E1,as:'employees'}]})",
       "test": "Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one"
-    },
-    "B-set-readonly-pk-timestamps": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set / update changes the primary key of a persisted record and createdAt/updatedAt (even via update()); v6 ignores PK changes once set and treats timestamps as read-only.",
-      "risk": "wrong-result",
-      "repro": "b=P.build({id:1},{isNewRecord:false}); b.set({id:2}); b.id // 2, v6: 1; u.update({createdAt:new Date(2000,1,1),ident:'x'}) changes both",
-      "test": "DAO Values set doesn't overwrite generated primary keys"
     },
     "B-sync-schema-option-references": {
       "cause": "bug",
@@ -478,14 +422,6 @@
       "repro": "await U.update()",
       "test": "Model update throws an error if no where clause is given"
     },
-    "B-update-saves-all-changed": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.update(values) also persists other unsaved dirty attributes; v6 saves only the keys passed (plus setter side effects).",
-      "risk": "wrong-result",
-      "repro": "u.set('x',5); await u.update({y:'1'}); await u.reload(); u.x // 5, v6: null",
-      "test": "Instance update should only save passed attributes"
-    },
     "B-update-undefined-values": {
       "cause": "bug",
       "area": "model",
@@ -501,14 +437,6 @@
       "risk": "error",
       "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
       "test": "Model update skips update query if no data to update"
-    },
-    "B-updatedat-default": {
-      "cause": "bug",
-      "area": "model",
-      "note": "A user-declared updatedAt attribute with defaultValue is overwritten with now on create; v6 uses the declared default (createdAt default is honoured).",
-      "risk": "wrong-result",
-      "repro": "U=sq.define('u',{n:DataTypes.INTEGER,updatedAt:{type:DataTypes.DATE,defaultValue:new Date('2012-01-02')}}); await sq.sync(); (await U.create({n:1})).updatedAt  // now, v6: 2012-01-02",
-      "test": "Model constructor should allow me to set a default value for createdAt and updatedAt"
     },
     "B-upsert-named-unique-index": {
       "cause": "bug",
@@ -1025,43 +953,11 @@
       "repro": "s.define('m',{name:STRING},{indexes:[{type:'unique',fields:['name']}]}).sync() // CREATE INDEX not UNIQUE",
       "test": "Model indexes should set the unique property when type is unique"
     },
-    "D-json-nested-set": {
-      "cause": "bug",
-      "area": "json",
-      "note": "instance.set('meta.city', v) on a JSON(B) column does not set the nested key and changed('meta') stays false.",
-      "risk": "wrong-result",
-      "repro": "u=M.build({meta:{city:'a'}});u.set('meta.city','b');u.get('meta.city')",
-      "test": "Instance set sets nested keys in JSON objects"
-    },
     "D-no-dialect-config": {
       "cause": "divergence",
       "area": "config",
       "note": "postgrelize accepts a missing dialect (defaults to postgres) and rejects any non-postgres dialect/URI (mysql:, pool:false test uses dialect mysql) with its own message.",
       "ref": "docs/guide/migrating.md section 3 ('Omit dialect or set it to postgres; any other value throws'), docs/guide/migrating.md Other dialects row"
-    },
-    "D-rawattributes-copy": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.rawAttributes returns a fresh copy each access, so assigning Model.rawAttributes.x = {...} followed by refreshAttributes() is lost (v6 mutable object used by plugins and the underscored/field tests).",
-      "risk": "wrong-result",
-      "repro": "M.rawAttributes.foo={type:DataTypes.STRING};M.refreshAttributes();Object.keys(M.rawAttributes)",
-      "test": "Model options.underscored hasOne does not override already defined field"
-    },
-    "D-remove-attribute-pk": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.removeAttribute('id') leaves primaryKeyAttribute='id'.",
-      "risk": "wrong-result",
-      "repro": "M.removeAttribute('id');M.primaryKeyAttribute",
-      "test": "Model removeAttribute should support removing the primary key"
-    },
-    "D-set-date-string-null": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.set('date','1970-01-01') on a null DATE attribute leaves a string instead of a Date.",
-      "risk": "wrong-result",
-      "repro": "u=M.build({});u.set('date','1970-01-01');typeof u.get('date').getTime",
-      "test": "Instance set sets the date \"1970-01-01\" to previously null field"
     },
     "D-typevalidation-ignored": {
       "cause": "bug",
@@ -1294,14 +1190,8 @@
       "cause": "D-harness-querygenerator"
     },
     "test/unit/instance/changed.test.js": {
-      "failing": [
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with changed values",
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with object"
-      ],
-      "causes": {
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with changed values": "D-json-nested-set",
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with object": "D-json-nested-set"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/instance/decrement.test.js": {
       "loadError": true,
@@ -1326,15 +1216,11 @@
     "test/unit/instance/set.test.js": {
       "failing": [
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"",
-        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"",
-        "[POSTGRES] Instance set sets nested keys in JSON objects",
-        "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field"
+        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\""
       ],
       "causes": {
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"": "D-harness-stub-query",
-        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"": "D-harness-stub-query",
-        "[POSTGRES] Instance set sets nested keys in JSON objects": "D-json-nested-set",
-        "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field": "D-set-date-string-null"
+        "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"": "D-harness-stub-query"
       }
     },
     "test/unit/model/bulk-create.test.js": {
@@ -1519,10 +1405,8 @@
       }
     },
     "test/unit/model/remove-attribute.test.js": {
-      "failing": ["[POSTGRES] Model removeAttribute should support removing the primary key"],
-      "causes": {
-        "[POSTGRES] Model removeAttribute should support removing the primary key": "D-remove-attribute-pk"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/model/schema.test.js": {
       "failing": [
@@ -1648,18 +1532,8 @@
       }
     },
     "test/unit/model/underscored.test.js": {
-      "failing": [
-        "[POSTGRES] Model options.underscored belongsTo does not override already defined field",
-        "[POSTGRES] Model options.underscored hasMany does not override already defined field",
-        "[POSTGRES] Model options.underscored hasOne does not override already defined field",
-        "[POSTGRES] Model options.underscored hasOne/belongsTo does not override already defined field"
-      ],
-      "causes": {
-        "[POSTGRES] Model options.underscored belongsTo does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasMany does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasOne does not override already defined field": "D-rawattributes-copy",
-        "[POSTGRES] Model options.underscored hasOne/belongsTo does not override already defined field": "D-rawattributes-copy"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/model/update.test.js": {
       "failing": [
@@ -2484,20 +2358,12 @@
       }
     },
     "test/integration/instance/decrement.test.js": {
-      "failing": ["[POSTGRES] Instance decrement supports returning"],
-      "causes": {
-        "[POSTGRES] Instance decrement supports returning": "B-increment-instance"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/increment.test.js": {
-      "failing": [
-        "[POSTGRES] Instance increment supports returning",
-        "[POSTGRES] Instance increment supports where conditions"
-      ],
-      "causes": {
-        "[POSTGRES] Instance increment supports returning": "B-increment-instance",
-        "[POSTGRES] Instance increment supports where conditions": "B-increment-instance"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/reload.test.js": {
       "failing": ["[POSTGRES] Instance reload should update internal options of the instance"],
@@ -2525,39 +2391,15 @@
     },
     "test/integration/instance/update.test.js": {
       "failing": [
-        "[POSTGRES] Instance update doesn't update primary keys or timestamps",
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used",
-        "[POSTGRES] Instance update should only save passed attributes"
+        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used"
       ],
       "causes": {
-        "[POSTGRES] Instance update doesn't update primary keys or timestamps": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated",
-        "[POSTGRES] Instance update should only save passed attributes": "B-update-saves-all-changed"
+        "[POSTGRES] Instance update hooks should validate attributes changed in hooks when default fields are used": "B-hook-changes-not-revalidated"
       }
     },
     "test/integration/instance/values.test.js": {
-      "failing": [
-        "[POSTGRES] DAO Values get can pass parameters to getters",
-        "[POSTGRES] DAO Values get should custom virtual getters in get(key)",
-        "[POSTGRES] DAO Values get should use custom getters in toJSON",
-        "[POSTGRES] DAO Values set doesn't overwrite defined primary keys",
-        "[POSTGRES] DAO Values set doesn't overwrite generated primary keys",
-        "[POSTGRES] DAO Values set doesn't set timestamps",
-        "[POSTGRES] DAO Values set doesn't set value if not a dynamic setter or a model attribute",
-        "[POSTGRES] DAO Values set includes should support basic includes",
-        "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)"
-      ],
-      "causes": {
-        "[POSTGRES] DAO Values get can pass parameters to getters": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values get should custom virtual getters in get(key)": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values get should use custom getters in toJSON": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values set doesn't overwrite defined primary keys": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't overwrite generated primary keys": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't set timestamps": "B-set-readonly-pk-timestamps",
-        "[POSTGRES] DAO Values set doesn't set value if not a dynamic setter or a model attribute": "B-getter-setter-methods",
-        "[POSTGRES] DAO Values set includes should support basic includes": "B-instance-set-include",
-        "[POSTGRES] DAO Values set includes should support basic includes (with raw: true)": "B-instance-set-include"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/json.test.js": {
       "failing": [
@@ -2581,10 +2423,8 @@
     },
     "test/integration/model.test.js": {
       "failing": [
-        "[POSTGRES] Model build attaches getter and setter methods from options",
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
-        "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field",
@@ -2601,10 +2441,8 @@
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ],
       "causes": {
-        "[POSTGRES] Model build attaches getter and setter methods from options": "B-getter-setter-methods",
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
-        "[POSTGRES] Model constructor should allow me to set a default value for createdAt and updatedAt": "B-updatedat-default",
         "[POSTGRES] Model constructor should allow the user to specify indexes in options": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed": "B-define-time-validation",
         "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field": "B-define-time-validation",
@@ -2676,13 +2514,11 @@
       "pass": 10,
       "failing": [
         "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction",
-        "[POSTGRES] Model should return default value set by the database (create)"
+        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
       ],
       "causes": {
         "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"": "B-findorcreate-pool-deadlock",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock",
-        "[POSTGRES] Model should return default value set by the database (create)": "B-literal-default-not-returned"
+        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock"
       }
     },
     "test/integration/model/create/include.test.js": {
@@ -2699,16 +2535,12 @@
       "failing": [
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance",
-        "[POSTGRES] Model rejectOnEmpty mode works from model options"
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance"
       ],
       "causes": {
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized": "B-rejectOnEmpty-findall",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance": "B-rejectOnEmpty-findall",
-        "[POSTGRES] Model rejectOnEmpty mode works from model options": "B-rejectOnEmpty-findall"
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance": "D-error-ctor-no-args"
       }
     },
     "test/integration/model/findAll/groupedLimit.test.js": {
@@ -2774,14 +2606,8 @@
       }
     },
     "test/integration/model/optimistic_locking.test.js": {
-      "failing": [
-        "[POSTGRES] Model optimistic locking decrement() also increments the version",
-        "[POSTGRES] Model optimistic locking increment() also increments the version"
-      ],
-      "causes": {
-        "[POSTGRES] Model optimistic locking decrement() also increments the version": "B-increment-version",
-        "[POSTGRES] Model optimistic locking increment() also increments the version": "B-increment-version"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/schema.test.js": {
       "failing": [
@@ -2893,12 +2719,10 @@
       "unstable": true,
       "pass": 9,
       "failing": [
-        "[POSTGRES] Model upsert returns values should return default value set by the database (upsert)",
         "[POSTGRES] Model upsert works when composite indexes are created via indexes array",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key"
       ],
       "causes": {
-        "[POSTGRES] Model upsert returns values should return default value set by the database (upsert)": "B-literal-default-not-returned",
         "[POSTGRES] Model upsert works when composite indexes are created via indexes array": "B-upsert-named-unique-index",
         "[POSTGRES] Model upsert works when deletedAt is Infinity and part of primary key": "B-triage-upsert-infinity-pk"
       }
