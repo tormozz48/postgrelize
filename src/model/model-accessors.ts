@@ -25,6 +25,8 @@ export class ModelAccessors {
   defineAttributes(prototype: object, definition: ModelDefinition): void {
     [...new Set([...definition.attributes.keys(), ...methods.virtualNames(definition)])]
       .filter((name) => !Object.prototype.hasOwnProperty.call(prototype, name))
+      // like v6, an attribute does not replace a built-in instance method (`set`, `get`, ...)
+      .filter((name) => !this.#isBuiltIn(prototype, name))
       .forEach((name) =>
         Object.defineProperty(prototype, name, {
           configurable: true,
@@ -37,6 +39,17 @@ export class ModelAccessors {
           },
         }),
       );
+  }
+
+  // members of the base `Model` prototype, found below the model's own prototypes; the extensions
+  // postgrelize adds there give way to attributes of the same name
+  #isBuiltIn(prototype: object | null, name: string): boolean {
+    if (prototype === null || name === 'wasInserted' || name === 'oldValues') {
+      return false;
+    }
+    return Object.prototype.hasOwnProperty.call(prototype, 'getDataValue')
+      ? name in prototype
+      : this.#isBuiltIn(Object.getPrototypeOf(prototype) as object | null, name);
   }
 
   /**
