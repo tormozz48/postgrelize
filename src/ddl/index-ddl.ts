@@ -65,7 +65,7 @@ export class IndexDdl {
       options.include === undefined || options.include.length === 0
         ? ''
         : ` INCLUDE (${options.include.map(SqlCompiler.quoteIdent).join(', ')})`,
-      options.unique === true && options.nullsNotDistinct === true ? ' NULLS NOT DISTINCT' : '',
+      Boolean(options.unique) && options.nullsNotDistinct === true ? ' NULLS NOT DISTINCT' : '',
       where,
     ].join('');
   }
@@ -75,6 +75,6 @@ export class IndexDdl {
   }
 
   #head(options: IndexOptions): string {
-    return `CREATE ${options.unique === true ? 'UNIQUE ' : ''}INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}${options.ifNotExists === true ? 'IF NOT EXISTS ' : ''}`;
+    return `CREATE ${options.unique ? 'UNIQUE ' : ''}INDEX ${options.concurrently === true ? 'CONCURRENTLY ' : ''}${options.ifNotExists === true ? 'IF NOT EXISTS ' : ''}`;
   }
 }
