@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.11] - 2026-11-26
+
 ### Fixed
 
 - Regression since 1.9.7: after `update()` (or `save({ fields })`) on a model with `version`, the next `save` of the same instance threw `OptimisticLockError`. Differential test in `tests/compat/version-after-update.test.ts`. ([#277](https://github.com/tormozz48/postgrelize/pull/277))
@@ -576,7 +578,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...HEAD
+[1.9.11]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...v1.9.11
 [1.9.10]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...v1.9.10
 [1.9.9]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...v1.9.8
