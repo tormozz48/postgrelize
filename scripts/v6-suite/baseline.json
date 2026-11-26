@@ -390,14 +390,6 @@
       "repro": "await U.update()",
       "test": "Model update throws an error if no where clause is given"
     },
-    "B-update-saves-all-changed": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "instance.update(values) also persists other unsaved dirty attributes; v6 saves only the keys passed (plus setter side effects).",
-      "risk": "wrong-result",
-      "repro": "u.set('x',5); await u.update({y:'1'}); await u.reload(); u.x // 5, v6: null",
-      "test": "Instance update should only save passed attributes"
-    },
     "B-update-undefined-values": {
       "cause": "bug",
       "area": "model",
@@ -2362,10 +2354,8 @@
       }
     },
     "test/integration/instance/update.test.js": {
-      "failing": ["[POSTGRES] Instance update should only save passed attributes"],
-      "causes": {
-        "[POSTGRES] Instance update should only save passed attributes": "B-update-saves-all-changed"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/instance/values.test.js": {
       "failing": [

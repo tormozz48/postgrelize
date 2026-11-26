@@ -37,14 +37,15 @@ export class InstanceSaver {
    */
   async save<I extends AnyModel>(instance: I, options: SaveOptions): Promise<I> {
     const context = this.#context(instance, options);
+    const { defaultFields } = context;
     const fields =
       context.explicitFields ??
-      (context.isNew ? this.#attributes(context) : this.#changed(context));
+      (context.isNew ? this.#attributes(context) : this.#defaulted(context, defaultFields));
     const now = new Date();
     this.#stampNew(instance, context, now);
     const hookFields = await this.#prepare(instance, context, fields);
     // like v6, validation and the before hooks run even when nothing changed; they may still change something
-    if (!context.isNew && this.#changed(context).length === 0 && hookFields.length === 0) {
+    if (!context.isNew && this.#unchanged(context, hookFields)) {
       return instance;
     }
     await (context.isNew
@@ -57,9 +58,20 @@ export class InstanceSaver {
     return this.#lifecycle.settle(instance, this.#settled(context, hookFields));
   }
 
+  // the changed (and stored) attributes, only those `update` passed when it set `defaultFields`
+  #defaulted(context: SaveContext, defaults: readonly string[] | undefined): readonly string[] {
+    const changed = this.#changed(context);
+    return defaults === undefined ? changed : changed.filter((name) => defaults.includes(name));
+  }
+
+  #unchanged(context: SaveContext, fields: readonly string[]): boolean {
+    const untouched = context.defaultFields !== undefined || this.#changed(context).length === 0;
+    return untouched && fields.length === 0;
+  }
+
   // With a `fields` option only those attributes (and the timestamps the save wrote) become unchanged.
   #settled(context: SaveContext, written: readonly string[]): readonly string[] | undefined {
-    if (context.explicitFields === undefined) {
+    if (context.explicitFields === undefined && context.defaultFields === undefined) {
       return undefined;
     }
     const { createdAt, updatedAt } = context.definition;
@@ -90,6 +102,7 @@ export class InstanceSaver {
       opts: { hooks: true, validate: true, ...options },
       options,
       isNew: instance.isNewRecord,
+      defaultFields: (options as Readonly<{ defaultFields?: readonly string[] }>).defaultFields,
       explicitFields: this.#services.values.saveFields(
         definition,
         options.fields as readonly string[] | undefined,

@@ -24,6 +24,8 @@ export type SaveContext = Readonly<{
   options: SaveOptions;
   /** Whether the instance is inserted. */
   isNew: boolean;
+  /** Fields `instance.update` saves when no `fields` option is given. */
+  defaultFields: readonly string[] | undefined;
   /** `fields` option. */
   explicitFields: readonly string[] | undefined;
 }>;
