@@ -2,7 +2,9 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 42. Open: 74.
+Fixed: 89. Open: 32 (includes causes found while fixing).
+
+Second batch (PRs #250 to #277): independent PRs on `main`, changelog and baseline in one bookkeeping PR; #272 contains the commit of #257.
 
 ## Fixed
 
@@ -50,82 +52,87 @@ Fixed: 42. Open: 74.
 | `C-fk-references-fields` | wrong-result | [#232](https://github.com/tormozz48/postgrelize/pull/232) |
 | `C-fk-default-constraint-name` | wrong-result | [#234](https://github.com/tormozz48/postgrelize/pull/234) |
 | `C-changecolumn-references` | wrong-result | [#236](https://github.com/tormozz48/postgrelize/pull/236) |
+| `A-aggregate-ignores-include` | wrong-result | [#250](https://github.com/tormozz48/postgrelize/pull/250) |
+| `A-date-number` | error | earlier release |
+| `B-date-number-bound-bigint` | error | earlier release |
+| `A-update-no-options` | error | [#251](https://github.com/tormozz48/postgrelize/pull/251) |
+| `B-update-no-args` | wording | [#251](https://github.com/tormozz48/postgrelize/pull/251) |
+| `B-update-undefined-values` | error | [#251](https://github.com/tormozz48/postgrelize/pull/251) |
+| `B-update-unknown-fields` | error | [#251](https://github.com/tormozz48/postgrelize/pull/251) |
+| `A-primarykeyfield-missing` | error | [#252](https://github.com/tormozz48/postgrelize/pull/252) |
+| `A-instance-rawattributes` | error | [#252](https://github.com/tormozz48/postgrelize/pull/252) |
+| `B-validator-extend` | error | [#253](https://github.com/tormozz48/postgrelize/pull/253) |
+| `B-deferrable-callable` | error | [#254](https://github.com/tormozz48/postgrelize/pull/254) |
+| `D-error-ctor-no-args` | error | [#255](https://github.com/tormozz48/postgrelize/pull/255) |
+| `C-database-error-sql-params` | wording | [#255](https://github.com/tormozz48/postgrelize/pull/255) |
+| `D-aggregate-error-message` | wording | [#255](https://github.com/tormozz48/postgrelize/pull/255) |
+| `D-define-unique-null` | error | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
+| `C-array-no-type` | error | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
+| `B-define-time-validation` | error | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
+| `D-define-no-validation` | wording | [#256](https://github.com/tormozz48/postgrelize/pull/256) |
+| `A-btm-paired-otherkey` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `B-btm-paired-otherkey` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `A-btm-identifier-props` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `A-references-null-crash` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `B-references-null` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `A-scope-fn-by-name` | error | [#258](https://github.com/tormozz48/postgrelize/pull/258) |
+| `C-addindex-null-options` | error | [#259](https://github.com/tormozz48/postgrelize/pull/259) |
+| `C-sync-no-models-connection` | error | [#259](https://github.com/tormozz48/postgrelize/pull/259) |
+| `A-group-nested-array` | error | [#260](https://github.com/tormozz48/postgrelize/pull/260) |
+| `D-assoc-invalid-model-arg` | wording | [#261](https://github.com/tormozz48/postgrelize/pull/261) |
+| `D-assoc-unknown-key-option` | error | [#261](https://github.com/tormozz48/postgrelize/pull/261) |
+| `A-default-alias-redefine` | error | [#262](https://github.com/tormozz48/postgrelize/pull/262) |
+| `B-btm-duplicate-auto-alias` | error | [#262](https://github.com/tormozz48/postgrelize/pull/262) |
+| `A-hasone-hasmany-cascade-default` | error | [#263](https://github.com/tormozz48/postgrelize/pull/263) |
+| `A-subquery-join-field-name` | error | earlier release |
+| `B-include-attr-bare-literal` | error | earlier release |
+| `B-index-field-attribute-key` | error | [#264](https://github.com/tormozz48/postgrelize/pull/264) |
+| `C-unknown-constraint-error` | error | [#265](https://github.com/tormozz48/postgrelize/pull/265) |
+| `C-references-without-model-drop` | error | [#266](https://github.com/tormozz48/postgrelize/pull/266) |
+| `C-bind-dollar-in-identifier` | error | [#267](https://github.com/tormozz48/postgrelize/pull/267) |
+| `C-nested-array-replacements` | error | [#267](https://github.com/tormozz48/postgrelize/pull/267) |
+| `C-fk-field-collision` | error | [#268](https://github.com/tormozz48/postgrelize/pull/268) |
+| `D-attr-named-set` | error | [#269](https://github.com/tormozz48/postgrelize/pull/269) |
+| `C-qi-function-args` | error | [#271](https://github.com/tormozz48/postgrelize/pull/271) |
+| `B-btm-count-through-timestamps` | error | [#272](https://github.com/tormozz48/postgrelize/pull/272) |
+| `B-aggregate-alias-group` | error | [#273](https://github.com/tormozz48/postgrelize/pull/273) |
+| `B-belongsto-include-notnull-fk` | error | [#274](https://github.com/tormozz48/postgrelize/pull/274) |
+| `B-sync-two-models-one-table` | error | [#275](https://github.com/tormozz48/postgrelize/pull/275) |
+| `C-pool-no-evict-dead-connection` | error | [#276](https://github.com/tormozz48/postgrelize/pull/276) |
 
 ## Not fixed
 
-| cause | risk | status |
+| cause | risk | note |
 | --- | --- | --- |
-| `A-aggregate-ignores-include` | wrong-result | stopped: written and locally committed (branch `fix/aggregate-ignores-include`), not verified, not pushed |
-| `A-btm-identifier-props` | error | not started: work stopped on request to rework the PRs |
-| `A-btm-paired-otherkey` | error | not started: work stopped on request to rework the PRs |
-| `A-date-number` | error | not started: work stopped on request to rework the PRs |
-| `A-default-alias-redefine` | error | not started: work stopped on request to rework the PRs |
-| `A-group-nested-array` | error | not started: work stopped on request to rework the PRs |
-| `A-hasone-hasmany-cascade-default` | error | not started: work stopped on request to rework the PRs |
-| `A-instance-rawattributes` | error | not started: work stopped on request to rework the PRs |
-| `A-primarykeyfield-missing` | error | not started: work stopped on request to rework the PRs |
-| `A-references-model-object` | cosmetic | not started: work stopped on request to rework the PRs |
-| `A-references-null-crash` | error | not started: work stopped on request to rework the PRs |
-| `A-scope-fn-by-name` | error | not started: work stopped on request to rework the PRs |
-| `A-subquery-join-field-name` | error | not started: work stopped on request to rework the PRs |
-| `A-update-no-options` | error | not started: work stopped on request to rework the PRs |
-| `B-aggregate-alias-group` | error | not started: work stopped on request to rework the PRs |
-| `B-attributes-empty` | wording | not started: work stopped on request to rework the PRs |
-| `B-belongsto-include-notnull-fk` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-count-through-timestamps` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-duplicate-auto-alias` | error | not started: work stopped on request to rework the PRs |
-| `B-btm-paired-otherkey` | error | not started: work stopped on request to rework the PRs |
-| `B-datavalues-key-order` | cosmetic | not started: work stopped on request to rework the PRs |
-| `B-date-number-bound-bigint` | error | not started: work stopped on request to rework the PRs |
-| `B-deferrable-callable` | error | not started: work stopped on request to rework the PRs |
-| `B-define-time-validation` | error | not started: work stopped on request to rework the PRs |
-| `B-findorcreate-pool-deadlock` | error | not started: work stopped on request to rework the PRs |
-| `B-include-attr-bare-literal` | error | not started: work stopped on request to rework the PRs |
-| `B-index-field-attribute-key` | error | not started: work stopped on request to rework the PRs |
-| `B-invalid-attr-message` | wording | not started: work stopped on request to rework the PRs |
-| `B-logging-interpolated` | cosmetic | not started: work stopped on request to rework the PRs |
-| `B-references-null` | error | not started: work stopped on request to rework the PRs |
-| `B-schema-clone-include` | error | not started: work stopped on request to rework the PRs |
-| `B-sync-schema-option-references` | error | not started: work stopped on request to rework the PRs |
-| `B-sync-two-models-one-table` | error | not started: work stopped on request to rework the PRs |
-| `B-unique-msg-option` | wording | not started: work stopped on request to rework the PRs |
-| `B-update-no-args` | wording | not started: work stopped on request to rework the PRs |
-| `B-update-undefined-values` | error | not started: work stopped on request to rework the PRs |
-| `B-update-unknown-fields` | error | not started: work stopped on request to rework the PRs |
-| `B-validator-extend` | error | not started: work stopped on request to rework the PRs |
-| `B-virtual-exclude` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-addindex-null-options` | error | not started: work stopped on request to rework the PRs |
-| `C-array-no-type` | error | not started: work stopped on request to rework the PRs |
-| `C-bind-dollar-in-identifier` | error | not started: work stopped on request to rework the PRs |
-| `C-bind-log-inlined` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-client-min-messages` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-database-error-sql-params` | wording | not started: work stopped on request to rework the PRs |
-| `C-datatypes-abstract` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-findorcreate-find-outside-tx` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-fk-field-collision` | error | not started: work stopped on request to rework the PRs |
-| `C-log-default-noop` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-logqueryparameters` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-modelmanager-all-findmodel` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-nested-array-replacements` | error | not started: work stopped on request to rework the PRs |
-| `C-no-logging-on-failed-query` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-options-define-late` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-pool-no-evict-dead-connection` | error | not started: work stopped on request to rework the PRs |
-| `C-qi-argument-errors` | wording | not started: work stopped on request to rework the PRs |
-| `C-qi-function-args` | error | not started: work stopped on request to rework the PRs |
-| `C-references-without-model-drop` | error | not started: work stopped on request to rework the PRs |
-| `C-sequelize-instance-sequelize-prop` | cosmetic | not started: work stopped on request to rework the PRs |
-| `C-sync-no-models-connection` | error | not started: work stopped on request to rework the PRs |
-| `C-unknown-constraint-error` | error | not started: work stopped on request to rework the PRs |
-| `C-validation-error-item-api` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-aggregate-error-message` | wording | not started: work stopped on request to rework the PRs |
-| `D-assoc-invalid-model-arg` | wording | not started: work stopped on request to rework the PRs |
-| `D-assoc-unknown-key-option` | error | not started: work stopped on request to rework the PRs |
-| `D-attr-named-set` | error | not started: work stopped on request to rework the PRs |
-| `D-config-dialectoptions-missing` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-data-types-string-options` | error | not started: work stopped on request to rework the PRs |
-| `D-define-no-validation` | wording | not started: work stopped on request to rework the PRs |
-| `D-define-tinyint-warn` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-define-unique-null` | error | not started: work stopped on request to rework the PRs |
-| `D-error-ctor-no-args` | error | not started: work stopped on request to rework the PRs |
-| `D-getattributes-shape` | cosmetic | not started: work stopped on request to rework the PRs |
-| `D-include-invalid-element` | cosmetic | not started: work stopped on request to rework the PRs |
+| `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
+| `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
+| `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
+| `B-findorcreate-pool-deadlock` | error | 50 concurrent findOrCreate calls hang forever with the default pool (max 5): each takes a pooled connection for its transaction while inner queries wait for another, exhausting the pool. v6 completes. |
+| `B-invalid-attr-message` | wording | An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '["username"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests. |
+| `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
+| `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
+| `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
+| `B-unique-msg-option` | wording | unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message. |
+| `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
+| `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
+| `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
+| `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
+| `C-findorcreate-find-outside-tx` | cosmetic | findOrCreate runs its initial find outside the transaction (only the create is in one); v6 wraps find+create in one, so CLS/log shows the find on the default connection. |
+| `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
+| `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
+| `C-modelmanager-all-findmodel` | cosmetic | ModelManager lacks typed v6 members `all` and `findModel`. |
+| `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
+| `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
+| `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
+| `C-sequelize-instance-sequelize-prop` | cosmetic | Instance property `sequelize.Sequelize` (typed public in v6, the class) is undefined. |
+| `C-validation-error-item-api` | cosmetic | ValidationErrorItem lacks getValidatorKey() and static Origins (typed public in v6). |
+| `D-config-dialectoptions-missing` | cosmetic | sequelize.config lacks dialectOptions (and options like dialectModulePath are ignored), v6 exposes config.dialectOptions. |
+| `D-data-types-string-options` | error | DataTypes.STRING({length:1234}) options-object form throws 'STRING length must be a non-negative integer'; sql/data-types.test.js cannot load. |
+| `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
+| `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
+| `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
+| `B-alter-deferrable-not-updated` | error | sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed. |
+| `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
+| `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
+| `C-raw-errors-option` | error | The v6 query option rawErrors is not supported; the test was not reached before. |
+| `D-addindex-expression-fields` | error | addIndex does not accept literal() / fn() fields; the file did not load before. |

@@ -1,82 +1,10 @@
 {
   "version": "6.37.8",
   "causes": {
-    "A-aggregate-ignores-include": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Model.aggregate ignores the include option (also from a scope), so where on the include is not applied.",
-      "risk": "wrong-result",
-      "repro": "U.aggregate('u.id','count',{include:[{model:C,where:{p:1}}],includeIgnoreAttributes:false,plain:true}) // 2, v6 1",
-      "test": "Model scope aggregate should be able to use where on include"
-    },
-    "A-btm-identifier-props": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "BelongsToMany lacks v6 public properties foreignIdentifier, identifier (and sourceKeyField, foreignIdentifierField).",
-      "risk": "error",
-      "repro": "P.associations.Ch.foreignIdentifier // undefined",
-      "test": "Self can handle n:m associations"
-    },
-    "A-btm-paired-otherkey": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Two paired belongsToMany declaring foreignKey/sourceKey do not take otherKey from the paired association foreignKey; an extra auto-named otherKey column is generated and the real one stays NULL, so add/set fail.",
-      "risk": "error",
-      "repro": "U.belongsToMany(G,{through:UG,foreignKey:'id_user'});G.belongsToMany(U,{through:UG,foreignKey:'id_group'}); await u.addGroup(g) // null value in column id_group",
-      "test": "BelongsToMany getAssociations supports custom primary keys and foreign keys"
-    },
-    "A-date-number": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "A number (ms epoch) assigned to a DATE attribute is bound as bigint (create and where) instead of being converted to a Date as v6 does.",
-      "risk": "error",
-      "repro": "await U.create({d:Date.UTC(2014,1,20)}) // column d is of type timestamp with time zone but expression is of type bigint",
-      "test": "Include findAll should support including date fields, with the correct timeszone"
-    },
-    "A-default-alias-redefine": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Re-declaring an association with the default alias throws \"alias in two separate associations\"; v6 only checks explicit aliases and silently replaces the default one.",
-      "risk": "error",
-      "repro": "A.belongsToMany(L,{through:T1}); A.belongsToMany(L,{through:T2}) // throws",
-      "test": "BelongsToMany hasAssociations answers true for labels that have been assigned multitple times"
-    },
-    "A-group-nested-array": {
-      "cause": "bug",
-      "area": "query",
-      "note": "group:[['col']] (array form v6 accepts) is bound as a parameter (GROUP BY $1) instead of a quoted identifier.",
-      "risk": "error",
-      "repro": "await U.findAll({attributes:['userId'],group:[['userId']]}) // must appear in the GROUP BY clause",
-      "test": "HasMany Association options should ignore group from ancestor on deep separated query"
-    },
     "A-harness-queryGenerator-addSchema": {
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls private queryInterface.queryGenerator.addSchema."
-    },
-    "A-hasone-hasmany-cascade-default": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasOne/hasMany FK with allowNull:false gets ON DELETE NO ACTION; v6 uses CASCADE (NO ACTION is only the belongsTo default); docs/guide/associations.md states the belongsTo default for all.",
-      "risk": "error",
-      "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
-      "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
-    },
-    "A-instance-rawattributes": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "Model instances have no rawAttributes property (v6 sets Model.prototype.rawAttributes).",
-      "risk": "error",
-      "repro": "(await T.findOne()).rawAttributes // undefined",
-      "test": "BelongsToMany getAssociations gets all associated objects with all fields"
-    },
-    "A-primarykeyfield-missing": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.primaryKeyField is undefined (v6 sets it; used for count col and in user code).",
-      "risk": "error",
-      "repro": "define('T',{pk:{type:INTEGER,primaryKey:true,field:'pk_f'}}).primaryKeyField // undefined",
-      "test": "HasMany count should not fail due to ambiguous field"
     },
     "A-references-model-object": {
       "cause": "bug",
@@ -86,50 +14,10 @@
       "repro": "U.hasMany(T); T.rawAttributes.UId.references.model // {tableName:'Us'} (v6 'Us')",
       "test": "BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before"
     },
-    "A-references-null-crash": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Attribute with references:null (opt out of FK) crashes sync with \"Cannot read properties of null (reading key)\".",
-      "risk": "error",
-      "repro": "IT=define('it',{tid:{type:INTEGER,references:null}}); P.belongsToMany(T,{through:IT,foreignKey:'tid'}); await IT.sync({force:true})",
-      "test": "associations scope N:M on the through model should create, find and include associations with scope values"
-    },
-    "A-scope-fn-by-name": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Model.scope(\"name\") where the scope is a function throws \"is a function; use {method:[..]}\"; v6 calls the function with no arguments.",
-      "risk": "error",
-      "repro": "define('U',{},{scopes:{s(){return {}}}}).scope('s') .findAll() // throws",
-      "test": "Model scope associations scope with includes should scope columns properly"
-    },
-    "A-subquery-join-field-name": {
-      "cause": "bug",
-      "area": "include",
-      "note": "findOne/limit with a required or m:n include over a sub-query joins on the column name of a key whose field differs from its attribute name (\"U\".\"user_id\") instead of the sub-query alias.",
-      "risk": "error",
-      "repro": "U=define('User',{id:{type:INTEGER,primaryKey:true,field:'main_id'}}); U.hasMany(T,{foreignKey:'userId'}); await U.findOne({include:[T]}) // column User.main_id does not exist",
-      "test": "Include findOne should include a model with a where clause when the PK field name and attribute name are different"
-    },
     "A-triage": {
       "cause": "triage",
       "area": "associations",
       "note": "Not individually analysed (catch-all for remaining tests of the slice files)."
-    },
-    "A-update-no-options": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.update(values) without an options argument throws TypeError (v6 defaults options).",
-      "risk": "error",
-      "repro": "await U.scope('low').update({n:'x'}) // Cannot read properties of undefined (reading 'fields')",
-      "test": "Model scope update should work with empty where"
-    },
-    "B-aggregate-alias-group": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Model.aggregate / count with attributes:[['id','id2']] and group:['id2'] fails with 'column id2 does not exist': the alias is not accepted as GROUP BY target.",
-      "risk": "error",
-      "repro": "await U.aggregate('id','count',{attributes:[['id','id2']],group:['id2']})",
-      "test": "Model count aggregate allows grouping by aliased attribute"
     },
     "B-attributes-empty": {
       "cause": "bug",
@@ -139,38 +27,6 @@
       "repro": "await U.findAll({attributes:[]})",
       "test": "Model findAll should throw on an attempt to fetch no attributes"
     },
-    "B-belongsto-include-notnull-fk": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Nested create of a belongsTo include whose foreign key is allowNull:false fails with 'notNull Violation: Product.UserId cannot be null' because validation runs before the parent row is created and the FK copied.",
-      "risk": "error",
-      "repro": "Product.belongsTo(User,{foreignKey:{allowNull:false}}); await Product.create({User:{first_name:'M'}},{include:[{model:User}]})",
-      "test": "Model create include should create data for BelongsTo relations with no nullable FK"
-    },
-    "B-btm-count-through-timestamps": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "instance.countX() on a belongsToMany with a string through selects the auto-created through model's createdAt/updatedAt, failing when the join table has no timestamp columns; v6 selects no through attributes for count.",
-      "risk": "error",
-      "repro": "U.belongsToMany(C,{through:'uc'}); /* uc table without timestamps */ await u.countComments() // column uc.createdAt does not exist",
-      "test": "Model attributes field should work with `belongsToMany` association `count`"
-    },
-    "B-btm-duplicate-auto-alias": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Declaring two belongsToMany to the same target without `as` (different through) throws 'You have used the alias projects in two separate associations'; v6 only checks explicitly given aliases (the second overwrites the first).",
-      "risk": "error",
-      "repro": "U.belongsToMany(P,{through:'a'}); U.belongsToMany(P,{through:'b'})",
-      "test": "Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\""
-    },
-    "B-btm-paired-otherkey": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Two belongsToMany with the same through model and explicit foreignKey on each side are not paired: otherKey is derived from the target name (courseNo) instead of the counterpart's foreignKey (CourseId), so the through table gets extra columns and add() inserts NULL into CourseId.",
-      "risk": "error",
-      "repro": "S.belongsToMany(C,{through:Sc,foreignKey:'StudentId'}); C.belongsToMany(S,{through:Sc,foreignKey:'CourseId'}); await s.addCourse(c) // null value in column CourseId",
-      "test": "Model attributes set should only be called once when used on a join model called with an association getter"
-    },
     "B-datavalues-key-order": {
       "cause": "bug",
       "area": "instance",
@@ -178,30 +34,6 @@
       "risk": "cosmetic",
       "repro": "Object.keys(U.build({a:'x'}).toJSON()) // ['isUser','id','a'], v6: ['id','a','isUser']",
       "test": "Instance toJSON build returns a response that can be stringified"
-    },
-    "B-date-number-bound-bigint": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "A number (epoch ms, e.g. Date.UTC() or new Date().setFullYear()) assigned to a DATE attribute is bound as bigint, so PostgreSQL rejects it; v6 converts it with moment.",
-      "risk": "error",
-      "repro": "const U=sq.define('u',{d:DataTypes.DATE},{timestamps:false}); await sq.sync(); await U.create({d:Date.UTC(2014,1,20)})  // column \"d\" is of type timestamp with time zone but expression is of type bigint",
-      "test": "Include find should support including date fields, with the correct timeszone"
-    },
-    "B-deferrable-callable": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Deferrable.INITIALLY_IMMEDIATE() / INITIALLY_DEFERRED() (v6 allows the call form) throws 'is not a function': postgrelize exposes plain objects.",
-      "risk": "error",
-      "repro": "references:{deferrable:Deferrable.INITIALLY_IMMEDIATE()}",
-      "test": "Model sync with { alter: true } updates the deferrable property of a foreign key"
-    },
-    "B-define-time-validation": {
-      "cause": "bug",
-      "area": "model",
-      "note": "sequelize.define does not throw for two autoIncrement attributes, for a non-function entry in options.validate, or a model validator named like a field (v6 throws at definition time).",
-      "risk": "error",
-      "repro": "sq.define('a',{x:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true},y:{type:DataTypes.INTEGER,primaryKey:true,autoIncrement:true}}) // does not throw",
-      "test": "Model constructor throws an error if 2 autoIncrements are passed"
     },
     "B-findorcreate-pool-deadlock": {
       "cause": "bug",
@@ -231,22 +63,6 @@
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
     },
-    "B-include-attr-bare-literal": {
-      "cause": "bug",
-      "area": "include",
-      "note": "A bare literal() (not [literal, alias]) in the attributes of an include or of a model throws TypeError 'item is not iterable' in the SELECT builder; v6 passes literals through as raw select items.",
-      "risk": "error",
-      "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
-      "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
-    },
-    "B-index-field-attribute-key": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Index field objects in define({indexes:[{fields:[{attribute:'email',collate,order,length}]}]}) use v6's `attribute` key; postgrelize only reads `name`, so sync crashes with TypeError reading replaceAll of undefined.",
-      "risk": "error",
-      "repro": "sq.define('m',{a:DataTypes.INTEGER,e:DataTypes.STRING},{indexes:[{name:'ix',fields:['a',{attribute:'e',order:'DESC'}]}]}); await sq.sync()",
-      "test": "Model constructor should allow the user to specify indexes in options"
-    },
     "B-invalid-attr-message": {
       "cause": "bug",
       "area": "query",
@@ -275,14 +91,6 @@
       "note": "order:[['id', literal('ASC, name DESC')]]: a literal as order direction is rejected (directions go through an allowlist).",
       "ref": "docs/security.md (order directions, Allowlist row); ADR-020"
     },
-    "B-references-null": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "An attribute with references: null (v6 way to switch the FK off, used by polymorphic belongsToMany through models) crashes sync with TypeError reading 'key'.",
-      "risk": "error",
-      "repro": "sq.define('M',{x:{type:DataTypes.INTEGER,references:null}}); await sq.sync()",
-      "test": "Model create include should create data for polymorphic BelongsToMany relations"
-    },
     "B-schema-clone-include": {
       "cause": "bug",
       "area": "associations",
@@ -298,14 +106,6 @@
       "risk": "error",
       "repro": "await U.sync({force:true,schema:'s_one'}); await K.sync({force:true,schema:'s_one'}); await k.setUserXYZ(u)",
       "test": "Model schemas regressions defaults to schema provided to sync() for references #11276"
-    },
-    "B-sync-two-models-one-table": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Two models mapped to the same table are both synced (v6 keeps only the last one per table), so the FK to the second model's column is created against the first model's table and sync fails (edge case).",
-      "risk": "error",
-      "repro": "sq.define('User',{n:DataTypes.STRING}); sq.define('project',{UserId:{type:DataTypes.STRING,references:{model:'Users',key:'UUID'}}}); sq.define('Users',{UUID:{type:DataTypes.STRING,primaryKey:true}}); await sq.sync({force:true})",
-      "test": "Model should be possible to use a key named UUID as foreign key"
     },
     "B-triage-upsert-infinity-pk": {
       "cause": "triage",
@@ -350,38 +150,6 @@
       "note": "DataTypes.UUIDV1 is not provided, so a UUIDV1 default yields no value on build.",
       "ref": "docs/guide/migrating.md (DataTypes Not planned: UUIDV1)"
     },
-    "B-update-no-args": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.update() with no arguments throws a raw TypeError (reading 'fields') instead of v6's 'Missing where attribute in the options parameter'.",
-      "risk": "wording",
-      "repro": "await U.update()",
-      "test": "Model update throws an error if no where clause is given"
-    },
-    "B-update-undefined-values": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.update ignores nothing: a key with value undefined ({ownerId: undefined}) is sent as NULL and fails notNull validation; v6 ignores undefined values.",
-      "risk": "error",
-      "repro": "await A.update({name:'q',ownerId:undefined},{where:{id:1}})",
-      "test": "Model update should ignore undefined values without throwing not null validation"
-    },
-    "B-update-unknown-fields": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.update with a key that is not an attribute emits SET on a non-existent column (v6 drops unknown keys and skips the query when nothing is left, returning [0]).",
-      "risk": "error",
-      "repro": "await A.update({unknownField:'h'},{where:{ownerId:3}}) // column unknownField does not exist",
-      "test": "Model update skips update query if no data to update"
-    },
-    "B-validator-extend": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "sequelize.Validator / Sequelize.Validator (the validator.js instance with extend()) is not exposed.",
-      "risk": "error",
-      "repro": "Sequelize.Validator.extend('f',()=>true)",
-      "test": "InstanceValidator allows me to add custom validation functions to validator.js"
-    },
     "B-virtual-exclude": {
       "cause": "bug",
       "area": "model",
@@ -394,30 +162,6 @@
       "cause": "harness",
       "area": "harness",
       "note": "Test file requires unmapped sequelize/lib/* deep imports (abstract connection-manager, errors/*, postgres hstore/range, utils, data-types) or v6 lib internals; does not load."
-    },
-    "C-addindex-null-options": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "queryInterface.addIndex(table, fields, null, name) throws TypeError (options null) while v6 accepts null options.",
-      "risk": "error",
-      "repro": "await qi.addIndex({schema:'schema',tableName:'table'},['name','isAdmin'],null,'schema_table') // TypeError Cannot read properties of null (reading 'replacements')",
-      "test": "QueryInterface indexes works with schemas"
-    },
-    "C-array-no-type": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "DataTypes.ARRAY without element type is accepted at define(); v6 throws \"ARRAY is missing type definition for its values.\" (fails later at sync).",
-      "risk": "error",
-      "repro": "s.define('o',{bla:{type:DataTypes.ARRAY}}) // no throw",
-      "test": "raises an error if no values are defined"
-    },
-    "C-bind-dollar-in-identifier": {
-      "cause": "bug",
-      "area": "query",
-      "note": "A `$` inside an identifier/alias (`as foo$bar`) is tokenised as bind parameter $bar and throws.",
-      "risk": "error",
-      "repro": "await s.query('select $one::int as foo$bar',{type:'SELECT',bind:{one:1}}) // Named bind parameter \"$bar\" has no value",
-      "test": "escape where has $ on the middle of characters"
     },
     "C-bind-log-inlined": {
       "cause": "bug",
@@ -456,14 +200,6 @@
       "area": "connection",
       "note": "Test uses connectionManager internals (_clearDynamicOIDs, validate, _connect stubs, pool.read/write, getConnection hacks, queryGenerator)."
     },
-    "C-database-error-sql-params": {
-      "cause": "bug",
-      "area": "error",
-      "note": "new DatabaseError(parent) does not copy parent.sql / parent.parameters (\"\" and []).",
-      "risk": "wording",
-      "repro": "e=new Sequelize.DatabaseError(Object.assign(new Error('x'),{sql:'SELECT 1',parameters:[1]})); e.sql // '' (v6 'SELECT 1')",
-      "test": "SequelizeDatabaseError should keep the original sql and the parameters"
-    },
     "C-datatypes-abstract": {
       "cause": "bug",
       "area": "datatypes",
@@ -496,14 +232,6 @@
       "repro": "U.findOrCreate({where:{name:'K'},logging:x=>l.push(x)}) -> first log line is 'Executing (default): SELECT', v6 logs the transaction id for both",
       "test": "CLS does not leak outside findOrCreate"
     },
-    "C-fk-field-collision": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasMany/belongsTo foreignKey equal to the column name (field) of an existing attribute creates a duplicate column in CREATE TABLE (\"user_id\" specified more than once); v6 merges by field.",
-      "risk": "error",
-      "repro": "UV=define('UV',{userId:{type:STRING,field:'user_id'}}); U.hasMany(UV,{foreignKey:'user_id'}); await UV.sync({force:true}) // column \"user_id\" specified more than once",
-      "test": "stacktraces emits raw errors if requested"
-    },
     "C-log-default-noop": {
       "cause": "bug",
       "area": "config",
@@ -533,14 +261,6 @@
       "area": "associations",
       "note": "Support.clearDatabase replaces sequelize.models with a new object, detaching postgrelize ModelManager from sequelize.models, so modelManager.getModel finds nothing; real code unaffected (getModel works after define)."
     },
-    "C-nested-array-replacements": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Nested array replacement (VALUES ?) is flattened to a comma list instead of ((..),(..)) row tuples.",
-      "risk": "error",
-      "repro": "await s.query('select * from (values ?) t',{replacements:[[['a','b'],['c','d']]],type:'SELECT'}) // syntax error at or near 'a'",
-      "test": "executes a query if a placeholder value is an array"
-    },
     "C-no-logging-on-failed-query": {
       "cause": "bug",
       "area": "query",
@@ -562,14 +282,6 @@
       "area": "query-interface",
       "note": "Test uses queryInterface.pgListEnums (postgres dialect-private helper, not typed in v6)."
     },
-    "C-pool-no-evict-dead-connection": {
-      "cause": "bug",
-      "area": "connection",
-      "note": "A pooled connection that was ended is handed out again (\"Client was closed\"), and an error event (ECONNRESET) on a checked-out connection with max:1 leaves the pool exhausted so the next getConnection hangs; v6 destroys such connections and opens a new one.",
-      "risk": "error",
-      "repro": "c=await cm.getConnection();await cm.releaseConnection(c);c.end();await sleep(200);await s.query('select 1') // Client was closed and is not queryable",
-      "test": "should obtain new connection when released connection dies inside pool"
-    },
     "C-postgis-missing": {
       "cause": "unsupported",
       "area": "datatypes",
@@ -583,26 +295,10 @@
       "repro": "await qi.addConstraint('users',{fields:['username']}) // TypeError toLowerCase (v6: Constraint type must be specified through options.type)",
       "test": "addconstraint missing type"
     },
-    "C-qi-function-args": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createFunction/dropFunction/renameFunction do not accept null or non-array optionsArray (TypeError options.map / null .schema) and validation messages differ from v6; a rejected-with TypeError in the test also crashes the mocha process via unhandled rejection.",
-      "risk": "error",
-      "repro": "await qi.createFunction('f',[{type:'varchar',name:'t'}],'varchar','plpgsql','return t;',null) // TypeError Cannot read properties of null (reading 'map')",
-      "test": "createFunction treats options as optional"
-    },
     "C-querygenerator-internals": {
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls queryInterface.queryGenerator.* (getForeignKeysQuery, selectQuery) which postgrelize does not expose."
-    },
-    "C-references-without-model-drop": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Attribute with references:{deferrable} but no model (filled by belongsTo) makes sync/drop throw TypeError in referencedTable.",
-      "risk": "error",
-      "repro": "A=define('A',{BId:{type:INTEGER,references:{deferrable:Deferrable.INITIALLY_IMMEDIATE}}}); B likewise; A.belongsTo(B,{foreignKey:{allowNull:false}}); B.belongsTo(A,...); await s.sync(); await s.drop() // TypeError Cannot use 'in' operator ... 'getTableName'",
-      "test": "supports dropping cyclic associations"
     },
     "C-replication-internals": {
       "cause": "harness",
@@ -622,22 +318,6 @@
       "area": "harness",
       "note": "Test uses sinon stubs of v6 internals / queryGenerator / sequelize.query spies / operatorsAliases on dialect."
     },
-    "C-sync-no-models-connection": {
-      "cause": "bug",
-      "area": "connection",
-      "note": "sequelize.sync({force:true}) with no models and an unreachable database resolves successfully; v6 rejects (ConnectionError).",
-      "risk": "error",
-      "repro": "await new Sequelize('cyber_bird','user','pass',{dialect:'postgres'}).sync({force:true}) // resolves",
-      "test": "sync fails for incorrect connection even when no models are defined"
-    },
-    "C-unknown-constraint-error": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "removeConstraint of a non-existent constraint throws SequelizeDatabaseError; v6 throws UnknownConstraintError.",
-      "risk": "error",
-      "repro": "await qi.removeConstraint('users','nope',{type:'unique'}) // DatabaseError (v6 UnknownConstraintError)",
-      "test": "unknown constraint should throw non existent constraints as UnknownConstraintError"
-    },
     "C-validate-alias-identity": {
       "cause": "harness",
       "area": "config",
@@ -651,44 +331,12 @@
       "repro": "typeof new ValidationErrorItem('m','Validation error','f','v').getValidatorKey // undefined; ValidationErrorItem.Origins undefined",
       "test": "SequelizeValidationErrorItem.getValidatorKey() should return a string"
     },
-    "D-aggregate-error-message": {
-      "cause": "bug",
-      "area": "errors",
-      "note": "AggregateError.message is the plain concatenation of the inner messages; v6 builds 'AggregateError of:\\n  Error: foo\\n ...' with indentation.",
-      "risk": "wording",
-      "repro": "new AggregateError([new Error('foo'),new Error('bar\\nbaz')]).message",
-      "test": "AggregateError get .message works"
-    },
     "D-assoc-hooks-missing": {
       "cause": "unsupported",
       "area": "hooks",
       "note": "Model.beforeAssociate/afterAssociate (and before/afterBelongsToAssociate, HasMany, HasOne, ...) do not exist; docs/guide/migrating.md lists them as 'Not planned' but v6 code calling them throws TypeError.",
       "test": "belongsTo association hooks beforeBelongsToAssociate should trigger",
       "ref": "docs/guide/migrating.md (hooks table, Not planned: Model beforeAssociate/afterAssociate)"
-    },
-    "D-assoc-invalid-model-arg": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Model.belongsTo()/hasMany()/hasOne() with no/invalid target throw 'Cannot convert undefined or null to object' instead of v6 'X.belongsTo called with something that's not a subclass of Sequelize.Model'.",
-      "risk": "wording",
-      "repro": "try{sequelize.define('U',{}).belongsTo()}catch(e){console.log(e.message)}",
-      "test": "belongsTo throws when invalid model is passed"
-    },
-    "D-assoc-unknown-key-option": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasOne/hasMany sourceKey and belongsTo targetKey naming an attribute that does not exist is accepted silently; v6 throws 'Unknown attribute \"x\" passed as sourceKey/targetKey, define this attribute on model \"M\" first'.",
-      "risk": "error",
-      "repro": "U.hasOne(T,{sourceKey:'wowow'}) // no throw",
-      "test": "hasOne warn on invalid options"
-    },
-    "D-attr-named-set": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Defining an attribute named `set` clobbers instance.set.",
-      "risk": "error",
-      "repro": "M.build({set:1}).set // not a function",
-      "test": "Model not breaking built-ins it should not break instance.set by defining a model set attribute"
     },
     "D-config-dialectoptions-missing": {
       "cause": "bug",
@@ -706,14 +354,6 @@
       "repro": "DataTypes.STRING({length:1234})",
       "test": "(file does not load) sql/data-types"
     },
-    "D-define-no-validation": {
-      "cause": "bug",
-      "area": "model",
-      "note": "define() does not throw for an unknown/undefined data type ('Unrecognized datatype for attribute \"bar.name\"') nor for a notNull validator without allowNull:false.",
-      "risk": "wording",
-      "repro": "s.define('bar',{name:{type:DataTypes.MY_UNKNOWN_TYPE}}) // no throw",
-      "test": "Model define should throw for unknown data type"
-    },
     "D-define-tinyint-warn": {
       "cause": "bug",
       "area": "datatypes",
@@ -722,27 +362,11 @@
       "repro": "s.define('A',{age:DataTypes.TINYINT.UNSIGNED}) // no warning",
       "test": "Model define datatype warnings warn for unsupported INTEGER options"
     },
-    "D-define-unique-null": {
-      "cause": "bug",
-      "area": "model",
-      "note": "define() with a null/undefined `unique` attribute option throws TypeError.",
-      "risk": "error",
-      "repro": "s.define('x',{a:{type:DataTypes.STRING,unique:null}})",
-      "test": "Model define should defend against null or undefined \"unique\" attributes"
-    },
     "D-dialectmodule-ignored": {
       "cause": "divergence",
       "area": "config",
       "note": "dialectModule is accepted but ignored (always loads pg); dialectModulePath is not implemented and connectionManager.lib is a v6 internal.",
       "ref": "src/connection/options.ts TSDoc of dialectModule ('postgrelize ignores it and always loads pg'); docs/guide/migrating.md section 3"
-    },
-    "D-error-ctor-no-args": {
-      "cause": "bug",
-      "area": "errors",
-      "note": "UniqueConstraintError/ForeignKeyConstraintError/ExclusionConstraintError/ConnectionError and subclasses/AggregateError constructors throw TypeError when called with no args or null; v6 accepts them (tests use new UniqueConstraintError(), new ConnectionError(null)).",
-      "risk": "error",
-      "repro": "new (require('postgrelize').UniqueConstraintError)()",
-      "test": "errors should maintain stack trace without message"
     },
     "D-getattributes-shape": {
       "cause": "bug",
@@ -801,6 +425,52 @@
       "area": "config",
       "note": "Other dialects (mariadb, mssql, mysql, snowflake, sqlite, db2): deep imports of their query-generator/query/errors modules.",
       "ref": "docs/guide/migrating.md (Other dialects (MySQL, SQLite, MSSQL...) row)"
+    },
+    "B-alter-deferrable-not-updated": {
+      "cause": "bug",
+      "area": "alter",
+      "note": "sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed.",
+      "test": "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key",
+      "risk": "error",
+      "repro": "change references.deferrable of a model attribute; await sync({ alter: true }) // constraint keeps the old mode"
+    },
+    "D-harness-stack-header": {
+      "cause": "harness",
+      "area": "harness",
+      "note": "sequelize@6 itself gives the same stack header on current Node (no trailing colon for an empty message).",
+      "test": "errors should maintain stack trace without message"
+    },
+    "D-btm-getter-two-queries": {
+      "cause": "bug",
+      "area": "btm",
+      "note": "belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs",
+      "test": "[POSTGRES] Self can handle n:m associations with pre-defined through table",
+      "risk": "cosmetic",
+      "repro": "await person.getChildren({ logging }) // two statements, v6 one"
+    },
+    "D-grouped-limit-option": {
+      "cause": "bug",
+      "area": "grouped",
+      "note": "The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before.",
+      "test": "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
+      "risk": "wrong-result",
+      "repro": "await User.findAll({ groupedLimit: { limit: 3, on: User.Projects, values: [1, 2] } }) // option ignored"
+    },
+    "C-raw-errors-option": {
+      "cause": "bug",
+      "area": "raw",
+      "note": "The v6 query option rawErrors is not supported; the test was not reached before.",
+      "test": "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
+      "risk": "error",
+      "repro": "await sequelize.query('SELECT 1 FROM missing', { rawErrors: true }) // rejects with DatabaseError, v6 with the driver error"
+    },
+    "D-addindex-expression-fields": {
+      "cause": "bug",
+      "area": "addindex",
+      "note": "addIndex does not accept literal() / fn() fields; the file did not load before.",
+      "test": "[POSTGRES Specific] QueryInterface indexes supports newlines",
+      "risk": "error",
+      "repro": "await queryInterface.addIndex('t', [fn('lower', col('name'))], { name: 'i' }) // TypeError"
     }
   },
   "files": {
@@ -813,17 +483,13 @@
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should not trigger association hooks",
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should trigger",
         "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should not trigger association hooks",
-        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger",
-        "[POSTGRES] belongsTo throws when invalid model is passed",
-        "[POSTGRES] belongsTo warn on invalid options"
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger"
       ],
       "causes": {
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should not trigger association hooks": "D-assoc-hooks-missing",
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should trigger": "D-assoc-hooks-missing",
         "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should not trigger association hooks": "D-assoc-hooks-missing",
-        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger": "D-assoc-hooks-missing",
-        "[POSTGRES] belongsTo throws when invalid model is passed": "D-assoc-invalid-model-arg",
-        "[POSTGRES] belongsTo warn on invalid options": "D-assoc-unknown-key-option"
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger": "D-assoc-hooks-missing"
       }
     },
     "test/unit/associations/has-many.test.js": {
@@ -836,8 +502,7 @@
         "[POSTGRES] hasMany get should fetch associations for multiple source instances",
         "[POSTGRES] hasMany mixin should mixin association methods",
         "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one delete from statement",
-        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition",
-        "[POSTGRES] hasMany throws when invalid model is passed"
+        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition"
       ],
       "causes": {
         "[POSTGRES] hasMany association hooks afterHasManyAssociate should not trigger association hooks": "D-assoc-hooks-missing",
@@ -848,8 +513,7 @@
         "[POSTGRES] hasMany get should fetch associations for multiple source instances": "D-harness-assoc-stubs",
         "[POSTGRES] hasMany mixin should mixin association methods": "D-harness-assoc-stubs",
         "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one delete from statement": "D-harness-assoc-stubs",
-        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition": "D-harness-assoc-stubs",
-        "[POSTGRES] hasMany throws when invalid model is passed": "D-assoc-invalid-model-arg"
+        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition": "D-harness-assoc-stubs"
       }
     },
     "test/unit/associations/has-one.test.js": {
@@ -857,17 +521,13 @@
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should not trigger association hooks",
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should trigger",
         "[POSTGRES] hasOne association hooks beforeHasOneAssociate should not trigger association hooks",
-        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger",
-        "[POSTGRES] hasOne throws when invalid model is passed",
-        "[POSTGRES] hasOne warn on invalid options"
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger"
       ],
       "causes": {
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should not trigger association hooks": "D-assoc-hooks-missing",
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should trigger": "D-assoc-hooks-missing",
         "[POSTGRES] hasOne association hooks beforeHasOneAssociate should not trigger association hooks": "D-assoc-hooks-missing",
-        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger": "D-assoc-hooks-missing",
-        "[POSTGRES] hasOne throws when invalid model is passed": "D-assoc-invalid-model-arg",
-        "[POSTGRES] hasOne warn on invalid options": "D-assoc-unknown-key-option"
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger": "D-assoc-hooks-missing"
       }
     },
     "test/unit/configuration.test.js": {
@@ -984,16 +644,6 @@
       "loadError": true,
       "cause": "D-unsupported-dialects"
     },
-    "test/unit/errors.test.js": {
-      "failing": [
-        "errors AggregateError get .message works",
-        "errors should maintain stack trace without message"
-      ],
-      "causes": {
-        "errors AggregateError get .message works": "D-aggregate-error-message",
-        "errors should maintain stack trace without message": "D-error-ctor-no-args"
-      }
-    },
     "test/unit/esm-named-exports.test.js": {
       "failing": ["ESM module exposes the same named exports as the CJS module"],
       "causes": {
@@ -1073,30 +723,16 @@
     "test/unit/model/define.test.js": {
       "failing": [
         "[POSTGRES] Model define datatype warnings warn for unsupported INTEGER options",
-        "[POSTGRES] Model define should allow custom timestamps with underscored: true",
-        "[POSTGRES] Model define should defend against null or undefined \"unique\" attributes",
-        "[POSTGRES] Model define should throw for notNull validator without allowNull",
-        "[POSTGRES] Model define should throw for unknown data type"
+        "[POSTGRES] Model define should allow custom timestamps with underscored: true"
       ],
       "causes": {
         "[POSTGRES] Model define datatype warnings warn for unsupported INTEGER options": "D-define-tinyint-warn",
-        "[POSTGRES] Model define should allow custom timestamps with underscored: true": "D-harness-model-internals",
-        "[POSTGRES] Model define should defend against null or undefined \"unique\" attributes": "D-define-unique-null",
-        "[POSTGRES] Model define should throw for notNull validator without allowNull": "D-define-no-validation",
-        "[POSTGRES] Model define should throw for unknown data type": "D-define-no-validation"
+        "[POSTGRES] Model define should allow custom timestamps with underscored: true": "D-harness-model-internals"
       }
     },
     "test/unit/model/find-all.test.js": {
       "loadError": true,
       "cause": "D-harness-stub-query"
-    },
-    "test/unit/model/find-create-find.test.js": {
-      "failing": [
-        "[POSTGRES] Model findCreateFind should do a second find if create failed due to an error of type UniqueConstraintError"
-      ],
-      "causes": {
-        "[POSTGRES] Model findCreateFind should do a second find if create failed due to an error of type UniqueConstraintError": "D-harness-stub-query"
-      }
     },
     "test/unit/model/find-one.test.js": {
       "failing": [
@@ -1221,14 +857,6 @@
       "causes": {
         "[POSTGRES] Model indexes should automatically set a gin index for JSONB indexes": "D-harness-model-indexes",
         "[POSTGRES] Model indexes should set the unique property when type is unique": "D-harness-model-indexes"
-      }
-    },
-    "test/unit/model/overwriting-builtins.test.js": {
-      "failing": [
-        "[POSTGRES] Model not breaking built-ins it should not break instance.set by defining a model set attribute"
-      ],
-      "causes": {
-        "[POSTGRES] Model not breaking built-ins it should not break instance.set by defining a model set attribute": "D-attr-named-set"
       }
     },
     "test/unit/model/remove-attribute.test.js": {
@@ -1863,28 +1491,8 @@
     "test/integration/associations/belongs-to-many.test.js": {
       "unstable": true,
       "pass": 35,
-      "failing": [
-        "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
-        "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)",
-        "[POSTGRES] BelongsToMany getAssociations supports primary key attributes with different field and attribute names",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object"
-      ],
-      "causes": {
-        "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields": "A-instance-rawattributes",
-        "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports primary key attributes with different field and attribute names": "A-subquery-join-field-name",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times": "A-default-alias-redefine",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object": "A-default-alias-redefine"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/associations/belongs-to.test.js": {
       "failing": [
@@ -1904,20 +1512,14 @@
       "failing": [
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query",
-        "[POSTGRES] HasMany count should not fail due to ambiguous field",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false"
+        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates"
       ],
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query": "A-group-nested-array",
-        "[POSTGRES] HasMany count should not fail due to ambiguous field": "A-primarykeyfield-missing",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
+        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/has-one.test.js": {
@@ -1926,38 +1528,24 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
         "[POSTGRES] HasOne foreign key constraints can cascade updates",
-        "[POSTGRES] HasOne foreign key constraints can restrict updates",
-        "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false"
+        "[POSTGRES] HasOne foreign key constraints can restrict updates"
       ],
       "causes": {
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
+        "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/scope.test.js": {
       "unstable": true,
       "pass": 5,
       "failing": [
-        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values",
-        "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
+        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values"
       ],
       "causes": {
-        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values": "A-triage",
-        "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values": "A-references-null-crash"
-      }
-    },
-    "test/integration/associations/self.test.js": {
-      "failing": [
-        "[POSTGRES] Self can handle n:m associations",
-        "[POSTGRES] Self can handle n:m associations with pre-defined through table"
-      ],
-      "causes": {
-        "[POSTGRES] Self can handle n:m associations": "A-btm-identifier-props",
-        "[POSTGRES] Self can handle n:m associations with pre-defined through table": "A-btm-identifier-props"
+        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values": "A-triage"
       }
     },
     "test/integration/cls.test.js": {
@@ -2078,10 +1666,6 @@
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
     },
-    "test/integration/dialects/postgres/query-interface.test.js": {
-      "loadError": true,
-      "cause": "C-qi-function-args"
-    },
     "test/integration/dialects/postgres/query.test.js": {
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
@@ -2092,13 +1676,11 @@
     },
     "test/integration/error.test.js": {
       "failing": [
-        "[POSTGRES] Sequelize Errors API Surface SequelizeDatabaseError should keep the original sql and the parameters",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.Origins is valid",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should throw if namespace separator is invalid (only if NS is used & available)"
       ],
       "causes": {
-        "[POSTGRES] Sequelize Errors API Surface SequelizeDatabaseError should keep the original sql and the parameters": "C-database-error-sql-params",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.Origins is valid": "C-validation-error-item-api",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string": "C-validation-error-item-api",
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should throw if namespace separator is invalid (only if NS is used & available)": "C-validation-error-item-api"
@@ -2110,34 +1692,20 @@
         "[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks": "B-unsupported-pool-acquire-hooks"
       }
     },
-    "test/integration/include.test.js": {
-      "failing": [
-        "[POSTGRES] Include find should support including date fields, with the correct timeszone"
-      ],
-      "causes": {
-        "[POSTGRES] Include find should support including date fields, with the correct timeszone": "B-date-number-bound-bigint"
-      }
-    },
     "test/integration/include/findAll.test.js": {
       "unstable": true,
       "pass": 34,
-      "failing": [
-        "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
-      ],
-      "causes": {
-        "[POSTGRES] Include findAll should support including date fields, with the correct timeszone": "A-date-number"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/include/schema.test.js": {
       "unstable": true,
       "pass": 17,
       "failing": [
-        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes",
-        "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone"
+        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes"
       ],
       "causes": {
-        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage",
-        "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone": "A-date-number"
+        "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage"
       }
     },
     "test/integration/instance.test.js": {
@@ -2157,13 +1725,11 @@
     "test/integration/instance.validations.test.js": {
       "failing": [
         "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly",
-        "[POSTGRES] InstanceValidator allows me to add custom validation functions to validator.js"
+        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly"
       ],
       "causes": {
         "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message": "B-unique-msg-option",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly": "B-unique-msg-option",
-        "[POSTGRES] InstanceValidator allows me to add custom validation functions to validator.js": "B-validator-extend"
+        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly": "B-unique-msg-option"
       }
     },
     "test/integration/instance/decrement.test.js": {
@@ -2212,67 +1778,41 @@
       "failing": [
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
-        "[POSTGRES] Model constructor should allow the user to specify indexes in options",
-        "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed",
-        "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field",
-        "[POSTGRES] Model constructor throws an error if a custom model-wide validation is not a function",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define",
-        "[POSTGRES] Model count aggregate allows grouping by aliased attribute",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
-        "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
-        "[POSTGRES] Model update throws an error if no where clause is given",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ],
       "causes": {
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
-        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
-        "[POSTGRES] Model constructor should allow the user to specify indexes in options": "B-index-field-attribute-key",
-        "[POSTGRES] Model constructor throws an error if 2 autoIncrements are passed": "B-define-time-validation",
-        "[POSTGRES] Model constructor throws an error if a custom model-wide validation has the same name as a field": "B-define-time-validation",
-        "[POSTGRES] Model constructor throws an error if a custom model-wide validation is not a function": "B-define-time-validation",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define": "B-harness-private-internals",
-        "[POSTGRES] Model count aggregate allows grouping by aliased attribute": "B-aggregate-alias-group",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
-        "[POSTGRES] Model should be possible to use a key named UUID as foreign key": "B-sync-two-models-one-table",
-        "[POSTGRES] Model update throws an error if no where clause is given": "B-update-no-args",
-        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated"
-      }
-    },
-    "test/integration/model/attributes.test.js": {
-      "failing": [
-        "[POSTGRES] Model attributes set should only be called once when used on a join model called with an association getter"
-      ],
-      "causes": {
-        "[POSTGRES] Model attributes set should only be called once when used on a join model called with an association getter": "B-btm-paired-otherkey"
+        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated",
+        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-unique-msg-option"
       }
     },
     "test/integration/model/attributes/field.test.js": {
       "failing": [
-        "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`"
+        "[POSTGRES] Model attributes field should sync foreign keys with custom field names"
       ],
       "causes": {
-        "[POSTGRES] Model attributes field should sync foreign keys with custom field names": "B-harness-private-internals",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`": "B-btm-count-through-timestamps"
+        "[POSTGRES] Model attributes field should sync foreign keys with custom field names": "B-harness-private-internals"
       }
     },
     "test/integration/model/attributes/types.test.js": {
       "unstable": true,
       "pass": 3,
       "failing": [
-        "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values",
         "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes"
       ],
       "causes": {
-        "[POSTGRES] Model attributes types VIRTUAL should allow me to store selected values": "B-include-attr-bare-literal",
         "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes": "B-virtual-exclude"
       }
     },
@@ -2283,18 +1823,8 @@
     "test/integration/model/bulk-create/include.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations"
-      ],
-      "causes": {
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations": "B-references-null"
-      }
-    },
-    "test/integration/model/count.test.js": {
-      "failing": ["[POSTGRES] Model count should count groups correctly and return attributes"],
-      "causes": {
-        "[POSTGRES] Model count should count groups correctly and return attributes": "B-date-number-bound-bigint"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/create.test.js": {
       "unstable": true,
@@ -2308,34 +1838,14 @@
         "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock"
       }
     },
-    "test/integration/model/create/include.test.js": {
-      "failing": [
-        "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK",
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
-      ],
-      "causes": {
-        "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK": "B-belongsto-include-notnull-fk",
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "B-references-null"
-      }
-    },
     "test/integration/model/findAll.test.js": {
       "failing": [
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
-        "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance"
+        "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type"
       ],
       "causes": {
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
-        "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance": "D-error-ctor-no-args"
-      }
-    },
-    "test/integration/model/findAll/groupedLimit.test.js": {
-      "failing": [
-        "[POSTGRES] Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\""
-      ],
-      "causes": {
-        "[POSTGRES] Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\"": "B-btm-duplicate-auto-alias"
+        "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension"
       }
     },
     "test/integration/model/findAll/order.test.js": {
@@ -2410,45 +1920,17 @@
         "[POSTGRES] Model schemas regressions defaults to schema provided to sync() for references #11276": "B-sync-schema-option-references"
       }
     },
-    "test/integration/model/scope/aggregate.test.js": {
-      "failing": ["[POSTGRES] Model scope aggregate should be able to use where on include"],
-      "causes": {
-        "[POSTGRES] Model scope aggregate should be able to use where on include": "A-aggregate-ignores-include"
-      }
-    },
     "test/integration/model/scope/associations.test.js": {
       "unstable": true,
       "pass": 7,
-      "failing": [
-        "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly"
-      ],
-      "causes": {
-        "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name"
-      }
-    },
-    "test/integration/model/scope/count.test.js": {
-      "failing": [
-        "[POSTGRES] Model scope count should be able to use include with function scope",
-        "[POSTGRES] Model scope count should be able to use include with function scope and string association"
-      ],
-      "causes": {
-        "[POSTGRES] Model scope count should be able to use include with function scope": "A-scope-fn-by-name",
-        "[POSTGRES] Model scope count should be able to use include with function scope and string association": "A-scope-fn-by-name"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/scope/merge.test.js": {
       "unstable": true,
       "pass": 0,
       "failing": [],
       "causes": {}
-    },
-    "test/integration/model/scope/update.test.js": {
-      "failing": ["[POSTGRES] Model scope update should work with empty where"],
-      "causes": {
-        "[POSTGRES] Model scope update should work with empty where": "A-update-no-options"
-      }
     },
     "test/integration/model/searchPath.test.js": {
       "failing": [
@@ -2471,19 +1953,7 @@
         "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key"
       ],
       "causes": {
-        "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key": "B-deferrable-callable"
-      }
-    },
-    "test/integration/model/update.test.js": {
-      "failing": [
-        "[POSTGRES] Model update should ignore undefined values without throwing not null validation",
-        "[POSTGRES] Model update skips update query if no data to update",
-        "[POSTGRES] Model update skips update query skips when timestamps disabled"
-      ],
-      "causes": {
-        "[POSTGRES] Model update should ignore undefined values without throwing not null validation": "B-update-undefined-values",
-        "[POSTGRES] Model update skips update query if no data to update": "B-update-unknown-fields",
-        "[POSTGRES] Model update skips update query skips when timestamps disabled": "B-update-unknown-fields"
+        "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key": "B-alter-deferrable-not-updated"
       }
     },
     "test/integration/model/upsert.test.js": {
@@ -2515,17 +1985,13 @@
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection",
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection for transaction",
         "[POSTGRES] Pooling idle [MSSQL Flaky] should get new connection beyond idle range",
-        "[POSTGRES] Pooling idle should maintain connection within idle range",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when old connection is abruptly closed",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when released connection dies inside pool"
+        "[POSTGRES] Pooling idle should maintain connection within idle range"
       ],
       "causes": {
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection": "C-connmanager-internals",
         "[POSTGRES] Pooling acquire should reject with ConnectionAcquireTimeoutError when unable to acquire connection for transaction": "C-connmanager-internals",
         "[POSTGRES] Pooling idle [MSSQL Flaky] should get new connection beyond idle range": "C-connmanager-internals",
-        "[POSTGRES] Pooling idle should maintain connection within idle range": "C-connmanager-internals",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when old connection is abruptly closed": "C-pool-no-evict-dead-connection",
-        "[POSTGRES] Pooling network / connection errors should obtain new connection when released connection dies inside pool": "C-pool-no-evict-dead-connection"
+        "[POSTGRES] Pooling idle should maintain connection within idle range": "C-connmanager-internals"
       }
     },
     "test/integration/query-interface.test.js": {
@@ -2534,17 +2000,13 @@
       "failing": [
         "[POSTGRES] QueryInterface addColumn addColumn expected error",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type",
-        "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
-        "[POSTGRES] QueryInterface indexes works with schemas",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
       ],
       "causes": {
         "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError": "C-unknown-constraint-error",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
-        "[POSTGRES] QueryInterface indexes works with schemas": "C-addindex-null-options",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing": "C-qi-argument-errors"
       }
     },
@@ -2605,26 +2067,22 @@
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
-        "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions",
         "[POSTGRES] Sequelize modelManager allows to find a model using a callback",
         "[POSTGRES] Sequelize set should be configurable with global functions",
-        "[POSTGRES] Sequelize sync fails for incorrect connection even when no models are defined",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()"
       ],
       "causes": {
         "\"after each\" hook for \"correctly handles multiple transactions\"": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
-        "[POSTGRES] Sequelize define raises an error if no values are defined": "C-array-no-type",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions": "C-sequelize-internals",
         "[POSTGRES] Sequelize modelManager allows to find a model using a callback": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize set should be configurable with global functions": "C-options-define-late",
-        "[POSTGRES] Sequelize sync fails for incorrect connection even when no models are defined": "C-sync-no-models-connection",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()": "C-validate-alias-identity"
       }
     },
@@ -2648,10 +2106,8 @@
     "test/integration/sequelize/drop.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": ["Sequelize#drop supports dropping cyclic associations"],
-      "causes": {
-        "Sequelize#drop supports dropping cyclic associations": "C-references-without-model-drop"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/sequelize/log.test.js": {
       "unstable": true,
@@ -2678,14 +2134,12 @@
         "[POSTGRES] Sequelize query binds token with the passed array",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
-        "[POSTGRES] Sequelize query escape where has $ on the middle of characters",
-        "[POSTGRES] Sequelize query executes a query if a placeholder value is an array",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
-        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"",
+        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
         "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
       ],
       "causes": {
@@ -2694,15 +2148,13 @@
         "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest": "C-sequelize-internals",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest": "C-sequelize-internals",
-        "[POSTGRES] Sequelize query escape where has $ on the middle of characters": "C-bind-dollar-in-identifier",
-        "[POSTGRES] Sequelize query executes a query if a placeholder value is an array": "C-nested-array-replacements",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql": "C-logqueryparameters",
         "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value": "C-logqueryparameters",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries": "C-no-logging-on-failed-query",
-        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"": "C-fk-field-collision",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined"
+        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined",
+        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested": "C-raw-errors-option"
       }
     },
     "test/integration/sequelize/truncate.test.js": {
@@ -2737,6 +2189,44 @@
       "unstable": true,
       "pass": 0,
       "failing": []
+    },
+    "test/unit/errors.test.js": {
+      "failing": ["errors should maintain stack trace without message"],
+      "causes": {
+        "errors should maintain stack trace without message": "D-harness-stack-header"
+      }
+    },
+    "test/integration/associations/self.test.js": {
+      "failing": ["[POSTGRES] Self can handle n:m associations with pre-defined through table"],
+      "causes": {
+        "[POSTGRES] Self can handle n:m associations with pre-defined through table": "D-btm-getter-two-queries"
+      }
+    },
+    "test/integration/model/findAll/groupedLimit.test.js": {
+      "failing": [
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models with include",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models"
+      ],
+      "causes": {
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models with include": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models": "D-grouped-limit-option"
+      }
+    },
+    "test/integration/dialects/postgres/query-interface.test.js": {
+      "failing": [
+        "[POSTGRES Specific] QueryInterface indexes adds, reads and removes a named functional index to the table",
+        "[POSTGRES Specific] QueryInterface indexes supports newlines"
+      ],
+      "causes": {
+        "[POSTGRES Specific] QueryInterface indexes supports newlines": "D-addindex-expression-fields",
+        "[POSTGRES Specific] QueryInterface indexes adds, reads and removes a named functional index to the table": "D-addindex-expression-fields"
+      }
     }
   }
 }
