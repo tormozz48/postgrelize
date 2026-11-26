@@ -58,7 +58,8 @@ export class ModelStateFactory {
     const runtime = sequelize[runtimeKey];
     return {
       ...this.#definitionState(className, attributes, definitionOptions, runtime),
-      hooks: HookRegistry.fromOption(hooks, HookRegistry.fromOption(runtime.defaults.hooks)),
+      // like v6, a hook of the model replaces the `define` hook of the same name
+      hooks: HookRegistry.fromOption({ ...runtime.defaults.hooks, ...hooks }),
       scopes: new ScopeRegistry(defaultScope, scopes, whereMergeStrategy),
       validators: validate ?? {},
       schema: validationSchema,
