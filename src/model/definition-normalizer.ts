@@ -163,6 +163,9 @@ export class DefinitionNormalizer {
 
   #autoPrimaryKey(declared: ModelAttributes): ModelAttributes {
     const entries = Object.values(declared);
+    if ((this.#options as Readonly<{ withoutGeneratedId?: boolean }>).withoutGeneratedId === true) {
+      return {};
+    }
     if (entries.some((value) => attributes.isOptions(value) && value.primaryKey === true)) {
       return {};
     }

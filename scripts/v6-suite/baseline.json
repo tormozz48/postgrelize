@@ -847,14 +847,6 @@
       "note": "postgrelize accepts a missing dialect (defaults to postgres) and rejects any non-postgres dialect/URI (mysql:, pool:false test uses dialect mysql) with its own message.",
       "ref": "docs/guide/migrating.md section 3 ('Omit dialect or set it to postgres; any other value throws'), docs/guide/migrating.md Other dialects row"
     },
-    "D-remove-attribute-pk": {
-      "cause": "bug",
-      "area": "model",
-      "note": "Model.removeAttribute('id') leaves primaryKeyAttribute='id'.",
-      "risk": "wrong-result",
-      "repro": "M.removeAttribute('id');M.primaryKeyAttribute",
-      "test": "Model removeAttribute should support removing the primary key"
-    },
     "D-set-date-string-null": {
       "cause": "bug",
       "area": "instance",
@@ -1301,10 +1293,8 @@
       }
     },
     "test/unit/model/remove-attribute.test.js": {
-      "failing": ["[POSTGRES] Model removeAttribute should support removing the primary key"],
-      "causes": {
-        "[POSTGRES] Model removeAttribute should support removing the primary key": "D-remove-attribute-pk"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/model/schema.test.js": {
       "failing": [

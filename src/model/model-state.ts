@@ -98,13 +98,18 @@ export class ModelStateFactory {
   withoutAttribute(state: ModelState, attribute: string): ModelState {
     const { [attribute]: _removed, ...attributes } = state.input.attributes;
     const { [attribute]: _added, ...extra } = state.input.extra;
+    // like v6, a removed generated `id` is not generated again
+    const options =
+      attribute === 'id'
+        ? { ...state.input.options, withoutGeneratedId: true }
+        : state.input.options;
     return {
       ...state,
-      input: { ...state.input, attributes, extra },
+      input: { ...state.input, attributes, extra, options },
       definition: ModelDefinition.normalize(
         state.input.className,
         attributes,
-        state.input.options,
+        options,
         state.runtime.defaults,
         extra,
       ),
