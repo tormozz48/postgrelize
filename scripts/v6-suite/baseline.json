@@ -993,14 +993,6 @@
       "repro": "s.define('m',{name:STRING},{indexes:[{type:'unique',fields:['name']}]}).sync() // CREATE INDEX not UNIQUE",
       "test": "Model indexes should set the unique property when type is unique"
     },
-    "D-json-nested-set": {
-      "cause": "bug",
-      "area": "json",
-      "note": "instance.set('meta.city', v) on a JSON(B) column does not set the nested key and changed('meta') stays false.",
-      "risk": "wrong-result",
-      "repro": "u=M.build({meta:{city:'a'}});u.set('meta.city','b');u.get('meta.city')",
-      "test": "Instance set sets nested keys in JSON objects"
-    },
     "D-no-dialect-config": {
       "cause": "divergence",
       "area": "config",
@@ -1246,14 +1238,8 @@
       "cause": "D-harness-querygenerator"
     },
     "test/unit/instance/changed.test.js": {
-      "failing": [
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with changed values",
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with object"
-      ],
-      "causes": {
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with changed values": "D-json-nested-set",
-        "[POSTGRES] Instance changed should return true for JSON dot.separated key with object": "D-json-nested-set"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/unit/instance/decrement.test.js": {
       "loadError": true,
@@ -1279,13 +1265,11 @@
       "failing": [
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"",
         "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"",
-        "[POSTGRES] Instance set sets nested keys in JSON objects",
         "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field"
       ],
       "causes": {
         "[POSTGRES] Instance set custom setter \"after all\" hook for \"sets field to changed if field is set to the another value with custom setter using object\"": "D-harness-stub-query",
         "[POSTGRES] Instance set custom setter \"before all\" hook for \"does not set field to changed if field is set to the same value with custom setter using primitive value\"": "D-harness-stub-query",
-        "[POSTGRES] Instance set sets nested keys in JSON objects": "D-json-nested-set",
         "[POSTGRES] Instance set sets the date \"1970-01-01\" to previously null field": "D-set-date-string-null"
       }
     },
