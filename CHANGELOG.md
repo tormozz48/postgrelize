@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.8] - 2026-11-26
+
 ### Fixed
 
 - The `typeValidation` Sequelize option works like in v6: a value that does not fit the data type of its attribute (a string for `INTEGER` or `DECIMAL`, an unknown `ENUM` label, ...) is rejected with `ValidationError` on writes and in `where` before the statement runs. Differential test in `tests/compat/type-validation.test.ts`; five v6 suite baseline entries and the causes `D-typevalidation-ignored` and `C-typevalidation-option` are gone. ([#205](https://github.com/tormozz48/postgrelize/pull/205))
@@ -546,7 +548,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...HEAD
+[1.9.8]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...v1.9.8
 [1.9.7]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...v1.9.5
