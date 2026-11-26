@@ -208,7 +208,7 @@ export class QueryResultShaper {
    * @param options - Query options.
    * @returns Shaped result.
    */
-  shape(result: QueryResult, options: QueryOptions): unknown {
+  shape(result: QueryResult, options: QueryOptions, sql = ''): unknown {
     const rows = this.#shapeRows(result, options);
     switch (this.type(options)) {
       case QueryTypes.SELECT:
@@ -224,8 +224,16 @@ export class QueryResultShaper {
       case QueryTypes.BULKUPDATE:
         return result.rowCount;
       default:
-        return options.plain === true ? (rows[0] ?? null) : [rows, result];
+        return this.#raw(rows, result, options, sql);
     }
+  }
+
+  // like v6, SHOW and DESCRIBE statements answer with the rows alone
+  #raw(rows: readonly unknown[], result: QueryResult, options: QueryOptions, sql: string): unknown {
+    if (options.plain === true) {
+      return rows[0] ?? null;
+    }
+    return /^\s*(?:show|describe)/i.test(sql) ? rows : [rows, result];
   }
 
   // the `fieldMap` option of a SELECT

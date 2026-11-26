@@ -386,7 +386,8 @@ export class SequelizeBase {
     const { text, ...parameters } = rawQuery.statement(sql, options);
     const prepared = rawQuery.prepare(text, parameters);
     const kind = resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write';
-    return resultShaper.shape(await this.internals.execute(prepared, options, kind), options);
+    const result = await this.internals.execute(prepared, options, kind);
+    return resultShaper.shape(result, options, prepared.text);
   }
 
   /**
