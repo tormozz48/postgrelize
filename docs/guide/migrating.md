@@ -59,6 +59,12 @@ Things that behave the same as in Sequelize v6 include model definition (`init`,
 
 Value conventions follow v6 too: `BIGINT` and `DECIMAL` values are strings, and `upsert` returns `[instance, null]` because PostgreSQL does not report whether a row was inserted (use the [`onConflict` option](./upserts) to get a boolean).
 
+## Upgrading postgrelize: junction models with their own primary key
+
+Earlier postgrelize releases added both foreign keys of `belongsToMany` to the primary key of a junction model that declared its own one, so `instance.update()` of such a foreign key did nothing. The schema now matches v6: the declared primary key stays, and the foreign keys get a unique key and are nullable unless declared with `allowNull: false`. A junction model without a declared primary key still gets the composite key of the two foreign keys. If such a model declares the foreign key attributes itself, it had an `id` column as part of the key before; now it has none.
+
+`sync()` does not change the primary key of an existing table. For a table created by an earlier release, drop the old composite primary key and add the declared one and the unique key in a migration (check the constraint names with `showConstraint`).
+
 ## Intentional differences
 
 Some Sequelize v6 behaviours are bugs on PostgreSQL. postgrelize fixes them instead of copying them, for example:

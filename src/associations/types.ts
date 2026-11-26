@@ -100,6 +100,12 @@ export type ThroughOptions = Readonly<{
    * @defaultValue false
    */
   paranoid?: boolean;
+  /**
+   * Whether the two foreign keys get a unique key when they do not become the primary key (the
+   * junction model declares its own primary key, or has none). `false` allows repeated links.
+   * @defaultValue true
+   */
+  unique?: boolean;
 }>;
 
 /**
@@ -121,6 +127,11 @@ export type BelongsToManyOptions = AssociationOptions &
     through: string | ModelStatic<AnyModel> | ThroughOptions;
     /** Junction foreign key pointing at the target. Default: derived from the target model name. */
     otherKey?: string | ForeignKeyOptions;
+    /**
+     * Name of the unique key over the two foreign keys, see `through.unique`.
+     * @defaultValue `<junction table>_<foreignKey>_<otherKey>_unique`
+     */
+    uniqueKey?: string;
     /**
      * `timestamps` of a junction model created from a name.
      * @defaultValue the `define` default, else true
