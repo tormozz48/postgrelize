@@ -349,14 +349,6 @@
       "note": "order:[[\"data.name.first}'); ...\"]] is treated as a (bound) JSON path and returns rows; v6 throws.",
       "ref": "docs/sequelize-issues.md (#9040 order by a JSON path); docs/security.md (ADR-020)"
     },
-    "B-json-path-index": {
-      "cause": "bug",
-      "area": "json",
-      "note": "sequelize.json('col.arr[1]') and where: json('col[0].name', v) / json('col.0',v): array indexes in the path are turned into key names ('phones[1]'), giving null / 'column col[0] does not exist'.",
-      "risk": "wrong-result",
-      "repro": "U.findOne({attributes:[[Sequelize.json('ec.phones[1]'),'n']]}) // n is null; U.findOne({where:Sequelize.json('ec[0].name','joe')}) // error",
-      "test": "model json should be able to retrieve element of array by index"
-    },
     "B-literal-default-not-returned": {
       "cause": "bug",
       "area": "model",
@@ -2498,16 +2490,8 @@
       }
     },
     "test/integration/json.test.js": {
-      "failing": [
-        "model json should be able to query array using property accessor",
-        "model json should be able to retrieve element of array by index",
-        "model json should be able to retrieve nested value of an object by path",
-        "model json should use a placeholder for json with insert"
-      ],
+      "failing": ["model json should use a placeholder for json with insert"],
       "causes": {
-        "model json should be able to query array using property accessor": "B-json-path-index",
-        "model json should be able to retrieve element of array by index": "B-json-path-index",
-        "model json should be able to retrieve nested value of an object by path": "B-json-path-index",
         "model json should use a placeholder for json with insert": "B-logging-interpolated"
       }
     },
