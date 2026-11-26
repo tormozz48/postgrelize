@@ -66,9 +66,12 @@ export class ModelBase {
     return registry.state(this).definition.tableName;
   }
 
-  /** Normalized attributes keyed by attribute name. */
-  static get rawAttributes(): Readonly<Record<string, AttributeDefinition>> {
-    return Object.fromEntries(registry.state(this).definition.attributes);
+  /**
+   * Normalized attributes keyed by attribute name. Like Sequelize v6, entries added, changed or
+   * deleted here take effect after {@link Model.refreshAttributes} (or the next association).
+   */
+  static get rawAttributes(): Record<string, AttributeDefinition> {
+    return registry.rawAttributes(this);
   }
 
   /** First primary key attribute name. */
