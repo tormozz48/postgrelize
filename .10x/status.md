@@ -196,7 +196,9 @@ Spec `.10x/specs/2026-11-16-s13-constraints-indexes-design.md`, ADR-027.
 ## CHANGELOG.md (2026-11-21)
 - `CHANGELOG.md` (Keep a Changelog 1.1.0) covers all 13 tags v0.1.0 … v0.12.0 plus `[Unreleased]`, with a stages-and-releases table; published on the site at `/changelog`, shipped in the npm package, checked by `tests/docs/changelog.test.ts`; `release.yml` creates the GitHub Release from the matching section. Rule in AGENTS.md: every user-visible PR adds a line under `[Unreleased]`; the release PR moves it to the new version.
 
-## Release 1.9.5 (2026-11-26, in progress)
+## Release 1.9.5 (2026-11-26, released)
+
+Tag `v1.9.5` on merge commit `5722c96` (PR #196), release.yml run 45803363588: ci gate, npm publish with provenance, GitHub Packages mirror and GitHub Release all green. `npm view postgrelize` shows `1.9.5` (`latest`, visible about 4 minutes after the publish job); clean install imports in ESM (155 exports) and CJS (constructable `Sequelize`).
 
 Include parity with v6 (PR #195): separate includes, renamed fields in the sub-query form, `all` includes, aliases, invalid include elements, empty `attributes`, nested `bulkCreate` with `include` (behaviour change: no per-row `beforeCreate`/`afterCreate` in nested `bulkCreate`, as in v6). Bench gate not run.
 
