@@ -13,7 +13,7 @@ const SCHEMA = `
   INSERT INTO "Countries" (name, "ContinentId") VALUES ('England', 1), ('France', 1);
   INSERT INTO "Industries" (name) VALUES ('Coal'), ('Wine'), ('Tea');
   INSERT INTO "CountryIndustries" VALUES (1, 1, 30, now(), now()), (1, 3, 5, now(), now()), (2, 2, 50, now(), now());
-  INSERT INTO "People" (name, "CountryId", "HomeId") VALUES ('Bob', 1, 2);`;
+  INSERT INTO "People" (name, "CountryId", "HomeId") VALUES ('Bob', 1, 2), ('Bob', 1, 2), ('Bob', 2, 1);`;
 
 const defineModels = (lib: Lib, sequelize: Sequelize) => {
   const { DataTypes } = lib;
@@ -144,4 +144,48 @@ describe('compat: invalid include elements', () => {
       defineModels(lib, sequelize).Country.findAll({ include: [element] } as never),
     );
   });
+});
+
+describe('compat: include with empty attributes and added keys', () => {
+  it('selects the primary key so rows with equal attributes stay apart', () =>
+    run(({ Person, Country }) =>
+      Person.findAll({
+        attributes: ['name'],
+        include: [{ model: Country, attributes: ['name'] }] as never,
+        order: byId,
+      } as never),
+    ));
+
+  it('matches a separate include when the key is not in the attributes', () =>
+    run(({ Continent, Country }) =>
+      Continent.findAll({
+        attributes: ['name'],
+        include: [{ model: Country, separate: true }] as never,
+      } as never),
+    ));
+
+  it('leaves out a hasMany include with attributes: []', () =>
+    run(({ Continent, Country }) =>
+      Continent.findAll({ include: [{ model: Country, attributes: [] }] as never } as never),
+    ));
+
+  it('leaves out a belongsToMany include with attributes: []', () =>
+    run(({ Country, Industry }) =>
+      Country.findAll({
+        include: [
+          { model: Industry, attributes: [], through: { attributes: ['numYears'] } },
+        ] as never,
+        order: byId,
+      } as never),
+    ));
+
+  it('does not leak the key added for the sub-query joins', () =>
+    run(({ Country, Continent, Person }) =>
+      Country.findAll({
+        attributes: ['name'],
+        include: [Continent, Person] as never,
+        order: [['name', 'ASC']],
+        limit: 10,
+      } as never),
+    ));
 });

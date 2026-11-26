@@ -107,7 +107,7 @@ export class IncludeQueryBuilder {
     const filters = joined
       .filter((node) => node.required || (node.association.isMultiAssociation && hasRequired(node)))
       .map((node) => this.#subQuery.existsFilter(definition, alias, node));
-    const missing = this.#columns.missingKeys(definition, alias, base.columns, joined);
+    const missing = this.#missing(parts);
     return {
       ...base,
       columns: [...base.columns, ...missing],
@@ -118,13 +118,33 @@ export class IncludeQueryBuilder {
     };
   }
 
+  #missing(parts: Parts): readonly ExprNode[] {
+    const { definition, alias, base, joined } = parts;
+    return this.#columns.missingKeys(definition, alias, base.columns, joined);
+  }
+
+  // keys the sub-query selects only for the outer joins stay out of the result (v6)
+  #mainColumns(parts: Parts): readonly ExprNode[] {
+    const { alias, base } = parts;
+    if (this.#missing(parts).length === 0) {
+      return [{ kind: 'star', table: alias }];
+    }
+    return base.columns.flatMap<ExprNode>((column) =>
+      column.kind === 'ident'
+        ? [ast.ident(alias, column.path.at(-1) as string)]
+        : column.kind === 'alias'
+          ? [ast.ident(alias, column.alias)]
+          : [{ kind: 'star', table: alias } as const],
+    );
+  }
+
   #subQueryForm(parts: Parts, order: unknown): SelectNode {
     const { alias, base, joined } = parts;
     const outer = exposedDefinition(parts.definition);
     return {
       kind: 'select',
       columns: [
-        { kind: 'star', table: alias },
+        ...this.#mainColumns(parts),
         ...joined.flatMap((node) => this.#columns.columns(node)),
       ],
       from: { subquery: this.#innerSelect(parts), alias },

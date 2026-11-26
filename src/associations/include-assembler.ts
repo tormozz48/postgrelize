@@ -13,6 +13,10 @@ type Instance = AnyModel;
 type Values = Record<string, unknown>;
 type Group = Readonly<{ values: Values; rows: IncludeRow[] }>;
 
+// v6 leaves the property out of an include whose `attributes` is an empty list
+const hasNoColumns = (node: IncludeNode): boolean =>
+  Array.isArray(node.attributes) && node.attributes.length === 0;
+
 /** Groups joined result rows into instance trees (Sequelize v6 de-duplication by primary key). */
 export class IncludeAssembler {
   readonly #rows = new IncludeRows();
@@ -121,7 +125,7 @@ export class IncludeAssembler {
     build: InstanceBuilder,
   ): void {
     nodes
-      .filter((node) => !node.separate)
+      .filter((node) => !node.separate && !hasNoColumns(node))
       .forEach((node) => {
         const children = [...this.#groupNode(node, rows).values()].map((group) =>
           this.#child(node, group, build),

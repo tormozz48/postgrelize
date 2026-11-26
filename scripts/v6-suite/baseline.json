@@ -118,14 +118,6 @@
       "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
       "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
     },
-    "A-include-empty-attributes-key": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include with attributes:[] still sets an empty array (post.comments = []) on the instance; v6 omits the key.",
-      "risk": "cosmetic",
-      "repro": "P.findAll({attributes:[[fn('COUNT',col('comments.id')),'n']],include:[{association:A,attributes:[]}],group:['Post.id']}) then r[0].get('comments') // []",
-      "test": "Include findAll should ignore include with attributes: [] (used for aggregates)"
-    },
     "A-include-merge-same-model": {
       "cause": "bug",
       "area": "scope",
@@ -189,14 +181,6 @@
       "risk": "wrong-result",
       "repro": "F.scope('incBar','incBaz').findOne() // only baz",
       "test": "Model scope simple merge should merge simple scopes correctly"
-    },
-    "A-subquery-fk-leak": {
-      "cause": "bug",
-      "area": "include",
-      "note": "findAll with attributes:[..], limit and a belongsTo + hasMany include leaks the internally selected FK (product.UserId) into the result.",
-      "risk": "cosmetic",
-      "repro": "P.findAll({attributes:['title'],include:[{model:U},{model:Pr}],limit:10})[0].UserId // 1",
-      "test": "Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit"
     },
     "A-subquery-join-field-name": {
       "cause": "bug",
@@ -358,14 +342,6 @@
       "risk": "error",
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
-    },
-    "B-include-empty-attributes": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include with attributes:[] on hasMany/belongsToMany returns an empty array property (kingdom.Animals = []); v6 leaves the property out.",
-      "risk": "cosmetic",
-      "repro": "(await K.findAll({include:[{model:A,attributes:[]}]}))[0].Animals // [] , v6 undefined",
-      "test": "Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only"
     },
     "B-include-option-propagation": {
       "cause": "bug",
@@ -2549,15 +2525,9 @@
       "unstable": true,
       "pass": 34,
       "failing": [
-        "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)",
         "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
       ],
       "causes": {
-        "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit": "A-subquery-fk-leak",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)": "A-include-empty-attributes-key",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)": "A-include-empty-attributes-key",
         "[POSTGRES] Include findAll should support including date fields, with the correct timeszone": "A-date-number"
       }
     },
@@ -2819,8 +2789,6 @@
     },
     "test/integration/model/findAll.test.js": {
       "failing": [
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
         "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized",
@@ -2828,8 +2796,6 @@
         "[POSTGRES] Model rejectOnEmpty mode works from model options"
       ],
       "causes": {
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes": "B-include-empty-attributes",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only": "B-include-empty-attributes",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension",
         "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized": "B-rejectOnEmpty-findall",
