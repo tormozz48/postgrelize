@@ -94,14 +94,6 @@
       "repro": "(await T.findOne()).rawAttributes // undefined",
       "test": "BelongsToMany getAssociations gets all associated objects with all fields"
     },
-    "A-op-not-array": {
-      "cause": "bug",
-      "area": "where",
-      "note": "{[Op.not]: [..]} compiles to <> ARRAY[..] (and binds an array to an integer column) instead of NOT IN.",
-      "risk": "wrong-result",
-      "repro": "await T.findAll({where:{id:{[Op.not]:[1]}}}) // invalid input syntax for type integer",
-      "test": "BelongsToMany getAssociations supports a where not in"
-    },
     "A-primarykeyfield-missing": {
       "cause": "bug",
       "area": "model",
@@ -2074,8 +2066,6 @@
       "pass": 35,
       "failing": [
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key",
         "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
@@ -2087,8 +2077,6 @@
       ],
       "causes": {
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields": "A-instance-rawattributes",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in": "A-op-not-array",
-        "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key": "A-op-not-array",
         "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)": "A-btm-paired-otherkey",
         "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)": "A-btm-paired-otherkey",
