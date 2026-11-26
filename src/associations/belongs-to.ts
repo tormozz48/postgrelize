@@ -54,7 +54,7 @@ export class BelongsTo<
     options: AccessorOptions,
   ): Promise<Record<string, Instance | null>> {
     const keys = instances.map((instance) => instance.get(this.foreignKey));
-    const found = await this.target.findAll({
+    const found = await this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.targetKey]: { [Op.in]: keys } }),
     } as never);
@@ -72,7 +72,7 @@ export class BelongsTo<
     const value = instance.get(this.foreignKey);
     return value === null || value === undefined
       ? Promise.resolve(null)
-      : this.target.findOne({
+      : this.scopedTarget(options).findOne({
           ...options,
           where: this.andWhere(options.where, this.scope, { [this.targetKey]: value }),
         } as never);
