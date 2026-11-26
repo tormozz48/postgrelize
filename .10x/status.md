@@ -98,6 +98,10 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Release 1.9.11 (2026-11-26, released)
+
+Fix of a regression released in 1.9.7 to 1.9.10: after `update()` or `save({ fields })` on a versioned model the next `save` threw `OptimisticLockError` (#277). Tag `v1.9.11` on `c6c80e5` (PR #280), release.yml run 45900387216: all jobs green; `npm view postgrelize` shows `1.9.11` (`latest`) with provenance, clean install imports in ESM and CJS; bench gate run 45899137027 passed. Fix PRs #250 to #276 and their bookkeeping PR #278 are open, not released.
+
 ## Release 1.9.10 (2026-11-26, released)
 
 v6 suite baseline fixes: query-interface and index parity with v6. Changelog lines list the pull requests. Tag `v1.9.10` on `eef7614` (PR #248), release.yml run 45868227925: all jobs green; `npm view postgrelize` shows `1.9.10` (`latest`), clean install imports in ESM and CJS. Releases 1.9.6 to 1.9.10 closed 42 of the 116 `bug` causes of the v6 suite baseline; 74 stay open (log `.10x/reviews/2026-11-26-baseline-bug-fixing-log.md`).
