@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.5] - 2026-11-26
+
 ### Fixed
 
 - Separate includes match v6: a `hasMany` include with `limit` and no `separate` is loaded with its own query (the limit was ignored and every child returned); a `separate` include whose parent `attributes` leave out the source key, or whose own `attributes` leave out the foreign key, still finds its children (the key is selected for matching and the foreign key is not left in the result); a `separate` include nested in another `separate` include keeps its `order` and `limit`; the `logging` option reaches the queries of separate includes. Differential tests in `tests/compat/include-separate.test.ts`; ten entries leave the v6 suite baseline (`include` area: four causes gone, the other twelve causes of the area remain).
@@ -506,7 +508,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...HEAD
+[1.9.5]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...v1.9.3
 [1.9.2]: https://github.com/tormozz48/postgrelize/compare/v1.9.1...v1.9.2
