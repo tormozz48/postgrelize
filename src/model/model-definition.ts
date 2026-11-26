@@ -70,6 +70,8 @@ export type DefinitionOptions = ModelDefaults &
     /** Virtual setters by name (Sequelize v6). */
     // oxlint-disable-next-line typescript/no-explicit-any -- `this` is the model, as in v6
     setterMethods?: ModelSetterOptions<any>;
+    /** Default of the finder option of the same name. */
+    rejectOnEmpty?: boolean | Error | (new () => Error);
     /** Table name. Defaults to the pluralized model name. */
     tableName?: string;
     /** Separator between schema and table that `getTableName` reports (PostgreSQL always uses `.` in SQL). */

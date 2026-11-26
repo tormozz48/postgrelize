@@ -57,9 +57,10 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     /** Return a single row instead of an array (set internally by `findOne`).
      * @defaultValue false */
     plain?: boolean;
-    /** Throw `EmptyResultError` (or the given `Error`) when no row is found.
-     * @defaultValue false */
-    rejectOnEmpty?: boolean | Error;
+    /** Throw `EmptyResultError` (or the given error; an error class is instantiated) when no row
+     * is found.
+     * @defaultValue the model option, else false */
+    rejectOnEmpty?: boolean | Error | (new () => Error);
     /** For paranoid models: `false` includes soft-deleted rows.
      * @defaultValue true */
     paranoid?: boolean;

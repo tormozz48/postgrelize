@@ -379,14 +379,6 @@
       "repro": "sq.define('M',{x:{type:DataTypes.INTEGER,references:null}}); await sq.sync()",
       "test": "Model create include should create data for polymorphic BelongsToMany relations"
     },
-    "B-rejectOnEmpty-findall": {
-      "cause": "bug",
-      "area": "model",
-      "note": "rejectOnEmpty is ignored by findAll (query option and model option) and by findOne/findByPk when set only as a model option; only the per-query option on findOne/findByPk works. Also custom Error instances/classes are not thrown. Contradicts docs/guide/errors.md.",
-      "risk": "wrong-result",
-      "repro": "R=sq.define('r',{u:DataTypes.STRING},{rejectOnEmpty:true}); await R.findAll({where:{u:'z'}}) // [] ; await R.findOne({where:{u:'z'}}) // null",
-      "test": "Model rejectOnEmpty mode works from model options"
-    },
     "B-schema-clone-include": {
       "cause": "bug",
       "area": "associations",
@@ -2613,16 +2605,12 @@
       "failing": [
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance",
-        "[POSTGRES] Model rejectOnEmpty mode works from model options"
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance"
       ],
       "causes": {
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized": "B-rejectOnEmpty-findall",
-        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance": "B-rejectOnEmpty-findall",
-        "[POSTGRES] Model rejectOnEmpty mode works from model options": "B-rejectOnEmpty-findall"
+        "[POSTGRES] Model rejectOnEmpty mode throws custom error with instance": "D-error-ctor-no-args"
       }
     },
     "test/integration/model/findAll/groupedLimit.test.js": {

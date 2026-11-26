@@ -50,7 +50,7 @@ export class FindOperation extends FindLookups {
    */
   async findAll<M extends AnyModel>(model: ModelStatic<M>, options: FindOptions): Promise<M[]> {
     const { definition, runtime } = this.services.registry.state(model);
-    const { finds, lifecycle } = this.services;
+    const { finds } = this.services;
     const opts: MutableOptions = { hooks: true, ...this.services.registry.scoped(model, options) };
     await this.#beforeFind(model, opts);
     const call = this.#call(model, opts);
@@ -58,16 +58,17 @@ export class FindOperation extends FindLookups {
     const select = finds.build(definition, call.query, call.includes, threshold);
     const rows = await this.#rows(select, call, runtime.minifyAliases === true);
     const found = await this.#found(call, rows);
-    if (opts['hooks'] === true) {
-      // like v6, `findOne` (`plain`) hands the instance, not an array, to the hooks
-      await lifecycle.runHooks(
-        model,
-        'afterFind',
-        opts['plain'] === true ? (found[0] ?? null) : found,
-        opts,
-      );
-    }
+    await this.#afterFind(model, opts, found);
+    this.rejectEmpty(model, opts, found);
     return found as M[];
+  }
+
+  // like v6, `findOne` (`plain`) hands the instance, not an array, to the hooks
+  async #afterFind(model: object, opts: MutableOptions, found: AnyModel[]): Promise<void> {
+    if (opts['hooks'] === true) {
+      const result = opts['plain'] === true ? (found[0] ?? null) : found;
+      await this.services.lifecycle.runHooks(model, 'afterFind', result, opts);
+    }
   }
 
   async #rows(select: SelectNode, call: FindCall, minify: boolean): Promise<QueryResult['rows']> {
