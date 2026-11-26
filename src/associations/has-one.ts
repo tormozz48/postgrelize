@@ -47,7 +47,7 @@ export class HasOne<
     if (Array.isArray(instance)) {
       return this.#getMany(instance as readonly Instance[], options);
     }
-    return this.target.findOne({
+    return this.scopedTarget(options).findOne({
       ...options,
       where: this.andWhere(options.where, this.scope, {
         [this.foreignKey]: (instance as Instance).get(this.sourceKey),
@@ -60,7 +60,7 @@ export class HasOne<
     options: AccessorOptions,
   ): Promise<Record<string, Instance | null>> {
     const values = instances.map((instance) => instance.get(this.sourceKey));
-    const found = await this.target.findAll({
+    const found = await this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.foreignKey]: { [Op.in]: values } }),
     } as never);

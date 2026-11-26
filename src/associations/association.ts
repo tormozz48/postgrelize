@@ -137,6 +137,24 @@ export abstract class Association<
   }
 
   /**
+   * Target model of a read: the `scope` accessor option names scopes to apply instead of the
+   * default scope, or removes it when falsy (Sequelize v6).
+   *
+   * @param options - Accessor options.
+   * @returns Target model, scoped accordingly.
+   * @internal
+   */
+  protected scopedTarget(options: AccessorOptions): ModelStatic<T> {
+    if (!Object.hasOwn(options, 'scope')) {
+      return this.target;
+    }
+    const scope = options['scope'] as string | readonly string[] | boolean | undefined;
+    return typeof scope === 'string' || Array.isArray(scope)
+      ? this.target.scope(scope as string | string[])
+      : this.target.unscoped();
+  }
+
+  /**
    * Values of an array-or-single argument as a list.
    *
    * @param value - One value, a list, `null` or `undefined`.

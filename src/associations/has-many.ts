@@ -51,7 +51,7 @@ export class HasMany<
     if (Array.isArray(instance)) {
       return this.#getMany(instance as readonly Instance[], options);
     }
-    return this.target.findAll({
+    return this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, this.#own(instance as Instance)),
     } as never);
@@ -62,7 +62,7 @@ export class HasMany<
     options: AccessorOptions,
   ): Promise<Record<string, Instance[]>> {
     const values = instances.map((instance) => instance.get(this.sourceKey));
-    const found = await this.target.findAll({
+    const found = await this.scopedTarget(options).findAll({
       ...options,
       where: this.andWhere(options.where, this.scope, { [this.foreignKey]: { [Op.in]: values } }),
     } as never);
@@ -84,7 +84,7 @@ export class HasMany<
    * @returns Number of associated rows.
    */
   count(instance: Instance, options: AccessorOptions = {}): Promise<number> {
-    return this.target.count({
+    return this.scopedTarget(options).count({
       ...options,
       where: this.andWhere(options.where, this.scope, this.#own(instance)),
     } as CountOptions);

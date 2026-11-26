@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Association getters and counters (`getX`, `countXs`) honour the `scope` option like v6: `false` removes the default scope of the target, a name (or list of names) replaces it. Differential test in `tests/compat/association-getter-scope.test.ts`; eight v6 suite baseline entries and the cause `A-getter-scope-option` are gone. ([#198](https://github.com/tormozz48/postgrelize/pull/198))
+
 ## [1.9.5] - 2026-11-26
 
 ### Fixed

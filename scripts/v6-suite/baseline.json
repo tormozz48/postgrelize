@@ -81,14 +81,6 @@
       "repro": "P.belongsTo(U,{foreignKey:P.rawAttributes.user_id}); P.rawAttributes.user_id.references // undefined",
       "test": "BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object"
     },
-    "A-getter-scope-option": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Association getters ignore the scope option: getX({scope:false}) does not unscope and getX({scope:\"name\"}) does not apply the named scope.",
-      "risk": "wrong-result",
-      "repro": "await u.getCompany({scope:false}) // null although row exists (default scope applied)",
-      "test": "Model scope associations get it should be able to unscope hasOne"
-    },
     "A-group-nested-array": {
       "cause": "bug",
       "area": "query",
@@ -2889,14 +2881,6 @@
       "unstable": true,
       "pass": 7,
       "failing": [
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsTo",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsToMany",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasMany",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasOne",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsTo",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsToMany",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasMany",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasOne",
         "[POSTGRES] Model scope associations include should be able to include a scoped model",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly",
@@ -2904,14 +2888,6 @@
         "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly"
       ],
       "causes": {
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsTo": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsToMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasOne": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsTo": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsToMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasOne": "A-getter-scope-option",
         "[POSTGRES] Model scope associations include should be able to include a scoped model": "A-hasmany-write-applies-default-scope",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name",
