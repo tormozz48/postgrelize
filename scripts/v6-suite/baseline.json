@@ -2605,7 +2605,6 @@
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
         "[POSTGRES] Sequelize define adds a new dao to the dao manager",
-        "[POSTGRES] Sequelize define enum doesn't save an instance if value is not in the range of enums",
         "[POSTGRES] Sequelize define raises an error if no values are defined",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
