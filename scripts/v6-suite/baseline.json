@@ -9,22 +9,6 @@
       "repro": "U.aggregate('u.id','count',{include:[{model:C,where:{p:1}}],includeIgnoreAttributes:false,plain:true}) // 2, v6 1",
       "test": "Model scope aggregate should be able to use where on include"
     },
-    "A-association-get-limit": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "association.get(instances, {limit, order}) applies the limit globally/incorrectly: v6 returns up to limit rows per source instance, postgrelize returns 1 each.",
-      "risk": "wrong-result",
-      "repro": "await A.get([u1,u2],{limit:2,order:[['title','ASC']]}) // 1 task per user, expected 2",
-      "test": "HasMany get multiple should fetch associations for multiple instances with limit and order"
-    },
-    "A-btm-add-existing-no-update": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "add/setX on an existing through row with new through attributes does not update the row (and so never inside a transaction); the later after-each failure is a left-open transaction.",
-      "risk": "wrong-result",
-      "repro": "await t.addU(u,{through:{status:'pending'}}); await t.addU(u,{through:{status:'completed'}}); (await u.getTs())[0].UT.status // pending",
-      "test": "BelongsToMany addAssociations supports transactions when updating a through model"
-    },
     "A-btm-identifier-props": {
       "cause": "bug",
       "area": "associations",
@@ -40,22 +24,6 @@
       "risk": "error",
       "repro": "U.belongsToMany(G,{through:UG,foreignKey:'id_user'});G.belongsToMany(U,{through:UG,foreignKey:'id_group'}); await u.addGroup(g) // null value in column id_group",
       "test": "BelongsToMany getAssociations supports custom primary keys and foreign keys"
-    },
-    "A-btm-timestamps-option": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "belongsToMany option timestamps:false is not applied to the auto-created through model (createdAt/updatedAt columns still added).",
-      "risk": "wrong-result",
-      "repro": "A.belongsToMany(B,{through:'AB',timestamps:false}); Object.keys(s.models.AB.rawAttributes) // includes createdAt, updatedAt",
-      "test": "BelongsTo foreign key should set foreignKey on foreign table"
-    },
-    "A-datatype-instanceof": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "DataTypes.X are not constructors/classes: attr.type instanceof DataTypes.STRING is false for every attribute, even new DataTypes.STRING() instanceof DataTypes.STRING.",
-      "risk": "wrong-result",
-      "repro": "define('K',{n:DataTypes.STRING}).rawAttributes.n.type instanceof DataTypes.STRING // false",
-      "test": "BelongsTo association options can specify data type for auto-generated relational keys"
     },
     "A-date-number": {
       "cause": "bug",
@@ -73,22 +41,6 @@
       "repro": "A.belongsToMany(L,{through:T1}); A.belongsToMany(L,{through:T2}) // throws",
       "test": "BelongsToMany hasAssociations answers true for labels that have been assigned multitple times"
     },
-    "A-fk-existing-attribute-not-merged": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "foreignKey given as an already-defined attribute (object or {allowNull} merged with an existing attribute) does not get references/onDelete/onUpdate or allowNull merged: no FK constraint is created.",
-      "risk": "wrong-result",
-      "repro": "P.belongsTo(U,{foreignKey:P.rawAttributes.user_id}); P.rawAttributes.user_id.references // undefined",
-      "test": "BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object"
-    },
-    "A-getter-scope-option": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "Association getters ignore the scope option: getX({scope:false}) does not unscope and getX({scope:\"name\"}) does not apply the named scope.",
-      "risk": "wrong-result",
-      "repro": "await u.getCompany({scope:false}) // null although row exists (default scope applied)",
-      "test": "Model scope associations get it should be able to unscope hasOne"
-    },
     "A-group-nested-array": {
       "cause": "bug",
       "area": "query",
@@ -101,14 +53,6 @@
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls private queryInterface.queryGenerator.addSchema."
-    },
-    "A-hasmany-write-applies-default-scope": {
-      "cause": "bug",
-      "area": "scope",
-      "note": "hasMany/belongsToMany set/add apply the target default scope to the UPDATE/lookup, so rows outside the default scope are silently not (un)linked. Hit by the scope test fixtures (c1.setUsers); the include-scoped-model failure is a consequence.",
-      "risk": "wrong-result",
-      "repro": "U defaultScope lvl>=5; await c.setUsers([u(lvl5),u(lvl3),u(lvl1)]); (await c.getUsers({scope:false})).length // 1, v6 3",
-      "test": "Model scope associations include should be able to include a scoped model"
     },
     "A-hasone-hasmany-cascade-default": {
       "cause": "bug",
@@ -2227,8 +2171,6 @@
       "unstable": true,
       "pass": 35,
       "failing": [
-        "\"after each\" hook for \"supports transactions when updating a through model\"",
-        "[POSTGRES] BelongsToMany addAssociations supports transactions when updating a through model",
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key",
@@ -2242,8 +2184,6 @@
         "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object"
       ],
       "causes": {
-        "\"after each\" hook for \"supports transactions when updating a through model\"": "A-btm-add-existing-no-update",
-        "[POSTGRES] BelongsToMany addAssociations supports transactions when updating a through model": "A-btm-add-existing-no-update",
         "[POSTGRES] BelongsToMany getAssociations gets all associated objects with all fields": "A-instance-rawattributes",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in": "A-op-not-array",
         "[POSTGRES] BelongsToMany getAssociations supports a where not in on the primary key": "A-op-not-array",
@@ -2259,50 +2199,36 @@
     },
     "test/integration/associations/belongs-to.test.js": {
       "failing": [
-        "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates",
-        "[POSTGRES] BelongsTo foreign key constraints can restrict updates",
-        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
+        "[POSTGRES] BelongsTo foreign key constraints can restrict updates"
       ],
       "causes": {
-        "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type": "A-datatype-instanceof",
-        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys": "A-datatype-instanceof",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table": "A-btm-timestamps-option"
+        "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/has-many.test.js": {
       "failing": [
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasMany Association options can specify data type for auto-generated relational keys",
-        "[POSTGRES] HasMany Association options infers the keyType if none provided",
         "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query",
         "[POSTGRES] HasMany count should not fail due to ambiguous field",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation"
+        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false"
       ],
       "causes": {
-        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasMany Association options can specify data type for auto-generated relational keys": "A-datatype-instanceof",
-        "[POSTGRES] HasMany Association options infers the keyType if none provided": "A-datatype-instanceof",
         "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query": "A-group-nested-array",
         "[POSTGRES] HasMany count should not fail due to ambiguous field": "A-primarykeyfield-missing",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order": "A-association-get-limit",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation": "A-association-get-limit"
+        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
       }
     },
     "test/integration/associations/has-one.test.js": {
@@ -2310,18 +2236,14 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys",
-        "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type",
         "[POSTGRES] HasOne foreign key constraints can cascade updates",
         "[POSTGRES] HasOne foreign key constraints can restrict updates",
         "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false"
       ],
       "causes": {
-        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-fk-existing-attribute-not-merged",
-        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-references-model-object",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys": "A-datatype-instanceof",
-        "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type": "A-datatype-instanceof",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
@@ -2889,30 +2811,12 @@
       "unstable": true,
       "pass": 7,
       "failing": [
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsTo",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsToMany",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasMany",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasOne",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsTo",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsToMany",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasMany",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasOne",
-        "[POSTGRES] Model scope associations include should be able to include a scoped model",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly",
         "[POSTGRES] Model scope associations scope with includes with different format should not throw error",
         "[POSTGRES] Model scope associations scope with includes with find options should merge includes correctly"
       ],
       "causes": {
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsTo": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope belongsToMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to apply another scope hasOne": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsTo": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope belongsToMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasMany": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations get it should be able to unscope hasOne": "A-getter-scope-option",
-        "[POSTGRES] Model scope associations include should be able to include a scoped model": "A-hasmany-write-applies-default-scope",
         "[POSTGRES] Model scope associations scope with includes should apply scope conditions": "A-scope-fn-by-name",
         "[POSTGRES] Model scope associations scope with includes should scope columns properly": "A-scope-fn-by-name",
         "[POSTGRES] Model scope associations scope with includes with different format should not throw error": "A-include-merge-same-model",
