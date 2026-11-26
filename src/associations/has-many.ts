@@ -102,11 +102,15 @@ export class HasMany<
    * @param options - Count options.
    * @returns Number of associated rows.
    */
-  count(instance: Instance, options: AccessorOptions = {}): Promise<number> {
-    return this.scopedTarget(options).count({
+  async count(instance: Instance, options: AccessorOptions = {}): Promise<number> {
+    const counted: unknown = await this.scopedTarget(options).count({
       ...options,
       where: this.andWhere(options.where, this.scope, this.#own(instance)),
     } as CountOptions);
+    // like v6, with `group` the count of the first group is reported
+    return Array.isArray(counted)
+      ? Number((counted[0] as Readonly<{ count?: unknown }> | undefined)?.count ?? 0)
+      : (counted as number);
   }
 
   /**
