@@ -5,6 +5,8 @@ import { InstanceState } from './instance-state.ts';
 import { InstanceWriter, type SaveContext } from './instance-writer.ts';
 import type { AnyModel, SaveOptions, Values } from './options.ts';
 
+type Snapshot = Readonly<{ values: Values; ignored: ReadonlySet<string> }>;
+
 /**
  * `instance.save()`: validation, `beforeCreate` / `beforeUpdate` hooks (with re-validation of
  * attributes the hooks changed), the INSERT or UPDATE, then the `after` hooks.
@@ -143,7 +145,7 @@ export class InstanceSaver {
     if (opts['hooks'] !== true) {
       return fields;
     }
-    const before = this.#changed(context);
+    const before = this.#snapshot(instance, context, fields);
     await this.#hook(instance, context, 'beforeCreate', 'beforeUpdate');
     if (context.explicitFields !== undefined || context.isNew) {
       return fields;
@@ -151,20 +153,33 @@ export class InstanceSaver {
     return this.#addChanged(instance, context, fields, before);
   }
 
-  /** Adds attributes changed by `beforeUpdate` hooks to the saved fields, validating them. */
+  // values of the fields to save, and the changed attributes left out of them
+  #snapshot(instance: AnyModel, context: SaveContext, fields: readonly string[]): Snapshot {
+    const values = instance.dataValues as Values;
+    return {
+      values: Object.fromEntries(fields.map((name) => [name, values[name]])),
+      ignored: new Set(this.#changed(context).filter((name) => !fields.includes(name))),
+    };
+  }
+
+  /** Adds attributes `beforeUpdate` hooks gave a new value to the saved fields, validating them. */
   async #addChanged(
     instance: AnyModel,
     context: SaveContext,
     fields: readonly string[],
-    before: readonly string[],
+    before: Snapshot,
   ): Promise<readonly string[]> {
-    const added = this.#changed(context).filter((name) => !before.includes(name));
+    const values = instance.dataValues as Values;
+    const changed = this.#changed(context).filter(
+      (name) => !before.ignored.has(name) && values[name] !== before.values[name],
+    );
+    // like v6, validation (and its hooks) runs again even when the hooks changed nothing
     if (context.opts['validate'] === true) {
       await instance.validate({
         hooks: context.opts['hooks'] === true,
-        skip: this.#attributes(context).filter((name) => !added.includes(name)),
+        skip: this.#attributes(context).filter((name) => !changed.includes(name)),
       });
     }
-    return [...fields, ...added];
+    return [...new Set([...fields, ...changed])];
   }
 }
