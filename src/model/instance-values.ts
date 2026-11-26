@@ -1,12 +1,14 @@
 import { SqlExpression } from '../expressions/methods.ts';
 import { InstanceState } from './instance-state.ts';
 import { MethodLookup } from './method-lookup.ts';
+import { NestedJson } from './nested-json.ts';
 import type { ModelRegistry } from './model-registry.ts';
 import type { ModelDefinition } from './model-definition.ts';
 import type { ModelValues } from './model-values.ts';
 import type { AnyModel, Values } from './options.ts';
 
 const methods = new MethodLookup();
+const nested = new NestedJson();
 
 /** Tells model instances apart from plain values (injected to avoid importing `Model`). */
 export type InstanceCheck = (value: unknown) => value is AnyModel;
@@ -133,7 +135,7 @@ export class InstanceValues {
     const definition = this.#registry.definition(instance.constructor);
     const setter = methods.setter(definition, key);
     if (setter === undefined && !definition.attributes.has(key)) {
-      return;
+      return this.#setNested(instance, definition, key, value);
     }
     const values = instance.dataValues as Values;
     const original = values[key];
@@ -143,6 +145,20 @@ export class InstanceValues {
     } else if (!this.#readOnly(instance, definition, key, original)) {
       this.#track(instance, key, original, value);
       values[key] = value;
+    }
+  }
+
+  // `set('meta.city', value)` writes into the JSON attribute `meta`
+  #setNested(instance: AnyModel, definition: ModelDefinition, key: string, value: unknown): void {
+    const path = key.split('.');
+    const [name = ''] = path;
+    const isEqual = (left: unknown, right: unknown) => this.#values.isEqual(left, right);
+    if (
+      path.length > 1 &&
+      definition.attributes.get(name)?.type.isJson === true &&
+      nested.write(instance.dataValues as Values, path, value, isEqual)
+    ) {
+      InstanceState.of(instance).mark(name, true);
     }
   }
 
