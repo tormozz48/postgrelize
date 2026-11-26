@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
-- `reload()` marks the instance as loaded by a query like v6, so `get()` and `toJSON()` no longer list the virtual `getterMethods` after a reload and a reloaded instance deep-equals the same row from a finder. Differential test in `tests/compat/reload-queried.test.ts`. (PRLINK)
+- `reload()` marks the instance as loaded by a query like v6, so `get()` and `toJSON()` no longer list the virtual `getterMethods` after a reload and a reloaded instance deep-equals the same row from a finder. Differential test in `tests/compat/reload-queried.test.ts`. ([#288](https://github.com/tormozz48/postgrelize/pull/288))
 
 ## [1.9.13] - 2026-11-27
 
