@@ -130,3 +130,18 @@ describe('compat: include attributes, aliases and through order', () => {
       } as never),
     ));
 });
+
+describe('compat: invalid include elements', () => {
+  const cases: readonly [string, unknown][] = [
+    ['a number', 1],
+    ['null', null],
+    ['model: null', { model: null }],
+    ['association: null', { association: null }],
+    ['an empty object', {}],
+  ];
+  it.each(cases)('rejects %s', async (_name, element) => {
+    await expectSameError(SCHEMA, async (lib, sequelize) =>
+      defineModels(lib, sequelize).Country.findAll({ include: [element] } as never),
+    );
+  });
+});

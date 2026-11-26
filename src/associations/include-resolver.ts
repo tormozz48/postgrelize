@@ -38,14 +38,27 @@ const isModel = (value: unknown): value is Model => typeof value === 'function';
 
 const isAssociation = (value: object): value is Association => 'associationType' in value;
 
-const toOptions = (item: Model | string | IncludeOptions): IncludeOptions =>
-  isModel(item)
-    ? { model: item }
-    : typeof item === 'string'
-      ? { association: item }
-      : isAssociation(item)
-        ? { association: item }
-        : item;
+const UNEXPECTED_INCLUDE =
+  'Include unexpected. Element has to be either a Model, an Association or an object.';
+
+const toOptions = (item: unknown): IncludeOptions => {
+  if (isModel(item)) {
+    return { model: item };
+  }
+  if (typeof item === 'string' && item !== '') {
+    return { association: item };
+  }
+  if (typeof item === 'object' && item !== null) {
+    if (isAssociation(item)) {
+      return { association: item };
+    }
+    const options = item as IncludeOptions;
+    if (options.association || options.model || options.all) {
+      return options;
+    }
+  }
+  throw new Error(UNEXPECTED_INCLUDE);
+};
 
 /**
  * Normalizes the `include` option into an include tree: resolves associations by model, alias or

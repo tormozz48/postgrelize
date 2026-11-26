@@ -367,14 +367,6 @@
       "repro": "(await K.findAll({include:[{model:A,attributes:[]}]}))[0].Animals // [] , v6 undefined",
       "test": "Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only"
     },
-    "B-include-non-object-message": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include:[1] throws \"Cannot use 'in' operator...\" instead of v6's 'Include unexpected. Element has to be either a Model, an Association or an object.'",
-      "risk": "wording",
-      "repro": "await U.findAll({include:[1]})",
-      "test": "Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object"
-    },
     "B-include-option-propagation": {
       "cause": "bug",
       "area": "include",
@@ -1108,9 +1100,9 @@
     "D-include-invalid-element": {
       "cause": "bug",
       "area": "include",
-      "note": "Invalid include elements (model:null, association:null, null, number) raise raw TypeErrors or 'Model is not initialized' instead of v6 'Include unexpected. Element has to be either a Model, an Association or an object.'",
-      "risk": "wording",
-      "repro": "U.findAll({include:[{association:null}]})",
+      "note": "Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose.",
+      "risk": "cosmetic",
+      "repro": "Sequelize.Model._conformIncludes({include:[{model:null}]}, Company) // TypeError: not a function",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
     },
     "D-index-options-ignored": {
@@ -2827,7 +2819,6 @@
     },
     "test/integration/model/findAll.test.js": {
       "failing": [
-        "[POSTGRES] Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
@@ -2837,7 +2828,6 @@
         "[POSTGRES] Model rejectOnEmpty mode works from model options"
       ],
       "causes": {
-        "[POSTGRES] Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object": "B-include-non-object-message",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes": "B-include-empty-attributes",
         "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only": "B-include-empty-attributes",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
