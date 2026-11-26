@@ -63,11 +63,11 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
    */
   async update<M extends AnyModel>(
     model: ModelStatic<M>,
-    given: Values,
-    options: UpdateOptions,
+    given: Values = {},
+    // like v6, a missing argument is reported as a missing `where`
+    options: UpdateOptions = {} as UpdateOptions,
   ): Promise<UpdateResult<M>> {
-    // like v6, values outside an explicit `fields` list are dropped before anything else
-    const values = UpdateOperation.#listed(given, options.fields);
+    const values = this.#given(model, given, options.fields);
     const opts: MutableOptions = {
       validate: true,
       hooks: true,
@@ -106,10 +106,24 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     }
   }
 
-  static #listed(values: Values, fields: readonly string[] | undefined): Values {
-    return fields === undefined
-      ? values
-      : Object.fromEntries(Object.entries(values).filter(([name]) => fields.includes(name)));
+  // like v6, `undefined` values, keys that are no attribute and values outside an explicit `fields`
+  // list are dropped before anything else
+  #given(model: object, values: Values, fields: readonly string[] | undefined): Values {
+    const { attributes } = this.services.registry.state(model).definition;
+    return Object.fromEntries(
+      Object.entries(values).filter(
+        ([name, value]) =>
+          value !== undefined && attributes.has(name) && (fields?.includes(name) ?? true),
+      ),
+    );
+  }
+
+  // nothing but the stamped `updatedAt` to write: v6 sends no query and reports 0 rows
+  static #nothing({ state, opts }: UpdateCall): boolean {
+    const { attributes, updatedAt } = state.definition;
+    return Object.keys(opts['attributes'] as Values).every(
+      (name) => name === updatedAt || attributes.get(name)?.type.isVirtual === true,
+    );
   }
 
   async #validated(
@@ -246,6 +260,9 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
   }
 
   async #execute(call: UpdateCall): Promise<UpdateRows> {
+    if (UpdateOperation.#nothing(call)) {
+      return { count: 0, rows: [] };
+    }
     const { definition, runtime } = call.state;
     const { returningOld, compiler, written } = this.services;
     const old = await returningOld.enabled(runtime, call.options);
