@@ -455,11 +455,6 @@
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
     },
     {
-      "name": "ModelGetterOptions",
-      "category": "tracked",
-      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
-    },
-    {
       "name": "ModelIndexesOptions",
       "category": "not-planned",
       "note": "v6 QueryInterface / query option interface; postgrelize types these options inline (use the method parameter types)"
@@ -471,11 +466,6 @@
     },
     {
       "name": "ModelScopeOptions",
-      "category": "tracked",
-      "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
-    },
-    {
-      "name": "ModelSetterOptions",
       "category": "tracked",
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
     },
@@ -1070,16 +1060,6 @@
         "name": "initialAutoIncrement",
         "category": "other-dialect",
         "note": "MySQL only"
-      },
-      {
-        "name": "setterMethods",
-        "category": "not-planned",
-        "note": "v6 deprecated setterMethods are not supported (use class setters)"
-      },
-      {
-        "name": "getterMethods",
-        "category": "not-planned",
-        "note": "v6 deprecated getterMethods are not supported (use class getters)"
       }
     ],
     "IncrementDecrementOptions": [

@@ -1,3 +1,4 @@
+import type { ModelGetterOptions, ModelSetterOptions } from './method-options.ts';
 import type { ModelDefaults } from '../connection/options.ts';
 import type { DataTypeInput } from '../data-types/data-types.ts';
 import type { IndexOptions } from '../ddl/ddl-generator.ts';
@@ -63,6 +64,12 @@ export type DefinitionOptions = ModelDefaults &
      * A missing form falls back to the inflection of `modelName`.
      */
     name?: ModelNameOptions;
+    /** Virtual getters by name (Sequelize v6). */
+    // oxlint-disable-next-line typescript/no-explicit-any -- `this` is the model, as in v6
+    getterMethods?: ModelGetterOptions<any>;
+    /** Virtual setters by name (Sequelize v6). */
+    // oxlint-disable-next-line typescript/no-explicit-any -- `this` is the model, as in v6
+    setterMethods?: ModelSetterOptions<any>;
     /** Table name. Defaults to the pluralized model name. */
     tableName?: string;
     /** Separator between schema and table that `getTableName` reports (PostgreSQL always uses `.` in SQL). */

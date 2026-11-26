@@ -83,6 +83,7 @@ export type {
   UpsertOptions,
   Values,
 } from './model/options.ts';
+export type { ModelGetterOptions, ModelSetterOptions } from './model/method-options.ts';
 export type {
   AttributeDefinition,
   AttributeOptions,

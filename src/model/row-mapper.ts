@@ -1,3 +1,4 @@
+import { InstanceState } from './instance-state.ts';
 import type { QueryResultRow } from 'pg';
 import type { AttributeDefinition, ModelDefinition } from './model-definition.ts';
 import type { ModelRegistry } from './model-registry.ts';
@@ -163,7 +164,18 @@ export class RowMapper {
    * @returns Instance with `isNewRecord: false`.
    */
   instance<M extends AnyModel>(model: ModelStatic<M>, row: Readonly<Record<string, unknown>>): M {
-    return new model(this.parseModel(model, row), { isNewRecord: false, raw: true });
+    return this.queried(new model(this.parseModel(model, row), { isNewRecord: false, raw: true }));
+  }
+
+  /**
+   * Marks an instance as built from a query row.
+   *
+   * @param instance - Instance.
+   * @returns The instance.
+   */
+  queried<M extends AnyModel>(instance: M): M {
+    InstanceState.of(instance).queried = true;
+    return instance;
   }
 
   /**

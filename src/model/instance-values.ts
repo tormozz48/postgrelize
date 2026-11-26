@@ -1,8 +1,11 @@
 import { SqlExpression } from '../expressions/methods.ts';
 import { InstanceState } from './instance-state.ts';
+import { MethodLookup } from './method-lookup.ts';
 import type { ModelRegistry } from './model-registry.ts';
 import type { ModelValues } from './model-values.ts';
 import type { AnyModel, Values } from './options.ts';
+
+const methods = new MethodLookup();
 
 /** Tells model instances apart from plain values (injected to avoid importing `Model`). */
 export type InstanceCheck = (value: unknown) => value is AnyModel;
@@ -83,23 +86,28 @@ export class InstanceValues {
   }
 
   #getOne(instance: AnyModel, key: string, options: SetOptions): unknown {
-    const getter = this.#registry.definition(instance.constructor).attributes.get(key)?.get;
+    const getter = methods.getter(this.#registry.definition(instance.constructor), key);
     return getter !== undefined && options.raw !== true
-      ? (getter as (this: unknown) => unknown).call(instance)
+      ? getter.call(instance, key, options)
       : (instance.dataValues as Values)[key];
   }
 
   #getAll(instance: AnyModel, options: GetOptions | number | symbol | undefined): Values {
     const raw = typeof options === 'object' && options.raw === true;
     const plain = typeof options === 'object' && options.plain === true;
+    const passed = typeof options === 'object' ? options : {};
+    const definition = this.#registry.definition(instance.constructor);
     const keys = new Set([
-      ...(raw ? [] : this.#getterKeys(instance)),
+      ...(raw ? [] : methods.getterNames(definition, InstanceState.of(instance).queried)),
       ...Object.keys(instance.dataValues),
     ]);
     return Object.fromEntries(
       [...keys].map((key) => [
         key,
-        this.#plain(raw ? (instance.dataValues as Values)[key] : instance.get(key), plain),
+        this.#plain(
+          raw ? (instance.dataValues as Values)[key] : this.#getOne(instance, key, passed),
+          plain,
+        ),
       ]),
     );
   }
@@ -116,26 +124,20 @@ export class InstanceValues {
       : value;
   }
 
-  /** v6 `get()` lists every attribute with a custom getter, also those without a stored value (VIRTUAL). */
-  #getterKeys(instance: AnyModel): string[] {
-    return [...this.#registry.definition(instance.constructor).attributes]
-      .filter(([, attribute]) => attribute.get !== undefined)
-      .map(([name]) => name);
-  }
-
   #setOne(instance: AnyModel, key: string, value: unknown, options: SetOptions): void {
     if (options.raw === true) {
       (instance.dataValues as Values)[key] = value;
       return;
     }
-    const attribute = this.#registry.definition(instance.constructor).attributes.get(key);
-    if (attribute === undefined) {
+    const definition = this.#registry.definition(instance.constructor);
+    const setter = methods.setter(definition, key);
+    if (setter === undefined && !definition.attributes.has(key)) {
       return;
     }
     const values = instance.dataValues as Values;
     const original = values[key];
-    if (attribute.set !== undefined) {
-      (attribute.set as (this: unknown, value: unknown) => void).call(instance, value);
+    if (setter !== undefined) {
+      setter.call(instance, value, key);
       this.#track(instance, key, original, values[key]);
       return;
     }

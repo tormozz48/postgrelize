@@ -184,7 +184,8 @@ export class FindOperation extends FindLookups {
       includes,
       rows,
       (row: Row) => this.services.rows.parse(definition, row),
-      (target, values) => new target(values, { isNewRecord: false, raw: true }),
+      (target, values) =>
+        this.services.rows.queried(new target(values, { isNewRecord: false, raw: true })),
     ) as AnyModel[];
     return this.#markLoaded(found, includes);
   }
