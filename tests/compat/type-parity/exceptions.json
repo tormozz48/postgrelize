@@ -1106,11 +1106,6 @@
         "name": "instance",
         "category": "internal",
         "note": "v6 internal: instance the query result is merged into"
-      },
-      {
-        "name": "fieldMap",
-        "category": "internal",
-        "note": "v6 internal column to attribute map"
       }
     ],
     "InstanceUpdateOptions": [
