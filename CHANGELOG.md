@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.7] - 2026-11-26
+
 ### Fixed
 
 - The `getterMethods` and `setterMethods` model options work like in v6: virtual getters run on `instance.name`, `get()` and `toJSON()` (instances loaded by a query do not list them), virtual setters run on `build` and `set`, attribute getters and setters take precedence, and getters receive `(key, options)`. The types `ModelGetterOptions` and `ModelSetterOptions` are exported. Differential test in `tests/compat/getter-setter-methods.test.ts`; four v6 suite baseline entries and the cause `B-getter-setter-methods` are gone. ([#200](https://github.com/tormozz48/postgrelize/pull/200))
@@ -536,7 +538,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...HEAD
+[1.9.7]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...v1.9.7
 [1.9.6]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...v1.9.4
