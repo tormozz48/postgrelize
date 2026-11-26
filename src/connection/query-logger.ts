@@ -65,10 +65,15 @@ export class QueryLogger {
    * @param elapsed - Duration in milliseconds.
    */
   log(query: CompiledQuery, options: QueryLogSettings, elapsed: number): void {
-    const logging = options.logging ?? this.#defaults.logging;
-    if (logging === false || logging === undefined) {
+    const given: unknown = options.logging ?? this.#defaults.logging;
+    if (!given) {
       return;
     }
+    // v6 takes the deprecated `logging: true` as `console.log`
+    const logging = (given === true ? console.log : given) as Extract<
+      QueryLogSettings['logging'],
+      (...args: never[]) => unknown
+    >;
     const sql = `Executing (${options.transactionId ?? 'default'}): ${QueryLogger.#inlined(query)}`;
     if (options.benchmark ?? this.#defaults.benchmark) {
       logging(sql.replace('Executing', 'Executed'), elapsed);
