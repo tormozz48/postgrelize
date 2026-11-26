@@ -1,3 +1,4 @@
+import type { WhereCompiler } from '../where/where.ts';
 import { Fn } from '../expressions/methods.ts';
 import { SqlAst, type ExprNode } from '../sql/ast.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
@@ -76,17 +77,27 @@ export class SelectAggregates {
   ): readonly ExprNode[] {
     const alias = definition.name;
     const ctx = this.#columns.whereCompiler(definition, alias);
-    const target =
-      field === '*'
-        ? ({ kind: 'star' } as const)
-        : this.#targets.target(definition, alias, ctx, field);
+    const target: ExprNode =
+      field === '*' ? { kind: 'star' } : this.#targets.target(definition, alias, ctx, field);
     const column = aggregateColumn(
       Fn.validName(aggregateFunction),
       target,
       options.distinct,
       aggregateFunction,
     );
-    return [...this.#targets.list(definition, alias, ctx, options.group), column];
+    return [...this.#beside(definition, alias, ctx, options), column];
+  }
+
+  // like v6, given `attributes` are selected in place of the group columns (`group` may name an alias)
+  #beside(
+    definition: ModelDefinition,
+    alias: string,
+    ctx: WhereCompiler,
+    options: SelectOptions,
+  ): readonly ExprNode[] {
+    return Array.isArray(options.attributes)
+      ? this.#targets.columns(definition, alias, ctx, options.attributes)
+      : this.#targets.list(definition, alias, ctx, options.group);
   }
 
   #countTarget(
