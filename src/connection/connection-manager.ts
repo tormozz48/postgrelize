@@ -1,3 +1,4 @@
+import { ConnectionHealth } from './connection-health.ts';
 import { Client as PgClient, Pool, types, type PoolClient, type PoolConfig } from 'pg';
 import { hookFailures } from './after-connect-hook.ts';
 import { CopyRunner } from './copy-runner.ts';
@@ -41,6 +42,8 @@ const typeParsers: NonNullable<PoolConfig['types']> = {
       ? (value: string) => value
       : types.getTypeParser(oid, format)) as NonNullable<PoolConfig['types']>['getTypeParser'],
 };
+
+const health = new ConnectionHealth();
 
 /**
  * Owner of the `pg` pools of a `Sequelize` instance: runs queries (mapping driver errors to Sequelize v6
@@ -271,7 +274,7 @@ export class ConnectionManager implements ConnectionManagerContract {
 
   async #acquire(pool: Pool): Promise<PoolClient> {
     try {
-      return ConnectionManager.#guard(await pool.connect());
+      return ConnectionManager.#guard(await ConnectionManager.#connect(pool));
     } catch (error) {
       if (hookFailures.has(error as object)) {
         throw error;
@@ -284,10 +287,22 @@ export class ConnectionManager implements ConnectionManagerContract {
     }
   }
 
+  // a client that was closed while idle in the pool is dropped and replaced, like v6
+  static async #connect(pool: Pool): Promise<PoolClient> {
+    const client = await pool.connect();
+    if (health.usable(client)) {
+      return client;
+    }
+    client.release(true);
+    return ConnectionManager.#connect(pool);
+  }
+
   static #guard(client: PoolClient): PoolClient {
-    let broken: Error | undefined;
+    // like v6, a connection that fails while checked out leaves the pool at once
     const onError = (error: Error): void => {
-      broken = error;
+      health.invalidate(client);
+      client.on('error', () => {});
+      client.release(error);
     };
     client.on('error', onError);
     const release = client.release.bind(client);
@@ -300,7 +315,7 @@ export class ConnectionManager implements ConnectionManagerContract {
       }
       released = true;
       client.removeListener('error', onError);
-      release(error ?? broken);
+      release(error);
     };
     return client;
   }
@@ -315,3 +330,12 @@ export class ConnectionManager implements ConnectionManagerContract {
     return error instanceof Error && /timeout exceeded when trying to connect/i.test(error.message);
   }
 }
+
+// Sequelize v6 `connectionManager.validate` (not part of the v6 typings): false for a connection
+// that was closed or has failed.
+Object.defineProperty(ConnectionManager.prototype, 'validate', {
+  configurable: true,
+  writable: true,
+  value: (connection: object | null | undefined): boolean =>
+    Boolean(connection) && health.usable(connection as object),
+});

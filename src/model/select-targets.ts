@@ -154,7 +154,8 @@ export class SelectTargets {
     return items === undefined
       ? []
       : (Array.isArray(items) ? items : [items]).map((item: unknown) =>
-          this.target(definition, alias, ctx, item),
+          // like v6, an item given as `['column', ...]` groups by its first element
+          this.target(definition, alias, ctx, Array.isArray(item) ? item[0] : item),
         );
   }
 
