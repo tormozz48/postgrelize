@@ -26,6 +26,8 @@ Default aliases and foreign keys come from the model's `name` init option when i
 
 Nested creation works for all four association types and for multiple levels (`include: [{ association: 'posts', include: ['comments'] }]`). For `belongsToMany`, the junction row can carry values: `{ label: 'admin', UserRoles: { level: 'high' } }`.
 
+`bulkCreate` with `include` creates the nested records with one nested `bulkCreate` per include, like v6: the `beforeBulkCreate` / `afterBulkCreate` hooks of the nested model run once with all its rows and receive the options of their include entry (`include: [{ model: User, myOption: 'x' }]` reaches them as `options.myOption`). It does not run the per-row `beforeCreate` / `afterCreate` hooks; pass `individualHooks: true` for those.
+
 ## Accessors
 
 Instances get the v6 accessor methods:
@@ -50,10 +52,10 @@ Instances get the v6 accessor methods:
 
 <<< @/examples/associations.ts#include{ts}
 
-Include options follow v6: `association` or `model` + `as`, `where`, `required`, `right`, `attributes`, nested `include`, `paranoid`, `through: { attributes, where }` for `belongsToMany`, and `all: true`.
+Include options follow v6: `association` or `model` + `as`, `where`, `required`, `right`, `attributes`, nested `include`, `paranoid`, `through: { attributes, where }` for `belongsToMany`, and `all: true` (or `all: 'BelongsTo'`, `'HasMany'`, … to pick association types, `nested: true` to recurse; other options of that entry apply to every generated include). `as` also takes the v6 `{ singular, plural }` form.
 
 - **`limit` with multi-row includes.** As in v6, a `limit` on the main query together with a `hasMany` / `belongsToMany` include moves the main table into a subquery, so the limit counts parent rows. `subQuery: false` turns this off.
-- **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order` and `limit` (applied per parent, as in Sequelize v6). This avoids row multiplication when a parent has many children.
+- **`separate: true`** (hasMany only) loads the association with a second query instead of a join, with its own `order` and `limit` (applied per parent, as in Sequelize v6). A `hasMany` include with `limit` is separate unless you pass `separate: false`. This avoids row multiplication when a parent has many children.
 - **`$nested.attr$` keys** in the top-level `where` filter on included columns, as in v6.
 
 - **`minifyAliases: true`** (constructor option, as in v6) shortens the aliases of included columns (`Posts.Comments.title` becomes `_0`) and of table aliases of 64 or more characters, then maps the rows back. PostgreSQL identifiers hold 63 bytes: without the option a deeply nested include with long association names gets truncated column aliases that can collide, and attributes go missing. It is off by default and applies to the joined include query of `findAll`, `findOne`, `findByPk` and `findAndCountAll`; `separate` includes run their own query with their own aliases. SQL logs show the short names. Unlike v6, aliases of attributes you rename yourself (`attributes: [[fn(...), 'total']]`) are left as written.

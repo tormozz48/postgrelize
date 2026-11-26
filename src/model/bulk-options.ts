@@ -9,7 +9,7 @@ import type { SaveOptions } from './write-options.ts';
 /**
  * Options of `bulkCreate`.
  *
- * Extends {@link SaveOptions}. Rows are inserted with one `INSERT` unless `individualHooks` or `include` is set. Validation is off by default (unlike `create`).
+ * Extends {@link SaveOptions}. Rows are inserted with one `INSERT` unless `individualHooks` is set; nested records of `include` are created by one nested `bulkCreate` per include. Validation is off by default (unlike `create`).
  *
  * @see {@link Model.bulkCreate}
  * @see {@link OnConflictOptions}

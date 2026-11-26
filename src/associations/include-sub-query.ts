@@ -1,4 +1,4 @@
-import type { ModelDefinition } from '../model/model-definition.ts';
+import { ModelDefinition } from '../model/model-definition.ts';
 import { SqlAst, type ExprNode, type SelectNode } from '../sql/ast.ts';
 import type { IncludeNode } from './include.ts';
 import type { IncludeJoins } from './include-joins.ts';
@@ -9,6 +9,30 @@ const isMulti = (node: IncludeNode): boolean => node.association.isMultiAssociat
 
 const aliasesOf = (nodes: readonly IncludeNode[]): readonly string[] =>
   nodes.flatMap((node) => [node.alias, ...aliasesOf(node.children)]);
+
+/**
+ * The main table as the outer query of a sub-query find sees it: the sub-query exposes every column
+ * under its attribute name (`"main_id" AS "id"`), so outer references use attribute names.
+ */
+export const exposedDefinition = (definition: ModelDefinition): ModelDefinition => {
+  const renamed = [...definition.attributes.values()].some(
+    (attribute) => attribute.field !== attribute.fieldName,
+  );
+  if (!renamed) {
+    return definition;
+  }
+  const attributes = new Map(
+    [...definition.attributes].map(([name, attribute]) => [
+      name,
+      { ...attribute, field: attribute.fieldName },
+    ]),
+  );
+  return new ModelDefinition({
+    ...definition,
+    attributes,
+    fieldToAttribute: new Map([...attributes.keys()].map((name) => [name, name])),
+  });
+};
 
 /** v6 `hasRequired`: the include or one of its direct (non-separate) children is required. */
 export const hasRequired = (node: IncludeNode): boolean =>

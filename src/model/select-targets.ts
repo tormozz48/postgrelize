@@ -201,7 +201,11 @@ export class SelectTargets {
     if (typeof item === 'string') {
       return SelectTargets.#columnFor(definition, alias, item);
     }
-    const [source, name] = item;
+    if (!Array.isArray(item)) {
+      // a bare `literal()` / `fn()` is a raw select item, like v6
+      return ctx.toExpr(item);
+    }
+    const [source, name] = item as readonly [unknown, string];
     const expr =
       typeof source === 'string'
         ? ast.ident(alias, definition.attributes.get(source)?.field ?? source)

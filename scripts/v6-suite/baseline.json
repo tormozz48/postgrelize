@@ -118,30 +118,6 @@
       "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
       "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
     },
-    "A-include-as-object-alias": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include {as:{singular:..}} / {as:{plural:..}} (object alias form accepted by v6 verifyAssociationAlias) is rejected with \"[object Object]\" alias error.",
-      "risk": "error",
-      "repro": "await I.findAll({include:[{model:H,as:{singular:'hat'}}]})",
-      "test": "BelongsTo Eager loading should load with an alias"
-    },
-    "A-include-empty-attributes-key": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include with attributes:[] still sets an empty array (post.comments = []) on the instance; v6 omits the key.",
-      "risk": "cosmetic",
-      "repro": "P.findAll({attributes:[[fn('COUNT',col('comments.id')),'n']],include:[{association:A,attributes:[]}],group:['Post.id']}) then r[0].get('comments') // []",
-      "test": "Include findAll should ignore include with attributes: [] (used for aggregates)"
-    },
-    "A-include-limit-implies-separate": {
-      "cause": "bug",
-      "area": "include",
-      "note": "hasMany include with limit and no separate flag ignores the limit; v6 sets separate:true automatically.",
-      "risk": "wrong-result",
-      "repro": "U.findAll({include:[{association:A,limit:2}]})[0].tasks.length // 3, v6 2",
-      "test": "Include separate should run a hasMany association with limit in a separate query"
-    },
     "A-include-merge-same-model": {
       "cause": "bug",
       "area": "scope",
@@ -205,38 +181,6 @@
       "risk": "wrong-result",
       "repro": "F.scope('incBar','incBaz').findOne() // only baz",
       "test": "Model scope simple merge should merge simple scopes correctly"
-    },
-    "A-separate-logging": {
-      "cause": "bug",
-      "area": "include",
-      "note": "Per-query logging option is not passed on to the extra queries of separate includes (logging called once instead of per query).",
-      "risk": "cosmetic",
-      "repro": "n=0; await U.findAll({include:[{association:A,separate:true}],logging:()=>n++}) // n==1, v6 2",
-      "test": "Include separate should run a hasMany association in a separate query"
-    },
-    "A-separate-missing-key": {
-      "cause": "bug",
-      "area": "include",
-      "note": "separate include returns no children when the parent attributes do not select the key (id/sourceKey) or the child attributes do not select the FK; v6 adds the missing key attributes automatically.",
-      "risk": "wrong-result",
-      "repro": "U.findAll({attributes:['name'],include:[{association:A,separate:true}]})[0].tasks.length // 0, v6 3",
-      "test": "Include separate should work even if the id was not included"
-    },
-    "A-separate-nested-order-ignored": {
-      "cause": "bug",
-      "area": "include",
-      "note": "order of a separate include nested under another separate include is ignored (rows come back in insertion order).",
-      "risk": "wrong-result",
-      "repro": "U.findAll({include:[{association:A,separate:true,include:[{association:B,order:[['title','DESC']],separate:true}]}]}) // subtasks not ordered",
-      "test": "HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true"
-    },
-    "A-subquery-fk-leak": {
-      "cause": "bug",
-      "area": "include",
-      "note": "findAll with attributes:[..], limit and a belongsTo + hasMany include leaks the internally selected FK (product.UserId) into the result.",
-      "risk": "cosmetic",
-      "repro": "P.findAll({attributes:['title'],include:[{model:U},{model:Pr}],limit:10})[0].UserId // 1",
-      "test": "Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit"
     },
     "A-subquery-join-field-name": {
       "cause": "bug",
@@ -391,14 +335,6 @@
       "repro": "U.beforeUpdate(i=>i.set('email','B')); await u.set({email:'ok@x.co'}).save() // saved 'B' without ValidationError",
       "test": "Instance save hooks should validate attributes changed in hooks when default fields are used"
     },
-    "B-include-all-options": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include:[{all:'BelongsTo'}] / [{all:'HasMany', attributes}] (type filter) fail with '? is not associated to country!', {all:true} plus an explicit include of the same model gives 'table name specified more than once', and {all:true,nested:true} does not load nested associations; only plain {all:true} works.",
-      "risk": "error",
-      "repro": "await Country.findAll({include:[{all:'BelongsTo'}]})",
-      "test": "Model findAll eager loading include all includes specific type of association"
-    },
     "B-include-attr-bare-literal": {
       "cause": "bug",
       "area": "include",
@@ -406,30 +342,6 @@
       "risk": "error",
       "repro": "await P.findAll({ include: [{ model: C, attributes: [Sequelize.literal('1 AS \"cs.v\"')] }] })",
       "test": "Include find should support Sequelize.literal and renaming of attributes in included model attributes"
-    },
-    "B-include-empty-attributes": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include with attributes:[] on hasMany/belongsToMany returns an empty array property (kingdom.Animals = []); v6 leaves the property out.",
-      "risk": "cosmetic",
-      "repro": "(await K.findAll({include:[{model:A,attributes:[]}]}))[0].Animals // [] , v6 undefined",
-      "test": "Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only"
-    },
-    "B-include-non-object-message": {
-      "cause": "bug",
-      "area": "include",
-      "note": "include:[1] throws \"Cannot use 'in' operator...\" instead of v6's 'Include unexpected. Element has to be either a Model, an Association or an object.'",
-      "risk": "wording",
-      "repro": "await U.findAll({include:[1]})",
-      "test": "Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object"
-    },
-    "B-include-option-propagation": {
-      "cause": "bug",
-      "area": "include",
-      "note": "Custom options set on an include entry (include:[{model:User, myOption:'option'}]) are not passed to the hooks' options of the nested create / bulkCreate (user.createOptions.myOption is undefined).",
-      "risk": "wrong-result",
-      "repro": "User.beforeCreate((u,o)=>{u.o=o}); const p=await Product.create({User:{}},{include:[{model:User,myOption:'x'}]}); p.User.o.myOption // undefined",
-      "test": "Model create include should create data for HasMany relations"
     },
     "B-increment-instance": {
       "cause": "bug",
@@ -523,14 +435,6 @@
       "note": "order:[['id', literal('ASC, name DESC')]]: a literal as order direction is rejected (directions go through an allowlist).",
       "ref": "docs/security.md (order directions, Allowlist row); ADR-020"
     },
-    "B-order-through-model": {
-      "cause": "bug",
-      "area": "include",
-      "note": "order:[[Industry, ThroughModel, 'numYears', 'ASC']] (association, through model class, attr, dir) throws 'Invalid order direction: class extends Model'; v6 sorts by the through table column.",
-      "risk": "error",
-      "repro": "await Co.findAll({include:[In],order:[[In,CI,'numYears','ASC']]})",
-      "test": "Model findAll order by eager loaded tables ManyToMany sorts by through table attribute"
-    },
     "B-references-null": {
       "cause": "bug",
       "area": "ddl",
@@ -562,14 +466,6 @@
       "risk": "wrong-result",
       "repro": "b=P.build({id:1},{isNewRecord:false}); b.set({id:2}); b.id // 2, v6: 1; u.update({createdAt:new Date(2000,1,1),ident:'x'}) changes both",
       "test": "DAO Values set doesn't overwrite generated primary keys"
-    },
-    "B-subquery-field-alias": {
-      "cause": "bug",
-      "area": "include",
-      "note": "When a model has a renamed column (field:'some_other_name' / 'taskId') and the query uses a sub-query (hasMany include with limit/findOne), the outer query references the column name on the sub-query alias ('column user.some_other_name does not exist').",
-      "risk": "error",
-      "repro": "User=sq.define('user',{name:{type:DataTypes.STRING,field:'some_other_name'}}); User.hasMany(P); await User.findAll({order:['name'],limit:2,include:[P]})",
-      "test": "Model findAll eager loading hasMany supports sorting on renamed sub-query attribute"
     },
     "B-sync-schema-option-references": {
       "cause": "bug",
@@ -1172,9 +1068,9 @@
     "D-include-invalid-element": {
       "cause": "bug",
       "area": "include",
-      "note": "Invalid include elements (model:null, association:null, null, number) raise raw TypeErrors or 'Model is not initialized' instead of v6 'Include unexpected. Element has to be either a Model, an Association or an object.'",
-      "risk": "wording",
-      "repro": "U.findAll({include:[{association:null}]})",
+      "note": "Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose.",
+      "risk": "cosmetic",
+      "repro": "Sequelize.Model._conformIncludes({include:[{model:null}]}, Company) // TypeError: not a function",
       "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
     },
     "D-index-options-ignored": {
@@ -2363,7 +2259,6 @@
     },
     "test/integration/associations/belongs-to.test.js": {
       "failing": [
-        "[POSTGRES] BelongsTo Eager loading should load with an alias",
         "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
@@ -2373,7 +2268,6 @@
         "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
       ],
       "causes": {
-        "[POSTGRES] BelongsTo Eager loading should load with an alias": "A-include-as-object-alias",
         "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type": "A-datatype-instanceof",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
@@ -2395,10 +2289,7 @@
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation",
-        "[POSTGRES] HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true",
-        "[POSTGRES] HasMany get multiple supports schemas",
-        "[POSTGRES] HasMany sourceKey with where clause in include should use the specified sourceKey instead of the primary key"
+        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation"
       ],
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
@@ -2411,10 +2302,7 @@
         "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default",
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order": "A-association-get-limit",
-        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation": "A-association-get-limit",
-        "[POSTGRES] HasMany get multiple should fetch multiple layers of associations with limit and order with separate=true": "A-separate-nested-order-ignored",
-        "[POSTGRES] HasMany get multiple supports schemas": "A-separate-nested-order-ignored",
-        "[POSTGRES] HasMany sourceKey with where clause in include should use the specified sourceKey instead of the primary key": "A-subquery-join-field-name"
+        "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation": "A-association-get-limit"
       }
     },
     "test/integration/associations/has-one.test.js": {
@@ -2423,7 +2311,6 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
         "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys",
-        "[POSTGRES] HasOne Eager loading should load with an alias",
         "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type",
         "[POSTGRES] HasOne foreign key constraints can cascade updates",
         "[POSTGRES] HasOne foreign key constraints can restrict updates",
@@ -2434,7 +2321,6 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys": "A-datatype-instanceof",
-        "[POSTGRES] HasOne Eager loading should load with an alias": "A-include-as-object-alias",
         "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type": "A-datatype-instanceof",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
@@ -2621,11 +2507,9 @@
     },
     "test/integration/include.test.js": {
       "failing": [
-        "[POSTGRES] Include find should support Sequelize.literal and renaming of attributes in included model attributes",
         "[POSTGRES] Include find should support including date fields, with the correct timeszone"
       ],
       "causes": {
-        "[POSTGRES] Include find should support Sequelize.literal and renaming of attributes in included model attributes": "B-include-attr-bare-literal",
         "[POSTGRES] Include find should support including date fields, with the correct timeszone": "B-date-number-bound-bigint"
       }
     },
@@ -2633,24 +2517,10 @@
       "unstable": true,
       "pass": 34,
       "failing": [
-        "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)",
         "[POSTGRES] Include findAll should support including date fields, with the correct timeszone"
       ],
       "causes": {
-        "[POSTGRES] Include findAll should be able to generate a correct request for entity with 1:n and m:1 associations and limit": "A-subquery-fk-leak",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] (used for aggregates)": "A-include-empty-attributes-key",
-        "[POSTGRES] Include findAll should ignore include with attributes: [] and through: { attributes: [] } (used for aggregates)": "A-include-empty-attributes-key",
         "[POSTGRES] Include findAll should support including date fields, with the correct timeszone": "A-date-number"
-      }
-    },
-    "test/integration/include/findOne.test.js": {
-      "failing": [
-        "[POSTGRES] Include findOne should include a model with a where clause when the PK field name and attribute name are different"
-      ],
-      "causes": {
-        "[POSTGRES] Include findOne should include a model with a where clause when the PK field name and attribute name are different": "A-subquery-join-field-name"
       }
     },
     "test/integration/include/schema.test.js": {
@@ -2663,28 +2533,6 @@
       "causes": {
         "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage",
         "[POSTGRES] Includes with schemas findAll should support including date fields, with the correct timezone": "A-date-number"
-      }
-    },
-    "test/integration/include/separate.test.js": {
-      "failing": [
-        "[POSTGRES] Include separate should run a hasMany association in a separate query",
-        "[POSTGRES] Include separate should run a hasMany association with limit in a separate query",
-        "[POSTGRES] Include separate should run a nested (from a non-separate include) hasMany association in a separate query",
-        "[POSTGRES] Include separate should run two nested hasMany association in a separate queries",
-        "[POSTGRES] Include separate should work even if include does not specify foreign key attribute with custom sourceKey",
-        "[POSTGRES] Include separate should work even if the id was not included",
-        "[POSTGRES] Include separate should work having a separate include between a parent and child include",
-        "[POSTGRES] Include separate should work with two schema models in a hasMany association"
-      ],
-      "causes": {
-        "[POSTGRES] Include separate should run a hasMany association in a separate query": "A-separate-logging",
-        "[POSTGRES] Include separate should run a hasMany association with limit in a separate query": "A-include-limit-implies-separate",
-        "[POSTGRES] Include separate should run a nested (from a non-separate include) hasMany association in a separate query": "A-separate-logging",
-        "[POSTGRES] Include separate should run two nested hasMany association in a separate queries": "A-separate-logging",
-        "[POSTGRES] Include separate should work even if include does not specify foreign key attribute with custom sourceKey": "A-separate-missing-key",
-        "[POSTGRES] Include separate should work even if the id was not included": "A-separate-missing-key",
-        "[POSTGRES] Include separate should work having a separate include between a parent and child include": "A-separate-logging",
-        "[POSTGRES] Include separate should work with two schema models in a hasMany association": "A-include-limit-implies-separate"
       }
     },
     "test/integration/instance.test.js": {
@@ -2861,16 +2709,12 @@
     },
     "test/integration/model/attributes/field.test.js": {
       "failing": [
-        "[POSTGRES] Model attributes field should support renaming of sequelize method fields",
         "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`",
-        "[POSTGRES] Model attributes field should work with where on includes for find"
+        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`"
       ],
       "causes": {
-        "[POSTGRES] Model attributes field should support renaming of sequelize method fields": "B-include-attr-bare-literal",
         "[POSTGRES] Model attributes field should sync foreign keys with custom field names": "B-harness-private-internals",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`": "B-btm-count-through-timestamps",
-        "[POSTGRES] Model attributes field should work with where on includes for find": "B-subquery-field-alias"
+        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`": "B-btm-count-through-timestamps"
       }
     },
     "test/integration/model/attributes/types.test.js": {
@@ -2893,15 +2737,9 @@
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsTo relations",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsToMany relations",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for HasMany relations",
         "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations"
       ],
       "causes": {
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsTo relations": "B-include-option-propagation",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for BelongsToMany relations": "B-include-option-propagation",
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for HasMany relations": "B-include-option-propagation",
         "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },
@@ -2927,33 +2765,16 @@
     },
     "test/integration/model/create/include.test.js": {
       "failing": [
-        "[POSTGRES] Model create include should create data for BelongsTo relations",
         "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK",
-        "[POSTGRES] Model create include should create data for BelongsToMany relations",
-        "[POSTGRES] Model create include should create data for HasMany relations",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
       ],
       "causes": {
-        "[POSTGRES] Model create include should create data for BelongsTo relations": "B-include-option-propagation",
         "[POSTGRES] Model create include should create data for BelongsTo relations with no nullable FK": "B-belongsto-include-notnull-fk",
-        "[POSTGRES] Model create include should create data for BelongsToMany relations": "B-include-option-propagation",
-        "[POSTGRES] Model create include should create data for HasMany relations": "B-include-option-propagation",
         "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "B-references-null"
       }
     },
     "test/integration/model/findAll.test.js": {
       "failing": [
-        "[POSTGRES] Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting DESC on renamed sub-query attribute",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting on multiple renamed sub-query attributes",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting on renamed sub-query attribute",
-        "[POSTGRES] Model findAll eager loading include all includes all nested associations",
-        "[POSTGRES] Model findAll eager loading include all includes specific type of association",
-        "[POSTGRES] Model findAll eager loading include all is over-ruled by specified include",
-        "[POSTGRES] Model findAll eager loading include all utilises specified attributes",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only",
-        "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type",
         "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized",
@@ -2961,17 +2782,6 @@
         "[POSTGRES] Model rejectOnEmpty mode works from model options"
       ],
       "causes": {
-        "[POSTGRES] Model findAll eager loading belongsTo throws an error about unexpected input if include contains a non-object": "B-include-non-object-message",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting DESC on renamed sub-query attribute": "B-subquery-field-alias",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting on multiple renamed sub-query attributes": "B-subquery-field-alias",
-        "[POSTGRES] Model findAll eager loading hasMany supports sorting on renamed sub-query attribute": "B-subquery-field-alias",
-        "[POSTGRES] Model findAll eager loading include all includes all nested associations": "B-include-all-options",
-        "[POSTGRES] Model findAll eager loading include all includes specific type of association": "B-include-all-options",
-        "[POSTGRES] Model findAll eager loading include all is over-ruled by specified include": "B-include-all-options",
-        "[POSTGRES] Model findAll eager loading include all utilises specified attributes": "B-include-all-options",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes but having through.attributes": "B-include-empty-attributes",
-        "[POSTGRES] Model findAll eager loading properly handles attributes:[] cases N:M with ignoring include.attributes only": "B-include-empty-attributes",
-        "[POSTGRES] Model findAll order by eager loaded tables ManyToMany sorts by through table attribute": "B-order-through-model",
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension",
         "[POSTGRES] Model rejectOnEmpty mode throws custom error with initialized": "B-rejectOnEmpty-findall",

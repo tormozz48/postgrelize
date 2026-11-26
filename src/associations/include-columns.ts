@@ -71,6 +71,9 @@ export class IncludeColumns {
     return selects
       .columns(definition, alias, attributeColumns.whereCompiler(definition, alias), attributes)
       .map((column) => {
+        if (column.kind !== 'alias' && column.kind !== 'ident') {
+          return column;
+        }
         const expr = column.kind === 'alias' ? column.expr : column;
         return { kind: 'alias', expr, alias: `${path}.${this.#name(definition, column)}` } as const;
       });

@@ -21,6 +21,7 @@ type FindCall = Readonly<{
   opts: MutableOptions;
   query: FindOptions;
   includes: readonly IncludeNode[];
+  addedKey?: string;
 }>;
 
 /**
@@ -113,7 +114,54 @@ export class FindOperation extends FindLookups {
       where: columns.paranoid(definition, opts['where'], opts['paranoid'] as boolean | undefined),
     };
     const nodes = includes.normalize(model, opts['include'] as IncludeOption | undefined);
-    return { model, definition, opts, query: query as FindOptions, includes: nodes };
+    const sourced = this.#withSourceKeys(query, nodes);
+    const keyed = this.#withPrimaryKey(sourced, definition, nodes);
+    return {
+      model,
+      definition,
+      opts,
+      query: keyed as FindOptions,
+      includes: nodes,
+      ...(keyed === sourced ? {} : { addedKey: definition.primaryKeys[0] as string }),
+    };
+  }
+
+  // v6 selects the primary key of a find with includes so that joined rows can be de-duplicated
+  #withPrimaryKey(
+    query: Record<string, unknown>,
+    definition: ModelDefinition,
+    nodes: readonly IncludeNode[],
+  ): Record<string, unknown> {
+    const { attributes } = query;
+    const [key] = definition.primaryKeys;
+    if (key === undefined || !Array.isArray(attributes) || !this.#needsKey(query, nodes)) {
+      return query;
+    }
+    const names = attributes.map((entry) => (Array.isArray(entry) ? entry[1] : entry));
+    return names.includes(key) ? query : { ...query, attributes: [key, ...attributes] };
+  }
+
+  #needsKey(query: Record<string, unknown>, nodes: readonly IncludeNode[]): boolean {
+    const onlySingle =
+      !nodes.some((node) => node.association.isMultiAssociation) &&
+      nodes.some((node) => !node.association.isMultiAssociation);
+    return (
+      nodes.length > 0 && query['raw'] !== true && !(query['group'] !== undefined && onlySingle)
+    );
+  }
+
+  // a separate include matches children by the parent's source key, so it must be selected (v6 adds it)
+  #withSourceKeys(query: Record<string, unknown>, nodes: readonly IncludeNode[]): FindOptions {
+    const { attributes } = query;
+    const keys = nodes.filter((node) => node.separate).map((node) => node.association.sourceKey);
+    if (!Array.isArray(attributes) || keys.length === 0) {
+      return query as FindOptions;
+    }
+    const names = attributes.map((entry) => (Array.isArray(entry) ? entry[1] : entry));
+    const missing = [...new Set(keys)].filter((key) => !names.includes(key));
+    return (
+      missing.length === 0 ? query : { ...query, attributes: [...attributes, ...missing] }
+    ) as FindOptions;
   }
 
   async #found(call: FindCall, rows: QueryResult['rows']): Promise<AnyModel[]> {
@@ -124,7 +172,7 @@ export class FindOperation extends FindLookups {
     if (call.includes.length > 0) {
       await this.services.loader.loadSeparate(found, call.includes, call.query);
     }
-    return found;
+    return this.#withoutAddedKey(found, call.addedKey);
   }
 
   #instances({ model, definition, includes }: FindCall, rows: QueryResult['rows']): AnyModel[] {
@@ -138,10 +186,23 @@ export class FindOperation extends FindLookups {
       (row: Row) => this.services.rows.parse(definition, row),
       (target, values) => new target(values, { isNewRecord: false, raw: true }),
     ) as AnyModel[];
+    return this.#markLoaded(found, includes);
+  }
+
+  #markLoaded(found: AnyModel[], includes: readonly IncludeNode[]): AnyModel[] {
     // `reload()` loads the same includes again, like v6 (`_options.include`)
     found.forEach((instance) => {
       InstanceState.of(instance).loadedIncludes = includes;
     });
+    return found;
+  }
+
+  // selected only to tell joined rows apart (and to match separate includes): not part of the
+  // result, like v6 `originalAttributes`
+  #withoutAddedKey(found: AnyModel[], key: string | undefined): AnyModel[] {
+    if (key !== undefined) {
+      found.forEach((instance) => Reflect.deleteProperty(instance.dataValues as Values, key));
+    }
     return found;
   }
 

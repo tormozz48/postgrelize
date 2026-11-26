@@ -10,20 +10,55 @@ const attributeColumns = new AttributeColumns();
 
 type Model = ModelStatic<AnyModel>;
 type Position = Readonly<{ alias: string; path: string }>;
+const KNOWN_INCLUDE_KEYS: ReadonlySet<string> = new Set([
+  'model',
+  'as',
+  'association',
+  'where',
+  'on',
+  'required',
+  'right',
+  'attributes',
+  'include',
+  'separate',
+  'through',
+  'lateral',
+  'order',
+  'limit',
+  'paranoid',
+  'all',
+]);
+
+const customOptions = (item: IncludeOptions): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(Object.entries(item).filter(([key]) => !KNOWN_INCLUDE_KEYS.has(key)));
+
 type BaseNode = Omit<IncludeNode, 'alias' | 'path' | 'through' | 'children'>;
 
 const isModel = (value: unknown): value is Model => typeof value === 'function';
 
 const isAssociation = (value: object): value is Association => 'associationType' in value;
 
-const toOptions = (item: Model | string | IncludeOptions): IncludeOptions =>
-  isModel(item)
-    ? { model: item }
-    : typeof item === 'string'
-      ? { association: item }
-      : isAssociation(item)
-        ? { association: item }
-        : item;
+const UNEXPECTED_INCLUDE =
+  'Include unexpected. Element has to be either a Model, an Association or an object.';
+
+const toOptions = (item: unknown): IncludeOptions => {
+  if (isModel(item)) {
+    return { model: item };
+  }
+  if (typeof item === 'string' && item !== '') {
+    return { association: item };
+  }
+  if (typeof item === 'object' && item !== null) {
+    if (isAssociation(item)) {
+      return { association: item };
+    }
+    const options = item as IncludeOptions;
+    if (options.association || options.model || options.all) {
+      return options;
+    }
+  }
+  throw new Error(UNEXPECTED_INCLUDE);
+};
 
 /**
  * Normalizes the `include` option into an include tree: resolves associations by model, alias or
@@ -88,7 +123,7 @@ export class IncludeResolver {
     }
     const association = this.#lookup.resolve(source, item);
     const model = item.model ?? association.target;
-    const conformed = { ...item, association, model, as: item.as ?? association.as };
+    const conformed = { ...item, association, model, as: association.as };
     return item.include === undefined
       ? conformed
       : { ...conformed, include: this.conform(model, item.include) as IncludeOption };
@@ -102,6 +137,7 @@ export class IncludeResolver {
    */
   toOptions(node: IncludeNode): IncludeOptions {
     return {
+      ...node.custom,
       association: node.association,
       required: node.required,
       separate: node.separate,
@@ -110,6 +146,8 @@ export class IncludeResolver {
       ...(node.where === undefined ? {} : { where: node.where }),
       ...(node.on === undefined ? {} : { on: node.on }),
       ...(node.attributes === undefined ? {} : { attributes: node.attributes }),
+      ...(node.order === undefined ? {} : { order: node.order }),
+      ...(node.limit === undefined ? {} : { limit: node.limit }),
       ...(node.children.length === 0
         ? {}
         : { include: node.children.map((child) => this.toOptions(child)) }),
@@ -142,12 +180,18 @@ export class IncludeResolver {
       required: item.required ?? item.where !== undefined,
       right: item.right === true,
       attributes: item.attributes,
-      separate: item.separate === true && association.associationType === 'HasMany',
+      separate: this.#separate(item, association),
       lateral: item.lateral === true,
       paranoid: item.paranoid !== false,
       order: item.order,
       limit: item.limit,
+      custom: customOptions(item),
     };
+  }
+
+  // like v6, a hasMany include with a `limit` and no explicit `separate` is loaded separately
+  #separate(item: IncludeOptions, association: Association): boolean {
+    return (item.separate ?? item.limit !== undefined) && association.associationType === 'HasMany';
   }
 
   #through(

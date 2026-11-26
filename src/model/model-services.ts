@@ -2,6 +2,7 @@ import { IncludeLoader } from '../associations/include-loader.ts';
 import { IncludeQueryBuilder } from '../associations/include-query-builder.ts';
 import { IncludeResolver } from '../associations/include-resolver.ts';
 import { NestedCreator } from '../associations/nested-creator.ts';
+import { NestedBulkCreator } from '../associations/nested-bulk-creator.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import { InstanceValidator } from '../validation/instance-validator.ts';
 import { AttributeColumns } from './attribute-columns.ts';
@@ -49,6 +50,7 @@ export const includeResolver = new IncludeResolver();
 export const includeQueries = new IncludeQueryBuilder();
 export const includeLoader = new IncludeLoader(includeResolver);
 export const nestedCreator = new NestedCreator(includeResolver, isInstance);
+export const nestedBulkCreator = new NestedBulkCreator(includeResolver, isInstance);
 export const findQueries = new FindQueryBuilder(selectQueries, cteBuilder, includeQueries);
 export const instanceValues = new InstanceValues(registry, modelValues, isInstance);
 export const lifecycle = new InstanceLifecycle({

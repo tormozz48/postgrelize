@@ -82,10 +82,23 @@ export class NestedSaver {
         : {};
   }
 
+  // like v6: the include entry's own options, the query options and the parent record reach the hooks
+  #saveOptions(
+    instance: AnyModel,
+    node: IncludeNode,
+    options: SaveOptions,
+  ): ReturnType<ModelValues['queryOptions']> {
+    return {
+      ...node.custom,
+      ...modelValues.queryOptions(options),
+      parentRecord: instance,
+    } as ReturnType<ModelValues['queryOptions']>;
+  }
+
   async #saveParent(instance: AnyModel, node: IncludeNode, options: SaveOptions): Promise<void> {
     const [parent] = this.#nestedInstances(instance, node);
     if (parent !== undefined) {
-      await parent.save(modelValues.queryOptions(options));
+      await parent.save(this.#saveOptions(instance, node, options));
       instance.set(node.association.foreignKey, parent.get(node.association.targetKey));
     }
   }
@@ -97,7 +110,7 @@ export class NestedSaver {
     options: SaveOptions,
   ): Promise<void> {
     const { association } = node;
-    const childOptions = modelValues.queryOptions(options);
+    const childOptions = this.#saveOptions(instance, node, options);
     if (association.associationType === 'BelongsToMany' && association.through !== undefined) {
       await child.save(childOptions);
       await this.#saveJunction(instance, node, child, childOptions);
