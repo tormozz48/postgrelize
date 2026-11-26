@@ -57,6 +57,15 @@ export abstract class AbstractDataType implements DataType {
   }
 
   /**
+   * Same as {@link AbstractDataType.toSql}, like Sequelize v6.
+   *
+   * @returns The SQL type.
+   */
+  toString(): string {
+    return this.toSql();
+  }
+
+  /**
    * Validates a numeric type parameter (length, precision, scale, srid) before it reaches SQL.
    *
    * @param name - Parameter name for the error message.

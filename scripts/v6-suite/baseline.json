@@ -49,14 +49,6 @@
       "repro": "A.belongsToMany(B,{through:'AB',timestamps:false}); Object.keys(s.models.AB.rawAttributes) // includes createdAt, updatedAt",
       "test": "BelongsTo foreign key should set foreignKey on foreign table"
     },
-    "A-datatype-instanceof": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "DataTypes.X are not constructors/classes: attr.type instanceof DataTypes.STRING is false for every attribute, even new DataTypes.STRING() instanceof DataTypes.STRING.",
-      "risk": "wrong-result",
-      "repro": "define('K',{n:DataTypes.STRING}).rawAttributes.n.type instanceof DataTypes.STRING // false",
-      "test": "BelongsTo association options can specify data type for auto-generated relational keys"
-    },
     "A-date-number": {
       "cause": "bug",
       "area": "datatypes",
@@ -2251,19 +2243,15 @@
     },
     "test/integration/associations/belongs-to.test.js": {
       "failing": [
-        "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates",
         "[POSTGRES] BelongsTo foreign key constraints can restrict updates",
         "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
       ],
       "causes": {
-        "[POSTGRES] BelongsTo association column has correct type and name for non-id primary keys with non-integer type": "A-datatype-instanceof",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] BelongsTo association options can specify data type for auto-generated relational keys": "A-datatype-instanceof",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table": "A-btm-timestamps-option"
@@ -2273,8 +2261,6 @@
       "failing": [
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasMany Association options can specify data type for auto-generated relational keys",
-        "[POSTGRES] HasMany Association options infers the keyType if none provided",
         "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query",
         "[POSTGRES] HasMany count should not fail due to ambiguous field",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
@@ -2286,8 +2272,6 @@
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasMany Association options can specify data type for auto-generated relational keys": "A-datatype-instanceof",
-        "[POSTGRES] HasMany Association options infers the keyType if none provided": "A-datatype-instanceof",
         "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query": "A-group-nested-array",
         "[POSTGRES] HasMany count should not fail due to ambiguous field": "A-primarykeyfield-missing",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
@@ -2302,8 +2286,6 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
-        "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys",
-        "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type",
         "[POSTGRES] HasOne foreign key constraints can cascade updates",
         "[POSTGRES] HasOne foreign key constraints can restrict updates",
         "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false"
@@ -2312,8 +2294,6 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
-        "[POSTGRES] HasOne Association options can specify data type for autogenerated relational keys": "A-datatype-instanceof",
-        "[POSTGRES] HasOne association column has correct type for non-id primary keys with non-integer type": "A-datatype-instanceof",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
