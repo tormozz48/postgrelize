@@ -4,7 +4,7 @@ Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed
 
 Fixed: 89. Open: 32 (includes causes found while fixing).
 
-Second batch (PRs #250 to #277): independent PRs on `main`, changelog and baseline in one bookkeeping PR; #272 contains the commit of #257.
+Second batch (PRs #250 to #277): independent PRs on `main`, changelog and baseline in one bookkeeping PR; #272 contains the commit of #257. #277 (regression since 1.9.7) was released alone in 1.9.11.
 
 ## Fixed
 

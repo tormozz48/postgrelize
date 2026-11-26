@@ -67,6 +67,11 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - A nested `create` with a `belongsTo` parent and a `NOT NULL` foreign key succeeds (it failed with "notNull Violation" before the parent was saved). Differential test in `tests/compat/belongs-to-include-not-null.test.ts`. ([#274](https://github.com/tormozz48/postgrelize/pull/274))
 - When several models are mapped to one table, `sequelize.sync` syncs only the last one (it synced each, which could fail). Differential test in `tests/compat/two-models-one-table.test.ts`. ([#275](https://github.com/tormozz48/postgrelize/pull/275))
 - A pooled connection that was closed while idle is no longer handed out, a connection that fails while checked out leaves the pool at once (with `pool.max: 1` the pool stayed exhausted), and `connectionManager.validate` is available. Differential test in `tests/compat/pool-dead-connection.test.ts`. ([#276](https://github.com/tormozz48/postgrelize/pull/276))
+
+## [1.9.11] - 2026-11-26
+
+### Fixed
+
 - Regression since 1.9.7: after `update()` (or `save({ fields })`) on a model with `version`, the next `save` of the same instance threw `OptimisticLockError`. Differential test in `tests/compat/version-after-update.test.ts`. ([#277](https://github.com/tormozz48/postgrelize/pull/277))
 
 ## [1.9.10] - 2026-11-26
@@ -603,7 +608,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...HEAD
+[1.9.11]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...v1.9.11
 [1.9.10]: https://github.com/tormozz48/postgrelize/compare/v1.9.9...v1.9.10
 [1.9.9]: https://github.com/tormozz48/postgrelize/compare/v1.9.8...v1.9.9
 [1.9.8]: https://github.com/tormozz48/postgrelize/compare/v1.9.7...v1.9.8
