@@ -40,10 +40,12 @@ export class IndexCommands {
     fieldsOrOptions: readonly IndexField[] | IndexOptions,
     options: IndexOptions & QueryOptionsBase,
   ): Promise<void> {
+    // v6 accepts `null` options
+    const given = options ?? {};
     const index: IndexOptions = Array.isArray(fieldsOrOptions)
-      ? { ...options, fields: fieldsOrOptions as readonly IndexField[] }
-      : { ...(fieldsOrOptions as IndexOptions), ...options };
-    await this.#runner.run(ddl.createIndexSql(table, index), options);
+      ? { ...given, fields: fieldsOrOptions as readonly IndexField[] }
+      : { ...(fieldsOrOptions as IndexOptions), ...given };
+    await this.#runner.run(ddl.createIndexSql(table, index), given);
   }
 
   /**
