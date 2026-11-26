@@ -217,9 +217,11 @@ export class QueryInterfaceTables {
    */
   async describeTable(
     table: TableName,
-    options: QueryOptionsBase & Readonly<{ schema?: string }> = {},
+    options: string | (QueryOptionsBase & Readonly<{ schema?: string }>) = {},
   ): Promise<Record<string, ColumnDescription>> {
-    return await this.#introspector.describeTable(table, options);
+    // v6 also takes the schema name alone
+    const given = typeof options === 'string' ? { schema: options } : options;
+    return await this.#introspector.describeTable(table, given);
   }
 
   /**

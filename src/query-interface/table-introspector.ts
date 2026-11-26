@@ -1,8 +1,45 @@
+import { Deferrable, type DeferrableValue } from '../ddl/ddl-types.ts';
 import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 import { ColumnDescriber } from './column-describer.ts';
 import type { ColumnDescription, ForeignKeyReference } from './query-interface-types.ts';
 import type { StatementRunner } from './statement-runner.ts';
+
+// the columns Sequelize v6 reports for a foreign key, returned with camel-cased names
+const FOREIGN_KEY_COLUMNS = [
+  'tc.constraint_name',
+  'tc.constraint_schema',
+  'tc.constraint_catalog',
+  'tc.table_name',
+  'tc.table_schema',
+  'tc.table_catalog',
+  'tc.initially_deferred',
+  'tc.is_deferrable',
+  'kcu.column_name',
+  'ccu.table_schema AS referenced_table_schema',
+  'ccu.table_catalog AS referenced_table_catalog',
+  'ccu.table_name AS referenced_table_name',
+  'ccu.column_name AS referenced_column_name',
+].join(', ');
+
+const camelized = (name: string): string =>
+  name.replace(/_(\w)/g, (_match, char: string) => char.toUpperCase());
+
+const deferrableOf = (deferrable: unknown, deferred: unknown): DeferrableValue => {
+  if (deferrable === 'NO') {
+    return Deferrable.NOT;
+  }
+  return deferred === 'NO' ? Deferrable.INITIALLY_IMMEDIATE : Deferrable.INITIALLY_DEFERRED;
+};
+
+const reference = (row: Readonly<Record<string, unknown>>): ForeignKeyReference => {
+  const { is_deferrable: deferrable, initially_deferred: deferred, ...names } = row;
+  const fields = Object.entries(names).map(([key, value]) => [camelized(key), String(value)]);
+  return {
+    ...(Object.fromEntries(fields) as Omit<ForeignKeyReference, 'deferrable'>),
+    deferrable: deferrableOf(deferrable, deferred),
+  };
+};
 
 const sqlLiteral = new SqlLiteral();
 
@@ -103,15 +140,10 @@ export class TableIntrospector {
   ): Promise<ForeignKeyReference[]> {
     const { name, schema } = sqlLiteral.tableParts(table);
     const rows = await this.#runner.run(
-      `SELECT tc.constraint_name, kcu.column_name, ccu.table_name AS referenced_table_name, ccu.column_name AS referenced_column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${sqlLiteral.escape(name)} AND tc.table_schema = ${this.#schemaSql(schema)}`,
+      `SELECT ${FOREIGN_KEY_COLUMNS} FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${sqlLiteral.escape(name)} AND tc.table_schema = ${this.#schemaSql(schema)}`,
       options,
     );
-    return rows.map((row) => ({
-      constraintName: String(row['constraint_name']),
-      columnName: String(row['column_name']),
-      referencedTableName: String(row['referenced_table_name']),
-      referencedColumnName: String(row['referenced_column_name']),
-    }));
+    return rows.map(reference);
   }
 
   #schemaSql(schema: string | undefined): string {
