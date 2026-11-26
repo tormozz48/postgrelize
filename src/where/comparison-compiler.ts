@@ -88,7 +88,9 @@ export class ComparisonCompiler {
       );
     }
     const operand = left.json === undefined ? left : withCast(left, jsonCastFor(value));
-    return ast.binary(sqlOp, operand.node, this.#valueNode(compiler, left, value));
+    // v6 does not type-check the pattern of a LIKE or regular expression match
+    const checked = /LIKE|~/.test(sqlOp) ? this.#unchecked(left) : left;
+    return ast.binary(sqlOp, operand.node, this.#valueNode(compiler, checked, value));
   }
 
   /** `Op.startsWith` / `Op.endsWith` / `Op.substring` as `LIKE`. */
@@ -153,6 +155,10 @@ export class ComparisonCompiler {
         ast.param(items.map((item) => serializeWith(left.ref, item))),
       ]),
     );
+  }
+
+  #unchecked(left: Operand): Operand {
+    return left.ref === undefined ? left : { ...left, ref: { ...left.ref, check: () => {} } };
   }
 
   #valueNode(compiler: ExprConverter, left: Operand, value: unknown): ExprNode {

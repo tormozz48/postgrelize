@@ -1,3 +1,4 @@
+import { TypeValidator } from '../data-types/type-validator.ts';
 import { DefaultValueGenerator } from '../data-types/default-value-generator.ts';
 import { Op } from '../expressions/op.ts';
 import { SqlAst, type ExprNode, type SetItem, type TableRef } from '../sql/ast.ts';
@@ -5,12 +6,16 @@ import { WhereCompiler, type AttributeRef } from '../where/where.ts';
 import type { AttributeDefinition, ModelDefinition } from './model-definition.ts';
 
 const ast = new SqlAst();
+const types = new TypeValidator();
 
 const attributeRef = (attribute: AttributeDefinition): AttributeRef => ({
   field: attribute.field,
   ...(attribute.type.isJson === true ? { isJson: true } : {}),
   ...(attribute.type.bindCast === undefined ? {} : { castType: attribute.type.bindCast }),
   ...(attribute.type.serialize === undefined ? {} : { serialize: attribute.type.serialize }),
+  ...(attribute.typeChecked === true
+    ? { check: (value: unknown) => types.check(attribute.type, attribute.fieldName, value) }
+    : {}),
 });
 
 /**

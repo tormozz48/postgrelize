@@ -8,6 +8,8 @@ export type AttributeRef = Readonly<{
   isJson?: boolean;
   castType?: string;
   serialize?: (value: unknown) => unknown;
+  /** Type check of the `typeValidation` option; throws for a value that does not fit. */
+  check?: (value: unknown) => void;
 }>;
 
 /** Attribute resolver and options injected into a `WhereCompiler`. */
@@ -75,8 +77,10 @@ export const nestedColumnPath = (path: string): ExprNode => {
 };
 
 /** Applies the attribute serializer, when there is one. */
-export const serializeWith = (ref: AttributeRef | undefined, value: unknown): unknown =>
-  ref?.serialize === undefined ? value : ref.serialize(value);
+export const serializeWith = (ref: AttributeRef | undefined, value: unknown): unknown => {
+  ref?.check?.(value);
+  return ref?.serialize === undefined ? value : ref.serialize(value);
+};
 
 // The path is bound as a text[] parameter, so keys with `,`, `"` or a backslash need no escaping.
 /** Text value at the path of a JSON column (`#>>`). */

@@ -142,7 +142,11 @@ export class DefinitionNormalizer {
     input: ModelAttributes[string],
     generated: ReadonlySet<string | undefined>,
   ): readonly [string, AttributeDefinition] {
-    const definition = attributes.attribute(name, input, this.#underscored);
+    const normalized = attributes.attribute(name, input, this.#underscored);
+    const definition =
+      (this.#options as Readonly<{ typeValidation?: boolean }>).typeValidation === true
+        ? Object.freeze({ ...normalized, typeChecked: true })
+        : normalized;
     return [
       name,
       generated.has(name) && !(name in this.#attributes)
