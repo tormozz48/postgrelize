@@ -9,7 +9,7 @@ import { and, or } from './expressions/logic.ts';
 import { useInflection } from './model/inflector.ts';
 import { PackageVersion } from './package-version.ts';
 import { QueryInterface } from './query-interface/query-interface.ts';
-import validatorJs from 'validator';
+import { validator } from './validation/validator.ts';
 import { DataTypes } from './data-types/data-types.ts';
 import { cast, col, fn, json, literal, where } from './expressions/methods.ts';
 import { Op } from './expressions/op.ts';
@@ -244,7 +244,7 @@ export class Sequelize extends SequelizeMembers {
   /** Schema API class. */
   static readonly QueryInterface = QueryInterface;
   /** The `validator` library used by the built-in validators. */
-  static readonly Validator = validatorJs;
+  static readonly Validator = validator;
   /** Combines conditions with `AND`. */
   static readonly and = and;
   /** Combines conditions with `OR`. */
