@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.6] - 2026-11-26
+
 ### Fixed
 
 - Association getters and counters (`getX`, `countXs`) honour the `scope` option like v6: `false` removes the default scope of the target, a name (or list of names) replaces it. Differential test in `tests/compat/association-getter-scope.test.ts`; eight v6 suite baseline entries and the cause `A-getter-scope-option` are gone. ([#198](https://github.com/tormozz48/postgrelize/pull/198))
@@ -518,7 +520,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.6...HEAD
+[1.9.6]: https://github.com/tormozz48/postgrelize/compare/v1.9.5...v1.9.6
 [1.9.5]: https://github.com/tormozz48/postgrelize/compare/v1.9.4...v1.9.5
 [1.9.4]: https://github.com/tormozz48/postgrelize/compare/v1.9.3...v1.9.4
 [1.9.3]: https://github.com/tormozz48/postgrelize/compare/v1.9.2...v1.9.3
