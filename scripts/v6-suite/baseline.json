@@ -464,14 +464,6 @@
       "area": "connection",
       "note": "Test uses connectionManager internals (_clearDynamicOIDs, validate, _connect stubs, pool.read/write, getConnection hacks, queryGenerator)."
     },
-    "C-createtable-uniquekeys": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createTable ignores options.uniqueKeys: no UNIQUE constraint is created.",
-      "risk": "wrong-result",
-      "repro": "await qi.createTable('tt',{id:{type:INTEGER,primaryKey:true},name:STRING},{uniqueKeys:{u:{fields:['name']}}}) // only tt_pkey exists",
-      "test": "createTable should create unique constraint with uniqueKeys"
-    },
     "C-database-error-sql-params": {
       "cause": "bug",
       "area": "error",
@@ -2602,12 +2594,8 @@
     "test/integration/query-interface/createTable.test.js": {
       "unstable": true,
       "pass": 5,
-      "failing": [
-        "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys"
-      ],
-      "causes": {
-        "[POSTGRES] QueryInterface createTable should create unique constraint with uniqueKeys": "C-createtable-uniquekeys"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/query-interface/describeTable.test.js": {
       "unstable": true,

@@ -1,6 +1,6 @@
 import { SqlCompiler } from '../sql/compile.ts';
 import type { ColumnDdl } from './column-ddl.ts';
-import type { ColumnDefinition, CreateTableOptions } from './ddl-types.ts';
+import type { ColumnDefinition, CreateTableOptions, UniqueKeys } from './ddl-types.ts';
 import type { EnumDdl } from './enum-ddl.ts';
 import { PartitionDdl } from './partition-ddl.ts';
 import { SqlLiteral, type TableName } from './sql-literal.ts';
@@ -44,7 +44,7 @@ export class TableDdl {
   ): readonly string[] {
     this.#checkPersistence(table, options);
     const defaultSchema = options.temporary === true ? undefined : options.defaultSchema;
-    const body = this.#tableBody(table, columns, defaultSchema);
+    const body = this.#tableBody(table, columns, defaultSchema, options.uniqueKeys);
     const qualified = sqlLiteral.quoteTable(table, defaultSchema);
     return [
       ...columns
@@ -104,9 +104,10 @@ export class TableDdl {
     table: TableName,
     columns: readonly ColumnDefinition[],
     defaultSchema: string | undefined,
+    given: UniqueKeys = {},
   ): string {
     const primaryKey = this.#primaryKeyConstraint(columns);
-    const uniqueKeys = this.#uniqueKeyConstraints(columns);
+    const uniqueKeys = [...this.#uniqueKeyConstraints(columns), ...this.#givenUniqueKeys(given)];
     return [
       ...columns.map((column) =>
         this.#columns.columnSql(
@@ -125,6 +126,13 @@ export class TableDdl {
       .filter((column) => column.primaryKey)
       .map((column) => SqlCompiler.quoteIdent(column.field));
     return primaryKeys.length === 0 ? [] : [`PRIMARY KEY (${primaryKeys.join(', ')})`];
+  }
+
+  // like v6, each key is an unnamed constraint unless it is marked `customIndex: false`
+  #givenUniqueKeys(given: UniqueKeys): readonly string[] {
+    return Object.values(given)
+      .filter((key) => key.customIndex !== false)
+      .map((key) => `UNIQUE (${key.fields.map(SqlCompiler.quoteIdent).join(', ')})`);
   }
 
   #uniqueKeyConstraints(columns: readonly ColumnDefinition[]): readonly string[] {

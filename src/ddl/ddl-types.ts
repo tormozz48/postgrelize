@@ -249,6 +249,17 @@ export type ConstraintOptions = Readonly<{
 /** Options of a column inside `CREATE TABLE` / `ADD COLUMN`. */
 export type ColumnSqlOptions = Readonly<{ inlinePrimaryKey?: boolean; defaultSchema?: string }>;
 
+/** One composite unique constraint of `uniqueKeys`. */
+export type UniqueKey = Readonly<{
+  /** Columns of the constraint. */
+  fields: readonly string[];
+  /** `false` leaves the key out. */
+  customIndex?: boolean;
+}>;
+
+/** `uniqueKeys` of `createTable`: composite unique constraints (Sequelize v6). */
+export type UniqueKeys = Readonly<Record<string, UniqueKey>>;
+
 /** Options of `CREATE TABLE`. */
 export type CreateTableOptions = Readonly<{
   comment?: string;
@@ -257,4 +268,5 @@ export type CreateTableOptions = Readonly<{
   defaultSchema?: string;
   ifNotExists?: boolean;
   partitionBy?: PartitionKey;
+  uniqueKeys?: UniqueKeys;
 }>;
