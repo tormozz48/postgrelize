@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Validator` (also `Sequelize.Validator` and `sequelize.Validator`) is a copy of validator.js with the v6 additions and `extend()`, and validators registered with it work in `validate` of attributes. Differential test in `tests/compat/validator-extend.test.ts`. ([#253](https://github.com/tormozz48/postgrelize/pull/253))
+- `Model.scope('name')` with a function scope calls it without arguments (it threw). Differential test in `tests/compat/scope-function-by-name.test.ts`. ([#258](https://github.com/tormozz48/postgrelize/pull/258))
+- A nested `create` with a `belongsTo` parent and a `NOT NULL` foreign key succeeds (it failed with "notNull Violation" before the parent was saved). Differential test in `tests/compat/belongs-to-include-not-null.test.ts`. ([#274](https://github.com/tormozz48/postgrelize/pull/274))
+
 ## [1.9.11] - 2026-11-26
 
 ### Fixed
