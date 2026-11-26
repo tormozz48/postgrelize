@@ -73,7 +73,13 @@ export class TableCommands {
       ...(temporary === undefined ? {} : { temporary }),
       ...(partitionBy === undefined ? {} : { partitionBy }),
     };
-    await this.#runner.runAll(ddl.createTableSql(table, columns, persistence), options);
+    const named = this.#placed(table, options.schema);
+    await this.#runner.runAll(ddl.createTableSql(named, columns, persistence), options);
+  }
+
+  // like v6, `options.schema` places a table given by name alone
+  #placed(table: TableName, schema: string | undefined): TableName {
+    return schema !== undefined && typeof table === 'string' ? { tableName: table, schema } : table;
   }
 
   /**

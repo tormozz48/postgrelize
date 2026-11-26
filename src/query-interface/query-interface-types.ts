@@ -42,6 +42,8 @@ export type ForeignKeyReference = Readonly<{
  */
 export type CreateTableOptions = QueryOptionsBase &
   Readonly<{
+    /** Schema of a table given by name alone. */
+    schema?: string;
     /** Table comment. */
     comment?: string;
     /** `CREATE UNLOGGED TABLE`: not written to the WAL, faster writes, emptied after a crash and not replicated. */
