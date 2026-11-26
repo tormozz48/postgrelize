@@ -29,7 +29,7 @@ export class IndexDdl {
    */
   indexName(table: TableName, fields: readonly IndexField[]): string {
     const names = fields.map((field) => {
-      const name = typeof field === 'string' ? field : field.name;
+      const name = typeof field === 'string' ? field : elements.columnName(field);
       if (name === undefined) {
         throw new Error('An index on an expression requires an explicit name');
       }
