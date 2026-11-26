@@ -438,14 +438,6 @@
       "area": "query-interface",
       "note": "Test creates EXCLUDE USING gist on integer; needs CREATE EXTENSION btree_gist which the test DB does not have (v6 CI installs it)."
     },
-    "C-changecolumn-references": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "changeColumn ignores references/onUpdate/onDelete: no foreign key is added.",
-      "risk": "wrong-result",
-      "repro": "await qi.changeColumn('users','level_id',{type:DataTypes.INTEGER,references:{model:'level',key:'id'},onDelete:'cascade'}) // pg_constraint has no FK",
-      "test": "changeColumn should support foreign keys able to change column to foreign key"
-    },
     "C-client-min-messages": {
       "cause": "bug",
       "area": "connection",
@@ -2562,14 +2554,8 @@
     "test/integration/query-interface/changeColumn.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column property without affecting other properties",
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column to foreign key"
-      ],
-      "causes": {
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column property without affecting other properties": "C-changecolumn-references",
-        "[POSTGRES] QueryInterface changeColumn should support foreign keys able to change column to foreign key": "C-changecolumn-references"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/query-interface/createTable.test.js": {
       "unstable": true,
