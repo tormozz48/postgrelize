@@ -271,14 +271,6 @@
       "repro": "await U.findOne({attributes:['id',['username']]})",
       "test": "Model findOne general / basic function should fail with meaningful error message on invalid attributes definition"
     },
-    "B-json-date-where": {
-      "cause": "bug",
-      "area": "json",
-      "note": "where: { json: { lastLogin: new Date() } } serialises the date as a JSON string with quotes and compares it with #>> text, so equality never matches.",
-      "risk": "wrong-result",
-      "repro": "await E.findAll({where:{json:{lastLogin:now}}}) // 0 rows",
-      "test": "Model JSON find should be possible to query dates with array operators"
-    },
     "B-json-order-injection": {
       "cause": "divergence",
       "area": "json",
@@ -2535,11 +2527,9 @@
     },
     "test/integration/model/json.test.js": {
       "failing": [
-        "[POSTGRES] Model JSON find should be possible to query dates with array operators",
         "[POSTGRES] Model JSON sql injection attacks should query an instance with JSONB data and order while trying to inject"
       ],
       "causes": {
-        "[POSTGRES] Model JSON find should be possible to query dates with array operators": "B-json-date-where",
         "[POSTGRES] Model JSON sql injection attacks should query an instance with JSONB data and order while trying to inject": "B-json-order-injection"
       }
     },
