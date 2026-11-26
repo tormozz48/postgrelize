@@ -65,14 +65,6 @@
       "repro": "A.belongsToMany(L,{through:T1}); A.belongsToMany(L,{through:T2}) // throws",
       "test": "BelongsToMany hasAssociations answers true for labels that have been assigned multitple times"
     },
-    "A-fk-existing-attribute-not-merged": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "foreignKey given as an already-defined attribute (object or {allowNull} merged with an existing attribute) does not get references/onDelete/onUpdate or allowNull merged: no FK constraint is created.",
-      "risk": "wrong-result",
-      "repro": "P.belongsTo(U,{foreignKey:P.rawAttributes.user_id}); P.rawAttributes.user_id.references // undefined",
-      "test": "BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object"
-    },
     "A-group-nested-array": {
       "cause": "bug",
       "area": "query",
@@ -2242,7 +2234,7 @@
         "[POSTGRES] BelongsTo foreign key should set foreignKey on foreign table"
       ],
       "causes": {
-        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] BelongsTo foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] BelongsTo foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
@@ -2262,7 +2254,7 @@
         "[POSTGRES] HasMany get multiple should fetch associations for multiple instances with limit and order and a belongsTo relation"
       ],
       "causes": {
-        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasMany Association options should ignore group from ancestor on deep separated query": "A-group-nested-array",
         "[POSTGRES] HasMany count should not fail due to ambiguous field": "A-primarykeyfield-missing",
@@ -2283,8 +2275,8 @@
         "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false"
       ],
       "causes": {
-        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-fk-existing-attribute-not-merged",
-        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-fk-existing-attribute-not-merged",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-references-model-object",
+        "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
         "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
