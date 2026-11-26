@@ -92,7 +92,8 @@ export class AttributeNormalizer {
 
   #uniqueKeyName(tableName: string, attribute: AttributeDefinition): string | undefined {
     const { unique } = attribute;
-    return unique === undefined || unique === false
+    // like v6, `null` / `undefined` is no unique key
+    return unique === undefined || unique === null || unique === false
       ? undefined
       : typeof unique === 'string'
         ? unique

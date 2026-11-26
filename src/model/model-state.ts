@@ -1,3 +1,4 @@
+import { DefinitionChecks } from './definition-checks.ts';
 import { HookRegistry } from '../hooks/hooks.ts';
 import type { StandardSchemaV1 } from '../validation/standard-schema.ts';
 import type { ModelValidatorFunction } from '../validation/types.ts';
@@ -9,6 +10,8 @@ import {
 import type { InitOptions } from './options.ts';
 import { runtimeKey, type ModelRuntime } from './runtime.ts';
 import { ScopeRegistry } from './scope-registry.ts';
+
+const checks = new DefinitionChecks();
 
 /** Internal state of an initialized model class. */
 export type ModelState = Readonly<{
@@ -55,11 +58,11 @@ export class ModelStateFactory {
       validationSchema,
       ...definitionOptions
     } = options;
-    const runtime = sequelize[runtimeKey];
+    checks.run(definitionOptions.modelName ?? className, attributes, validate);
     return {
-      ...this.#definitionState(className, attributes, definitionOptions, runtime),
+      ...this.#definitionState(className, attributes, definitionOptions, sequelize[runtimeKey]),
       // like v6, a hook of the model replaces the `define` hook of the same name
-      hooks: HookRegistry.fromOption({ ...runtime.defaults.hooks, ...hooks }),
+      hooks: HookRegistry.fromOption({ ...sequelize[runtimeKey].defaults.hooks, ...hooks }),
       scopes: new ScopeRegistry(defaultScope, scopes, whereMergeStrategy),
       validators: validate ?? {},
       schema: validationSchema,
