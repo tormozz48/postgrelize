@@ -197,6 +197,9 @@ export class InstanceValues {
   // like v6, a string or number assigned to a date attribute becomes a `Date`
   #sanitized(definition: ModelDefinition, key: string, value: unknown): unknown {
     const type = definition.attributes.get(key)?.type.key;
+    if (type === 'DATEONLY' && typeof value === 'string' && /^-?infinity$/i.test(value)) {
+      return this.#date(value);
+    }
     const isDate = type === 'DATE' || type === 'TIMESTAMP';
     return isDate && Boolean(value) ? this.#date(value) : value;
   }
