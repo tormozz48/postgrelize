@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DataTypes } from '../../../src/index.ts';
+import { DataTypes, col, fn } from '../../../src/index.ts';
 import { PAYLOADS, settle, withCanary } from '../../support/injection.ts';
 
 const syntaxError = (result: unknown): boolean =>
@@ -183,6 +183,20 @@ describe('partition names, keys and bounds cannot break out', () => {
         );
         expect(syntaxError(keyed)).toBe(false);
         await settle(queryInterface.dropTable('p2'));
+      }
+    }));
+
+  it('fn() arguments of an index field are escaped literals', () =>
+    withCanary(async ({ sequelize }) => {
+      const queryInterface = sequelize.getQueryInterface();
+      await queryInterface.createTable('indexed', { name: DataTypes.TEXT });
+      for (const [index, payload] of PAYLOADS.entries()) {
+        const outcome = await settle(
+          queryInterface.addIndex('indexed', [fn('coalesce', col('name'), payload)], {
+            name: `indexed_${index}`,
+          }),
+        );
+        expect(syntaxError(outcome)).toBe(false);
       }
     }));
 });

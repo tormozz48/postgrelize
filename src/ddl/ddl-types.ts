@@ -1,3 +1,4 @@
+import type { SqlExpression } from '../expressions/expression.ts';
 import type { DataType } from '../data-types/data-types.ts';
 import type { AttributeDefinition } from '../model/model-definition.ts';
 import type { PartitionKey } from './partition-types.ts';
@@ -113,6 +114,7 @@ type IndexElementModifiers = Readonly<{
  */
 export type IndexField =
   | string
+  | SqlExpression
   | (IndexElementModifiers &
       Readonly<{
         /** Column name. */
@@ -172,7 +174,7 @@ export type IndexOptions = Readonly<{
  * One element of an `exclude` constraint: an index field plus the operator it is compared with.
  * The `expression`, when used, is trusted SQL.
  */
-export type ExcludeElement = Exclude<IndexField, string> &
+export type ExcludeElement = Exclude<IndexField, string | SqlExpression> &
   Readonly<{
     /** Exclusion operator, e.g. `'&&'` or `'='` (operator characters only). */
     with: string;

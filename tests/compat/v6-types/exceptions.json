@@ -44,10 +44,6 @@
       "category": "tracked",
       "note": "QueryInterface method called with more arguments than ours accepts (bulkInsert attributes argument)."
     },
-    "branded-expression": {
-      "category": "tracked",
-      "note": "Fn, Literal and Col are not assignable to string-branded attributes and IndexField."
-    },
     "permissive-where": {
       "category": "tracked",
       "note": "Unknown keys in where are accepted here but rejected by v6 on typed models (an @ts-expect-error in the corpus is unused)."
@@ -243,20 +239,6 @@
     },
     {
       "file": "query-interface.ts",
-      "code": "TS2322",
-      "message": "Type 'Fn' is not assignable to type 'IndexField'.",
-      "count": 1,
-      "cause": "branded-expression"
-    },
-    {
-      "file": "query-interface.ts",
-      "code": "TS2322",
-      "message": "Type 'Literal' is not assignable to type 'IndexField'.",
-      "count": 1,
-      "cause": "branded-expression"
-    },
-    {
-      "file": "query-interface.ts",
       "code": "TS2339",
       "message": "Property 'delete' does not exist on type 'QueryInterface'.",
       "count": 1,
@@ -321,7 +303,7 @@
     {
       "file": "query-interface.ts",
       "code": "TS2353",
-      "message": "Object literal may only specify known properties, and 'length' does not exist in type 'Readonly<{ order?: \"ASC\" | \"DESC\"",
+      "message": "Object literal may only specify known properties, and 'length' does not exist in type 'SqlExpression | (Readonly<{ order",
       "count": 1,
       "cause": "option-keys"
     },

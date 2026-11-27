@@ -1,3 +1,4 @@
+import { SqlExpression } from '../expressions/expression.ts';
 import { ModelIndexes } from '../model/model-indexes.ts';
 import { DdlGenerator, type ColumnDefinition, type IndexField } from '../ddl/ddl-generator.ts';
 import type { TableName } from '../ddl/sql-literal.ts';
@@ -115,7 +116,7 @@ export class ModelTables {
     if (typeof field === 'string') {
       return definition.attributes.get(field)?.field ?? field;
     }
-    return field.name === undefined
+    return field instanceof SqlExpression || field.name === undefined
       ? field
       : { ...field, name: definition.attributes.get(field.name)?.field ?? field.name };
   }
