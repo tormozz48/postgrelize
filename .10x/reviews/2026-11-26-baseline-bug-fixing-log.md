@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 89. Open: 32 (includes causes found while fixing).
+Fixed: 95. Open: 30 (includes causes found while fixing).
 
 ## Fixed
 
@@ -97,6 +97,12 @@ Fixed: 89. Open: 32 (includes causes found while fixing).
 | `B-btm-duplicate-auto-alias` | error | [#262](https://github.com/tormozz48/postgrelize/pull/262) |
 | `A-hasone-hasmany-cascade-default` | error | [#263](https://github.com/tormozz48/postgrelize/pull/263) |
 | `B-btm-count-through-timestamps` | error | [#272](https://github.com/tormozz48/postgrelize/pull/272) |
+| `B-findorcreate-pool-deadlock` | error | [#297](https://github.com/tormozz48/postgrelize/pull/297) |
+| `C-findorcreate-find-outside-tx` | cosmetic | [#297](https://github.com/tormozz48/postgrelize/pull/297) |
+| `C-sequelize-instance-sequelize-prop` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
+| `C-modelmanager-all-findmodel` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
+| `C-validation-error-item-api` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
+| `D-config-dialectoptions-missing` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
 
 ## Not fixed
 
@@ -105,7 +111,6 @@ Fixed: 89. Open: 32 (includes causes found while fixing).
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
 | `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
-| `B-findorcreate-pool-deadlock` | error | 50 concurrent findOrCreate calls hang forever with the default pool (max 5): each takes a pooled connection for its transaction while inner queries wait for another, exhausting the pool. v6 completes. |
 | `B-invalid-attr-message` | wording | An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '["username"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests. |
 | `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
@@ -115,16 +120,11 @@ Fixed: 89. Open: 32 (includes causes found while fixing).
 | `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
 | `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
-| `C-findorcreate-find-outside-tx` | cosmetic | findOrCreate runs its initial find outside the transaction (only the create is in one); v6 wraps find+create in one, so CLS/log shows the find on the default connection. |
 | `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
 | `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
-| `C-modelmanager-all-findmodel` | cosmetic | ModelManager lacks typed v6 members `all` and `findModel`. |
 | `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
 | `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
-| `C-sequelize-instance-sequelize-prop` | cosmetic | Instance property `sequelize.Sequelize` (typed public in v6, the class) is undefined. |
-| `C-validation-error-item-api` | cosmetic | ValidationErrorItem lacks getValidatorKey() and static Origins (typed public in v6). |
-| `D-config-dialectoptions-missing` | cosmetic | sequelize.config lacks dialectOptions (and options like dialectModulePath are ignored), v6 exposes config.dialectOptions. |
 | `D-data-types-string-options` | error | DataTypes.STRING({length:1234}) options-object form throws 'STRING length must be a non-negative integer'; sql/data-types.test.js cannot load. |
 | `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
 | `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
@@ -134,3 +134,7 @@ Fixed: 89. Open: 32 (includes causes found while fixing).
 | `D-addindex-expression-fields` | error | addIndex does not accept literal() / fn() fields; the file did not load before. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
+| `C-findorcreate-shared-tx` | error | Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock. |
+| `C-btm-polymorphic-through-pk` | error | Regression of 1.9.17: a polymorphic belongsToMany pair on one through model gets a primary key of one column, so the second row fails with UniqueConstraintError. |
+| `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
+| `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |

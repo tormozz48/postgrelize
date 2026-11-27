@@ -35,14 +35,6 @@
       "repro": "Object.keys(U.build({a:'x'}).toJSON()) // ['isUser','id','a'], v6: ['id','a','isUser']",
       "test": "Instance toJSON build returns a response that can be stringified"
     },
-    "B-findorcreate-pool-deadlock": {
-      "cause": "bug",
-      "area": "model",
-      "note": "50 concurrent findOrCreate calls hang forever with the default pool (max 5): each takes a pooled connection for its transaction while inner queries wait for another, exhausting the pool. v6 completes.",
-      "risk": "error",
-      "repro": "new Sequelize(url,{pool:{max:5}}); await Promise.all(Array.from({length:50},()=>U.findOrCreate({where:{email:'e',companyId:2}}))) // hangs",
-      "test": "Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
-    },
     "B-harness-aggregate-error-map": {
       "cause": "harness",
       "area": "model",
@@ -224,14 +216,6 @@
       "area": "connection",
       "note": "Node 24 AggregateError has empty message; v6 itself gives \"\" for ConnectionRefusedError on this Node (verified with sequelize@6), test expects \"connect ECONNREFUSED\"."
     },
-    "C-findorcreate-find-outside-tx": {
-      "cause": "bug",
-      "area": "model",
-      "note": "findOrCreate runs its initial find outside the transaction (only the create is in one); v6 wraps find+create in one, so CLS/log shows the find on the default connection.",
-      "risk": "cosmetic",
-      "repro": "U.findOrCreate({where:{name:'K'},logging:x=>l.push(x)}) -> first log line is 'Executing (default): SELECT', v6 logs the transaction id for both",
-      "test": "CLS does not leak outside findOrCreate"
-    },
     "C-log-default-noop": {
       "cause": "bug",
       "area": "config",
@@ -247,14 +231,6 @@
       "risk": "cosmetic",
       "repro": "new Sequelize(url,{logQueryParameters:true}) then query with bind: log ends without '; {\"0\":..}'",
       "test": "logging with logQueryParameters add parameters in log sql"
-    },
-    "C-modelmanager-all-findmodel": {
-      "cause": "bug",
-      "area": "model",
-      "note": "ModelManager lacks typed v6 members `all` and `findModel`.",
-      "risk": "cosmetic",
-      "repro": "sequelize.modelManager.all // undefined; typeof sequelize.modelManager.findModel // undefined",
-      "test": "allows to find a model using a callback"
     },
     "C-models-reset-by-test-support": {
       "cause": "harness",
@@ -305,14 +281,6 @@
       "area": "connection",
       "note": "Test inspects connectionManager.pool.read/write and spies on acquire."
     },
-    "C-sequelize-instance-sequelize-prop": {
-      "cause": "bug",
-      "area": "config",
-      "note": "Instance property `sequelize.Sequelize` (typed public in v6, the class) is undefined.",
-      "risk": "cosmetic",
-      "repro": "new Sequelize(url).Sequelize // undefined (v6: the Sequelize class)",
-      "test": "DATE SQL should be able to create and update records with Infinity/-Infinity"
-    },
     "C-sequelize-internals": {
       "cause": "harness",
       "area": "harness",
@@ -323,28 +291,12 @@
       "area": "config",
       "note": "Test asserts sequelize.validate === sequelize.authenticate (function identity); validate exists and works."
     },
-    "C-validation-error-item-api": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "ValidationErrorItem lacks getValidatorKey() and static Origins (typed public in v6).",
-      "risk": "cosmetic",
-      "repro": "typeof new ValidationErrorItem('m','Validation error','f','v').getValidatorKey // undefined; ValidationErrorItem.Origins undefined",
-      "test": "SequelizeValidationErrorItem.getValidatorKey() should return a string"
-    },
     "D-assoc-hooks-missing": {
       "cause": "unsupported",
       "area": "hooks",
       "note": "Model.beforeAssociate/afterAssociate (and before/afterBelongsToAssociate, HasMany, HasOne, ...) do not exist; docs/guide/migrating.md lists them as 'Not planned' but v6 code calling them throws TypeError.",
       "test": "belongsTo association hooks beforeBelongsToAssociate should trigger",
       "ref": "docs/guide/migrating.md (hooks table, Not planned: Model beforeAssociate/afterAssociate)"
-    },
-    "D-config-dialectoptions-missing": {
-      "cause": "bug",
-      "area": "config",
-      "note": "sequelize.config lacks dialectOptions (and options like dialectModulePath are ignored), v6 exposes config.dialectOptions.",
-      "risk": "cosmetic",
-      "repro": "new Sequelize('db','u','p',{dialect:'postgres',dialectOptions:{a:1}}).config.dialectOptions // undefined",
-      "test": "should accept four parameters (database, username, password, options)"
     },
     "D-data-types-string-options": {
       "cause": "bug",
@@ -471,6 +423,38 @@
       "test": "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
       "risk": "wrong-result",
       "repro": "await User.findAll({ groupedLimit: { limit: 3, on: User.Projects, values: [1, 2] } }) // option ignored"
+    },
+    "C-findorcreate-shared-tx": {
+      "cause": "bug",
+      "area": "findorcreate",
+      "note": "Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock.",
+      "test": "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction",
+      "risk": "error",
+      "repro": "await sequelize.transaction(t => Promise.all([1,2].map(() => User.findOrCreate({ where: { name: 'a' }, transaction: t })))) // aborts the transaction"
+    },
+    "C-btm-polymorphic-through-pk": {
+      "cause": "bug",
+      "area": "btm",
+      "note": "Regression of 1.9.17: a polymorphic belongsToMany pair on one through model gets a primary key of one column, so the second row fails with UniqueConstraintError.",
+      "test": "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations",
+      "risk": "error",
+      "repro": "Post.belongsToMany(Tag, { foreignKey: 'taggable_id', through }); Tag.belongsToMany(Post, { foreignKey: 'tag_id', through }); await sync() // PRIMARY KEY (taggable_id) only"
+    },
+    "D-dateonly-infinity-default": {
+      "cause": "bug",
+      "area": "dateonly",
+      "note": "sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added.",
+      "test": "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity",
+      "risk": "error",
+      "repro": "define('U', { d: { type: DataTypes.DATEONLY, defaultValue: -Infinity } }); await U.sync() // Cannot render non-finite number"
+    },
+    "D-validator-key-empty": {
+      "cause": "bug",
+      "area": "validator",
+      "note": "getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''.",
+      "test": "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
+      "risk": "cosmetic",
+      "repro": "new ValidationErrorItem('m', 'FUNCTION', 'p', 'v').getValidatorKey() // 'function.null', v6 ''"
     }
   },
   "files": {
@@ -540,7 +524,6 @@
         "Sequelize Instantiation with a URL string should use query string host if specified",
         "Sequelize Instantiation with a URL string should work with no authentication options",
         "Sequelize Instantiation with a URL string should work with no authentication options and passing additional options",
-        "Sequelize Instantiation with arguments should accept four parameters (database, username, password, options)",
         "Sequelize dialect is required throw error when no dialect is supplied",
         "Sequelize dialect is required works when dialect explicitly supplied",
         "Sequelize should throw error if pool:false"
@@ -554,7 +537,6 @@
         "Sequelize Instantiation with a URL string should use query string host if specified": "D-no-dialect-config",
         "Sequelize Instantiation with a URL string should work with no authentication options": "D-no-dialect-config",
         "Sequelize Instantiation with a URL string should work with no authentication options and passing additional options": "D-no-dialect-config",
-        "Sequelize Instantiation with arguments should accept four parameters (database, username, password, options)": "D-config-dialectoptions-missing",
         "Sequelize dialect is required throw error when no dialect is supplied": "D-no-dialect-config",
         "Sequelize dialect is required works when dialect explicitly supplied": "D-no-dialect-config",
         "Sequelize should throw error if pool:false": "D-no-dialect-config"
@@ -1551,12 +1533,10 @@
     "test/integration/cls.test.js": {
       "failing": [
         "[POSTGRES] CLS (Async hooks) CLS namespace is stored in Sequelize._cls",
-        "[POSTGRES] CLS (Async hooks) context does not leak outside findOrCreate",
         "[POSTGRES] CLS (Async hooks) context does not use continuation storage on manually managed transactions"
       ],
       "causes": {
         "[POSTGRES] CLS (Async hooks) CLS namespace is stored in Sequelize._cls": "C-cls-private-internals",
-        "[POSTGRES] CLS (Async hooks) context does not leak outside findOrCreate": "C-findorcreate-find-outside-tx",
         "[POSTGRES] CLS (Async hooks) context does not use continuation storage on manually managed transactions": "C-cls-private-internals"
       }
     },
@@ -1626,7 +1606,6 @@
     },
     "test/integration/dialects/postgres/data-types.test.js": {
       "failing": [
-        "[POSTGRES Specific] Data Types DATE SQL should be able to create and update records with Infinity/-Infinity",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize \"Infinity\"/\"-Infinity\" as Infinity/-Infinity",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize Infinity/-Infinity as Infinity/-Infinity",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize a Date as normal",
@@ -1640,7 +1619,6 @@
         "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity"
       ],
       "causes": {
-        "[POSTGRES Specific] Data Types DATE SQL should be able to create and update records with Infinity/-Infinity": "C-sequelize-instance-sequelize-prop",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize \"Infinity\"/\"-Infinity\" as Infinity/-Infinity": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize Infinity/-Infinity as Infinity/-Infinity": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize a Date as normal": "C-datatypes-dialect-deep-import",
@@ -1651,7 +1629,7 @@
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate Infinity/-Infinity as true": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate a Date as normal": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity": "C-datatypes-dialect-deep-import",
-        "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity": "C-sequelize-instance-sequelize-prop"
+        "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity": "D-dateonly-infinity-default"
       }
     },
     "test/integration/dialects/postgres/error.test.js": {
@@ -1673,18 +1651,6 @@
     "test/integration/dialects/postgres/range.test.js": {
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
-    },
-    "test/integration/error.test.js": {
-      "failing": [
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.Origins is valid",
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should throw if namespace separator is invalid (only if NS is used & available)"
-      ],
-      "causes": {
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.Origins is valid": "C-validation-error-item-api",
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string": "C-validation-error-item-api",
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should throw if namespace separator is invalid (only if NS is used & available)": "C-validation-error-item-api"
-      }
     },
     "test/integration/hooks/hooks.test.js": {
       "failing": ["[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks"],
@@ -1778,7 +1744,6 @@
       "failing": [
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
-        "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
@@ -1788,7 +1753,6 @@
       ],
       "causes": {
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
-        "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
@@ -1830,12 +1794,10 @@
       "unstable": true,
       "pass": 10,
       "failing": [
-        "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction"
+        "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction"
       ],
       "causes": {
-        "\"after each\" hook for \"should not deadlock with concurrency duplicate entries and no outer transaction\"": "B-findorcreate-pool-deadlock",
-        "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock"
+        "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction": "C-findorcreate-shared-tx"
       }
     },
     "test/integration/model/findAll.test.js": {
@@ -2066,22 +2028,18 @@
       "failing": [
         "\"after each\" hook for \"correctly handles multiple transactions\"",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator",
-        "[POSTGRES] Sequelize define adds a new dao to the dao manager",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions",
-        "[POSTGRES] Sequelize modelManager allows to find a model using a callback",
         "[POSTGRES] Sequelize set should be configurable with global functions",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()"
       ],
       "causes": {
         "\"after each\" hook for \"correctly handles multiple transactions\"": "C-sequelize-internals",
         "[POSTGRES] Sequelize constructor should set operators aliases on dialect queryGenerator": "C-sequelize-internals",
-        "[POSTGRES] Sequelize define adds a new dao to the dao manager": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize define table should be able to override options on the default attributes": "C-datatypes-abstract",
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions": "C-sequelize-internals",
-        "[POSTGRES] Sequelize modelManager allows to find a model using a callback": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize set should be configurable with global functions": "C-options-define-late",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()": "C-validate-alias-identity"
       }
@@ -2226,6 +2184,22 @@
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models": "D-grouped-limit-option"
+      }
+    },
+    "test/integration/model/create/include.test.js": {
+      "failing": [
+        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
+      ],
+      "causes": {
+        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "C-btm-polymorphic-through-pk"
+      }
+    },
+    "test/integration/error.test.js": {
+      "failing": [
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string"
+      ],
+      "causes": {
+        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string": "D-validator-key-empty"
       }
     }
   }
