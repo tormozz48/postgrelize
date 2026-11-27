@@ -134,12 +134,10 @@ export class InstanceWriter {
     where: Values,
   ): Promise<QueryResult> {
     const { compiler, updates, columns } = this.#services;
-    return runtime.execute(
-      compiler.compile(
-        updates.build(definition, columns.setItems(definition, set), where, { returning: true }),
-      ),
-      options,
+    const statement = compiler.compile(
+      updates.build(definition, columns.setItems(definition, set), where, { returning: true }),
     );
+    return runtime.execute({ ...statement, placeholders: true }, options);
   }
 
   #insertValues(instance: AnyModel, context: SaveContext, now: Date): Values {
@@ -153,15 +151,13 @@ export class InstanceWriter {
 
   #insertRow({ definition, options, runtime }: SaveContext, values: Values): Promise<QueryResult> {
     const { compiler, inserts } = this.#services;
-    return runtime.execute(
-      compiler.compile(
-        inserts.build(definition, [values], {
-          returning: true,
-          ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
-        }),
-      ),
-      options,
+    const statement = compiler.compile(
+      inserts.build(definition, [values], {
+        returning: true,
+        ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
+      }),
     );
+    return runtime.execute({ ...statement, placeholders: true }, options);
   }
 
   #changes(instance: AnyModel, context: SaveContext, fields: readonly string[], now: Date): Values {

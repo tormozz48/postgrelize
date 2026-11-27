@@ -268,7 +268,10 @@ export class UpdateOperation extends ModelOperation<UpdateOperationServices> {
     const old = await returningOld.enabled(runtime, call.options);
     const node = this.#statement(call);
     const statement = old ? returningOld.node(definition, node) : node;
-    const result = await runtime.execute(compiler.compile(statement), call.options);
+    const result = await runtime.execute(
+      { ...compiler.compile(statement), placeholders: true },
+      call.options,
+    );
     const rows = result.rows.map((row) => written.instance(call.model, row, old));
     return { count: result.rowCount, rows };
   }

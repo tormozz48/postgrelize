@@ -49,6 +49,8 @@ export const ROUTED_QUERY: unique symbol = Symbol.for('postgrelize.routedQuery')
 /** Options of a query routed through `sequelize.query`. @internal */
 export type RoutedQueryOptions = Readonly<{
   [ROUTED_QUERY]?: 'read' | 'write';
+  /** The routed statement is logged with its placeholders. */
+  placeholders?: boolean;
   bind?: readonly unknown[];
 }>;
 

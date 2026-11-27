@@ -126,7 +126,9 @@ export const SequelizeHelpers = <TBase extends SequelizeConstructor>(Base: TBase
       if (own && options.logging === console.log) {
         args.pop();
       }
-      const logging = options.logging === true ? console.log : options.logging;
+      // like v6, `console.log` when the instance was given no `logging`
+      const unset = !own && options.logging === undefined;
+      const logging = unset || options.logging === true ? console.log : options.logging;
       if (typeof logging === 'function') {
         const benchmark =
           options.benchmark === true ||

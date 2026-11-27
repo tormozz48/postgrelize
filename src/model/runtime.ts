@@ -16,6 +16,12 @@ export type QueryOptionsBase = {
   /** Pass query duration to the logger. */
   benchmark?: boolean;
   /**
+   * Append the bound values of this statement to the log when it is shown with placeholders.
+   *
+   * @defaultValue the instance `logQueryParameters` option, or false
+   */
+  logQueryParameters?: boolean;
+  /**
    * `statement_timeout` for this query only, in milliseconds (non-negative integer; `0` disables it).
    * PostgreSQL cancels the statement with a `DatabaseError` (code `57014`) when it runs longer.
    * Outside a transaction the query runs in its own short transaction; inside one the previous

@@ -160,6 +160,12 @@ export type SequelizeOptions = Readonly<{
   logging?: LoggingFunction | false;
   /** Pass query duration to the logger. */
   benchmark?: boolean;
+  /**
+   * Append the bound values to logged statements that show placeholders: writes of rows and
+   * statements with `bind` (Sequelize v6). The values may be sensitive.
+   * @defaultValue false
+   */
+  logQueryParameters?: boolean;
   /** Session time zone. Default `'+00:00'`. */
   timezone?: string;
   /** Defaults for all models. */

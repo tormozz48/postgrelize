@@ -8,7 +8,12 @@ import type { Chunks, ParamChunk } from './sql-chunks.ts';
 export type { Chunk, Chunks, ParamChunk } from './sql-chunks.ts';
 
 /** Parameterized SQL text with its bound values. */
-export type CompiledQuery = Readonly<{ text: string; values: readonly unknown[] }>;
+export type CompiledQuery = Readonly<{
+  text: string;
+  values: readonly unknown[];
+  /** Log the text with its placeholders instead of the values. */
+  placeholders?: boolean;
+}>;
 
 const quoter = new IdentifierQuoter();
 

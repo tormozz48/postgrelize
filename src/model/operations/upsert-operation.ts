@@ -91,7 +91,10 @@ export class UpsertOperation extends ModelOperation<UpsertOperationServices> {
   async #write(call: UpsertCall): Promise<UpsertResult> {
     const { runtime } = this.services.registry.state(call.model);
     const insert = this.#statement(call);
-    const result = await runtime.execute(this.services.compiler.compile(insert), call.options);
+    const result = await runtime.execute(
+      { ...this.services.compiler.compile(insert), placeholders: true },
+      call.options,
+    );
     return this.#refresh(call, result.rows[0]);
   }
 
