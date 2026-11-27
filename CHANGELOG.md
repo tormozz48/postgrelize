@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.21] - 2026-11-27
+
 ### Fixed
 
 - `DataTypes.STRING.BINARY` / `CHAR.BINARY` are `BYTEA`, `FLOAT`, `REAL`, `DOUBLE` and `DECIMAL` take `UNSIGNED` / `ZEROFILL`, `FLOAT` with decimals is plain `FLOAT` and `DATE` takes `{ length }`, like v6. **Behaviour change:** `STRING({ binary: true })` created `VARCHAR`. Differential test in `tests/compat/data-type-modifiers.test.ts`. ([#299](https://github.com/tormozz48/postgrelize/pull/299))
@@ -665,7 +667,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.20...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.21...HEAD
+[1.9.21]: https://github.com/tormozz48/postgrelize/compare/v1.9.20...v1.9.21
 [1.9.20]: https://github.com/tormozz48/postgrelize/compare/v1.9.19...v1.9.20
 [1.9.19]: https://github.com/tormozz48/postgrelize/compare/v1.9.18...v1.9.19
 [1.9.18]: https://github.com/tormozz48/postgrelize/compare/v1.9.17...v1.9.18
