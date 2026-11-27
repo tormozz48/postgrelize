@@ -1,4 +1,4 @@
-import type { IndexOptions } from '../ddl/ddl-types.ts';
+import type { IndexField, IndexOptions } from '../ddl/ddl-types.ts';
 import type { AttributeDefinition, ModelDefinition } from './model-definition.ts';
 
 /**
@@ -15,7 +15,18 @@ export class ModelIndexes {
 
   #conformed(index: IndexOptions): IndexOptions {
     const { type, ...rest } = index as IndexOptions & Readonly<{ type?: string }>;
-    return type?.toLowerCase() === 'unique' ? { ...rest, unique: true } : index;
+    const conformed = type?.toLowerCase() === 'unique' ? { ...rest, unique: true } : index;
+    return conformed.fields === undefined
+      ? conformed
+      : { ...conformed, fields: conformed.fields.map((field) => this.#named(field)) };
+  }
+
+  // v6 also takes the column of a field object under the `attribute` key
+  #named(field: IndexField): IndexField {
+    const { attribute } = (typeof field === 'string' ? {} : field) as { attribute?: string };
+    return attribute === undefined
+      ? field
+      : ({ ...(field as object), name: attribute } as IndexField);
   }
 
   #gin(definition: ModelDefinition): readonly IndexOptions[] {

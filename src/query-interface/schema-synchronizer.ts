@@ -152,9 +152,22 @@ export class SchemaSynchronizer {
    * @param options - `cascade`, `schema` and query options.
    */
   async dropAll(definitions: readonly ModelDefinition[], options: DropOptions = {}): Promise<void> {
-    await this.#each(planner.dependencyOrder(definitions).toReversed(), (definition) =>
-      this.drop(definition, options),
-    );
+    const { models, cyclic } = this.truncationOrder(definitions);
+    // like v6, a reference cycle is broken by removing the foreign keys first
+    if (cyclic) {
+      await this.#each(models, (definition) => this.#removeForeignKeys(definition, options));
+    }
+    await this.#each(models, (definition) => this.drop(definition, options));
+  }
+
+  async #removeForeignKeys(model: ModelDefinition, options: DropOptions): Promise<void> {
+    const table = tables.tableOf(tables.inSchema(model, options.schema));
+    const keys = Object.values(
+      await this.#queryInterface.getForeignKeysForTables([table], options),
+    ).flat();
+    for (const name of keys) {
+      await this.#queryInterface.removeConstraint(table, name, options);
+    }
   }
 
   /**

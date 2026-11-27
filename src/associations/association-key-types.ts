@@ -33,7 +33,7 @@ export type ReferenceSpec = Readonly<{
   constraints: boolean | undefined;
 }>;
 
-/** Referential actions used when the options give none (`auto`: `SET NULL` when nullable). */
+/** Referential actions used when the options give none. */
 export type ReferenceDefaults = Readonly<{ onDelete: string; onUpdate: string }>;
 
 /** Alias and keys of a hasOne / hasMany association. */

@@ -102,7 +102,8 @@ export abstract class Association<
       definition: Readonly<{ name: string; attributes: ReadonlyMap<string, unknown> }>;
     }>,
   ): void {
-    if (state.associations.has(this.as)) {
+    // like v6, only an explicit alias has to be unique: a default one replaces the association
+    if (typeof this.options.as === 'string' && state.associations.has(this.as)) {
       throw new AssociationError(
         `You have used the alias ${this.as} in two separate associations. Aliased associations must have unique aliases.`,
       );
@@ -118,7 +119,7 @@ export abstract class Association<
    * Registers the association on the source model, installs the accessor methods and the
    * instance properties of the alias (and of the junction model on the target).
    *
-   * @throws AssociationError when the alias is already used on the source; Error when it is the name of an attribute of the source.
+   * @throws AssociationError when an explicit alias is already used on the source; Error when it is the name of an attribute of the source.
    * @internal
    */
   protected install(): void {

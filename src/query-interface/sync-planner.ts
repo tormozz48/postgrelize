@@ -15,7 +15,14 @@ export class SyncPlanner {
    */
   dependencyOrder(definitions: readonly ModelDefinition[]): readonly ModelDefinition[] {
     const byTable = new Map(definitions.map((definition) => [definition.tableName, definition]));
-    return definitions.reduce<readonly ModelDefinition[]>(
+    // like v6, of several models mapped to one table only the last is kept
+    const kept = new Map(
+      definitions.map((definition) => [
+        `${definition.schema ?? ''}.${definition.tableName}`,
+        definition,
+      ]),
+    );
+    return [...kept.values()].reduce<readonly ModelDefinition[]>(
       (ordered, definition) => this.#visit(byTable, definition, new Set(), ordered),
       [],
     );
@@ -78,8 +85,8 @@ export class SyncPlanner {
   }
 
   #referencedTable(references: AttributeDefinition['references']): string | undefined {
-    if (references === undefined || typeof references === 'string') {
-      return references;
+    if (!references || typeof references === 'string') {
+      return references || undefined;
     }
     const model = references.model;
     if (typeof model === 'string') {

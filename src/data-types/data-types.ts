@@ -92,17 +92,32 @@ const integer = <R extends DataTypes.IntegerFamilyDataType>(
   sqlType: string,
 ): CallableInteger<R> => wrapInteger<R>(new IntegerType(key, sqlType));
 
+// v6 types also take an options object instead of positional arguments
+const given = <V>(argument: unknown, key: string): V | undefined =>
+  (typeof argument === 'object' && argument !== null
+    ? (argument as Readonly<Record<string, unknown>>)[key]
+    : argument) as V | undefined;
+
+const decimal = (digits?: number, scale?: number): DecimalType =>
+  new DecimalType(
+    given(digits, 'precision'),
+    scale ?? (typeof digits === 'object' ? given(digits, 'scale') : undefined),
+  );
+
 /** `REAL` / `DOUBLE` called with the arguments v6 takes (length, decimals); PostgreSQL ignores them. */
 const floating = <R extends DataTypes.NumberDataType>(
   key: string,
   sqlType: string,
 ): Callable<ScalarType, [length?: number, decimals?: number], R> =>
   callable(
-    (length?: number, decimals?: number) =>
-      new ScalarType(key, sqlType, {
+    (first?: number, second?: number) => {
+      const length = given<number>(first, 'length');
+      const decimals = second ?? (typeof first === 'object' ? given(first, 'decimals') : undefined);
+      return new ScalarType(key, sqlType, {
         ...(length === undefined ? {} : { length }),
         ...(decimals === undefined ? {} : { decimals }),
-      }),
+      });
+    },
     new ScalarType(key, sqlType),
   ) as unknown as Callable<ScalarType, [length?: number, decimals?: number], R>;
 
@@ -138,11 +153,14 @@ type VirtualFactory = VirtualType &
  */
 export const DataTypes = {
   /** `VARCHAR(length)`, default length 255. */
-  STRING: callable((length?: number) => new StringType(length), new StringType()),
+  STRING: callable((length?: number) => new StringType(given(length, 'length')), new StringType()),
   /** `CHAR(length)`, default length 255. */
-  CHAR: callable((length?: number) => new CharType(length), new CharType()),
+  CHAR: callable((length?: number) => new CharType(given(length, 'length')), new CharType()),
   /** `TEXT`. The size argument is accepted for compatibility and ignored. */
-  TEXT: callable((size?: 'tiny' | 'medium' | 'long') => new TextType(size), new TextType()),
+  TEXT: callable(
+    (size?: 'tiny' | 'medium' | 'long') => new TextType(given(size, 'length')),
+    new TextType(),
+  ),
   /** `CITEXT` (case-insensitive text, requires the `citext` extension). */
   CITEXT: plain(new ScalarType('CITEXT', 'CITEXT')),
   /** `INTEGER`. */
@@ -156,28 +174,17 @@ export const DataTypes = {
   /** `BIGINT`; values are returned as strings. */
   BIGINT: integer<DataTypes.BigIntDataType>('BIGINT', 'BIGINT'),
   /** `FLOAT(precision)`. */
-  FLOAT: callable((digits?: number) => new FloatType(digits), new FloatType()),
+  FLOAT: callable((digits?: number) => new FloatType(given(digits, 'length')), new FloatType()),
   /** `REAL`. */
   REAL: floating<DataTypes.RealDataType>('REAL', 'REAL'),
   /** `DOUBLE PRECISION`. */
   DOUBLE: floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `DECIMAL(precision, scale)`; values are returned as strings. */
-  DECIMAL: callable(
-    (digits?: number, scale?: number) => new DecimalType(digits, scale),
-    new DecimalType(),
-  ),
+  DECIMAL: callable(decimal, new DecimalType()),
   /** Alias of `DECIMAL`. */
-  NUMBER: callable(
-    (digits?: number, scale?: number) => new DecimalType(digits, scale),
-    new DecimalType(),
-    {},
-    'NUMBER',
-  ),
+  NUMBER: callable(decimal, new DecimalType(), {}, 'NUMBER'),
   /** Alias of `DECIMAL` (v6 `NUMERIC`). */
-  NUMERIC: callable(
-    (digits?: number, scale?: number) => new DecimalType(digits, scale),
-    new DecimalType(),
-  ),
+  NUMERIC: callable(decimal, new DecimalType()),
   /** `DOUBLE PRECISION` (v6 alias of `DOUBLE`). */
   'DOUBLE PRECISION': floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `BOOLEAN`. */
@@ -200,7 +207,10 @@ export const DataTypes = {
   /** `JSONB`. */
   JSONB: plain(new JsonType('JSONB')),
   /** `BYTEA`; values are `Buffer`s. */
-  BLOB: callable((size?: 'tiny' | 'medium' | 'long') => new BlobType(size), new BlobType()),
+  BLOB: callable(
+    (size?: 'tiny' | 'medium' | 'long') => new BlobType(given(size, 'length')),
+    new BlobType(),
+  ),
   /** `UUID`. */
   UUID: plain(new ScalarType('UUID', 'UUID')),
   /**

@@ -14,7 +14,7 @@ Notes on the example:
 - `ForeignKey<number>` and `NonAttribute<...>` keep these fields out of the creation attributes.
 - The accessor methods exist at runtime; declare the ones you use with `declare` so TypeScript knows them. postgrelize does not export the v6 `HasManyGetAssociationsMixin`-style helper types, so write the signatures directly.
 
-`sync()` creates the foreign key constraints with the v6 defaults: `ON DELETE SET NULL` for nullable foreign keys (`NO ACTION` for `allowNull: false`), `ON DELETE CASCADE` for junction tables, and `ON UPDATE CASCADE`. Override them with `onDelete` / `onUpdate`, or skip constraints with `constraints: false`.
+`sync()` creates the foreign key constraints with the v6 defaults: `ON DELETE SET NULL` for nullable foreign keys; for `allowNull: false` ones, `NO ACTION` with `belongsTo` and `CASCADE` with `hasOne` / `hasMany`; `ON DELETE CASCADE` for junction tables, and `ON UPDATE CASCADE`. Override them with `onDelete` / `onUpdate`, or skip constraints with `constraints: false`.
 
 Default aliases and foreign keys come from the model's `name` init option when it is set (`name: { singular: 'user', plural: 'users' }`, as in v6), otherwise from the inflected `modelName`. An `include` entry takes a custom join condition with `on`; it replaces the key condition of `belongsTo`, `hasOne` and `hasMany` includes (not of `belongsToMany`).
 
