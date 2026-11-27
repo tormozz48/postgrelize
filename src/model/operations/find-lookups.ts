@@ -143,8 +143,10 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
   }
 
   /**
-   * `Model.findOrCreate`: finds a row or creates it inside a transaction (re-reading it when a
-   * concurrent insert wins).
+   * `Model.findOrCreate`: finds a row or creates it, both inside one transaction (v6). A lost race
+   * is re-read after the rollback, so no call holds a pooled connection while waiting for another.
+   * In the caller's transaction the find precedes the savepoint, so that concurrent calls on its
+   * one connection do not interleave their savepoints around each other's finds.
    *
    * @param model - Model class.
    * @param options - `where` to search, `defaults` to add on creation.
@@ -155,33 +157,35 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
     options: FindOrCreateOptions,
   ): Promise<[M, boolean]> {
     const { runtime } = this.services.registry.state(model);
-    const found = await model.findOne(options);
-    if (found !== null) {
-      return [found, false];
+    const outer = options.transaction ? await model.findOne(options) : null;
+    if (outer !== null) {
+      return [outer, false];
     }
-    return runtime.transaction(
-      (transaction) => this.#create(model, options, transaction),
-      options.transaction,
-    );
+    try {
+      return await runtime.transaction(
+        (transaction) => this.#findOrInsert(model, options, transaction),
+        options.transaction,
+      );
+    } catch (error) {
+      return FindLookups.#existing(model, options, error);
+    }
   }
 
-  async #create<M extends AnyModel>(
+  async #findOrInsert<M extends AnyModel>(
     model: ModelStatic<M>,
     options: FindOrCreateOptions,
     transaction: Transaction,
   ): Promise<[M, boolean]> {
+    const found = options.transaction ? null : await model.findOne({ ...options, transaction });
+    if (found !== null) {
+      return [found, false];
+    }
     const values = {
       ...this.services.values.fromWhere(options.where),
       ...options.defaults,
     } as CreationAttributes<M>;
-    try {
-      return [
-        await model.create(values, { transaction, ...this.services.values.queryOptions(options) }),
-        true,
-      ];
-    } catch (error) {
-      return FindLookups.#existing(model, options, error);
-    }
+    const query = this.services.values.queryOptions(options);
+    return [await model.create(values, { transaction, ...query }), true];
   }
 
   static async #existing<M extends AnyModel>(
