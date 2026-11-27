@@ -11,7 +11,9 @@ import { QueryLogger } from '../connection/query-logger.ts';
 import { RetryRunner } from '../connection/retry.ts';
 import { PgErrorMapper } from '../errors/map-pg-error.ts';
 import { HookRegistry } from '../hooks/hooks.ts';
-import type { ModelAttributes } from '../model/model-definition.ts';
+import type { ModelAttributes, ModelDefinition } from '../model/model-definition.ts';
+import { ModelRegistry } from '../model/model-registry.ts';
+import { UniqueMessages } from '../model/unique-messages.ts';
 import type { AnyModel, ModelStatic } from '../model/options.ts';
 import type { ModelRuntime, QueryOptionsBase } from '../model/runtime.ts';
 import { RawQuery, ROUTED_QUERY } from '../query/raw-query.ts';
@@ -22,6 +24,10 @@ import { transactionScope } from '../transaction/transaction-runner.ts';
 import { TransactionStarter } from '../transaction/transaction-starter.ts';
 
 const rawQuery = new RawQuery();
+
+const registry = new ModelRegistry();
+
+const uniqueMessages = new UniqueMessages();
 
 /** What the internals need from the owning `Sequelize` instance. */
 export type InternalsOwner = Readonly<{
@@ -103,9 +109,18 @@ export class SequelizeInternals {
     }
     const settings = this.executeOptions(options, kind);
     // A statement inside a transaction is never retried: PostgreSQL has aborted the transaction.
-    return settings.client === undefined && this.#retries.active(options.retry)
-      ? this.#retries.run(() => this.connections.execute(query, settings), options.retry)
-      : this.connections.execute(query, settings);
+    const run = (): Promise<QueryResult> => this.connections.execute(query, settings);
+    const result =
+      settings.client === undefined && this.#retries.active(options.retry)
+        ? this.#retries.run(run, options.retry)
+        : run();
+    return result.catch((error: unknown) => {
+      throw uniqueMessages.apply(error, () => this.#definitions());
+    });
+  }
+
+  #definitions(): readonly ModelDefinition[] {
+    return Object.values(this.#owner.models).map((model) => registry.definition(model));
   }
 
   // A query on a transaction that was committed or rolled back is rejected with the v6 message and `sql`.
