@@ -101,6 +101,12 @@ export class ConnectionManager implements ConnectionManagerContract {
     return this.#counters;
   }
 
+  #queryError(error: unknown, query: CompiledQuery, options: ExecuteOptions): unknown {
+    return options.rawErrors === true
+      ? error
+      : this.#errors.mapQueryError(error, { sql: query.text, parameters: query.values });
+  }
+
   /**
    * Runs a compiled query and maps driver errors to Sequelize v6 error classes.
    *
@@ -121,7 +127,7 @@ export class ConnectionManager implements ConnectionManagerContract {
       }
       return { rows: result.rows, rowCount: result.rowCount ?? 0, command: result.command };
     } catch (error) {
-      throw this.#errors.mapQueryError(error, { sql: query.text, parameters: query.values });
+      throw this.#queryError(error, query, options);
     } finally {
       if (options.client === undefined) {
         await this.releaseConnection(client);

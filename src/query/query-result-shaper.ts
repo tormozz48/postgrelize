@@ -107,6 +107,12 @@ export type QueryOptions = QueryOptionsBase &
     mapToModel?: boolean;
     /** Return plain rows even with `model`. */
     raw?: boolean;
+    /**
+     * Reject with the driver error as it is instead of a `DatabaseError` subclass.
+     *
+     * @defaultValue `false`
+     */
+    rawErrors?: boolean;
     /** Nests `a.b` keys of the rows into objects (`{ a: { b } }`); implies `type: SELECT` unless a type is given. */
     nest?: boolean;
   }>;
