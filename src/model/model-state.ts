@@ -152,6 +152,30 @@ export class ModelStateFactory {
     return this.withAssociationAttributes({ ...state, input: { ...state.input, options } }, {});
   }
 
+  /**
+   * State of a schema-bound copy brought up to date with the model it was made from: like v6,
+   * associations (and their attributes) declared after `schema()` reach the copy.
+   *
+   * @param copy - State of the copy.
+   * @param source - State of the model it was made from.
+   * @returns The new state of the copy.
+   */
+  following(copy: ModelState, source: ModelState): ModelState {
+    const { schema, schemaDelimiter } = copy.input.options;
+    const options = {
+      ...source.input.options,
+      ...(schema === undefined ? {} : { schema }),
+      ...(schemaDelimiter === undefined ? {} : { schemaDelimiter }),
+    };
+    const input = {
+      ...source.input,
+      options,
+      extra: { ...copy.input.extra, ...source.input.extra },
+    };
+    const associations = new Map([...copy.associations, ...source.associations]);
+    return this.withAssociationAttributes({ ...copy, input, associations }, {});
+  }
+
   #definitionState(
     className: string,
     attributes: ModelAttributes,
