@@ -158,11 +158,19 @@ export class SequelizeInternals {
         : {}),
       ...this.#searchPath(options),
       ...((options as ExecuteOptions).rawErrors === true ? { rawErrors: true } : {}),
-      ...(options.logging === undefined ? {} : { logging: options.logging }),
-      ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
+      ...SequelizeInternals.#logSettings(options),
       ...(options.statementTimeout === undefined
         ? {}
         : { statementTimeout: options.statementTimeout }),
+    };
+  }
+
+  static #logSettings(options: QueryOptionsBase): ExecuteOptions {
+    const { logging, benchmark, logQueryParameters } = options;
+    return {
+      ...(logging === undefined ? {} : { logging }),
+      ...(benchmark === undefined ? {} : { benchmark }),
+      ...(logQueryParameters === undefined ? {} : { logQueryParameters }),
     };
   }
 
@@ -261,6 +269,7 @@ export class SequelizeInternals {
           ...options,
           bind: injected.values,
           [ROUTED_QUERY]: kind,
+          placeholders: query.placeholders === true,
         }) as Promise<QueryResult>;
       },
       copyFrom: (text, lines, options) =>

@@ -163,6 +163,12 @@ export type SequelizeOptions = Readonly<{
   /** Pass query duration to the logger. */
   benchmark?: boolean;
   /**
+   * Append the bound values to logged statements that show placeholders: writes of rows and
+   * statements with `bind` (Sequelize v6). The values may be sensitive.
+   * @defaultValue false
+   */
+  logQueryParameters?: boolean;
+  /**
    * `client_min_messages` of the sessions (Sequelize v6): a PostgreSQL message level, or `false` /
    * `'ignore'` for the server default.
    * @defaultValue 'warning'

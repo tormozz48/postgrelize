@@ -304,7 +304,6 @@
       "Options.attributeBehavior": "option-keys",
       "Options.dialectModulePath": "option-keys",
       "Options.isolationLevel": "option-keys",
-      "Options.logQueryParameters": "option-keys",
       "Options.native": "option-keys",
       "Options.omitNull": "option-keys",
       "Options.operatorsAliases": "option-keys",

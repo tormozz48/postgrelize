@@ -378,7 +378,11 @@ export class SequelizeBase {
     const routed = (options as RoutedQueryOptions)[ROUTED_QUERY];
     if (routed !== undefined) {
       return this.internals.execute(
-        { text: String(sql), values: (options as RoutedQueryOptions).bind ?? [] },
+        {
+          text: String(sql),
+          values: (options as RoutedQueryOptions).bind ?? [],
+          placeholders: (options as RoutedQueryOptions).placeholders === true,
+        },
         options,
         routed,
       );
@@ -386,7 +390,9 @@ export class SequelizeBase {
     const { text, ...parameters } = rawQuery.statement(sql, options);
     const prepared = rawQuery.prepare(text, parameters);
     const kind = resultShaper.type(options) === QueryTypes.SELECT ? 'read' : 'write';
-    const result = await this.internals.execute(prepared, options, kind);
+    // `bind` may come with the options or with a tagged `{ query, bind }`
+    const placeholders = parameters.bind !== undefined;
+    const result = await this.internals.execute({ ...prepared, placeholders }, options, kind);
     return resultShaper.shape(result, options, prepared.text);
   }
 

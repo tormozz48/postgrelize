@@ -8,6 +8,8 @@ export type QueryLogSettings = Readonly<{
   logging?: LoggingFunction | false;
   /** Pass the query duration to the logger. */
   benchmark?: boolean;
+  /** Append the bound values to a logged statement that is shown with placeholders. */
+  logQueryParameters?: boolean;
   /** Transaction id shown in the log line. */
   transactionId?: string;
 }>;
@@ -26,6 +28,9 @@ export class QueryLogger {
     return new QueryLogger({
       logging: options.logging === undefined ? console.log : options.logging,
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
+      ...(options.logQueryParameters === undefined
+        ? {}
+        : { logQueryParameters: options.logQueryParameters }),
     });
   }
 
@@ -47,8 +52,38 @@ export class QueryLogger {
     return logging !== false && logging !== undefined;
   }
 
-  // Like v6 for a finder, the logged text carries the values, so it can be run as it is; the statement
-  // sent to PostgreSQL keeps its bound parameters, and `bind` stays in the second argument.
+  /**
+   * Whether the logger takes the duration, so the statement is logged after it ran.
+   *
+   * @param options - Per-query settings overriding the defaults.
+   * @returns True when `benchmark` is set.
+   */
+  benchmarks(options: QueryLogSettings): boolean {
+    return (options.benchmark ?? this.#defaults.benchmark) === true;
+  }
+
+  // Like v6, writes of rows and statements with `bind` show their placeholders; other statements
+  // carry the values, so they can be run as they are.
+  #text(query: CompiledQuery, options: QueryLogSettings): string {
+    if (query.placeholders !== true) {
+      return QueryLogger.#inlined(query);
+    }
+    const show = options.logQueryParameters ?? this.#defaults.logQueryParameters;
+    return show === true && query.values.length > 0
+      ? `${query.text}${query.text.endsWith(';') ? '' : ';'} ${QueryLogger.#parameters(query.values)}`
+      : query.text;
+  }
+
+  static #parameters(values: readonly unknown[]): string {
+    return values
+      .map((value) =>
+        JSON.stringify(value, (_key, item: unknown) =>
+          typeof item === 'bigint' ? String(item) : item,
+        ),
+      )
+      .join(', ');
+  }
+
   static #inlined(query: CompiledQuery): string {
     try {
       return new SqlLiteral().inlineValues(query);
@@ -58,7 +93,7 @@ export class QueryLogger {
   }
 
   /**
-   * Logs one executed statement.
+   * Logs one statement.
    *
    * @param query - Executed query.
    * @param options - Per-query settings overriding the defaults.
@@ -74,8 +109,8 @@ export class QueryLogger {
       QueryLogSettings['logging'],
       (...args: never[]) => unknown
     >;
-    const sql = `Executing (${options.transactionId ?? 'default'}): ${QueryLogger.#inlined(query)}`;
-    if (options.benchmark ?? this.#defaults.benchmark) {
+    const sql = `Executing (${options.transactionId ?? 'default'}): ${this.#text(query, options)}`;
+    if (this.benchmarks(options)) {
       logging(sql.replace('Executing', 'Executed'), elapsed);
     } else {
       // v6 passes the query options here although its typings declare `timing?: number`.

@@ -133,6 +133,9 @@ export class ModelValues {
       ...(options.transaction === undefined ? {} : { transaction: options.transaction }),
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
+      ...(options.logQueryParameters === undefined
+        ? {}
+        : { logQueryParameters: options.logQueryParameters }),
       ...(options.retry === undefined ? {} : { retry: options.retry }),
       ...(options.searchPath === undefined ? {} : { searchPath: options.searchPath }),
       ...(options.replacements === undefined ? {} : { replacements: options.replacements }),

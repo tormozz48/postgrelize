@@ -122,13 +122,8 @@ export class ConnectionManager implements ConnectionManagerContract {
     const client =
       options.client ??
       (await this.getConnection({ type: options.route === 'read' ? 'read' : 'write' }));
-    const logged = this.#logger.enabled(options);
-    const started = logged ? performance.now() : 0;
     try {
-      const result = await this.#send(client, query, options);
-      if (logged) {
-        this.#logger.log(query, options, performance.now() - started);
-      }
+      const result = await this.#logged(query, options, () => this.#send(client, query, options));
       return { rows: result.rows, rowCount: result.rowCount ?? 0, command: result.command };
     } catch (error) {
       throw this.#queryError(error, query, options);
@@ -137,6 +132,26 @@ export class ConnectionManager implements ConnectionManagerContract {
         await this.releaseConnection(client);
       }
     }
+  }
+
+  // like v6, logged before it runs, so a failing statement and each retry show up; with
+  // `benchmark` after it, with the duration
+  async #logged<T>(
+    query: CompiledQuery,
+    options: ExecuteOptions,
+    send: () => Promise<T>,
+  ): Promise<T> {
+    if (!this.#logger.enabled(options)) {
+      return send();
+    }
+    if (!this.#logger.benchmarks(options)) {
+      this.#logger.log(query, options, 0);
+      return send();
+    }
+    const started = performance.now();
+    const result = await send();
+    this.#logger.log(query, options, performance.now() - started);
+    return result;
   }
 
   /**

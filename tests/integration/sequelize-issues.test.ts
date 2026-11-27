@@ -780,7 +780,7 @@ describe('v6 parity: instance update after create with fields, update fields, in
 });
 
 describe('v6 parity: logging', () => {
-  it('logs SQL with the values inlined, keeps bind in the second argument and sends bound parameters', () =>
+  it('logs finder SQL with the values inlined, keeps bind in the second argument and sends bound parameters', () =>
     withSchema(async ({ schema }) => {
       const sequelize = connect(schema);
       const Mail = sequelize.define('Mail', {
@@ -801,7 +801,8 @@ describe('v6 parity: logging', () => {
       const info = logged[0]?.options as { bind: unknown[]; parameterizedSql: string };
       expect(info.bind).toEqual(["a'bc"]);
       expect(info.parameterizedSql).toContain('"sesMessageId" = $1');
-      expect(logged[1]?.sql).toContain(`SET "note" = 'changed'`);
+      // like v6, a write shows its placeholders
+      expect(logged[1]?.sql).toContain('SET "note" = $1');
       // the logged text runs as it is
       const replay = await runSelect(sequelize, loggedSelect.replace(/^Executing \([^)]*\): /, ''));
       expect(replay).toHaveLength(rows.length);

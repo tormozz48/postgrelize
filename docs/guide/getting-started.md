@@ -63,7 +63,7 @@ const sequelize = new Sequelize(url, { logging: (sql) => logger.debug(sql) });
 // Executing (6f1c...): INSERT INTO ...
 ```
 
-All values are sent as bound parameters (`$1`, `$2`, ...), never interpolated into the SQL text.
+All values are sent as bound parameters (`$1`, `$2`, ...), never interpolated into the SQL text. As in Sequelize v6, the log of a finder or delete shows the values in place, while the log of a row write (`create`, `save`, `update`, `upsert`) and of a query with `bind` shows the placeholders; `logQueryParameters: true` appends their values (they may be sensitive). A statement is logged before it runs, or after it with `benchmark: true`.
 
 ## Errors
 
