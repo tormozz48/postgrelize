@@ -104,8 +104,11 @@ export class ColumnDdl {
   }
 
   #literalDefault(type: ColumnDefinition['type'], value: unknown): string {
-    if (type.key === 'DATE' && (value === Infinity || value === -Infinity)) {
-      return value > 0 ? "'infinity'" : "'-infinity'";
+    if (
+      (type.key === 'DATE' || type.key === 'DATEONLY') &&
+      Math.abs(value as number) === Infinity
+    ) {
+      return (value as number) > 0 ? "'infinity'" : "'-infinity'";
     }
     return sqlLiteral.escape(SERIALIZED_DEFAULTS.test(type.key) ? type.serialize?.(value) : value);
   }
