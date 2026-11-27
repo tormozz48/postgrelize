@@ -172,6 +172,8 @@ export type ExecuteOptions = Readonly<{
   /** `statement_timeout` in milliseconds for this query only (`0` disables it). */
   statementTimeout?: number;
   transactionId?: string;
+  /** `search_path` of this statement. */
+  searchPath?: string;
   /** Throw driver errors unmapped. */
   rawErrors?: boolean;
 }>;

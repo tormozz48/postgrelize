@@ -122,7 +122,8 @@ export class ModelValues {
   }
 
   /**
-   * Query options passed on to nested queries: `transaction`, `logging`, `benchmark`, `retry`.
+   * Query options passed on to nested queries: `transaction`, `logging`, `benchmark`, `retry`,
+   * `searchPath`.
    *
    * @param options - Options of the outer call.
    * @returns Query options.
@@ -133,6 +134,7 @@ export class ModelValues {
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
       ...(options.retry === undefined ? {} : { retry: options.retry }),
+      ...(options.searchPath === undefined ? {} : { searchPath: options.searchPath }),
       ...(options.replacements === undefined ? {} : { replacements: options.replacements }),
     };
   }

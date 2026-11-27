@@ -33,10 +33,6 @@
       "category": "other-dialect",
       "note": "Options used only by other dialects (indexHints, ignoreDuplicates, storage, ...)."
     },
-    "search-path": {
-      "category": "not-planned",
-      "note": "searchPath is set per connection / query in postgrelize, not through every options type."
-    },
     "association-members": {
       "category": "tracked",
       "note": "Association members missing: identifier, inspect, isSelfAssociation."
@@ -105,7 +101,6 @@
       "BelongsToManyAddAssociationMixinOptions.mapToModel": "option-keys",
       "BelongsToManyAddAssociationMixinOptions.omitNull": "option-keys",
       "BelongsToManyAddAssociationMixinOptions.reset": "option-keys",
-      "BelongsToManyAddAssociationMixinOptions.searchPath": "search-path",
       "BelongsToManyAddAssociationMixinOptions.type": "option-keys",
       "BelongsToManyAddAssociationsMixinOptions.bind": "option-keys",
       "BelongsToManyAddAssociationsMixinOptions.fieldMap": "query-options-internal",
@@ -115,7 +110,6 @@
       "BelongsToManyAddAssociationsMixinOptions.mapToModel": "option-keys",
       "BelongsToManyAddAssociationsMixinOptions.omitNull": "option-keys",
       "BelongsToManyAddAssociationsMixinOptions.reset": "option-keys",
-      "BelongsToManyAddAssociationsMixinOptions.searchPath": "search-path",
       "BelongsToManyAddAssociationsMixinOptions.type": "option-keys",
       "BelongsToManyCreateAssociationMixinOptions.ignoreDuplicates": "other-dialect",
       "BelongsToManyCreateAssociationMixinOptions.isNewRecord": "option-keys",
@@ -150,10 +144,8 @@
       "BelongsToManySetAssociationsMixinOptions.mapToModel": "option-keys",
       "BelongsToManySetAssociationsMixinOptions.omitNull": "option-keys",
       "BelongsToManySetAssociationsMixinOptions.reset": "option-keys",
-      "BelongsToManySetAssociationsMixinOptions.searchPath": "search-path",
       "BelongsToManySetAssociationsMixinOptions.type": "option-keys",
       "BelongsToSetAssociationMixinOptions.omitNull": "option-keys",
-      "BulkCreateOptions.searchPath": "search-path",
       "ColumnDescription.autoIncrement": "option-keys",
       "CountOptions.attributes": "option-keys",
       "CreateOptions.ignoreDuplicates": "other-dialect",
@@ -352,13 +344,11 @@
       "Sequelize.beforeDefine": "hooks",
       "Sequelize.beforeInit": "hooks",
       "Sequelize.set": "sequelize-members",
-      "SyncOptions.searchPath": "search-path",
       "TransactionOptions.autocommit": "option-keys",
       "TransactionOptions.benchmark": "option-keys",
       "UpdateOptions.limit": "option-keys",
       "UpdateOptions.sideEffects": "option-keys",
       "UpsertOptions.conflictWhere": "option-keys",
-      "UpsertOptions.searchPath": "search-path",
       "ValidationErrorItem.isValidationErrorItemOrigin": "error-members",
       "ValidationErrorItem.normalizeString": "error-members",
       "ValidationErrorItem.static TypeStringMap": "error-members"

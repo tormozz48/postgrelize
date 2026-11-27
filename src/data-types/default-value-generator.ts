@@ -1,5 +1,5 @@
 /**
- * Default value marker (`DataTypes.NOW`, `DataTypes.UUIDV4`): generates a value on the client when a
+ * Default value marker (`DataTypes.NOW`, `DataTypes.UUIDV1`, `DataTypes.UUIDV4`): generates a value on the client when a
  * row is built.
  */
 export class DefaultValueGenerator {

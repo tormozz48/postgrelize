@@ -72,6 +72,8 @@ export const TINYINT = DataTypes.TINYINT;
 export const TSVECTOR = DataTypes.TSVECTOR;
 /** Alias of `DataTypes.UUID` (Sequelize v6 module export). */
 export const UUID = DataTypes.UUID;
+/** Alias of `DataTypes.UUIDV1` (Sequelize v6 module export). */
+export const UUIDV1 = DataTypes.UUIDV1;
 /** Alias of `DataTypes.UUIDV4` (Sequelize v6 module export). */
 export const UUIDV4 = DataTypes.UUIDV4;
 /** Alias of `DataTypes.VIRTUAL` (Sequelize v6 module export). */

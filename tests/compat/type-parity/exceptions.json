@@ -710,11 +710,6 @@
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
     },
     {
-      "name": "UUIDV1",
-      "category": "not-planned",
-      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
-    },
-    {
       "name": "VirtualDataType",
       "category": "not-planned",
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
@@ -990,18 +985,6 @@
         "name": "conflictWhere",
         "category": "tracked",
         "note": "upsert expresses conflict predicates through onConflict"
-      },
-      {
-        "name": "searchPath",
-        "category": "not-planned",
-        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
-      }
-    ],
-    "BulkCreateOptions": [
-      {
-        "name": "searchPath",
-        "category": "not-planned",
-        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
       }
     ],
     "RestoreOptions": [
@@ -1060,13 +1043,6 @@
         "name": "initialAutoIncrement",
         "category": "other-dialect",
         "note": "MySQL only"
-      }
-    ],
-    "IncrementDecrementOptions": [
-      {
-        "name": "searchPath",
-        "category": "not-planned",
-        "note": "searchPath is not supported; set search_path with dialectOptions (migrating guide)"
       }
     ],
     "IncludeOptions": [

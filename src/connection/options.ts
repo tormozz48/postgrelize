@@ -137,7 +137,18 @@ export type SequelizeOptions = Readonly<{
   /** SSL settings passed to `pg`. */
   ssl?: PoolConfig['ssl'];
   /** Extra options passed to the `pg` pool/client as is. */
-  dialectOptions?: Readonly<Omit<PoolConfig, 'types'>>;
+  dialectOptions?: Readonly<
+    Omit<PoolConfig, 'types'> & {
+      /** Apply the `searchPath` option of the instance and of queries (Sequelize v6). */
+      prependSearchPath?: boolean;
+    }
+  >;
+  /**
+   * `search_path` of queries without their own `searchPath` (Sequelize v6), applied only with
+   * `dialectOptions.prependSearchPath`.
+   * @defaultValue 'DEFAULT'
+   */
+  searchPath?: string;
   /**
    * Accepted for Sequelize v6 type compatibility; postgrelize ignores it and always loads `pg`.
    * @defaultValue undefined
