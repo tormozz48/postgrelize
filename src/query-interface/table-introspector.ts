@@ -121,7 +121,7 @@ export class TableIntrospector {
     const rows = await this.#runner.run(this.#describeSql(name, this.#schemaSql(schema)), options);
     if (rows.length === 0) {
       throw new Error(
-        `No description found for table ${name}. Check the table name and schema; remember, they _are_ case sensitive.`,
+        `No description found for "${name}" table. Check the table name and schema; remember, they _are_ case sensitive.`,
       );
     }
     return columnDescriber.describe(rows);
