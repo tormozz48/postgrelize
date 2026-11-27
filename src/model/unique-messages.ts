@@ -42,17 +42,25 @@ export class UniqueMessages {
     }
   }
 
+  // like v6 `uniqueKeys`: attributes naming one key form it, any of them may declare the `msg`
   #declared(definition: ModelDefinition): readonly Declared[] {
-    const attributes = [...definition.attributes.values()].flatMap((attribute) => {
-      const { msg, name } = (
-        typeof attribute.unique === 'object' && attribute.unique !== null ? attribute.unique : {}
-      ) as Readonly<{ msg?: string; name?: string }>;
-      return msg ? [{ key: name ?? attribute.field, columns: [attribute.field], msg }] : [];
-    });
-    const merged = new Map<string, Declared>();
-    for (const { key, columns, msg } of attributes) {
-      merged.set(key, { key, msg, columns: [...(merged.get(key)?.columns ?? []), ...columns] });
+    const merged = new Map<string, { columns: string[]; msg?: string }>();
+    for (const { field, unique } of definition.attributes.values()) {
+      if (unique === undefined || unique === null || unique === false) {
+        continue;
+      }
+      const { name, msg } = (typeof unique === 'object' ? unique : {}) as Readonly<{
+        name?: string;
+        msg?: string;
+      }>;
+      const key = typeof unique === 'string' ? unique : (name ?? field);
+      const known = merged.get(key) ?? { columns: [] };
+      merged.set(key, { columns: [...known.columns, field], ...this.#message(known.msg ?? msg) });
     }
-    return [...merged.values()];
+    return [...merged].flatMap(([key, { columns, msg }]) => (msg ? [{ key, columns, msg }] : []));
+  }
+
+  #message(msg: string | undefined): { msg?: string } {
+    return msg ? { msg } : {};
   }
 }
