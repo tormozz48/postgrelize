@@ -66,6 +66,10 @@ export interface InstanceHookAdders {
   readonly beforeConnect: NamedHookAdder;
   /** Adds a global `afterConnect` hook: `sequelize.afterConnect(fn)` or `sequelize.afterConnect(name, fn)`. */
   readonly afterConnect: NamedHookAdder;
+  /** Adds a global `beforePoolAcquire` hook: `sequelize.beforePoolAcquire(fn)` or `sequelize.beforePoolAcquire(name, fn)`. */
+  readonly beforePoolAcquire: NamedHookAdder;
+  /** Adds a global `afterPoolAcquire` hook: `sequelize.afterPoolAcquire(fn)` or `sequelize.afterPoolAcquire(name, fn)`. */
+  readonly afterPoolAcquire: NamedHookAdder;
   /** Adds a global `beforeBulkSync` hook: `sequelize.beforeBulkSync(fn)` or `sequelize.beforeBulkSync(name, fn)`. */
   readonly beforeBulkSync: NamedHookAdder;
   /** Adds a global `afterBulkSync` hook: `sequelize.afterBulkSync(fn)` or `sequelize.afterBulkSync(name, fn)`. */

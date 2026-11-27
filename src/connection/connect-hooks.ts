@@ -1,6 +1,7 @@
 import type { Client as PgClient, PoolConfig } from 'pg';
 import type { HookRegistry } from '../hooks/hooks.ts';
-import { AfterConnectHook } from './after-connect-hook.ts';
+import { AfterConnectHook, hookFailures } from './after-connect-hook.ts';
+import type { Connection, GetConnectionOptions } from './connection-types.ts';
 import type { ConnectionConfig as ConnectionSettings } from './options.ts';
 
 /**
@@ -35,6 +36,52 @@ export class ConnectHooks {
       password: () => this.#password(config.password),
       Client: this.#after.clientClass(),
     };
+  }
+
+  /**
+   * Runs `beforePoolAcquire(options)` and `afterPoolAcquire(connection, options)` around an
+   * acquisition, like Sequelize v6; a connection whose `afterPoolAcquire` throws is released.
+   *
+   * @param options - Options of `getConnection`.
+   * @param acquire - Takes a connection from the pool.
+   * @returns The acquired connection.
+   */
+  around(options: GetConnectionOptions, acquire: () => Promise<Connection>): Promise<Connection> {
+    const hooks = this.#hooks();
+    // no extra promise on the query path without these hooks
+    return hooks.has('beforePoolAcquire') || hooks.has('afterPoolAcquire')
+      ? this.#acquireWithHooks(options, acquire)
+      : acquire();
+  }
+
+  async #acquireWithHooks(
+    options: GetConnectionOptions,
+    acquire: () => Promise<Connection>,
+  ): Promise<Connection> {
+    await this.#run('beforePoolAcquire', options);
+    const connection = await acquire();
+    try {
+      await this.#run('afterPoolAcquire', connection, options);
+    } catch (error) {
+      connection.release();
+      throw error;
+    }
+    return connection;
+  }
+
+  // marked like `afterConnect` failures, so they are not mapped to connection errors
+  async #run(
+    type: 'beforePoolAcquire' | 'afterPoolAcquire',
+    ...args: readonly unknown[]
+  ): Promise<void> {
+    try {
+      await this.#hooks().run(type, this.#owner, ...args);
+    } catch (error) {
+      if (typeof error === 'object' && error !== null) {
+        hookFailures.add(error);
+      }
+      throw error;
+    }
   }
 
   async #password(configured: PoolConfig['password']): Promise<string> {

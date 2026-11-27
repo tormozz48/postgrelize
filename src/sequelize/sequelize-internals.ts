@@ -219,6 +219,7 @@ export class SequelizeInternals {
       QueryLogger.fromOptions(options),
       new PgErrorMapper(),
       options.statementCache,
+      hooks,
     );
   }
 

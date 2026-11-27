@@ -12,6 +12,8 @@ const INSTANCE_HOOKS = [
   ...NAMED_HOOKS,
   'beforeConnect',
   'afterConnect',
+  'beforePoolAcquire',
+  'afterPoolAcquire',
   'beforeBulkSync',
   'afterBulkSync',
 ] as const satisfies readonly (HookType & keyof InstanceHookAdders)[];
