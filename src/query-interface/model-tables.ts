@@ -44,9 +44,13 @@ export class ModelTables {
    * @returns Column definitions.
    */
   storedColumns(definition: ModelDefinition): readonly ColumnDefinition[] {
-    return [...definition.attributes.values()]
-      .filter((attribute) => attribute.type.isVirtual !== true)
-      .map((attribute) => ddl.columnOf(attribute));
+    // like v6, attributes sharing a column make one column, defined by the last of them
+    const byField = new Map(
+      [...definition.attributes.values()]
+        .filter((attribute) => attribute.type.isVirtual !== true)
+        .map((attribute) => [attribute.field, ddl.columnOf(attribute)] as const),
+    );
+    return [...byField.values()];
   }
 
   /**
