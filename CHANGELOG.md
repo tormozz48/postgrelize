@@ -42,6 +42,39 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 - `belongsToMany` through a model that declares its own primary key keeps that key and gives the two foreign keys a unique key (`uniqueKey`, `through.unique`) like v6. It added both foreign keys to the primary key, so `instance.update()` of one was silently ignored. A junction model that declares only the foreign keys no longer keeps the automatic `id`, and a later association on a junction foreign key keeps its key. **Behaviour change:** `primaryKeyAttributes`, `findByPk`, `upsert` conflict target and the `sync()` schema of such models change; see the migrating guide. Differential test in `tests/compat/btm-through-declared-pk.test.ts`. ([#290](https://github.com/tormozz48/postgrelize/pull/290))
 
+## [1.9.16] - 2026-11-27
+
+### Fixed
+
+- Two `belongsToMany` through the same model now take the other side's `foreignKey` as `otherKey` and its `sourceKey` as `targetKey` when these are not given (an extra column was generated and `add` / `set` failed), associations expose v6's `identifier`, `foreignIdentifier`, `foreignIdentifierField`, `sourceKeyField` and `targetKeyField`, and an attribute with `references: null` no longer crashes `sync`. **Behaviour change:** the junction table of such pairs gets different columns. Differential tests in `tests/compat`. ([#257](https://github.com/tormozz48/postgrelize/pull/257))
+- `belongsTo` / `hasOne` / `hasMany` / `belongsToMany` without a model throw v6's "called with something that's not a subclass of Sequelize.Model", and an unknown `sourceKey` / `targetKey` of `belongsTo`, `hasOne` and `hasMany` throws (it was accepted). Differential test in `tests/compat/association-definition-errors.test.ts`. ([#261](https://github.com/tormozz48/postgrelize/pull/261))
+- Declaring an association again under its default alias replaces it instead of throwing `AssociationError`; only a repeated explicit `as` throws. Differential test in `tests/compat/default-alias-redefine.test.ts`. ([#262](https://github.com/tormozz48/postgrelize/pull/262))
+- **Behaviour change, deletes rows:** the foreign key of `hasOne` / `hasMany` that cannot be `NULL` now gets `ON DELETE CASCADE` (it was `NO ACTION`), like Sequelize v6: once `sync` creates such a constraint, deleting a parent row deletes its children. `belongsTo` keeps `NO ACTION`. Pass `onDelete: 'NO ACTION'` to keep the old behaviour. Differential test in `tests/compat/has-fk-delete-action.test.ts`. ([#263](https://github.com/tormozz48/postgrelize/pull/263))
+- `countX` and `hasX` of `belongsToMany` read only the junction keys (they failed when the join table had no timestamp columns). Differential test in `tests/compat/btm-count-without-timestamps.test.ts`. ([#272](https://github.com/tormozz48/postgrelize/pull/272))
+
+## [1.9.15] - 2026-11-27
+
+### Fixed
+
+- `Deferrable.INITIALLY_IMMEDIATE()`, `INITIALLY_DEFERRED()` and `NOT()` work like in v6 (they threw `is not a function`). Differential test in `tests/compat/deferrable-callable.test.ts`. `sync({ alter: true })` still does not update a changed mode (filed as `B-alter-deferrable-not-updated`). ([#254](https://github.com/tormozz48/postgrelize/pull/254))
+- `queryInterface.addIndex` accepts `null` options (it threw `TypeError`) and `sequelize.sync()` without models checks the connection like v6 (it resolved against an unreachable server). Differential tests in `tests/compat/sync-addindex-inputs.test.ts`. ([#259](https://github.com/tormozz48/postgrelize/pull/259))
+- Index field objects may name their column with v6's `attribute` key in model `indexes` and `addIndex` (`sync` threw `TypeError`). Differential test in `tests/compat/index-attribute-key.test.ts`. ([#264](https://github.com/tormozz48/postgrelize/pull/264))
+- Removing a constraint that does not exist rejects with `UnknownConstraintError` (it was a plain `DatabaseError`). Differential test in `tests/compat/unknown-constraint.test.ts`. ([#265](https://github.com/tormozz48/postgrelize/pull/265))
+- `sequelize.drop()` removes the foreign keys first when tables reference each other in a cycle (it failed with "other objects depend on it"). Differential test in `tests/compat/drop-cyclic.test.ts`. ([#266](https://github.com/tormozz48/postgrelize/pull/266))
+- A foreign key named like the column of another attribute (`foreignKey: 'user_id'` next to `userId: { field: 'user_id' }`) makes one column on `sync` (it failed with "column specified more than once"). Differential test in `tests/compat/fk-field-collision.test.ts`. ([#268](https://github.com/tormozz48/postgrelize/pull/268))
+- `STRING`, `CHAR`, `TEXT`, `BLOB`, `DECIMAL`, `FLOAT`, `REAL` and `DOUBLE` accept v6's options object (`STRING({ length: 12 })` threw). Differential test in `tests/compat/data-type-options-object.test.ts`. ([#270](https://github.com/tormozz48/postgrelize/pull/270))
+- `createFunction` accepts `null` options and `null` / `{}` characteristics, and `createFunction` / `dropFunction` report missing arguments with v6's messages (some threw `TypeError`). Differential test in `tests/compat/function-arguments.test.ts`. ([#271](https://github.com/tormozz48/postgrelize/pull/271))
+- When several models are mapped to one table, `sequelize.sync` syncs only the last one (it synced each, which could fail). Differential test in `tests/compat/two-models-one-table.test.ts`. ([#275](https://github.com/tormozz48/postgrelize/pull/275))
+
+## [1.9.14] - 2026-11-27
+
+### Fixed
+
+- `group: [['col']]` groups by the column (the value was bound as a parameter). Differential test in `tests/compat/group-nested-array.test.ts`. ([#260](https://github.com/tormozz48/postgrelize/pull/260))
+- In raw queries a `$` inside an identifier (`foo$bar`) is no longer read as a bind parameter, and an array inside an array replacement is written as a row `(..)` instead of being flattened. Differential tests in `tests/compat/raw-query-tokens.test.ts`. ([#267](https://github.com/tormozz48/postgrelize/pull/267))
+- `aggregate` selects the given `attributes` next to the aggregate, so `group` may name an alias, and a query with the deprecated `logging: true` logs to `console.log` instead of failing. Differential test in `tests/compat/aggregate-alias-group.test.ts`. ([#273](https://github.com/tormozz48/postgrelize/pull/273))
+- A pooled connection that was closed while idle is no longer handed out, a connection that fails while checked out leaves the pool at once (with `pool.max: 1` the pool stayed exhausted), and `connectionManager.validate` is available. Differential test in `tests/compat/pool-dead-connection.test.ts`. ([#276](https://github.com/tormozz48/postgrelize/pull/276))
+
 ## [1.9.13] - 2026-11-27
 
 ### Fixed
@@ -601,7 +634,10 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...HEAD
+[1.9.16]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...v1.9.16
+[1.9.15]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...v1.9.15
+[1.9.14]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...v1.9.14
 [1.9.13]: https://github.com/tormozz48/postgrelize/compare/v1.9.12...v1.9.13
 [1.9.12]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...v1.9.12
 [1.9.11]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...v1.9.11

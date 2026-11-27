@@ -98,4 +98,15 @@ describe('compat: primary key of a belongsToMany through model', () => {
       return { primaryKeys: MsgDoc.primaryKeyAttributes, schema: await schemaOf(sequelize) };
     });
   });
+
+  it('keeps a declared id when the paired side changes the other key', () =>
+    expectSameResult('', async (lib, sequelize) => {
+      const Msg = sequelize.define('Msg', {});
+      const Doc = sequelize.define('Doc', {});
+      const MsgDoc = sequelize.define('MsgDoc', ownId(lib), { tableName: 'msg_docs' });
+      Msg.belongsToMany(Doc, { through: MsgDoc, foreignKey: 'message' });
+      Doc.belongsToMany(Msg, { through: MsgDoc, foreignKey: 'document' });
+      await sequelize.sync({ force: true });
+      return { primaryKeys: MsgDoc.primaryKeyAttributes, schema: await schemaOf(sequelize) };
+    }));
 });

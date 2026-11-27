@@ -35,6 +35,20 @@ export type DeferrableValue = Readonly<{
   sql: string;
 }>;
 
+/** A mode of a constraint: usable bare or called, like in v6 (`Deferrable.INITIALLY_DEFERRED()`). */
+export type CallableDeferrable = DeferrableValue & (() => DeferrableValue);
+
+const constraintMode = (sql: string): CallableDeferrable => {
+  // a function expression, so that `new` works too; both give the mode itself
+  const mode = Object.assign(
+    function same(): DeferrableValue {
+      return mode;
+    },
+    { sql },
+  );
+  return Object.freeze(mode);
+};
+
 /**
  * Deferrable constraint modes (Sequelize v6 `Deferrable`).
  *
@@ -48,11 +62,11 @@ export type DeferrableValue = Readonly<{
  */
 export const Deferrable = {
   /** `DEFERRABLE INITIALLY IMMEDIATE`. */
-  INITIALLY_IMMEDIATE: Object.freeze<DeferrableValue>({ sql: 'DEFERRABLE INITIALLY IMMEDIATE' }),
+  INITIALLY_IMMEDIATE: constraintMode('DEFERRABLE INITIALLY IMMEDIATE'),
   /** `DEFERRABLE INITIALLY DEFERRED`. */
-  INITIALLY_DEFERRED: Object.freeze<DeferrableValue>({ sql: 'DEFERRABLE INITIALLY DEFERRED' }),
+  INITIALLY_DEFERRED: constraintMode('DEFERRABLE INITIALLY DEFERRED'),
   /** `NOT DEFERRABLE`. */
-  NOT: Object.freeze<DeferrableValue>({ sql: 'NOT DEFERRABLE' }),
+  NOT: constraintMode('NOT DEFERRABLE'),
   /**
    * `SET CONSTRAINTS ... DEFERRED`: for the `deferrable` option of `sequelize.transaction()`, defers the given constraints
    * (all of them when used bare or called without names) for the rest of the transaction.

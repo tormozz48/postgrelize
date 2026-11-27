@@ -4,6 +4,7 @@ import { ModelRegistry } from '../model/model-registry.ts';
 import type { AnyModel, ModelStatic, Values } from '../model/options.ts';
 import type { AssociationKeys, TargetKeys } from './association-keys.ts';
 import type {
+  Association,
   AssociationName,
   BelongsToManyOptions,
   ForeignKeyOptions,
@@ -44,15 +45,18 @@ export class JunctionKeys {
    * @returns Alias forms and keys (including the junction).
    */
   resolve(source: Model, target: Model, options: BelongsToManyOptions): TargetKeys {
-    const names = this.#names(source, target, options);
     const through = this.#through(options);
     const model = this.#throughModel(source, through.model, this.#modelOptions(through, options));
+    const paired = this.#paired(source, target, model);
+    const own = this.#names(source, target, options);
+    const names = paired === undefined ? own : this.#pair(own, options, paired, source, model);
     this.#addKeys(model, [source, target], names, through, options);
     return {
       name: names.name,
       keys: {
         foreignKey: names.foreignKey,
         identifierField: this.#keys.fieldOf(model, names.foreignKey),
+        ...this.#identifiers(source, target, model, names),
         sourceKey: names.sourceKey,
         targetKey: names.targetKey,
         otherKey: names.otherKey,
@@ -74,6 +78,70 @@ export class JunctionKeys {
     const otherKey =
       keys.foreignKeyName(options.otherKey) ?? keys.camelize(`${targetPrefix}_${targetKey}`);
     return { name, sourceKey, targetKey, foreignKey, otherKey };
+  }
+
+  // public v6 properties that are not part of the declared association type
+  #identifiers(source: Model, target: Model, model: Model, names: JunctionNames): Values {
+    return {
+      identifier: names.foreignKey,
+      foreignIdentifier: names.otherKey,
+      foreignIdentifierField: this.#keys.fieldOf(model, names.otherKey),
+      sourceKeyField: this.#keys.fieldOf(source, names.sourceKey),
+      targetKeyField: this.#keys.fieldOf(target, names.targetKey),
+    };
+  }
+
+  // the belongsToMany of the other side that uses the same junction
+  #paired(source: Model, target: Model, model: Model): Association | undefined {
+    return [...(registry.state(target).associations.values() as Iterable<Association>)].find(
+      (association) =>
+        association.associationType === 'BelongsToMany' &&
+        association.target === source &&
+        association.through?.model === model,
+    );
+  }
+
+  // like v6, keys that neither side named follow the keys of the other side
+  #pair(
+    names: JunctionNames,
+    options: BelongsToManyOptions,
+    paired: Association,
+    source: Model,
+    model: Model,
+  ): JunctionNames {
+    const targetKey = options.targetKey ?? paired.sourceKey;
+    const own = this.#names(source, paired.source, { ...options, targetKey });
+    const otherKey = options.otherKey === undefined ? paired.foreignKey : own.otherKey;
+    this.#repair(paired, this.#pairedNames(paired, names), model);
+    return { ...names, targetKey, otherKey };
+  }
+
+  #pairedNames(paired: Association, names: JunctionNames): JunctionNames {
+    const { targetKey, otherKey } = paired.options as BelongsToManyOptions;
+    return {
+      name: paired.name,
+      sourceKey: paired.sourceKey,
+      targetKey: targetKey ?? names.sourceKey,
+      foreignKey: paired.foreignKey,
+      otherKey: otherKey === undefined ? names.foreignKey : (paired.otherKey as string),
+    };
+  }
+
+  #repair(paired: Association, names: JunctionNames, model: Model): void {
+    if (names.otherKey === paired.otherKey && names.targetKey === paired.targetKey) {
+      return;
+    }
+    if (names.otherKey !== paired.otherKey) {
+      registry.removeAttribute(model, paired.otherKey as string);
+    }
+    const options = paired.options as BelongsToManyOptions;
+    const through = this.#through(options);
+    this.#addKeys(model, [paired.source, paired.target], names, through, options);
+    Object.assign(paired, {
+      targetKey: names.targetKey,
+      otherKey: names.otherKey,
+      ...this.#identifiers(paired.source, paired.target, model, names),
+    });
   }
 
   // v6 `_injectAttributes`: the keys form the primary key only in place of a generated one,
@@ -161,7 +229,7 @@ export class JunctionKeys {
     };
     return keys.keyAttribute(keys.attributeOf(model, key), keys.foreignKeyExtras(option), {
       ...role,
-      ...keys.reference(spec, false, { onDelete: 'CASCADE', onUpdate: 'CASCADE' }),
+      ...keys.reference(spec, { onDelete: 'CASCADE', onUpdate: 'CASCADE' }),
     });
   }
 

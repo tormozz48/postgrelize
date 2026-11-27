@@ -78,7 +78,9 @@ describe('function DDL', () => {
     expect(() => create({ language: "plpgsql' AS" })).toThrow(/language/);
     expect(() => create({ options: ['IMMUTABLE; DROP'] })).toThrow(/function option/);
     expect(() => create({ param: 'a b' })).toThrow(/parameter name/);
-    expect(() => functions.createSql('f', [], '', 'plpgsql', 'x', [], {})).toThrow(/requires/);
+    expect(() => functions.createSql('f', [], '', 'plpgsql', 'x', [], {})).toThrow(
+      /missing some parameters/,
+    );
     expect(() =>
       functions.createSql('f', [{ type: 'int', direction: 'sideways' }], 'int', 'sql', 'x', [], {}),
     ).toThrow(/direction/);

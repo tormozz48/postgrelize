@@ -48,6 +48,10 @@ const runSync = async (sequelize: SequelizeBase, options: SyncOptions): Promise<
     await sequelize.internals.hooks.run('beforeBulkSync', sequelize, hookOptions);
   }
   const models = new Map(Object.values(sequelize.models).map((m) => [registry.definition(m), m]));
+  // like v6, a sync with nothing to create still fails when the database is unreachable
+  if (models.size === 0) {
+    await sequelize.authenticate(options);
+  }
   await synchronizer(sequelize).syncAll(definitions(sequelize), options, (definition, run) =>
     syncHooks.around(models.get(definition) ?? {}, hookOptions, run),
   );

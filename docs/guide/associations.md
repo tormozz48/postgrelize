@@ -16,7 +16,7 @@ Notes on the example:
 
 The primary key of a junction model follows v6. Without a declared primary key the automatic `id` is dropped and the two foreign keys form a composite primary key. A junction model that declares its own primary key keeps it, and the two foreign keys get a unique key instead: name it with `uniqueKey`, or allow repeated links with `through: { model, unique: false }`.
 
-`sync()` creates the foreign key constraints with the v6 defaults: `ON DELETE SET NULL` for nullable foreign keys (`NO ACTION` for `allowNull: false`), `ON DELETE CASCADE` for junction tables, and `ON UPDATE CASCADE`. Override them with `onDelete` / `onUpdate`, or skip constraints with `constraints: false`.
+`sync()` creates the foreign key constraints with the v6 defaults: `ON DELETE SET NULL` for nullable foreign keys; for `allowNull: false` ones, `NO ACTION` with `belongsTo` and `CASCADE` with `hasOne` / `hasMany`; `ON DELETE CASCADE` for junction tables, and `ON UPDATE CASCADE`. Override them with `onDelete` / `onUpdate`, or skip constraints with `constraints: false`.
 
 Default aliases and foreign keys come from the model's `name` init option when it is set (`name: { singular: 'user', plural: 'users' }`, as in v6), otherwise from the inflected `modelName`. An `include` entry takes a custom join condition with `on`; it replaces the key condition of `belongsTo`, `hasOne` and `hasMany` includes (not of `belongsToMany`).
 
