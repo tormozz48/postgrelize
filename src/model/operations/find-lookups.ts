@@ -4,6 +4,7 @@ import type { IncludeResolver } from '../../associations/include-resolver.ts';
 import { EmptyResultError, UniqueConstraintError } from '../../errors/errors.ts';
 import type { SqlCompiler } from '../../sql/compile.ts';
 import type { Transaction } from '../../transaction/transaction.ts';
+import { Op } from '../../expressions/op.ts';
 import type { AttributeColumns } from '../attribute-columns.ts';
 import type { FindQueryBuilder } from '../find-query-builder.ts';
 import type { ModelRegistry } from '../model-registry.ts';
@@ -20,6 +21,7 @@ import type {
 import type { RowMapper } from '../row-mapper.ts';
 import type { SelectQueryBuilder } from '../select-query-builder.ts';
 import type { WhereOptions } from '../types.ts';
+import { IntegerKeys } from './integer-keys.ts';
 import { ModelOperation, type OperationServices } from './model-operation.ts';
 import { TransactionQueue } from './transaction-queue.ts';
 
@@ -47,6 +49,8 @@ export type FindOperationServices = OperationServices &
     /** SQL compiler. */
     compiler: SqlCompiler;
   }>;
+
+const integerKeys = new IntegerKeys();
 
 /**
  * Finders of `Model` built on `findAll` / `findOne` / `count`: `findOne`, `findByPk`,
@@ -113,8 +117,12 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
     if (key === null || key === undefined) {
       return null;
     }
-    const name = this.services.registry.definition(model).primaryKeys[0] ?? 'id';
-    return model.findOne({ ...options, where: { [name]: key } as WhereOptions });
+    const definition = this.services.registry.definition(model);
+    const name = definition.primaryKeys[0] ?? 'id';
+    // like v6, a number no integer key can hold finds nothing; bound, it would be a database error
+    const type = definition.attributes.get(name)?.type.sqlType;
+    const value = integerKeys.holds(type, key) ? key : { [Op.in]: [] };
+    return model.findOne({ ...options, where: { [name]: value } as WhereOptions });
   }
 
   /**
