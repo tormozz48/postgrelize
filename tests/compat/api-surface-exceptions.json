@@ -79,11 +79,6 @@
   ],
   "Sequelize.prototype": [
     {
-      "name": "Sequelize",
-      "category": "internal",
-      "note": "v6 internal or self reference, not part of the documented API"
-    },
-    {
       "name": "afterAssociate",
       "category": "not-planned",
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"

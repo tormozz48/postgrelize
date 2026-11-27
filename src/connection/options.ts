@@ -204,4 +204,6 @@ export type ConnectionConfig = Readonly<{
   host: string;
   /** Port. */
   port: number;
+  /** The `dialectOptions` option, as given. */
+  dialectOptions?: SequelizeOptions['dialectOptions'];
 }>;

@@ -320,4 +320,9 @@ export class Sequelize extends SequelizeMembers {
   constructor(...args: readonly unknown[]) {
     super(...args);
   }
+
+  /** The `Sequelize` class (Sequelize v6 `sequelize.Sequelize`). */
+  get Sequelize(): typeof Sequelize {
+    return Sequelize;
+  }
 }

@@ -141,6 +141,7 @@ export class ConnectionConfig {
       password: options.password,
       host: options.host ?? 'localhost',
       port: options.port ?? 5432,
+      ...(options.dialectOptions === undefined ? {} : { dialectOptions: options.dialectOptions }),
     };
   }
 
