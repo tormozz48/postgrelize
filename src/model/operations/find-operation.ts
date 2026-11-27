@@ -9,6 +9,7 @@ import type { ModelDefinition } from '../model-definition.ts';
 import type { AnyModel, FindOptions, ModelStatic, MutableOptions, Values } from '../options.ts';
 import { FindCursor } from './find-cursor.ts';
 import { FindLookups, type FindOperationServices } from './find-lookups.ts';
+import { VirtualSelection } from './virtual-selection.ts';
 
 export type { FindOperationServices } from './find-lookups.ts';
 
@@ -23,6 +24,8 @@ type FindCall = Readonly<{
   includes: readonly IncludeNode[];
   addedKey?: string;
 }>;
+
+const selection = new VirtualSelection();
 
 /**
  * Finders of `Model`: `findAll` (scopes, paranoid filter, hooks, includes, raw / nested rows),
@@ -170,6 +173,7 @@ export class FindOperation extends FindLookups {
       return this.#raw(call, rows);
     }
     const found = this.#instances(call, rows);
+    selection.apply(call.definition, call.opts['attributes'], found);
     if (call.includes.length > 0) {
       await this.services.loader.loadSeparate(found, call.includes, call.query);
     }

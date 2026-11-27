@@ -51,6 +51,8 @@ export class InstanceState {
   loadedIncludes: readonly IncludeNode[] = NO_INCLUDES;
   /** Built from a query row; like v6, such instances do not list the virtual `getterMethods`. */
   queried = false;
+  /** Getters of virtual attributes the finder did not select, which `get()` leaves out (v6). */
+  unselected: ReadonlySet<string> | undefined = undefined;
   /** Whether the row was inserted (`true`) or updated (`false`) by an `ON CONFLICT` write. */
   wasInserted: boolean | undefined = undefined;
   /** Pre-statement values from `returningOld`, `null` for inserted rows. */

@@ -115,7 +115,7 @@ export class InstanceValues {
     const passed = typeof options === 'object' ? options : {};
     const definition = this.#registry.definition(instance.constructor);
     const keys = new Set([
-      ...(raw ? [] : methods.getterNames(definition, InstanceState.of(instance).queried)),
+      ...(raw ? [] : this.#getterNames(instance, definition)),
       ...Object.keys(instance.dataValues),
     ]);
     return Object.fromEntries(
@@ -127,6 +127,12 @@ export class InstanceValues {
         ),
       ]),
     );
+  }
+
+  #getterNames(instance: AnyModel, definition: ModelDefinition): readonly string[] {
+    const { queried, unselected } = InstanceState.of(instance);
+    const names = methods.getterNames(definition, queried);
+    return unselected === undefined ? names : names.filter((name) => !unselected.has(name));
   }
 
   // nested instances get the caller's options too (v6 getters receive them)
