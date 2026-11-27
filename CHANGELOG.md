@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-11-27
+
 ### Fixed
 
 - `ValidationErrorItem#getValidatorKey` of an item without a validator key returns `''`, like v6. Differential test in `tests/compat/missing-members.test.ts`. ([#327](https://github.com/tormozz48/postgrelize/pull/327))
@@ -687,7 +689,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/tormozz48/postgrelize/compare/v1.9.22...v1.10.0
 [1.9.22]: https://github.com/tormozz48/postgrelize/compare/v1.9.21...v1.9.22
 [1.9.21]: https://github.com/tormozz48/postgrelize/compare/v1.9.20...v1.9.21
