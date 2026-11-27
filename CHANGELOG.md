@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.15] - 2026-11-27
+
 ### Fixed
 
 - `Deferrable.INITIALLY_IMMEDIATE()`, `INITIALLY_DEFERRED()` and `NOT()` work like in v6 (they threw `is not a function`). Differential test in `tests/compat/deferrable-callable.test.ts`. `sync({ alter: true })` still does not update a changed mode (filed as `B-alter-deferrable-not-updated`). ([#254](https://github.com/tormozz48/postgrelize/pull/254))
@@ -618,7 +620,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...HEAD
+[1.9.15]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...v1.9.15
 [1.9.14]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...v1.9.14
 [1.9.13]: https://github.com/tormozz48/postgrelize/compare/v1.9.12...v1.9.13
 [1.9.12]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...v1.9.12
