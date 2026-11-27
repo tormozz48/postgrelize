@@ -392,14 +392,6 @@
       "risk": "error",
       "repro": "await User.findByPk(4732322332323333232344334354234) // DatabaseError, v6 null"
     },
-    "D-unique-msg-composite": {
-      "cause": "bug",
-      "area": "unique",
-      "note": "A unique key over several attributes does not use the msg declared on one of them: the error message stays Validation error.",
-      "test": "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
-      "risk": "cosmetic",
-      "repro": "a: { unique: { name: 'k', msg: 'm' } }, b: { unique: 'k' } // duplicate create: message 'Validation error', v6 'm'"
-    },
     "D-harness-datatype-internals": {
       "cause": "harness",
       "area": "harness",
@@ -1678,8 +1670,6 @@
     },
     "test/integration/model.test.js": {
       "failing": [
-        "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
-        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
@@ -1693,9 +1683,7 @@
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
-        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated",
-        "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "D-unique-msg-composite",
-        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "D-unique-msg-composite"
+        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated"
       }
     },
     "test/integration/model/attributes/field.test.js": {

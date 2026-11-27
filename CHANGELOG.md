@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- A `UniqueConstraintError` of a unique key over several attributes carries the `msg` that any of them declares, like v6. Differential test in `tests/compat/unique-msg.test.ts`. ([#313](https://github.com/tormozz48/postgrelize/pull/313))
+
 ## [1.9.21] - 2026-11-27
 
 ### Fixed
