@@ -125,7 +125,7 @@ You can hold a connection outside any query, for example a replica connection fo
 
 `getConnection({ type: 'read' })` goes to a replica. In v6 the runtime only recognises the query type `'SELECT'` there, so `type: 'read'` (the value its typings document) reaches the writer; postgrelize accepts both names.
 
-`listen` does not go through the manager: it opens a dedicated connection outside the pool, from this instance's own settings, so it is not routed. Hooks such as `beforePoolAcquire` are not run (see [migrating](/guide/migrating)).
+`listen` does not go through the manager: it opens a dedicated connection outside the pool, from this instance's own settings, so it is not routed. The [pool acquire hooks](./hooks-validation) run around every `getConnection`.
 
 ## Retrying failed queries
 

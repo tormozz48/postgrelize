@@ -94,11 +94,6 @@
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },
     {
-      "name": "afterPoolAcquire",
-      "category": "not-planned",
-      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
-    },
-    {
       "name": "afterQuery",
       "category": "not-planned",
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
@@ -120,11 +115,6 @@
     },
     {
       "name": "beforeInit",
-      "category": "not-planned",
-      "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
-    },
-    {
-      "name": "beforePoolAcquire",
       "category": "not-planned",
       "note": "This hook is accepted by addHook but never run by postgrelize, so no named adder is provided"
     },

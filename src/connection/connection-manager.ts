@@ -1,6 +1,7 @@
 import { ConnectionHealth } from './connection-health.ts';
 import { Client as PgClient, Pool, types, type PoolClient, type PoolConfig } from 'pg';
 import { hookFailures } from './after-connect-hook.ts';
+import type { ConnectHooks } from './connect-hooks.ts';
 import { CopyRunner } from './copy-runner.ts';
 import type {
   Client,
@@ -52,6 +53,7 @@ const health = new ConnectionHealth();
  */
 export class ConnectionManager implements ConnectionManagerContract {
   readonly #config: PoolConfig;
+  readonly #poolHooks: ConnectHooks | undefined;
   readonly #router: ReplicaRouter<Pool>;
   readonly #logger: QueryLogger;
   readonly #errors: PgErrorMapper;
@@ -67,6 +69,7 @@ export class ConnectionManager implements ConnectionManagerContract {
    * @param logger - Logger of executed statements.
    * @param errors - Driver error mapper.
    * @param statementCache - Named prepared statement settings; unnamed statements when absent.
+   * @param poolHooks - Runs the pool acquire hooks.
    */
   constructor(
     config: PoolConfig,
@@ -74,7 +77,9 @@ export class ConnectionManager implements ConnectionManagerContract {
     logger: QueryLogger,
     errors: PgErrorMapper,
     statementCache?: boolean | StatementCacheOptions,
+    poolHooks?: ConnectHooks,
   ) {
+    this.#poolHooks = poolHooks;
     this.#config = config;
     this.#logger = logger;
     this.#errors = errors;
@@ -83,10 +88,7 @@ export class ConnectionManager implements ConnectionManagerContract {
         ? undefined
         : new StatementCache(statementCache);
     this.#copies = this.#copyRunner();
-    this.#router = new ReplicaRouter(
-      ConnectionManager.#pool(config),
-      readConfigs.map((readConfig) => ConnectionManager.#pool(readConfig)),
-    );
+    this.#router = ConnectionManager.#routerOf(config, readConfigs);
   }
 
   /**
@@ -162,7 +164,9 @@ export class ConnectionManager implements ConnectionManagerContract {
   getConnection(options: GetConnectionOptions = {}): Promise<Connection> {
     const read =
       (options.type === 'read' || options.type === 'SELECT') && options.useMaster !== true;
-    return this.#acquire(this.#router.pool(read ? 'read' : 'write'));
+    const acquire = (): Promise<PoolClient> =>
+      this.#acquire(this.#router.pool(read ? 'read' : 'write'));
+    return this.#poolHooks === undefined ? acquire() : this.#poolHooks.around(options, acquire);
   }
 
   /**
@@ -342,6 +346,13 @@ export class ConnectionManager implements ConnectionManagerContract {
       release(error);
     };
     return client;
+  }
+
+  static #routerOf(config: PoolConfig, readConfigs: readonly PoolConfig[]): ReplicaRouter<Pool> {
+    return new ReplicaRouter(
+      ConnectionManager.#pool(config),
+      readConfigs.map((readConfig) => ConnectionManager.#pool(readConfig)),
+    );
   }
 
   static #pool(config: PoolConfig): Pool {

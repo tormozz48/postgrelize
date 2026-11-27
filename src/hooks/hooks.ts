@@ -1,5 +1,5 @@
 /**
- * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect`, `afterConnect`, the sync
+ * Hook names accepted by `addHook` (Sequelize v6). Model lifecycle hooks, `beforeConnect`, `afterConnect`, the pool acquire hooks, the sync
  * hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`), `beforeDefine` / `afterDefine` and the static
  * `beforeInit` / `afterInit` run; the other connection hooks and query / association hooks are accepted and not run yet.
  */

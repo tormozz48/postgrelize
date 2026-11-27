@@ -91,7 +91,7 @@ These Sequelize v6 features are not implemented:
 | `create({ ignoreDuplicates })`         | `create(values, { onConflict: { action: 'nothing' } })` or `bulkCreate([...], { ignoreDuplicates })`. |
 | Sequelize v7 (`@sequelize/core`) API   | Not planned.                                                                                          |
 
-Hooks are accepted for every v6 hook name, but model lifecycle hooks, `beforeConnect`, `afterConnect`, the sync hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`), the define hooks of the instance (`beforeDefine`, `afterDefine`) and the static `Sequelize.beforeInit` / `Sequelize.afterInit` run; the other connection hooks and `beforeQuery`, `beforeAssociate`, ... are registered and never called. See [Hooks and validation](./hooks-validation).
+Hooks are accepted for every v6 hook name, but model lifecycle hooks, `beforeConnect`, `afterConnect`, the pool acquire hooks, the sync hooks (`beforeBulkSync`, `afterBulkSync`, `beforeSync`, `afterSync`), the define hooks of the instance (`beforeDefine`, `afterDefine`) and the static `Sequelize.beforeInit` / `Sequelize.afterInit` run; the other connection hooks and `beforeQuery`, `beforeAssociate`, ... are registered and never called. See [Hooks and validation](./hooks-validation).
 
 ## API differences
 
@@ -99,26 +99,26 @@ postgrelize is checked against the public API of Sequelize v6.37 (`Sequelize`, `
 
 <!-- api-differences:start -->
 
-| Surface                | Status              | Names                                                                                                                                                                                                      |
-| ---------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Sequelize` statics    | Not planned         | `ABSTRACT`                                                                                                                                                                                                 |
-| `Sequelize` statics    | Other dialects only | `IndexHints`, `TableHints`, `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                                                |
-| `Sequelize` statics    | v6 internals        | `AsyncQueueError`, `Sequelize`, `default`                                                                                                                                                                  |
-| `Sequelize` instance   | Not planned         | `afterAssociate`, `afterDefine`, `afterDisconnect`, `afterInit`, `afterPoolAcquire`, `afterQuery`, `beforeAssociate`, `beforeDefine`, `beforeDisconnect`, `beforeInit`, `beforePoolAcquire`, `beforeQuery` |
-| `Sequelize` instance   | Other dialects only | `set`                                                                                                                                                                                                      |
-| `Sequelize` instance   | v6 internals        | `dialect`, `normalizeAttribute`, `normalizeDataType`                                                                                                                                                       |
-| `Model` statics        | Not planned         | `afterAssociate`, `afterBulkSync`, `afterQuery`, `beforeAssociate`, `beforeBulkSync`, `beforeQuery`                                                                                                        |
-| `Model` statics        | v6 internals        | `Mixin`, `default`, `queryGenerator`, `warnOnInvalidOptions`                                                                                                                                               |
-| `Model` instance       | Not planned         | `addHook`, `hasHook`, `hasHooks`, `removeHook`, `runHooks`, `setValidators`                                                                                                                                |
-| `Transaction` statics  | v6 internals        | `Transaction`, `default`                                                                                                                                                                                   |
-| `Transaction` instance | v6 internals        | `cleanup`, `forceCleanup`, `prepareEnvironment`, `setDeferrable`                                                                                                                                           |
-| `QueryInterface`       | Not planned         | `commitTransaction`, `decrement`, `delete`, `increment`, `insert`, `rawSelect`, `rollbackTransaction`, `select`, `setIsolationLevel`, `startTransaction`, `update`, `upsert`                               |
-| `QueryInterface`       | v6 internals        | `ensureEnums`, `normalizeAttribute`, `pgListEnums`                                                                                                                                                         |
-| `DataTypes`            | Not planned         | `ABSTRACT`                                                                                                                                                                                                 |
-| `DataTypes`            | Other dialects only | `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                                                                            |
-| Module exports         | Not planned         | `ABSTRACT`                                                                                                                                                                                                 |
-| Module exports         | Other dialects only | `IndexHints`, `TableHints`                                                                                                                                                                                 |
-| Module exports         | v6 internals        | `AsyncQueueError`                                                                                                                                                                                          |
+| Surface                | Status              | Names                                                                                                                                                                        |
+| ---------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sequelize` statics    | Not planned         | `ABSTRACT`                                                                                                                                                                   |
+| `Sequelize` statics    | Other dialects only | `IndexHints`, `TableHints`, `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                  |
+| `Sequelize` statics    | v6 internals        | `AsyncQueueError`, `Sequelize`, `default`                                                                                                                                    |
+| `Sequelize` instance   | Not planned         | `afterAssociate`, `afterDefine`, `afterDisconnect`, `afterInit`, `afterQuery`, `beforeAssociate`, `beforeDefine`, `beforeDisconnect`, `beforeInit`, `beforeQuery`            |
+| `Sequelize` instance   | Other dialects only | `set`                                                                                                                                                                        |
+| `Sequelize` instance   | v6 internals        | `dialect`, `normalizeAttribute`, `normalizeDataType`                                                                                                                         |
+| `Model` statics        | Not planned         | `afterAssociate`, `afterBulkSync`, `afterQuery`, `beforeAssociate`, `beforeBulkSync`, `beforeQuery`                                                                          |
+| `Model` statics        | v6 internals        | `Mixin`, `default`, `queryGenerator`, `warnOnInvalidOptions`                                                                                                                 |
+| `Model` instance       | Not planned         | `addHook`, `hasHook`, `hasHooks`, `removeHook`, `runHooks`, `setValidators`                                                                                                  |
+| `Transaction` statics  | v6 internals        | `Transaction`, `default`                                                                                                                                                     |
+| `Transaction` instance | v6 internals        | `cleanup`, `forceCleanup`, `prepareEnvironment`, `setDeferrable`                                                                                                             |
+| `QueryInterface`       | Not planned         | `commitTransaction`, `decrement`, `delete`, `increment`, `insert`, `rawSelect`, `rollbackTransaction`, `select`, `setIsolationLevel`, `startTransaction`, `update`, `upsert` |
+| `QueryInterface`       | v6 internals        | `ensureEnums`, `normalizeAttribute`, `pgListEnums`                                                                                                                           |
+| `DataTypes`            | Not planned         | `ABSTRACT`                                                                                                                                                                   |
+| `DataTypes`            | Other dialects only | `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                                              |
+| Module exports         | Not planned         | `ABSTRACT`                                                                                                                                                                   |
+| Module exports         | Other dialects only | `IndexHints`, `TableHints`                                                                                                                                                   |
+| Module exports         | v6 internals        | `AsyncQueueError`                                                                                                                                                            |
 
 <!-- api-differences:end -->
 
