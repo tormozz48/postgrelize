@@ -22,6 +22,7 @@ describe('compat: logged statements', () => {
         await User.update({ name: 'ann' }, { where: { id: 1 }, ...options });
         await User.findAll({ where: { name: 'ann' }, ...options });
         await sequelize.query('SELECT $1::text AS a', { bind: ['ann'], ...options });
+        await sequelize.query({ query: 'SELECT $1::text AS a', bind: ['ann'] } as never, options);
         return lines.map(shape);
       });
     },
