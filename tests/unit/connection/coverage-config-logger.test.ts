@@ -37,7 +37,7 @@ describe('ConnectionConfig', () => {
     expect(config.settings().port).toBe(1);
     const write = config.replicationPoolConfigs().write;
     expect(write.max).toBe(9);
-    expect(write.options).toBe('-c TimeZone=Europe/Paris');
+    expect(write.options).toBe('-c TimeZone=Europe/Paris -c client_min_messages=warning');
   });
 
   it('accepts database, username and password as separate arguments', () => {
@@ -92,7 +92,7 @@ describe('ConnectionConfig', () => {
       connectionTimeoutMillis: 7,
       maxUses: 11,
       statement_timeout: 50,
-      options: '-c TimeZone=+00:00 -c search_path=s',
+      options: '-c TimeZone=+00:00 -c client_min_messages=warning -c search_path=s',
     });
     expect(new ConnectionConfig([{}]).replicationPoolConfigs().write).toMatchObject({
       max: 5,
