@@ -1,11 +1,12 @@
 import { AbstractDataType } from './abstract-data-type.ts';
+import { NumberType } from './number-type.ts';
 
 /**
  * `DECIMAL(precision, scale)` (`DataTypes.DECIMAL`, `DataTypes.NUMBER`); values are strings.
  *
  * @internal
  */
-export class DecimalType extends AbstractDataType {
+export class DecimalType extends NumberType {
   /**
    * @param digits - Precision.
    * @param scale - Scale.

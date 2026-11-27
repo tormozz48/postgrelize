@@ -16,6 +16,8 @@ import { HstoreType } from './hstore-type.ts';
 import { IntegerType, type IntegerArgument } from './integer-type.ts';
 import { JsonType } from './json-type.ts';
 import { MultirangeType } from './multirange-type.ts';
+import type { NumberType } from './number-type.ts';
+import { NumericScalarType } from './numeric-scalar-type.ts';
 import { RangeType } from './range-type.ts';
 import { ScalarType } from './scalar-type.ts';
 import { SpatialType } from './spatial-type.ts';
@@ -104,22 +106,52 @@ const decimal = (digits?: number, scale?: number): DecimalType =>
     scale ?? (typeof digits === 'object' ? given(digits, 'scale') : undefined),
   );
 
+/** A non-integer numeric type whose `UNSIGNED` / `ZEROFILL` chains stay callable. */
+const numeric = <A extends unknown[], T extends NumberType>(
+  build: (...args: A) => T,
+  bare: T,
+  key: string = bare.key,
+): Callable<T, A> =>
+  callable(
+    (...args: A) => build(...args).with((bare as { options?: object }).options ?? {}),
+    bare,
+    {
+      UNSIGNED: { get: () => numeric(build, bare.UNSIGNED, key) },
+      ZEROFILL: { get: () => numeric(build, bare.ZEROFILL, key) },
+    },
+    key,
+  );
+
+/** `STRING` / `CHAR` with their `BINARY` form. */
+const characters = <T extends StringType | CharType>(
+  Type: new (length?: number, binary?: boolean) => T,
+): Callable<T, [length?: number, binary?: boolean]> =>
+  callable(
+    (length?: number, binary?: boolean) =>
+      new Type(
+        given(length, 'length'),
+        binary ?? (typeof length === 'object' ? given(length, 'binary') : undefined),
+      ),
+    new Type(),
+    { BINARY: { get: () => new Type().BINARY } },
+  );
+
 /** `REAL` / `DOUBLE` called with the arguments v6 takes (length, decimals); PostgreSQL ignores them. */
 const floating = <R extends DataTypes.NumberDataType>(
   key: string,
   sqlType: string,
-): Callable<ScalarType, [length?: number, decimals?: number], R> =>
-  callable(
+): Callable<NumericScalarType, [length?: number, decimals?: number], R> =>
+  numeric(
     (first?: number, second?: number) => {
       const length = given<number>(first, 'length');
       const decimals = second ?? (typeof first === 'object' ? given(first, 'decimals') : undefined);
-      return new ScalarType(key, sqlType, {
+      return new NumericScalarType(key, sqlType, {
         ...(length === undefined ? {} : { length }),
         ...(decimals === undefined ? {} : { decimals }),
       });
     },
-    new ScalarType(key, sqlType),
-  ) as unknown as Callable<ScalarType, [length?: number, decimals?: number], R>;
+    new NumericScalarType(key, sqlType),
+  ) as unknown as Callable<NumericScalarType, [length?: number, decimals?: number], R>;
 
 const INTEGER = new IntegerType('INTEGER', 'INTEGER');
 
@@ -152,10 +184,10 @@ type VirtualFactory = VirtualType &
  * ```
  */
 export const DataTypes = {
-  /** `VARCHAR(length)`, default length 255. */
-  STRING: callable((length?: number) => new StringType(given(length, 'length')), new StringType()),
-  /** `CHAR(length)`, default length 255. */
-  CHAR: callable((length?: number) => new CharType(given(length, 'length')), new CharType()),
+  /** `VARCHAR(length)`, default length 255; `BINARY` is `BYTEA`. */
+  STRING: characters(StringType),
+  /** `CHAR(length)`, default length 255; `BINARY` is `BYTEA`. */
+  CHAR: characters(CharType),
   /** `TEXT`. The size argument is accepted for compatibility and ignored. */
   TEXT: callable(
     (size?: 'tiny' | 'medium' | 'long') => new TextType(given(size, 'length')),
@@ -174,23 +206,30 @@ export const DataTypes = {
   /** `BIGINT`; values are returned as strings. */
   BIGINT: integer<DataTypes.BigIntDataType>('BIGINT', 'BIGINT'),
   /** `FLOAT(precision)`. */
-  FLOAT: callable((digits?: number) => new FloatType(given(digits, 'length')), new FloatType()),
+  FLOAT: numeric(
+    (digits?: number, places?: number) =>
+      new FloatType(
+        given(digits, 'length'),
+        places ?? (typeof digits === 'object' ? given(digits, 'decimals') : undefined),
+      ),
+    new FloatType(),
+  ),
   /** `REAL`. */
   REAL: floating<DataTypes.RealDataType>('REAL', 'REAL'),
   /** `DOUBLE PRECISION`. */
   DOUBLE: floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `DECIMAL(precision, scale)`; values are returned as strings. */
-  DECIMAL: callable(decimal, new DecimalType()),
+  DECIMAL: numeric(decimal, new DecimalType()),
   /** Alias of `DECIMAL`. */
-  NUMBER: callable(decimal, new DecimalType(), {}, 'NUMBER'),
+  NUMBER: numeric(decimal, new DecimalType(), 'NUMBER'),
   /** Alias of `DECIMAL` (v6 `NUMERIC`). */
-  NUMERIC: callable(decimal, new DecimalType()),
+  NUMERIC: numeric(decimal, new DecimalType()),
   /** `DOUBLE PRECISION` (v6 alias of `DOUBLE`). */
   'DOUBLE PRECISION': floating<DataTypes.DoubleDataType>('DOUBLE', 'DOUBLE PRECISION'),
   /** `BOOLEAN`. */
   BOOLEAN: plain(new ScalarType('BOOLEAN', 'BOOLEAN')),
   /** `TIMESTAMP WITH TIME ZONE`; values are `Date` objects. */
-  DATE: callable((fsp?: number) => new DateType(fsp), new DateType()),
+  DATE: callable((fsp?: number) => new DateType(given(fsp, 'length')), new DateType()),
   /**
    * `TIMESTAMP WITHOUT TIME ZONE`; values are `Date` objects whose local wall-clock time is the
    * stored time. PostgreSQL extension.
