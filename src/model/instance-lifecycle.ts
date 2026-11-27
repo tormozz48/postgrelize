@@ -182,6 +182,7 @@ export class InstanceLifecycle {
     instance._previousDataValues = { ...instance.dataValues };
     InstanceState.of(instance).reset();
     InstanceState.of(instance).loadedIncludes = InstanceState.of(reloaded).loadedIncludes;
+    InstanceState.of(instance).queried = InstanceState.of(reloaded).queried;
     return instance;
   }
 

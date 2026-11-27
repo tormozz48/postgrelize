@@ -40,6 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Fixed
 
+- `reload()` marks the instance as loaded by a query like v6, so `get()` and `toJSON()` no longer list the virtual `getterMethods` after a reload and a reloaded instance deep-equals the same row from a finder. Differential test in `tests/compat/reload-queried.test.ts`. ([#288](https://github.com/tormozz48/postgrelize/pull/288))
 - `belongsToMany` through a model that declares its own primary key keeps that key and gives the two foreign keys a unique key (`uniqueKey`, `through.unique`) like v6. It added both foreign keys to the primary key, so `instance.update()` of one was silently ignored. A junction model that declares only the foreign keys no longer keeps the automatic `id`, and a later association on a junction foreign key keeps its key. **Behaviour change:** `primaryKeyAttributes`, `findByPk`, `upsert` conflict target and the `sync()` schema of such models change; see the migrating guide. Differential test in `tests/compat/btm-through-declared-pk.test.ts`. ([#290](https://github.com/tormozz48/postgrelize/pull/290))
 
 ## [1.9.16] - 2026-11-27
