@@ -432,14 +432,6 @@
       "risk": "error",
       "repro": "await sequelize.transaction(t => Promise.all([1,2].map(() => User.findOrCreate({ where: { name: 'a' }, transaction: t })))) // aborts the transaction"
     },
-    "C-btm-polymorphic-through-pk": {
-      "cause": "bug",
-      "area": "btm",
-      "note": "Regression of 1.9.17: a polymorphic belongsToMany pair on one through model gets a primary key of one column, so the second row fails with UniqueConstraintError.",
-      "test": "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations",
-      "risk": "error",
-      "repro": "Post.belongsToMany(Tag, { foreignKey: 'taggable_id', through }); Tag.belongsToMany(Post, { foreignKey: 'tag_id', through }); await sync() // PRIMARY KEY (taggable_id) only"
-    },
     "D-dateonly-infinity-default": {
       "cause": "bug",
       "area": "dateonly",
@@ -2184,14 +2176,6 @@
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models": "D-grouped-limit-option"
-      }
-    },
-    "test/integration/model/create/include.test.js": {
-      "failing": [
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
-      ],
-      "causes": {
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "C-btm-polymorphic-through-pk"
       }
     },
     "test/integration/error.test.js": {

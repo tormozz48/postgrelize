@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 95. Open: 30 (includes causes found while fixing).
+Fixed: 96. Open: 29 (includes causes found while fixing).
 
 ## Fixed
 
@@ -103,6 +103,7 @@ Fixed: 95. Open: 30 (includes causes found while fixing).
 | `C-modelmanager-all-findmodel` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
 | `C-validation-error-item-api` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
 | `D-config-dialectoptions-missing` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
+| `C-btm-polymorphic-through-pk` | error | [#309](https://github.com/tormozz48/postgrelize/pull/309) |
 
 ## Not fixed
 
@@ -135,6 +136,5 @@ Fixed: 95. Open: 30 (includes causes found while fixing).
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
 | `C-findorcreate-shared-tx` | error | Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock. |
-| `C-btm-polymorphic-through-pk` | error | Regression of 1.9.17: a polymorphic belongsToMany pair on one through model gets a primary key of one column, so the second row fails with UniqueConstraintError. |
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
 | `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |
