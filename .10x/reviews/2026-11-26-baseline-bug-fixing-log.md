@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10, 1.9.12 to 1.9.16, 1.9.18 to 1.9.21).
 
-Fixed: 108. Open: 19 (includes causes found while fixing).
+Fixed: 115. Open: 11 (includes causes found while fixing).
 
 ## Fixed
 
@@ -116,6 +116,13 @@ Fixed: 108. Open: 19 (includes causes found while fixing).
 | `D-validator-key-empty` | cosmetic | [#327](https://github.com/tormozz48/postgrelize/pull/327) |
 | `C-findorcreate-shared-tx` | error | [#330](https://github.com/tormozz48/postgrelize/pull/330) |
 | `C-client-min-messages` | cosmetic | [#335](https://github.com/tormozz48/postgrelize/pull/335) |
+| `D-findbypk-out-of-range` | error | [#329](https://github.com/tormozz48/postgrelize/pull/329) |
+| `B-logging-interpolated` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
+| `C-bind-log-inlined` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
+| `C-logqueryparameters` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
+| `C-no-logging-on-failed-query` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
+| `C-log-default-noop` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
+| `B-virtual-exclude` | cosmetic | [#334](https://github.com/tormozz48/postgrelize/pull/334) |
 
 ## Not fixed
 
@@ -123,20 +130,12 @@ Fixed: 108. Open: 19 (includes causes found while fixing).
 | --- | --- | --- |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
-| `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
-| `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
-| `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
-| `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
-| `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
-| `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
 | `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
 | `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
 | `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
-| `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
-| `D-findbypk-out-of-range` | error | findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads. |

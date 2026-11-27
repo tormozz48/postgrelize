@@ -41,6 +41,7 @@ Differences to know:
 - `findByPk(id, { rejectOnEmpty: true })` resolves to the model (not `M | null`), as `findOne` does.
 - `sequelize.query` accepts a string or a `literal()`, not the v6 `{ query, values }` object form.
 - `searchPath` works as in v6 with `dialectOptions.prependSearchPath`, but is set on the connection for the statement (the value is bound) and restored afterwards, instead of being written before the SQL text. Statements with a path skip `statementCache`; `findCursor` and `COPY` do not apply it.
+- The logged SQL is the statement postgrelize sends, so its formatting differs from v6 (for example `"col" = $1` where v6 writes `"col"=$1`): do not match log lines against v6 SQL text.
 - Option keys that postgrelize does not implement (`omitNull`, ...) are not in the option types, so the compiler points at them.
 - `Model.sequelize` and `instance.sequelize` are typed `Sequelize` (not optional, it throws on a model that is not initialized), `WhereAttributeHash` defaults to `any`, attribute `get` / `set` and model-level `validate` functions can be written with a typed `this` and a callback style `next`, and the parameters of hook functions are `any` so an unannotated hook compiles.
 

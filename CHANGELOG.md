@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `findByPk` with a number the integer primary key cannot hold resolves to `null` (or rejects with `EmptyResultError`), like v6; it rejected with `DatabaseError`. Differential test in `tests/compat/find-by-pk-out-of-range.test.ts`. ([#329](https://github.com/tormozz48/postgrelize/pull/329))
+- Logging follows v6: row writes and queries with `bind` are logged with placeholders, `logQueryParameters` appends their values, a statement is logged before it runs (so a failing one and each retry show up; with `benchmark` after it) and `sequelize.log` writes to `console.log` when no `logging` is given. **Behaviour change:** the logged text of writes no longer carries the values. Differential test in `tests/compat/logging-placeholders.test.ts`. ([#333](https://github.com/tormozz48/postgrelize/pull/333))
+- `get()` of a found instance omits the virtual attributes with a getter that the finder's `attributes` left out, like v6. Differential test in `tests/compat/virtual-attribute-selection.test.ts`. ([#334](https://github.com/tormozz48/postgrelize/pull/334))
+
 ## [1.10.1] - 2026-11-27
 
 ### Fixed
