@@ -17,6 +17,7 @@ import type { CompiledQuery } from '../sql/compile.ts';
 import type { QueryLogger } from './query-logger.ts';
 import { ManagerPools } from './pool-counters.ts';
 import { ReplicaRouter } from './replica-router.ts';
+import { SearchPath } from './search-path.ts';
 import { StatementTimeout } from './statement-timeout.ts';
 import { StatementCache, type StatementClient } from './statement-cache.ts';
 import type { StatementCacheOptions } from './options.ts';
@@ -57,6 +58,7 @@ export class ConnectionManager implements ConnectionManagerContract {
   readonly #copies: CopyRunner;
   readonly #statements: StatementCache | undefined;
   readonly #timeouts = new StatementTimeout();
+  readonly #searchPaths = new SearchPath();
   #counters: ManagerPools | undefined;
 
   /**
@@ -269,13 +271,29 @@ export class ConnectionManager implements ConnectionManagerContract {
     query: CompiledQuery,
     options: ExecuteOptions,
   ): ReturnType<StatementClient['query']> {
-    const run = (): ReturnType<StatementClient['query']> =>
-      this.#statements === undefined
-        ? client.query({ text: query.text, values: query.values as unknown[] })
-        : this.#statements.run(client, query, options.client === undefined);
+    const run = this.#onPath(client, options, () => this.#dispatch(client, query, options));
     return options.statementTimeout === undefined
       ? run()
       : this.#timeouts.run(client, options.client !== undefined, options.statementTimeout, run);
+  }
+
+  #onPath(
+    client: Client,
+    { searchPath }: ExecuteOptions,
+    send: () => ReturnType<StatementClient['query']>,
+  ): () => ReturnType<StatementClient['query']> {
+    return searchPath === undefined ? send : () => this.#searchPaths.run(client, searchPath, send);
+  }
+
+  #dispatch(
+    client: Client,
+    query: CompiledQuery,
+    options: ExecuteOptions,
+  ): ReturnType<StatementClient['query']> {
+    // a prepared statement keeps the tables it was planned against: not reused across paths
+    return this.#statements === undefined || options.searchPath !== undefined
+      ? client.query({ text: query.text, values: query.values as unknown[] })
+      : this.#statements.run(client, query, options.client === undefined);
   }
 
   async #acquire(pool: Pool): Promise<PoolClient> {

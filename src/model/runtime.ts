@@ -24,6 +24,14 @@ export type QueryOptionsBase = {
    */
   statementTimeout?: number;
   /**
+   * `search_path` of this query, a comma separated schema list (`'tenant,public'`), as in Sequelize
+   * v6: applied only with `dialectOptions.prependSearchPath`, ignored otherwise. It is set on the
+   * connection for the statement and restored afterwards. `'DEFAULT'` keeps the connection's path.
+   *
+   * @defaultValue the instance `searchPath` option, or `'DEFAULT'`
+   */
+  searchPath?: string;
+  /**
    * Retries this query when it fails, merged over the instance `retry` option (Sequelize v6). The
    * connection acquisition is part of the retried work; a query that runs in a transaction is never
    * retried.

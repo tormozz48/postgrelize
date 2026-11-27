@@ -146,6 +146,8 @@ export const V6_RUNTIME_OPTIONS: readonly string[] = [
   'retry',
   'keyType',
   'rawErrors',
+  'searchPath',
+  'prependSearchPath',
   'tableAs',
   'nested',
   'replacements',
