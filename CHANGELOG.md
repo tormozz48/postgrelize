@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.16] - 2026-11-27
+
 ### Fixed
 
 - Two `belongsToMany` through the same model now take the other side's `foreignKey` as `otherKey` and its `sourceKey` as `targetKey` when these are not given (an extra column was generated and `add` / `set` failed), associations expose v6's `identifier`, `foreignIdentifier`, `foreignIdentifierField`, `sourceKeyField` and `targetKeyField`, and an attribute with `references: null` no longer crashes `sync`. **Behaviour change:** the junction table of such pairs gets different columns. Differential tests in `tests/compat`. ([#257](https://github.com/tormozz48/postgrelize/pull/257))
@@ -628,7 +630,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...HEAD
+[1.9.16]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...v1.9.16
 [1.9.15]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...v1.9.15
 [1.9.14]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...v1.9.14
 [1.9.13]: https://github.com/tormozz48/postgrelize/compare/v1.9.12...v1.9.13
