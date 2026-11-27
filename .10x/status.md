@@ -98,6 +98,10 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Release 1.10.0 (2026-11-27, released)
+
+Three Sequelize v6 features that were `unsupported`: `searchPath` (#321), `DataTypes.UUIDV1` (#322), `beforePoolAcquire` / `afterPoolAcquire` (#323). Release PR #325, merge commit `953e915`; bench gate green on `main` against v1.9.22 (geometric mean -0.1%); `release.yml` run 46067491882 green; npm `latest` 1.10.0, attestation present, GitHub Release created. The registry served the metadata before the tarball (about 5 minutes of 404); ESM and CJS import in a clean directory once it was there. Not checked: npm Provenance badge page, GitHub Packages mirror page.
+
 ## Releases 1.9.18 to 1.9.22 (2026-11-27, released)
 
 Third batch of v6 suite baseline fixes, merged and released in five groups. Each release: bench gate green, `release.yml` all jobs green, npm `latest`, ESM and CJS import in a clean directory, attestation present, GitHub Release created. Not checked: npm Provenance badge page, GitHub Packages mirror page.
