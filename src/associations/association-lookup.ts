@@ -164,7 +164,7 @@ export class AssociationLookup {
   }
 
   #sameModel(left: Model, right: Model): boolean {
-    return registry.state(left) === registry.state(right);
+    return registry.origin(left) === registry.origin(right);
   }
 
   #byAssociation(source: Model, given: Association | string): Association {

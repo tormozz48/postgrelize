@@ -18,6 +18,7 @@ const NOT_INITIALIZED = 'Model is not initialized. Call Model.init() or sequeliz
 const states = new WeakMap<object, ModelState>();
 const selections = new WeakMap<object, readonly ScopeSelector[]>();
 const owners = new WeakMap<object, RuntimeOwner>();
+const origins = new WeakMap<object, object>();
 const accessors = new ModelAccessors();
 const factory = new ModelStateFactory();
 const defineHooks = new DefineHooks();
@@ -191,6 +192,7 @@ export class ModelRegistry {
    */
   bindSchema(model: object, bound: object, schema: string, delimiter: string | undefined): void {
     states.set(bound, factory.withSchema(this.state(model), schema, delimiter));
+    origins.set(bound, this.origin(model));
     const owner = owners.get(this.#owner(model) as object);
     if (owner !== undefined) {
       owners.set(bound, owner);
@@ -199,6 +201,28 @@ export class ModelRegistry {
     if (selected !== undefined) {
       selections.set(bound, selected);
     }
+  }
+
+  /**
+   * The initialized model a class stands for: itself for scoped subclasses and, through them, the
+   * model a schema-bound copy was made from.
+   *
+   * @param model - Model class.
+   * @returns The original class.
+   */
+  origin(model: object): object {
+    const owner = this.#owner(model) as object;
+    return origins.get(owner) ?? owner;
+  }
+
+  /**
+   * Whether `model` is, or is scoped from, a schema-bound copy.
+   *
+   * @param model - Model class.
+   * @returns `true` for `Model.schema()` copies.
+   */
+  isSchemaCopy(model: object): boolean {
+    return origins.has(this.#owner(model) as object);
   }
 
   /**

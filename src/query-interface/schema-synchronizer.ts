@@ -248,15 +248,15 @@ export class SchemaSynchronizer {
     if (fields.length === 0) {
       return;
     }
-    const { schema } = options;
-    const definition = tables.inSchema(model, schema);
+    const definition = tables.inSchema(model, options.schema);
     const table = tables.tableOf(definition);
+    const qualified = sqlLiteral.quoteTable(table);
     const existing = await this.#alter.foreignKeyColumns(table, options);
     await this.#run(
       tables
         .storedColumns(definition)
         .filter((column) => fields.includes(column.field) && !existing.has(column.field))
-        .map((column) => tables.foreignKeySql(sqlLiteral.quoteTable(table), column, schema)),
+        .map((column) => tables.foreignKeySql(qualified, column, definition.schema)),
       options,
     );
   }

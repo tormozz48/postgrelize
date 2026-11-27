@@ -77,7 +77,8 @@ export class ModelTables {
           : { comment: definition.options.comment }),
         ...(definition.options.unlogged === true ? { unlogged: true } : {}),
         ...(definition.options.temporary === true ? { temporary: true } : {}),
-        ...(schema === undefined ? {} : { defaultSchema: schema }),
+        // like v6, an unqualified reference stays in the schema of the created table
+        ...this.#referenceSchema(schema ?? definition.schema),
       },
     );
   }
@@ -109,6 +110,10 @@ export class ModelTables {
    */
   foreignKeySql(qualified: string, column: ColumnDefinition, schema: string | undefined): string {
     return `ALTER TABLE ${qualified} ADD FOREIGN KEY (${SqlCompiler.quoteIdent(column.field)}) ${ddl.referencesSql(column, schema) ?? ''}`;
+  }
+
+  #referenceSchema(schema: string | undefined): Readonly<{ defaultSchema?: string }> {
+    return schema === undefined ? {} : { defaultSchema: schema };
   }
 
   #indexField(definition: ModelDefinition, field: IndexField): IndexField {
