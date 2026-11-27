@@ -67,6 +67,16 @@ export class AssociationKeys {
   }
 
   /**
+   * Name of a model.
+   *
+   * @param model - Model class.
+   * @returns Model name.
+   */
+  nameOf(model: Model): string {
+    return registry.state(model).definition.name;
+  }
+
+  /**
    * Column of an attribute.
    *
    * @param model - Model class.
