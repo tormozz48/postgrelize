@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.18] - 2026-11-27
+
 ### Fixed
 
 - Regression since 1.9.17: a paired `belongsToMany` (for example a polymorphic pair) on a through model that declares its foreign keys got a primary key of one column, so a second link failed with `UniqueConstraintError`; both keys form the primary key again, like v6. Join tables created by `sync()` on 1.9.17 keep the one-column key: change it by hand. Differential test in `tests/compat/btm-through-declared-pk.test.ts`. ([#309](https://github.com/tormozz48/postgrelize/pull/309))
@@ -643,7 +645,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.17...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.18...HEAD
+[1.9.18]: https://github.com/tormozz48/postgrelize/compare/v1.9.17...v1.9.18
 [1.9.17]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...v1.9.17
 [1.9.16]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...v1.9.16
 [1.9.15]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...v1.9.15
