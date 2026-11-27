@@ -9,6 +9,7 @@ import { DataTypeIdentity } from './data-type-identity.ts';
 import { DateType } from './date-type.ts';
 import { DecimalType } from './decimal-type.ts';
 import { DefaultValueGenerator } from './default-value-generator.ts';
+import { UuidV1 } from './uuid-v1.ts';
 import { EnumType } from './enum-type.ts';
 import { FloatType } from './float-type.ts';
 import { GeometricType } from './geometric-type.ts';
@@ -172,6 +173,8 @@ type VirtualFactory = VirtualType &
     returnType?: T,
     fields?: readonly string[],
   ) => VirtualType & DataTypes.VirtualDataType<Element<T>>);
+
+const uuidV1 = new UuidV1();
 
 /**
  * Column types, API-compatible with Sequelize v6 `DataTypes` for PostgreSQL.
@@ -352,6 +355,8 @@ export const DataTypes = {
   ) as unknown as VirtualFactory,
   /** Default value: current timestamp. */
   NOW: new DefaultValueGenerator('NOW', () => new Date()),
+  /** Default value: time-based UUID v1 generated on the client; it reveals when the row was built. */
+  UUIDV1: new DefaultValueGenerator('UUIDV1', () => uuidV1.next()),
   /** Default value: random UUID v4 generated on the client. */
   UUIDV4: new DefaultValueGenerator('UUIDV4', () => randomUUID()),
 } as const;

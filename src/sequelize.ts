@@ -165,6 +165,8 @@ export class Sequelize extends SequelizeMembers {
   static readonly TSVECTOR = DataTypes.TSVECTOR;
   /** Alias of `DataTypes.UUID`. */
   static readonly UUID = DataTypes.UUID;
+  /** Alias of `DataTypes.UUIDV1`. */
+  static readonly UUIDV1 = DataTypes.UUIDV1;
   /** Alias of `DataTypes.UUIDV4`. */
   static readonly UUIDV4 = DataTypes.UUIDV4;
   /** Alias of `DataTypes.VIRTUAL`. */

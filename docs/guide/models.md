@@ -56,7 +56,7 @@ Instances track changes as in v6: `changed()`, `previous()`, `save()` writes onl
 | Structured     | `JSON`, `JSONB`, `HSTORE`, `ARRAY(type)`, `RANGE(type)`, `ENUM(...values)`                                                                        |
 | PostGIS        | `GEOMETRY`, `GEOGRAPHY`                                                                                                                           |
 | Not stored     | `VIRTUAL`                                                                                                                                         |
-| Default values | `DataTypes.NOW` (current time), `DataTypes.UUIDV4` (random UUID generated in Node.js)                                                             |
+| Default values | `DataTypes.NOW` (current time), `DataTypes.UUIDV1` / `UUIDV4` (UUID generated in Node.js)                                                         |
 
 As in v6, `BIGINT` and `DECIMAL` values are returned as strings to avoid precision loss. `INTERVAL` values are strings in PostgreSQL output format (`'1 year 2 mons'`). `RANGE` values are arrays of two bounds, `{ value, inclusive }` objects as in v6.
 
