@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `ValidationErrorItem#getValidatorKey` of an item without a validator key returns `''`, like v6. Differential test in `tests/compat/missing-members.test.ts`. ([#327](https://github.com/tormozz48/postgrelize/pull/327))
+- Concurrent `findOrCreate` calls in one caller transaction return the row instead of aborting the transaction: they run one after another. Differential test in `tests/compat/find-or-create-pool.test.ts`. ([#330](https://github.com/tormozz48/postgrelize/pull/330))
+- Sessions use `client_min_messages = warning` by default, and `clientMinMessages` / `dialectOptions.clientMinMessages` change it (`false` / `'ignore'` keep the server default), like v6. **Behaviour change:** `NOTICE` messages were sent before. Differential test in `tests/compat/client-min-messages.test.ts`. ([#335](https://github.com/tormozz48/postgrelize/pull/335))
+
 ## [1.10.0] - 2026-11-27
 
 ### Added

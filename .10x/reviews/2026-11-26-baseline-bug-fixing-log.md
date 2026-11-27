@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10, 1.9.12 to 1.9.16, 1.9.18 to 1.9.21).
 
-Fixed: 105. Open: 22 (includes causes found while fixing).
+Fixed: 108. Open: 19 (includes causes found while fixing).
 
 ## Fixed
 
@@ -113,6 +113,9 @@ Fixed: 105. Open: 22 (includes causes found while fixing).
 | `B-alter-deferrable-not-updated` | error | [#301](https://github.com/tormozz48/postgrelize/pull/301) |
 | `D-addindex-expression-fields` | error | [#303](https://github.com/tormozz48/postgrelize/pull/303) |
 | `D-unique-msg-composite` | cosmetic | [#313](https://github.com/tormozz48/postgrelize/pull/313) |
+| `D-validator-key-empty` | cosmetic | [#327](https://github.com/tormozz48/postgrelize/pull/327) |
+| `C-findorcreate-shared-tx` | error | [#330](https://github.com/tormozz48/postgrelize/pull/330) |
+| `C-client-min-messages` | cosmetic | [#335](https://github.com/tormozz48/postgrelize/pull/335) |
 
 ## Not fixed
 
@@ -124,7 +127,6 @@ Fixed: 105. Open: 22 (includes causes found while fixing).
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
 | `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
 | `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
-| `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
 | `C-log-default-noop` | cosmetic | sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log. |
 | `C-logqueryparameters` | cosmetic | logQueryParameters option is not implemented: logs have no parameters suffix. |
@@ -136,7 +138,5 @@ Fixed: 105. Open: 22 (includes causes found while fixing).
 | `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
-| `C-findorcreate-shared-tx` | error | Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock. |
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
-| `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |
 | `D-findbypk-out-of-range` | error | findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads. |
