@@ -25,13 +25,23 @@ export class IndexElementDdl {
     }
     return [
       field.expression === undefined
-        ? SqlCompiler.quoteIdent(field.name)
+        ? SqlCompiler.quoteIdent(this.columnName(field) as string)
         : this.#expression(field.expression),
       field.collate === undefined ? '' : ` COLLATE ${SqlCompiler.quoteIdent(field.collate)}`,
       this.#operatorClass(field.operator ?? operator),
       field.order === undefined ? '' : ` ${field.order === 'DESC' ? 'DESC' : 'ASC'}`,
       field.nulls === undefined ? '' : ` NULLS ${field.nulls === 'FIRST' ? 'FIRST' : 'LAST'}`,
     ].join('');
+  }
+
+  /**
+   * Column of a field object: v6 also accepts it under the `attribute` key.
+   *
+   * @param field - Field object.
+   * @returns Column name, if given.
+   */
+  columnName(field: Exclude<IndexField, string>): string | undefined {
+    return (field as Readonly<{ attribute?: string }>).attribute ?? field.name;
   }
 
   #expression(expression: string): string {
