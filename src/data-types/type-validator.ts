@@ -86,7 +86,8 @@ export class TypeValidator {
         : format('%j is not a valid choice in %j', value, type.values);
     }
     const rule = RULES[type.key];
-    return rule === undefined || rule.valid(value)
+    const binary = (type as { options?: { binary?: boolean } }).options?.binary === true;
+    return rule === undefined || rule.valid(value) || (binary && Buffer.isBuffer(value))
       ? undefined
       : format(`%j is not a valid ${rule.noun}`, value);
   }

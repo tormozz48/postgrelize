@@ -48,6 +48,22 @@ export abstract class AbstractDataType implements DataType {
   }
 
   /**
+   * A frozen copy with more `options`, for the v6 modifiers (`BINARY`, `UNSIGNED`, `ZEROFILL`).
+   *
+   * @param options - Options added to the type's own.
+   * @param sqlType - Column type of the copy.
+   * @returns The copy.
+   */
+  with(options: object, sqlType: string = this.sqlType): this {
+    const merged = Object.freeze({ ...(this as { options?: object }).options, ...options });
+    const copy = Object.assign(Object.create(Object.getPrototypeOf(this)), this, {
+      options: merged,
+      sqlType,
+    }) as this;
+    return Object.freeze(copy);
+  }
+
+  /**
    * PostgreSQL column type, like Sequelize v6 `toSql()`.
    *
    * @returns The SQL type, e.g. `'VARCHAR(255)'`.
