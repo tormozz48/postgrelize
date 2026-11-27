@@ -38,6 +38,18 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `Deferrable.INITIALLY_IMMEDIATE()`, `INITIALLY_DEFERRED()` and `NOT()` work like in v6 (they threw `is not a function`). Differential test in `tests/compat/deferrable-callable.test.ts`. `sync({ alter: true })` still does not update a changed mode (filed as `B-alter-deferrable-not-updated`). ([#254](https://github.com/tormozz48/postgrelize/pull/254))
+- `queryInterface.addIndex` accepts `null` options (it threw `TypeError`) and `sequelize.sync()` without models checks the connection like v6 (it resolved against an unreachable server). Differential tests in `tests/compat/sync-addindex-inputs.test.ts`. ([#259](https://github.com/tormozz48/postgrelize/pull/259))
+- Index field objects may name their column with v6's `attribute` key in model `indexes` and `addIndex` (`sync` threw `TypeError`). Differential test in `tests/compat/index-attribute-key.test.ts`. ([#264](https://github.com/tormozz48/postgrelize/pull/264))
+- Removing a constraint that does not exist rejects with `UnknownConstraintError` (it was a plain `DatabaseError`). Differential test in `tests/compat/unknown-constraint.test.ts`. ([#265](https://github.com/tormozz48/postgrelize/pull/265))
+- `sequelize.drop()` removes the foreign keys first when tables reference each other in a cycle (it failed with "other objects depend on it"). Differential test in `tests/compat/drop-cyclic.test.ts`. ([#266](https://github.com/tormozz48/postgrelize/pull/266))
+- A foreign key named like the column of another attribute (`foreignKey: 'user_id'` next to `userId: { field: 'user_id' }`) makes one column on `sync` (it failed with "column specified more than once"). Differential test in `tests/compat/fk-field-collision.test.ts`. ([#268](https://github.com/tormozz48/postgrelize/pull/268))
+- `STRING`, `CHAR`, `TEXT`, `BLOB`, `DECIMAL`, `FLOAT`, `REAL` and `DOUBLE` accept v6's options object (`STRING({ length: 12 })` threw). Differential test in `tests/compat/data-type-options-object.test.ts`. ([#270](https://github.com/tormozz48/postgrelize/pull/270))
+- `createFunction` accepts `null` options and `null` / `{}` characteristics, and `createFunction` / `dropFunction` report missing arguments with v6's messages (some threw `TypeError`). Differential test in `tests/compat/function-arguments.test.ts`. ([#271](https://github.com/tormozz48/postgrelize/pull/271))
+- When several models are mapped to one table, `sequelize.sync` syncs only the last one (it synced each, which could fail). Differential test in `tests/compat/two-models-one-table.test.ts`. ([#275](https://github.com/tormozz48/postgrelize/pull/275))
+
 ## [1.9.14] - 2026-11-27
 
 ### Fixed

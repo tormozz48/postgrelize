@@ -99,14 +99,6 @@
       "repro": "Object.keys(U.build({a:'x'}).toJSON()) // ['isUser','id','a'], v6: ['id','a','isUser']",
       "test": "Instance toJSON build returns a response that can be stringified"
     },
-    "B-deferrable-callable": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Deferrable.INITIALLY_IMMEDIATE() / INITIALLY_DEFERRED() (v6 allows the call form) throws 'is not a function': postgrelize exposes plain objects.",
-      "risk": "error",
-      "repro": "references:{deferrable:Deferrable.INITIALLY_IMMEDIATE()}",
-      "test": "Model sync with { alter: true } updates the deferrable property of a foreign key"
-    },
     "B-findorcreate-pool-deadlock": {
       "cause": "bug",
       "area": "model",
@@ -134,14 +126,6 @@
       "cause": "harness",
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
-    },
-    "B-index-field-attribute-key": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Index field objects in define({indexes:[{fields:[{attribute:'email',collate,order,length}]}]}) use v6's `attribute` key; postgrelize only reads `name`, so sync crashes with TypeError reading replaceAll of undefined.",
-      "risk": "error",
-      "repro": "sq.define('m',{a:DataTypes.INTEGER,e:DataTypes.STRING},{indexes:[{name:'ix',fields:['a',{attribute:'e',order:'DESC'}]}]}); await sq.sync()",
-      "test": "Model constructor should allow the user to specify indexes in options"
     },
     "B-invalid-attr-message": {
       "cause": "bug",
@@ -194,14 +178,6 @@
       "risk": "error",
       "repro": "await U.sync({force:true,schema:'s_one'}); await K.sync({force:true,schema:'s_one'}); await k.setUserXYZ(u)",
       "test": "Model schemas regressions defaults to schema provided to sync() for references #11276"
-    },
-    "B-sync-two-models-one-table": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Two models mapped to the same table are both synced (v6 keeps only the last one per table), so the FK to the second model's column is created against the first model's table and sync fails (edge case).",
-      "risk": "error",
-      "repro": "sq.define('User',{n:DataTypes.STRING}); sq.define('project',{UserId:{type:DataTypes.STRING,references:{model:'Users',key:'UUID'}}}); sq.define('Users',{UUID:{type:DataTypes.STRING,primaryKey:true}}); await sq.sync({force:true})",
-      "test": "Model should be possible to use a key named UUID as foreign key"
     },
     "B-triage-upsert-infinity-pk": {
       "cause": "triage",
@@ -258,14 +234,6 @@
       "cause": "harness",
       "area": "harness",
       "note": "Test file requires unmapped sequelize/lib/* deep imports (abstract connection-manager, errors/*, postgres hstore/range, utils, data-types) or v6 lib internals; does not load."
-    },
-    "C-addindex-null-options": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "queryInterface.addIndex(table, fields, null, name) throws TypeError (options null) while v6 accepts null options.",
-      "risk": "error",
-      "repro": "await qi.addIndex({schema:'schema',tableName:'table'},['name','isAdmin'],null,'schema_table') // TypeError Cannot read properties of null (reading 'replacements')",
-      "test": "QueryInterface indexes works with schemas"
     },
     "C-bind-log-inlined": {
       "cause": "bug",
@@ -336,14 +304,6 @@
       "repro": "U.findOrCreate({where:{name:'K'},logging:x=>l.push(x)}) -> first log line is 'Executing (default): SELECT', v6 logs the transaction id for both",
       "test": "CLS does not leak outside findOrCreate"
     },
-    "C-fk-field-collision": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasMany/belongsTo foreignKey equal to the column name (field) of an existing attribute creates a duplicate column in CREATE TABLE (\"user_id\" specified more than once); v6 merges by field.",
-      "risk": "error",
-      "repro": "UV=define('UV',{userId:{type:STRING,field:'user_id'}}); U.hasMany(UV,{foreignKey:'user_id'}); await UV.sync({force:true}) // column \"user_id\" specified more than once",
-      "test": "stacktraces emits raw errors if requested"
-    },
     "C-log-default-noop": {
       "cause": "bug",
       "area": "config",
@@ -407,26 +367,10 @@
       "repro": "await qi.addConstraint('users',{fields:['username']}) // TypeError toLowerCase (v6: Constraint type must be specified through options.type)",
       "test": "addconstraint missing type"
     },
-    "C-qi-function-args": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "createFunction/dropFunction/renameFunction do not accept null or non-array optionsArray (TypeError options.map / null .schema) and validation messages differ from v6; a rejected-with TypeError in the test also crashes the mocha process via unhandled rejection.",
-      "risk": "error",
-      "repro": "await qi.createFunction('f',[{type:'varchar',name:'t'}],'varchar','plpgsql','return t;',null) // TypeError Cannot read properties of null (reading 'map')",
-      "test": "createFunction treats options as optional"
-    },
     "C-querygenerator-internals": {
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls queryInterface.queryGenerator.* (getForeignKeysQuery, selectQuery) which postgrelize does not expose."
-    },
-    "C-references-without-model-drop": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Attribute with references:{deferrable} but no model (filled by belongsTo) makes sync/drop throw TypeError in referencedTable.",
-      "risk": "error",
-      "repro": "A=define('A',{BId:{type:INTEGER,references:{deferrable:Deferrable.INITIALLY_IMMEDIATE}}}); B likewise; A.belongsTo(B,{foreignKey:{allowNull:false}}); B.belongsTo(A,...); await s.sync(); await s.drop() // TypeError Cannot use 'in' operator ... 'getTableName'",
-      "test": "supports dropping cyclic associations"
     },
     "C-replication-internals": {
       "cause": "harness",
@@ -445,22 +389,6 @@
       "cause": "harness",
       "area": "harness",
       "note": "Test uses sinon stubs of v6 internals / queryGenerator / sequelize.query spies / operatorsAliases on dialect."
-    },
-    "C-sync-no-models-connection": {
-      "cause": "bug",
-      "area": "connection",
-      "note": "sequelize.sync({force:true}) with no models and an unreachable database resolves successfully; v6 rejects (ConnectionError).",
-      "risk": "error",
-      "repro": "await new Sequelize('cyber_bird','user','pass',{dialect:'postgres'}).sync({force:true}) // resolves",
-      "test": "sync fails for incorrect connection even when no models are defined"
-    },
-    "C-unknown-constraint-error": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "removeConstraint of a non-existent constraint throws SequelizeDatabaseError; v6 throws UnknownConstraintError.",
-      "risk": "error",
-      "repro": "await qi.removeConstraint('users','nope',{type:'unique'}) // DatabaseError (v6 UnknownConstraintError)",
-      "test": "unknown constraint should throw non existent constraints as UnknownConstraintError"
     },
     "C-validate-alias-identity": {
       "cause": "harness",
@@ -591,6 +519,30 @@
       "area": "harness",
       "note": "sequelize@6 itself gives the same stack header on current Node (no trailing colon for an empty message).",
       "test": "errors should maintain stack trace without message"
+    },
+    "B-alter-deferrable-not-updated": {
+      "cause": "bug",
+      "area": "alter",
+      "note": "sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed.",
+      "test": "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key",
+      "risk": "error",
+      "repro": "change references.deferrable of a model attribute; await sync({ alter: true }) // constraint keeps the old mode"
+    },
+    "C-raw-errors-option": {
+      "cause": "bug",
+      "area": "raw",
+      "note": "The v6 query option rawErrors is not supported; the test was not reached before.",
+      "test": "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
+      "risk": "error",
+      "repro": "await sequelize.query('SELECT 1 FROM missing', { rawErrors: true }) // rejects with DatabaseError, v6 with the driver error"
+    },
+    "D-addindex-expression-fields": {
+      "cause": "bug",
+      "area": "addindex",
+      "note": "addIndex does not accept literal() / fn() fields; the file did not load before.",
+      "test": "[POSTGRES Specific] QueryInterface indexes supports newlines",
+      "risk": "error",
+      "repro": "await queryInterface.addIndex('t', [fn('lower', col('name'))], { name: 'i' }) // TypeError"
     }
   },
   "files": {
@@ -1828,10 +1780,6 @@
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
     },
-    "test/integration/dialects/postgres/query-interface.test.js": {
-      "loadError": true,
-      "cause": "C-qi-function-args"
-    },
     "test/integration/dialects/postgres/query.test.js": {
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
@@ -1944,28 +1892,24 @@
       "failing": [
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name",
-        "[POSTGRES] Model constructor should allow the user to specify indexes in options",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false",
-        "[POSTGRES] Model should be possible to use a key named UUID as foreign key",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ],
       "causes": {
         "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
-        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-index-field-attribute-key",
-        "[POSTGRES] Model constructor should allow the user to specify indexes in options": "B-index-field-attribute-key",
         "[POSTGRES] Model constructor uses checks to make sure dao factory is not leaking on multiple define": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
-        "[POSTGRES] Model should be possible to use a key named UUID as foreign key": "B-sync-two-models-one-table",
-        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated"
+        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated",
+        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-unique-msg-option"
       }
     },
     "test/integration/model/attributes.test.js": {
@@ -2153,7 +2097,7 @@
         "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key"
       ],
       "causes": {
-        "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key": "B-deferrable-callable"
+        "[POSTGRES] Model sync with { alter: true } updates the deferrable property of a foreign key": "B-alter-deferrable-not-updated"
       }
     },
     "test/integration/model/upsert.test.js": {
@@ -2200,17 +2144,13 @@
       "failing": [
         "[POSTGRES] QueryInterface addColumn addColumn expected error",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type",
-        "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
-        "[POSTGRES] QueryInterface indexes works with schemas",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
       ],
       "causes": {
         "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
         "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface constraints unknown constraint should throw non existent constraints as UnknownConstraintError": "C-unknown-constraint-error",
         "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
-        "[POSTGRES] QueryInterface indexes works with schemas": "C-addindex-null-options",
         "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing": "C-qi-argument-errors"
       }
     },
@@ -2277,7 +2217,6 @@
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions",
         "[POSTGRES] Sequelize modelManager allows to find a model using a callback",
         "[POSTGRES] Sequelize set should be configurable with global functions",
-        "[POSTGRES] Sequelize sync fails for incorrect connection even when no models are defined",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()"
       ],
       "causes": {
@@ -2288,7 +2227,6 @@
         "[POSTGRES] Sequelize define transaction correctly handles multiple transactions": "C-sequelize-internals",
         "[POSTGRES] Sequelize modelManager allows to find a model using a callback": "C-modelmanager-all-findmodel",
         "[POSTGRES] Sequelize set should be configurable with global functions": "C-options-define-late",
-        "[POSTGRES] Sequelize sync fails for incorrect connection even when no models are defined": "C-sync-no-models-connection",
         "[POSTGRES] Sequelize validate is an alias for .authenticate()": "C-validate-alias-identity"
       }
     },
@@ -2312,10 +2250,8 @@
     "test/integration/sequelize/drop.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": ["Sequelize#drop supports dropping cyclic associations"],
-      "causes": {
-        "Sequelize#drop supports dropping cyclic associations": "C-references-without-model-drop"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/sequelize/log.test.js": {
       "unstable": true,
@@ -2347,7 +2283,7 @@
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
-        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"",
+        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
         "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
       ],
       "causes": {
@@ -2361,8 +2297,8 @@
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries": "C-no-logging-on-failed-query",
-        "[POSTGRES] Sequelize query stacktraces \"before each\" hook for \"emits raw errors if requested\"": "C-fk-field-collision",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined"
+        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined",
+        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested": "C-raw-errors-option"
       }
     },
     "test/integration/sequelize/truncate.test.js": {
@@ -2402,6 +2338,16 @@
       "failing": ["errors should maintain stack trace without message"],
       "causes": {
         "errors should maintain stack trace without message": "D-harness-stack-header"
+      }
+    },
+    "test/integration/dialects/postgres/query-interface.test.js": {
+      "failing": [
+        "[POSTGRES Specific] QueryInterface indexes adds, reads and removes a named functional index to the table",
+        "[POSTGRES Specific] QueryInterface indexes supports newlines"
+      ],
+      "causes": {
+        "[POSTGRES Specific] QueryInterface indexes supports newlines": "D-addindex-expression-fields",
+        "[POSTGRES Specific] QueryInterface indexes adds, reads and removes a named functional index to the table": "D-addindex-expression-fields"
       }
     }
   }
