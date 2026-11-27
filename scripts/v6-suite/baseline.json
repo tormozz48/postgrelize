@@ -53,14 +53,6 @@
       "note": "order:[[\"data.name.first}'); ...\"]] is treated as a (bound) JSON path and returns rows; v6 throws.",
       "ref": "docs/sequelize-issues.md (#9040 order by a JSON path); docs/security.md (ADR-020)"
     },
-    "B-logging-interpolated": {
-      "cause": "bug",
-      "area": "query",
-      "note": "The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail.",
-      "risk": "cosmetic",
-      "repro": "await u.update({s:'43'},{fields:['s'],logging:console.log}) // SET \"s\" = '43' instead of = $1",
-      "test": "Model update updates the attributes that we select only without updating createdAt"
-    },
     "B-order-direction-literal": {
       "cause": "divergence",
       "area": "query",
@@ -92,26 +84,10 @@
       "note": "Custom DataTypes.X.parse / connectionManager.refreshTypeParser / _clearTypeParser not provided (DataTypes are frozen).",
       "ref": "docs/guide/migrating.md (connectionManager: refreshTypeParser not provided); ADR-030"
     },
-    "B-virtual-exclude": {
-      "cause": "bug",
-      "area": "model",
-      "note": "findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it.",
-      "risk": "cosmetic",
-      "repro": "Object.keys(u.get()).includes('field1') // true after exclude",
-      "test": "Model attributes types VIRTUAL should be able to exclude with attributes"
-    },
     "C-adapter-no-deep-import": {
       "cause": "harness",
       "area": "harness",
       "note": "Test file requires unmapped sequelize/lib/* deep imports (abstract connection-manager, errors/*, postgres hstore/range, utils, data-types) or v6 lib internals; does not load."
-    },
-    "C-bind-log-inlined": {
-      "cause": "bug",
-      "area": "query",
-      "note": "Logged SQL for queries with bind has values inlined (\"select 1::int\") instead of v6 \"$1\" placeholders.",
-      "risk": "cosmetic",
-      "repro": "logging captured for s.query('select $1::int as a',{bind:[1]}) // 'Executing (default): select 1::int as a'",
-      "test": "binds token with the passed array"
     },
     "C-bind-skips-string-literals": {
       "cause": "divergence",
@@ -158,34 +134,10 @@
       "area": "connection",
       "note": "Node 24 AggregateError has empty message; v6 itself gives \"\" for ConnectionRefusedError on this Node (verified with sequelize@6), test expects \"connect ECONNREFUSED\"."
     },
-    "C-log-default-noop": {
-      "cause": "bug",
-      "area": "config",
-      "note": "sequelize.log() is a no-op when `logging` option is not given; v6 defaults to console.log.",
-      "risk": "cosmetic",
-      "repro": "new Sequelize('db','u','p',{dialect:'postgres'}).log('hi') // prints nothing",
-      "test": "with default logging options called with no arguments calls the log method"
-    },
-    "C-logqueryparameters": {
-      "cause": "bug",
-      "area": "query",
-      "note": "logQueryParameters option is not implemented: logs have no parameters suffix.",
-      "risk": "cosmetic",
-      "repro": "new Sequelize(url,{logQueryParameters:true}) then query with bind: log ends without '; {\"0\":..}'",
-      "test": "logging with logQueryParameters add parameters in log sql"
-    },
     "C-models-reset-by-test-support": {
       "cause": "harness",
       "area": "associations",
       "note": "Support.clearDatabase replaces sequelize.models with a new object, detaching postgrelize ModelManager from sequelize.models, so modelManager.getModel finds nothing; real code unaffected (getModel works after define)."
-    },
-    "C-no-logging-on-failed-query": {
-      "cause": "bug",
-      "area": "query",
-      "note": "The query logger is not called for a statement that fails (v6 logs \"Executing\" before running, so retry logs each attempt).",
-      "risk": "cosmetic",
-      "repro": "let n=0; await s.query('select * from nonexist',{logging:()=>n++}).catch(()=>{}); n // 0",
-      "test": "retry properly bind parameters on extra retries"
     },
     "C-options-define-late": {
       "cause": "bug",
@@ -293,12 +245,9 @@
       "note": "Test stubs sequelize.query / queryInterface.* / Model statics (findAll, aggregate, findOne, create, transaction, cls.get, Query class, connectionManager) or uses a made-up unit-test DB without tables; crashes only because of the stub (e.g. insert reads result[0][0] from stub)."
     },
     "D-include-invalid-element": {
-      "cause": "bug",
+      "cause": "harness",
       "area": "include",
-      "note": "Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose.",
-      "risk": "cosmetic",
-      "repro": "Sequelize.Model._conformIncludes({include:[{model:null}]}, Company) // TypeError: not a function",
-      "test": "Model _validateIncludedElements _conformInclude should throw an error if invalid model is passed"
+      "note": "The tests call the private Model._conformIncludes of v6; invalid include elements of finders throw the v6 message."
     },
     "D-no-dialect-config": {
       "cause": "divergence",
@@ -342,19 +291,17 @@
       "risk": "error",
       "repro": "define('U', { d: { type: DataTypes.DATEONLY, defaultValue: -Infinity } }); await U.sync() // Cannot render non-finite number"
     },
-    "D-findbypk-out-of-range": {
-      "cause": "bug",
-      "area": "findbypk",
-      "note": "findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads.",
-      "test": "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk",
-      "risk": "error",
-      "repro": "await User.findByPk(4732322332323333232344334354234) // DatabaseError, v6 null"
-    },
     "D-harness-datatype-internals": {
       "cause": "harness",
       "area": "harness",
       "note": "Test uses v6 internals: sequelize.normalizeDataType and validate() of data type instances.",
       "test": "[POSTGRES] SQL DataTypes NUMERIC"
+    },
+    "D-logged-sql-spacing": {
+      "cause": "divergence",
+      "area": "logging",
+      "note": "The logged SQL is the statement postgrelize sends: assignments are written as \"col\" = $1, v6 writes \"col\"=$1. The test matches the v6 spacing.",
+      "ref": "docs/guide/migrating.md (logged SQL formatting)"
     }
   },
   "files": {
@@ -1594,12 +1541,6 @@
       "failing": [],
       "causes": {}
     },
-    "test/integration/json.test.js": {
-      "failing": ["model json should use a placeholder for json with insert"],
-      "causes": {
-        "model json should use a placeholder for json with insert": "B-logging-interpolated"
-      }
-    },
     "test/integration/model.test.js": {
       "failing": [
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"",
@@ -1615,7 +1556,7 @@
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
-        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated"
+        "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "D-logged-sql-spacing"
       }
     },
     "test/integration/model/attributes/field.test.js": {
@@ -1629,12 +1570,8 @@
     "test/integration/model/attributes/types.test.js": {
       "unstable": true,
       "pass": 3,
-      "failing": [
-        "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes"
-      ],
-      "causes": {
-        "[POSTGRES] Model attributes types VIRTUAL should be able to exclude with attributes": "B-virtual-exclude"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/bulk-create.test.js": {
       "loadError": true,
@@ -1894,47 +1831,23 @@
     "test/integration/sequelize/log.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] Sequelize log with default logging options called with more than two arguments passes the arguments to the logger",
-        "[POSTGRES] Sequelize log with default logging options called with no arguments calls the log method",
-        "[POSTGRES] Sequelize log with default logging options called with no arguments logs an empty string as info event",
-        "[POSTGRES] Sequelize log with default logging options called with one argument logs the passed string as info event"
-      ],
-      "causes": {
-        "[POSTGRES] Sequelize log with default logging options called with more than two arguments passes the arguments to the logger": "C-log-default-noop",
-        "[POSTGRES] Sequelize log with default logging options called with no arguments calls the log method": "C-log-default-noop",
-        "[POSTGRES] Sequelize log with default logging options called with no arguments logs an empty string as info event": "C-log-default-noop",
-        "[POSTGRES] Sequelize log with default logging options called with one argument logs the passed string as info event": "C-log-default-noop"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/sequelize/query.test.js": {
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] Sequelize query binds named parameters with the passed object",
-        "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice",
-        "[POSTGRES] Sequelize query binds token with the passed array",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest",
-        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql",
-        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
-        "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
-        "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
+        "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present"
       ],
       "causes": {
-        "[POSTGRES] Sequelize query binds named parameters with the passed object": "C-bind-log-inlined",
-        "[POSTGRES] Sequelize query binds named parameters with the passed object using the same key twice": "C-bind-log-inlined",
-        "[POSTGRES] Sequelize query binds token with the passed array": "C-bind-log-inlined",
         "[POSTGRES] Sequelize query destructs dot separated attributes when doing a raw query using nest": "C-sequelize-internals",
         "[POSTGRES] Sequelize query dot separated attributes when doing a raw query without nest": "C-sequelize-internals",
-        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql": "C-logqueryparameters",
-        "[POSTGRES] Sequelize query logging with logQueryParameters add parameters in log sql when use bind value": "C-logqueryparameters",
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",
-        "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present": "C-bind-skips-string-literals",
-        "[POSTGRES] Sequelize query retry properly bind parameters on extra retries": "C-no-logging-on-failed-query",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined"
+        "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present": "C-bind-skips-string-literals"
       }
     },
     "test/integration/sequelize/truncate.test.js": {
@@ -2000,12 +1913,10 @@
     },
     "test/integration/model/findOne.test.js": {
       "failing": [
-        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type",
-        "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk"
+        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type"
       ],
       "causes": {
-        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type": "B-harness-citext-extension",
-        "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk": "D-findbypk-out-of-range"
+        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type": "B-harness-citext-extension"
       }
     },
     "test/unit/sql/data-types.test.js": {
