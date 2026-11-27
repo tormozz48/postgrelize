@@ -7,7 +7,7 @@
     },
     "sequelize-members": {
       "category": "tracked",
-      "note": "Other Sequelize members missing: set, modelManager, Sequelize.Sequelize self reference."
+      "note": "Other Sequelize members missing: set, modelManager."
     },
     "query-interface-members": {
       "category": "tracked",
@@ -351,7 +351,6 @@
       "Sequelize.afterInit": "hooks",
       "Sequelize.beforeDefine": "hooks",
       "Sequelize.beforeInit": "hooks",
-      "Sequelize.Sequelize": "sequelize-members",
       "Sequelize.set": "sequelize-members",
       "SyncOptions.searchPath": "search-path",
       "TransactionOptions.autocommit": "option-keys",
@@ -360,10 +359,8 @@
       "UpdateOptions.sideEffects": "option-keys",
       "UpsertOptions.conflictWhere": "option-keys",
       "UpsertOptions.searchPath": "search-path",
-      "ValidationErrorItem.getValidatorKey": "error-members",
       "ValidationErrorItem.isValidationErrorItemOrigin": "error-members",
       "ValidationErrorItem.normalizeString": "error-members",
-      "ValidationErrorItem.static Origins": "error-members",
       "ValidationErrorItem.static TypeStringMap": "error-members"
     },
     "generic": {

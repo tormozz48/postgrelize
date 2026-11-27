@@ -101,6 +101,18 @@ export class ValidationErrorItem {
   readonly validatorName: string | null;
   /** Built-in validator arguments. */
   readonly validatorArgs: readonly unknown[];
+  /**
+   * Values of `origin` (Sequelize v6 `ValidationErrorItem.Origins`).
+   */
+  static readonly Origins: Readonly<{
+    /** Raised by a built-in check of the library. */
+    CORE: 'CORE';
+    /** Raised by the database. */
+    DB: 'DB';
+    /** Raised by a validator function. */
+    FUNCTION: 'FUNCTION';
+  }> = Object.freeze({ CORE: 'CORE', DB: 'DB', FUNCTION: 'FUNCTION' });
+
   /** What a custom validator threw (v6 `original`); set only on items of failed custom validators. */
   original?: unknown;
 
@@ -134,6 +146,28 @@ export class ValidationErrorItem {
     this.validatorName = validatorName ?? null;
     this.validatorArgs = validatorArgs ?? [];
     Object.assign(this, classify(type));
+  }
+
+  /**
+   * Lower-case validator key (else validator name), prefixed with the origin, like Sequelize v6.
+   *
+   * @param useTypeAsNS - Prefix the origin. Default true.
+   * @param separator - Text between origin and key. Default `'.'`.
+   * @returns The key, e.g. `'db.not_unique'`.
+   * @throws Error when `separator` is empty or not a string and a prefix is wanted.
+   * @example
+   * ```ts
+   * const item = new ValidationErrorItem('taken', 'unique violation', 'name', 'a', null, 'not_unique');
+   * item.getValidatorKey(); // 'db.not_unique'
+   * ```
+   */
+  getValidatorKey(useTypeAsNS = true, separator = '.'): string {
+    const namespace = useTypeAsNS ? this.origin : null;
+    if (namespace && (typeof separator !== 'string' || separator === '')) {
+      throw new Error('Invalid namespace separator given, must be a non-empty string');
+    }
+    const key = String(this.validatorKey || this.validatorName);
+    return (namespace ? [namespace, key].join(separator) : key).toLowerCase().trim();
   }
 
   /**

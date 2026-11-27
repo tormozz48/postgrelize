@@ -30,6 +30,27 @@ export class ModelManager {
     list.forEach((model) => this.addModel(model));
   }
 
+  /** Same as {@link ModelManager.models} (Sequelize v6). */
+  get all(): ModelStatic<AnyModel>[] {
+    return this.models;
+  }
+
+  /**
+   * Finds the first model the callback accepts.
+   *
+   * @param callback - Predicate over the models in definition order.
+   * @returns The model, or `undefined`.
+   * @example
+   * ```ts
+   * const model = sequelize.modelManager.findModel((candidate) => candidate.tableName === 'users');
+   * ```
+   */
+  findModel(
+    callback: (model: ModelStatic<AnyModel>) => boolean,
+  ): ModelStatic<AnyModel> | undefined {
+    return this.models.find(callback);
+  }
+
   /**
    * Adds a model under its name.
    *
