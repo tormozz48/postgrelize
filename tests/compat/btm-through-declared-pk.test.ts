@@ -109,4 +109,31 @@ describe('compat: primary key of a belongsToMany through model', () => {
       await sequelize.sync({ force: true });
       return { primaryKeys: MsgDoc.primaryKeyAttributes, schema: await schemaOf(sequelize) };
     }));
+
+  it('keeps the composite key of a polymorphic pair on declared foreign keys', () =>
+    expectSameResult('', async (lib, sequelize) => {
+      const Post = sequelize.define('Post', {});
+      const Tag = sequelize.define('Tag', {});
+      const declared = {
+        tag_id: lib.DataTypes.INTEGER,
+        taggable_id: { type: lib.DataTypes.INTEGER, references: null },
+        taggable: lib.DataTypes.STRING,
+      };
+      const ItemTag = sequelize.define('ItemTag', declared as never, { tableName: 'item_tags' });
+      const through = { model: ItemTag, scope: { taggable: 'post' } };
+      const options = { through, constraints: false };
+      Post.belongsToMany(Tag, { ...options, as: 'tags', foreignKey: 'taggable_id' });
+      Tag.belongsToMany(Post, { ...options, as: 'posts', foreignKey: 'tag_id' });
+      await sequelize.sync({ force: true });
+      await Post.create({ tags: [{}, {}] }, { include: [{ model: Tag, as: 'tags' }] });
+      const [primaryKey] = await sequelize.query(
+        `SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+         WHERE conrelid = 'item_tags'::regclass AND contype = 'p'`,
+      );
+      return {
+        primaryKeys: ItemTag.primaryKeyAttributes.toSorted(),
+        rows: await ItemTag.count(),
+        primaryKey,
+      };
+    }));
 });
