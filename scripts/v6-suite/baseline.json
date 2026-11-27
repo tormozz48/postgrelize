@@ -59,14 +59,6 @@
       "note": "order:[['id', literal('ASC, name DESC')]]: a literal as order direction is rejected (directions go through an allowlist).",
       "ref": "docs/security.md (order directions, Allowlist row); ADR-020"
     },
-    "B-schema-clone-include": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'.",
-      "risk": "error",
-      "repro": "R1=R.schema('s_one'); E1=E.schema('s_one'); await R1.findOne({include:[{model:E1,as:'employees'}]})",
-      "test": "Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one"
-    },
     "B-triage-upsert-infinity-pk": {
       "cause": "triage",
       "area": "upsert",
@@ -156,14 +148,6 @@
       "cause": "unsupported",
       "area": "datatypes",
       "note": "Test setup creates geometry type; test container has no PostGIS."
-    },
-    "C-qi-argument-errors": {
-      "cause": "bug",
-      "area": "query-interface",
-      "note": "Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages.",
-      "risk": "wording",
-      "repro": "await qi.addConstraint('users',{fields:['username']}) // TypeError toLowerCase (v6: Constraint type must be specified through options.type)",
-      "test": "addconstraint missing type"
     },
     "C-querygenerator-internals": {
       "cause": "harness",
@@ -282,14 +266,6 @@
       "test": "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
       "risk": "wrong-result",
       "repro": "await User.findAll({ groupedLimit: { limit: 3, on: User.Projects, values: [1, 2] } }) // option ignored"
-    },
-    "D-dateonly-infinity-default": {
-      "cause": "bug",
-      "area": "dateonly",
-      "note": "sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added.",
-      "test": "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity",
-      "risk": "error",
-      "repro": "define('U', { d: { type: DataTypes.DATEONLY, defaultValue: -Infinity } }); await U.sync() // Cannot render non-finite number"
     },
     "D-harness-datatype-internals": {
       "cause": "harness",
@@ -1452,8 +1428,7 @@
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should stringify Infinity/-Infinity to infinity/-infinity",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate Infinity/-Infinity as true",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate a Date as normal",
-        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity",
-        "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity"
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity"
       ],
       "causes": {
         "[POSTGRES Specific] Data Types DATE/DATEONLY Sanitize DATE should sanitize \"Infinity\"/\"-Infinity\" as Infinity/-Infinity": "C-datatypes-dialect-deep-import",
@@ -1465,8 +1440,7 @@
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should stringify Infinity/-Infinity to infinity/-infinity": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate Infinity/-Infinity as true": "C-datatypes-dialect-deep-import",
         "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATE should validate a Date as normal": "C-datatypes-dialect-deep-import",
-        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity": "C-datatypes-dialect-deep-import",
-        "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity": "D-dateonly-infinity-default"
+        "[POSTGRES Specific] Data Types DATE/DATEONLY Validate and Stringify DATEONLY should stringify Infinity/-Infinity to infinity/-infinity": "C-datatypes-dialect-deep-import"
       }
     },
     "test/integration/dialects/postgres/error.test.js": {
@@ -1652,13 +1626,11 @@
     "test/integration/model/schema.test.js": {
       "failing": [
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"",
-        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option",
-        "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one"
+        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option"
       ],
       "causes": {
         "[POSTGRES] Model global schema \"before each\" hook: build restaurant tables for \"should be able to insert data into default table using create\"": "B-harness-private-internals",
-        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option": "B-harness-private-internals",
-        "[POSTGRES] Model schemas Get schema specific associated data via include should be able to insert and retrieve associated data into the table in schema_one": "B-schema-clone-include"
+        "[POSTGRES] Model global schema Add data via model.create, retrieve via model.findOne should be able to sync model without schema option": "B-harness-private-internals"
       }
     },
     "test/integration/model/scope/associations.test.js": {
@@ -1721,16 +1693,10 @@
       "unstable": true,
       "pass": 0,
       "failing": [
-        "[POSTGRES] QueryInterface addColumn addColumn expected error",
-        "[POSTGRES] QueryInterface constraints check addconstraint missing type",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table",
-        "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing"
+        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table"
       ],
       "causes": {
-        "[POSTGRES] QueryInterface addColumn addColumn expected error": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface constraints check addconstraint missing type": "C-qi-argument-errors",
-        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals",
-        "[POSTGRES] QueryInterface renameColumn shows a reasonable error message when column is missing": "C-qi-argument-errors"
+        "[POSTGRES] QueryInterface describeForeignKeys should get a list of foreign keys for the table": "C-querygenerator-internals"
       }
     },
     "test/integration/query-interface/changeColumn.test.js": {
@@ -1748,10 +1714,8 @@
     "test/integration/query-interface/describeTable.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": ["[POSTGRES] QueryInterface describeTable rejects when no data is available"],
-      "causes": {
-        "[POSTGRES] QueryInterface describeTable rejects when no data is available": "C-qi-argument-errors"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/query-interface/dropEnum.test.js": {
       "unstable": true,

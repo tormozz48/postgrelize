@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10, 1.9.12 to 1.9.16, 1.9.18 to 1.9.21).
 
-Fixed: 115. Open: 11 (includes causes found while fixing).
+Fixed: 118. Open: 8 (includes causes found while fixing).
 
 ## Fixed
 
@@ -123,6 +123,9 @@ Fixed: 115. Open: 11 (includes causes found while fixing).
 | `C-no-logging-on-failed-query` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
 | `C-log-default-noop` | cosmetic | [#333](https://github.com/tormozz48/postgrelize/pull/333) |
 | `B-virtual-exclude` | cosmetic | [#334](https://github.com/tormozz48/postgrelize/pull/334) |
+| `D-dateonly-infinity-default` | error | [#328](https://github.com/tormozz48/postgrelize/pull/328) |
+| `B-schema-clone-include` | error | [#331](https://github.com/tormozz48/postgrelize/pull/331) |
+| `C-qi-argument-errors` | wording | [#332](https://github.com/tormozz48/postgrelize/pull/332) |
 
 ## Not fixed
 
@@ -130,12 +133,9 @@ Fixed: 115. Open: 11 (includes causes found while fixing).
 | --- | --- | --- |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
-| `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
-| `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
 | `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
 | `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
-| `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
