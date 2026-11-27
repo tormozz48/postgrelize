@@ -1,42 +1,10 @@
 {
   "version": "6.37.8",
   "causes": {
-    "A-btm-identifier-props": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "BelongsToMany lacks v6 public properties foreignIdentifier, identifier (and sourceKeyField, foreignIdentifierField).",
-      "risk": "error",
-      "repro": "P.associations.Ch.foreignIdentifier // undefined",
-      "test": "Self can handle n:m associations"
-    },
-    "A-btm-paired-otherkey": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Two paired belongsToMany declaring foreignKey/sourceKey do not take otherKey from the paired association foreignKey; an extra auto-named otherKey column is generated and the real one stays NULL, so add/set fail.",
-      "risk": "error",
-      "repro": "U.belongsToMany(G,{through:UG,foreignKey:'id_user'});G.belongsToMany(U,{through:UG,foreignKey:'id_group'}); await u.addGroup(g) // null value in column id_group",
-      "test": "BelongsToMany getAssociations supports custom primary keys and foreign keys"
-    },
-    "A-default-alias-redefine": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Re-declaring an association with the default alias throws \"alias in two separate associations\"; v6 only checks explicit aliases and silently replaces the default one.",
-      "risk": "error",
-      "repro": "A.belongsToMany(L,{through:T1}); A.belongsToMany(L,{through:T2}) // throws",
-      "test": "BelongsToMany hasAssociations answers true for labels that have been assigned multitple times"
-    },
     "A-harness-queryGenerator-addSchema": {
       "cause": "harness",
       "area": "query-interface",
       "note": "Test calls private queryInterface.queryGenerator.addSchema."
-    },
-    "A-hasone-hasmany-cascade-default": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasOne/hasMany FK with allowNull:false gets ON DELETE NO ACTION; v6 uses CASCADE (NO ACTION is only the belongsTo default); docs/guide/associations.md states the belongsTo default for all.",
-      "risk": "error",
-      "repro": "User.hasOne(Task,{foreignKey:{allowNull:false}}); Task.rawAttributes.UserId.onDelete // NO ACTION (v6 CASCADE); destroy parent -> FK error",
-      "test": "HasOne foreign key constraints sets to CASCADE if allowNull: false"
     },
     "A-references-model-object": {
       "cause": "bug",
@@ -45,14 +13,6 @@
       "risk": "cosmetic",
       "repro": "U.hasMany(T); T.rawAttributes.UId.references.model // {tableName:'Us'} (v6 'Us')",
       "test": "BelongsTo association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before"
-    },
-    "A-references-null-crash": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "Attribute with references:null (opt out of FK) crashes sync with \"Cannot read properties of null (reading key)\".",
-      "risk": "error",
-      "repro": "IT=define('it',{tid:{type:INTEGER,references:null}}); P.belongsToMany(T,{through:IT,foreignKey:'tid'}); await IT.sync({force:true})",
-      "test": "associations scope N:M on the through model should create, find and include associations with scope values"
     },
     "A-triage": {
       "cause": "triage",
@@ -66,30 +26,6 @@
       "risk": "wording",
       "repro": "await U.findAll({attributes:[]})",
       "test": "Model findAll should throw on an attempt to fetch no attributes"
-    },
-    "B-btm-count-through-timestamps": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "instance.countX() on a belongsToMany with a string through selects the auto-created through model's createdAt/updatedAt, failing when the join table has no timestamp columns; v6 selects no through attributes for count.",
-      "risk": "error",
-      "repro": "U.belongsToMany(C,{through:'uc'}); /* uc table without timestamps */ await u.countComments() // column uc.createdAt does not exist",
-      "test": "Model attributes field should work with `belongsToMany` association `count`"
-    },
-    "B-btm-duplicate-auto-alias": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Declaring two belongsToMany to the same target without `as` (different through) throws 'You have used the alias projects in two separate associations'; v6 only checks explicitly given aliases (the second overwrites the first).",
-      "risk": "error",
-      "repro": "U.belongsToMany(P,{through:'a'}); U.belongsToMany(P,{through:'b'})",
-      "test": "Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\""
-    },
-    "B-btm-paired-otherkey": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Two belongsToMany with the same through model and explicit foreignKey on each side are not paired: otherKey is derived from the target name (courseNo) instead of the counterpart's foreignKey (CourseId), so the through table gets extra columns and add() inserts NULL into CourseId.",
-      "risk": "error",
-      "repro": "S.belongsToMany(C,{through:Sc,foreignKey:'StudentId'}); C.belongsToMany(S,{through:Sc,foreignKey:'CourseId'}); await s.addCourse(c) // null value in column CourseId",
-      "test": "Model attributes set should only be called once when used on a join model called with an association getter"
     },
     "B-datavalues-key-order": {
       "cause": "bug",
@@ -154,14 +90,6 @@
       "area": "query",
       "note": "order:[['id', literal('ASC, name DESC')]]: a literal as order direction is rejected (directions go through an allowlist).",
       "ref": "docs/security.md (order directions, Allowlist row); ADR-020"
-    },
-    "B-references-null": {
-      "cause": "bug",
-      "area": "ddl",
-      "note": "An attribute with references: null (v6 way to switch the FK off, used by polymorphic belongsToMany through models) crashes sync with TypeError reading 'key'.",
-      "risk": "error",
-      "repro": "sq.define('M',{x:{type:DataTypes.INTEGER,references:null}}); await sq.sync()",
-      "test": "Model create include should create data for polymorphic BelongsToMany relations"
     },
     "B-schema-clone-include": {
       "cause": "bug",
@@ -410,22 +338,6 @@
       "test": "belongsTo association hooks beforeBelongsToAssociate should trigger",
       "ref": "docs/guide/migrating.md (hooks table, Not planned: Model beforeAssociate/afterAssociate)"
     },
-    "D-assoc-invalid-model-arg": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "Model.belongsTo()/hasMany()/hasOne() with no/invalid target throw 'Cannot convert undefined or null to object' instead of v6 'X.belongsTo called with something that's not a subclass of Sequelize.Model'.",
-      "risk": "wording",
-      "repro": "try{sequelize.define('U',{}).belongsTo()}catch(e){console.log(e.message)}",
-      "test": "belongsTo throws when invalid model is passed"
-    },
-    "D-assoc-unknown-key-option": {
-      "cause": "bug",
-      "area": "associations",
-      "note": "hasOne/hasMany sourceKey and belongsTo targetKey naming an attribute that does not exist is accepted silently; v6 throws 'Unknown attribute \"x\" passed as sourceKey/targetKey, define this attribute on model \"M\" first'.",
-      "risk": "error",
-      "repro": "U.hasOne(T,{sourceKey:'wowow'}) // no throw",
-      "test": "hasOne warn on invalid options"
-    },
     "D-config-dialectoptions-missing": {
       "cause": "bug",
       "area": "config",
@@ -543,6 +455,22 @@
       "test": "[POSTGRES Specific] QueryInterface indexes supports newlines",
       "risk": "error",
       "repro": "await queryInterface.addIndex('t', [fn('lower', col('name'))], { name: 'i' }) // TypeError"
+    },
+    "D-btm-getter-two-queries": {
+      "cause": "bug",
+      "area": "btm",
+      "note": "belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs",
+      "test": "[POSTGRES] Self can handle n:m associations with pre-defined through table",
+      "risk": "cosmetic",
+      "repro": "await person.getChildren({ logging }) // two statements, v6 one"
+    },
+    "D-grouped-limit-option": {
+      "cause": "bug",
+      "area": "grouped",
+      "note": "The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before.",
+      "test": "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
+      "risk": "wrong-result",
+      "repro": "await User.findAll({ groupedLimit: { limit: 3, on: User.Projects, values: [1, 2] } }) // option ignored"
     }
   },
   "files": {
@@ -555,17 +483,13 @@
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should not trigger association hooks",
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should trigger",
         "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should not trigger association hooks",
-        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger",
-        "[POSTGRES] belongsTo throws when invalid model is passed",
-        "[POSTGRES] belongsTo warn on invalid options"
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger"
       ],
       "causes": {
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should not trigger association hooks": "D-assoc-hooks-missing",
         "[POSTGRES] belongsTo association hooks afterBelongsToAssociate should trigger": "D-assoc-hooks-missing",
         "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should not trigger association hooks": "D-assoc-hooks-missing",
-        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger": "D-assoc-hooks-missing",
-        "[POSTGRES] belongsTo throws when invalid model is passed": "D-assoc-invalid-model-arg",
-        "[POSTGRES] belongsTo warn on invalid options": "D-assoc-unknown-key-option"
+        "[POSTGRES] belongsTo association hooks beforeBelongsToAssociate should trigger": "D-assoc-hooks-missing"
       }
     },
     "test/unit/associations/has-many.test.js": {
@@ -578,8 +502,7 @@
         "[POSTGRES] hasMany get should fetch associations for multiple source instances",
         "[POSTGRES] hasMany mixin should mixin association methods",
         "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one delete from statement",
-        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition",
-        "[POSTGRES] hasMany throws when invalid model is passed"
+        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition"
       ],
       "causes": {
         "[POSTGRES] hasMany association hooks afterHasManyAssociate should not trigger association hooks": "D-assoc-hooks-missing",
@@ -590,8 +513,7 @@
         "[POSTGRES] hasMany get should fetch associations for multiple source instances": "D-harness-assoc-stubs",
         "[POSTGRES] hasMany mixin should mixin association methods": "D-harness-assoc-stubs",
         "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one delete from statement": "D-harness-assoc-stubs",
-        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition": "D-harness-assoc-stubs",
-        "[POSTGRES] hasMany throws when invalid model is passed": "D-assoc-invalid-model-arg"
+        "[POSTGRES] hasMany optimizations using bulk create, destroy and update uses one update statement for addition": "D-harness-assoc-stubs"
       }
     },
     "test/unit/associations/has-one.test.js": {
@@ -599,17 +521,13 @@
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should not trigger association hooks",
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should trigger",
         "[POSTGRES] hasOne association hooks beforeHasOneAssociate should not trigger association hooks",
-        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger",
-        "[POSTGRES] hasOne throws when invalid model is passed",
-        "[POSTGRES] hasOne warn on invalid options"
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger"
       ],
       "causes": {
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should not trigger association hooks": "D-assoc-hooks-missing",
         "[POSTGRES] hasOne association hooks afterHasOneAssociate should trigger": "D-assoc-hooks-missing",
         "[POSTGRES] hasOne association hooks beforeHasOneAssociate should not trigger association hooks": "D-assoc-hooks-missing",
-        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger": "D-assoc-hooks-missing",
-        "[POSTGRES] hasOne throws when invalid model is passed": "D-assoc-invalid-model-arg",
-        "[POSTGRES] hasOne warn on invalid options": "D-assoc-unknown-key-option"
+        "[POSTGRES] hasOne association hooks beforeHasOneAssociate should trigger": "D-assoc-hooks-missing"
       }
     },
     "test/unit/configuration.test.js": {
@@ -1573,24 +1491,8 @@
     "test/integration/associations/belongs-to-many.test.js": {
       "unstable": true,
       "pass": 35,
-      "failing": [
-        "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object"
-      ],
-      "causes": {
-        "[POSTGRES] BelongsToMany getAssociations supports custom primary keys and foreign keys": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom foreignKey, custom through model)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (custom through model)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany getAssociations supports non primary key attributes for joins (sourceKey only)": "A-btm-paired-otherkey",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times": "A-default-alias-redefine",
-        "[POSTGRES] BelongsToMany hasAssociations answers true for labels that have been assigned multitple times when passing a primary key instead of an object": "A-default-alias-redefine"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/associations/belongs-to.test.js": {
       "failing": [
@@ -1611,15 +1513,13 @@
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false"
+        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates"
       ],
       "causes": {
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasMany Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasMany foreign key constraints 1:m can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasMany foreign key constraints 1:m sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
+        "[POSTGRES] HasMany foreign key constraints 1:m can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/has-one.test.js": {
@@ -1628,38 +1528,24 @@
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before",
         "[POSTGRES] HasOne foreign key constraints can cascade updates",
-        "[POSTGRES] HasOne foreign key constraints can restrict updates",
-        "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false"
+        "[POSTGRES] HasOne foreign key constraints can restrict updates"
       ],
       "causes": {
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when merging with an existing definition": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works when taking a column directly from the object": "A-references-model-object",
         "[POSTGRES] HasOne Association options allows the user to provide an attribute definition object as foreignKey works with a column that hasnt been defined before": "A-references-model-object",
         "[POSTGRES] HasOne foreign key constraints can cascade updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema",
-        "[POSTGRES] HasOne foreign key constraints sets to CASCADE if allowNull: false": "A-hasone-hasmany-cascade-default"
+        "[POSTGRES] HasOne foreign key constraints can restrict updates": "A-harness-queryGenerator-addSchema"
       }
     },
     "test/integration/associations/scope.test.js": {
       "unstable": true,
       "pass": 5,
       "failing": [
-        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values",
-        "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values"
+        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values"
       ],
       "causes": {
-        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values": "A-triage",
-        "[POSTGRES] associations scope N:M on the through model should create, find and include associations with scope values": "A-references-null-crash"
-      }
-    },
-    "test/integration/associations/self.test.js": {
-      "failing": [
-        "[POSTGRES] Self can handle n:m associations",
-        "[POSTGRES] Self can handle n:m associations with pre-defined through table"
-      ],
-      "causes": {
-        "[POSTGRES] Self can handle n:m associations": "A-btm-identifier-props",
-        "[POSTGRES] Self can handle n:m associations with pre-defined through table": "A-btm-identifier-props"
+        "[POSTGRES] associations scope N:M on the target [Flaky] should create, find and include associations with scope values": "A-triage"
       }
     },
     "test/integration/cls.test.js": {
@@ -1912,22 +1798,12 @@
         "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-unique-msg-option"
       }
     },
-    "test/integration/model/attributes.test.js": {
-      "failing": [
-        "[POSTGRES] Model attributes set should only be called once when used on a join model called with an association getter"
-      ],
-      "causes": {
-        "[POSTGRES] Model attributes set should only be called once when used on a join model called with an association getter": "B-btm-paired-otherkey"
-      }
-    },
     "test/integration/model/attributes/field.test.js": {
       "failing": [
-        "[POSTGRES] Model attributes field should sync foreign keys with custom field names",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`"
+        "[POSTGRES] Model attributes field should sync foreign keys with custom field names"
       ],
       "causes": {
-        "[POSTGRES] Model attributes field should sync foreign keys with custom field names": "B-harness-private-internals",
-        "[POSTGRES] Model attributes field should work with `belongsToMany` association `count`": "B-btm-count-through-timestamps"
+        "[POSTGRES] Model attributes field should sync foreign keys with custom field names": "B-harness-private-internals"
       }
     },
     "test/integration/model/attributes/types.test.js": {
@@ -1947,12 +1823,8 @@
     "test/integration/model/bulk-create/include.test.js": {
       "unstable": true,
       "pass": 0,
-      "failing": [
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations"
-      ],
-      "causes": {
-        "[POSTGRES] Model bulkCreate include should bulkCreate data for polymorphic BelongsToMany relations": "B-references-null"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/create.test.js": {
       "unstable": true,
@@ -1966,14 +1838,6 @@
         "[POSTGRES] Model findOrCreate should not deadlock with concurrency duplicate entries and no outer transaction": "B-findorcreate-pool-deadlock"
       }
     },
-    "test/integration/model/create/include.test.js": {
-      "failing": [
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations"
-      ],
-      "causes": {
-        "[POSTGRES] Model create include should create data for polymorphic BelongsToMany relations": "B-references-null"
-      }
-    },
     "test/integration/model/findAll.test.js": {
       "failing": [
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
@@ -1982,14 +1846,6 @@
       "causes": {
         "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension"
-      }
-    },
-    "test/integration/model/findAll/groupedLimit.test.js": {
-      "failing": [
-        "[POSTGRES] Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\""
-      ],
-      "causes": {
-        "[POSTGRES] Model findAll groupedLimit \"before each\" hook for \"maps attributes from a grouped limit to models\"": "B-btm-duplicate-auto-alias"
       }
     },
     "test/integration/model/findAll/order.test.js": {
@@ -2348,6 +2204,28 @@
       "causes": {
         "[POSTGRES Specific] QueryInterface indexes supports newlines": "D-addindex-expression-fields",
         "[POSTGRES Specific] QueryInterface indexes adds, reads and removes a named functional index to the table": "D-addindex-expression-fields"
+      }
+    },
+    "test/integration/associations/self.test.js": {
+      "failing": ["[POSTGRES] Self can handle n:m associations with pre-defined through table"],
+      "causes": {
+        "[POSTGRES] Self can handle n:m associations with pre-defined through table": "D-btm-getter-two-queries"
+      }
+    },
+    "test/integration/model/findAll/groupedLimit.test.js": {
+      "failing": [
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models with include",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models"
+      ],
+      "causes": {
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany maps attributes from a grouped limit to models with include": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders": "D-grouped-limit-option",
+        "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models": "D-grouped-limit-option"
       }
     }
   }
