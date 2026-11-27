@@ -21,6 +21,9 @@ import type { RowMapper } from '../row-mapper.ts';
 import type { SelectQueryBuilder } from '../select-query-builder.ts';
 import type { WhereOptions } from '../types.ts';
 import { ModelOperation, type OperationServices } from './model-operation.ts';
+import { TransactionQueue } from './transaction-queue.ts';
+
+const savepoints = new TransactionQueue();
 
 /** Collaborators of `FindOperation`. */
 export type FindOperationServices = OperationServices &
@@ -145,14 +148,24 @@ export abstract class FindLookups extends ModelOperation<FindOperationServices> 
   /**
    * `Model.findOrCreate`: finds a row or creates it, both inside one transaction (v6). A lost race
    * is re-read after the rollback, so no call holds a pooled connection while waiting for another.
-   * In the caller's transaction the find precedes the savepoint, so that concurrent calls on its
-   * one connection do not interleave their savepoints around each other's finds.
+   * Concurrent calls in one caller transaction run one after another: their savepoints on its one
+   * connection cannot interleave.
    *
    * @param model - Model class.
    * @param options - `where` to search, `defaults` to add on creation.
    * @returns `[instance, created]`.
    */
   async findOrCreate<M extends AnyModel>(
+    model: ModelStatic<M>,
+    options: FindOrCreateOptions,
+  ): Promise<[M, boolean]> {
+    const { transaction } = options;
+    return transaction
+      ? savepoints.run(transaction, () => this.#findOrCreate(model, options))
+      : this.#findOrCreate(model, options);
+  }
+
+  async #findOrCreate<M extends AnyModel>(
     model: ModelStatic<M>,
     options: FindOrCreateOptions,
   ): Promise<[M, boolean]> {

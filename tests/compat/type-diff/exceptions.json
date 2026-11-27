@@ -302,7 +302,6 @@
       "NonNullFindOptions.mapToModel": "option-keys",
       "NonNullFindOptions.type": "option-keys",
       "Options.attributeBehavior": "option-keys",
-      "Options.clientMinMessages": "option-keys",
       "Options.dialectModulePath": "option-keys",
       "Options.isolationLevel": "option-keys",
       "Options.native": "option-keys",

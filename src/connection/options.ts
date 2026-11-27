@@ -141,6 +141,8 @@ export type SequelizeOptions = Readonly<{
     Omit<PoolConfig, 'types'> & {
       /** Apply the `searchPath` option of the instance and of queries (Sequelize v6). */
       prependSearchPath?: boolean;
+      /** Like the `clientMinMessages` option, which it replaces when given. */
+      clientMinMessages?: string | false;
     }
   >;
   /**
@@ -166,6 +168,12 @@ export type SequelizeOptions = Readonly<{
    * @defaultValue false
    */
   logQueryParameters?: boolean;
+  /**
+   * `client_min_messages` of the sessions (Sequelize v6): a PostgreSQL message level, or `false` /
+   * `'ignore'` for the server default.
+   * @defaultValue 'warning'
+   */
+  clientMinMessages?: string | false;
   /** Session time zone. Default `'+00:00'`. */
   timezone?: string;
   /** Defaults for all models. */

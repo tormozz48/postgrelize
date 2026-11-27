@@ -22,6 +22,18 @@ const URI_PARAMETERS: ReadonlySet<string> = new Set([
   'statement_timeout',
 ]);
 
+const MESSAGE_LEVELS: ReadonlySet<string> = new Set([
+  'debug5',
+  'debug4',
+  'debug3',
+  'debug2',
+  'debug1',
+  'log',
+  'notice',
+  'warning',
+  'error',
+]);
+
 /**
  * Connection configuration of a `Sequelize` instance: normalizes the overloaded Sequelize v6
  * constructor arguments and derives the `pg` pool configurations (writer and read replicas).
@@ -177,10 +189,32 @@ export class ConnectionConfig {
       ssl: options.ssl,
       ...ConnectionConfig.#poolLimits(options),
       ...options.dialectOptions,
-      options: [`-c TimeZone=${timezone}`, options.dialectOptions?.options]
-        .filter(Boolean)
-        .join(' '),
+      options: ConnectionConfig.#startupOptions(options, timezone),
     });
+  }
+
+  static #startupOptions(options: SequelizeOptions, timezone: string): string {
+    return [
+      `-c TimeZone=${timezone}`,
+      ConnectionConfig.#clientMinMessages(options),
+      options.dialectOptions?.options,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  // like v6, `warning` unless set otherwise; `ignore` / `false` keep the server default. It is
+  // passed as a libpq startup option, so only the PostgreSQL levels are accepted.
+  static #clientMinMessages(options: SequelizeOptions): string | undefined {
+    const given = options.dialectOptions?.clientMinMessages ?? options.clientMinMessages;
+    if (given === false || String(given).toLowerCase() === 'ignore') {
+      return undefined;
+    }
+    const level = String(given || 'warning').toLowerCase();
+    if (!MESSAGE_LEVELS.has(level)) {
+      throw new Error(`Invalid clientMinMessages: ${level}`);
+    }
+    return `-c client_min_messages=${level}`;
   }
 
   static #poolLimits(options: SequelizeOptions): PoolConfig {

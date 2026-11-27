@@ -124,14 +124,6 @@
       "area": "query-interface",
       "note": "Test creates EXCLUDE USING gist on integer; needs CREATE EXTENSION btree_gist which the test DB does not have (v6 CI installs it)."
     },
-    "C-client-min-messages": {
-      "cause": "bug",
-      "area": "connection",
-      "note": "v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option.",
-      "risk": "cosmetic",
-      "repro": "new Sequelize(url,{dialectOptions:{clientMinMessages:'ERROR'}}).query('SHOW client_min_messages',{type:'SELECT'}) -> notice (v6: error)",
-      "test": "should allow overriding client_min_messages"
-    },
     "C-cls-private-internals": {
       "cause": "harness",
       "area": "config",
@@ -342,14 +334,6 @@
       "risk": "wrong-result",
       "repro": "await User.findAll({ groupedLimit: { limit: 3, on: User.Projects, values: [1, 2] } }) // option ignored"
     },
-    "C-findorcreate-shared-tx": {
-      "cause": "bug",
-      "area": "findorcreate",
-      "note": "Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock.",
-      "test": "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction",
-      "risk": "error",
-      "repro": "await sequelize.transaction(t => Promise.all([1,2].map(() => User.findOrCreate({ where: { name: 'a' }, transaction: t })))) // aborts the transaction"
-    },
     "D-dateonly-infinity-default": {
       "cause": "bug",
       "area": "dateonly",
@@ -357,14 +341,6 @@
       "test": "[POSTGRES Specific] Data Types DATEONLY SQL should be able to create and update records with Infinity/-Infinity",
       "risk": "error",
       "repro": "define('U', { d: { type: DataTypes.DATEONLY, defaultValue: -Infinity } }); await U.sync() // Cannot render non-finite number"
-    },
-    "D-validator-key-empty": {
-      "cause": "bug",
-      "area": "validator",
-      "note": "getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''.",
-      "test": "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
-      "risk": "cosmetic",
-      "repro": "new ValidationErrorItem('m', 'FUNCTION', 'p', 'v').getValidatorKey() // 'function.null', v6 ''"
     },
     "D-findbypk-out-of-range": {
       "cause": "bug",
@@ -1502,18 +1478,12 @@
       "failing": [
         "Dynamic OIDs should fetch enum dynamic oids and create parsers",
         "Dynamic OIDs should fetch range dynamic oids and create parsers",
-        "Dynamic OIDs should fetch regular dynamic oids and create parsers",
-        "[POSTGRES] Sequelize should allow overriding client_min_messages",
-        "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)",
-        "[POSTGRES] Sequelize should set client_min_messages to warning by default"
+        "Dynamic OIDs should fetch regular dynamic oids and create parsers"
       ],
       "causes": {
         "Dynamic OIDs should fetch enum dynamic oids and create parsers": "C-connmanager-internals",
         "Dynamic OIDs should fetch range dynamic oids and create parsers": "C-connmanager-internals",
-        "Dynamic OIDs should fetch regular dynamic oids and create parsers": "C-connmanager-internals",
-        "[POSTGRES] Sequelize should allow overriding client_min_messages": "C-client-min-messages",
-        "[POSTGRES] Sequelize should allow overriding client_min_messages (deprecated in v7)": "C-client-min-messages",
-        "[POSTGRES] Sequelize should set client_min_messages to warning by default": "C-client-min-messages"
+        "Dynamic OIDs should fetch regular dynamic oids and create parsers": "C-connmanager-internals"
       }
     },
     "test/integration/dialects/postgres/dao.test.js": {
@@ -1679,12 +1649,8 @@
     "test/integration/model/create.test.js": {
       "unstable": true,
       "pass": 10,
-      "failing": [
-        "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction"
-      ],
-      "causes": {
-        "[POSTGRES] Model findOrCreate several concurrent calls works with a transaction": "C-findorcreate-shared-tx"
-      }
+      "failing": [],
+      "causes": {}
     },
     "test/integration/model/findAll.test.js": {
       "failing": [
@@ -2030,14 +1996,6 @@
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany [Flaky] works with computed order": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with multiple orders": "D-grouped-limit-option",
         "[POSTGRES] Model findAll groupedLimit on: belongsToMany works with paranoid junction models": "D-grouped-limit-option"
-      }
-    },
-    "test/integration/error.test.js": {
-      "failing": [
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string"
-      ],
-      "causes": {
-        "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string": "D-validator-key-empty"
       }
     },
     "test/integration/model/findOne.test.js": {

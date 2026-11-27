@@ -147,6 +147,7 @@ export const V6_RUNTIME_OPTIONS: readonly string[] = [
   'keyType',
   'rawErrors',
   'logQueryParameters',
+  'clientMinMessages',
   'searchPath',
   'prependSearchPath',
   'tableAs',
