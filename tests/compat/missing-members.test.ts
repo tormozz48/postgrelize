@@ -21,6 +21,8 @@ describe('compat: v6 members', () => {
         item.getValidatorKey(),
         item.getValidatorKey(false),
         item.getValidatorKey(true, ':'),
+        new Item('m', 'FUNCTION', 'p', 'v').getValidatorKey(),
+        new Item('m', 'FUNCTION', 'p', 'v').getValidatorKey(true, ':'),
         { ...Item.Origins },
       ];
     }));
