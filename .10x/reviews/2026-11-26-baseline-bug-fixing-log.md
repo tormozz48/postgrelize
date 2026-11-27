@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 100. Open: 27 (includes causes found while fixing).
+Fixed: 104. Open: 23 (includes causes found while fixing).
 
 ## Fixed
 
@@ -108,6 +108,10 @@ Fixed: 100. Open: 27 (includes causes found while fixing).
 | `B-attributes-empty` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
 | `B-invalid-attr-message` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
 | `B-unique-msg-option` | wording | [#305](https://github.com/tormozz48/postgrelize/pull/305) |
+| `D-data-types-string-options` | error | [#299](https://github.com/tormozz48/postgrelize/pull/299) |
+| `B-sync-schema-option-references` | error | [#300](https://github.com/tormozz48/postgrelize/pull/300) |
+| `B-alter-deferrable-not-updated` | error | [#301](https://github.com/tormozz48/postgrelize/pull/301) |
+| `D-addindex-expression-fields` | error | [#303](https://github.com/tormozz48/postgrelize/pull/303) |
 
 ## Not fixed
 
@@ -117,7 +121,6 @@ Fixed: 100. Open: 27 (includes causes found while fixing).
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
 | `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
-| `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
 | `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
 | `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
 | `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
@@ -127,12 +130,9 @@ Fixed: 100. Open: 27 (includes causes found while fixing).
 | `C-no-logging-on-failed-query` | cosmetic | The query logger is not called for a statement that fails (v6 logs "Executing" before running, so retry logs each attempt). |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
 | `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
-| `D-data-types-string-options` | error | DataTypes.STRING({length:1234}) options-object form throws 'STRING length must be a non-negative integer'; sql/data-types.test.js cannot load. |
 | `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
 | `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
 | `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
-| `B-alter-deferrable-not-updated` | error | sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed. |
-| `D-addindex-expression-fields` | error | addIndex does not accept literal() / fn() fields; the file did not load before. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
 | `C-findorcreate-shared-tx` | error | Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock. |

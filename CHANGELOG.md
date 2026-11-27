@@ -38,6 +38,13 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `DataTypes.STRING.BINARY` / `CHAR.BINARY` are `BYTEA`, `FLOAT`, `REAL`, `DOUBLE` and `DECIMAL` take `UNSIGNED` / `ZEROFILL`, `FLOAT` with decimals is plain `FLOAT` and `DATE` takes `{ length }`, like v6. **Behaviour change:** `STRING({ binary: true })` created `VARCHAR`. Differential test in `tests/compat/data-type-modifiers.test.ts`. ([#299](https://github.com/tormozz48/postgrelize/pull/299))
+- An `include` of a `Model.schema()` copy resolves the association and reads that schema, association getters accept `schema`, and `sync()` of a table in a schema references unqualified tables in the same schema, like v6. Differential test in `tests/compat/schema-clone-include.test.ts`. ([#300](https://github.com/tormozz48/postgrelize/pull/300))
+- `sync({ alter: true })` re-creates a foreign key whose `deferrable` mode differs from the model, like v6. Test in `tests/integration/alter-deferrable.test.ts`. ([#301](https://github.com/tormozz48/postgrelize/pull/301))
+- `addIndex` and model `indexes` take `literal()`, `fn()` and `col()` fields, like v6, and `IndexField` types them. Differential test in `tests/compat/index-expression-fields.test.ts`. ([#303](https://github.com/tormozz48/postgrelize/pull/303))
+
 ## [1.9.20] - 2026-11-27
 
 ### Fixed
