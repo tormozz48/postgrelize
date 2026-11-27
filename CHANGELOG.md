@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.20] - 2026-11-27
+
 ### Fixed
 
 - A `UniqueConstraintError` of a single-column unique key carries the `msg` of its `unique: { msg }` attribute, like v6 (keys over several attributes keep `Validation error` unless each of them declares the `msg`). Differential test in `tests/compat/unique-msg.test.ts`. ([#305](https://github.com/tormozz48/postgrelize/pull/305))
@@ -656,7 +658,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.19...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.20...HEAD
+[1.9.20]: https://github.com/tormozz48/postgrelize/compare/v1.9.19...v1.9.20
 [1.9.19]: https://github.com/tormozz48/postgrelize/compare/v1.9.18...v1.9.19
 [1.9.18]: https://github.com/tormozz48/postgrelize/compare/v1.9.17...v1.9.18
 [1.9.17]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...v1.9.17
