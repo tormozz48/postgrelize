@@ -131,17 +131,37 @@ export class JunctionKeys {
     if (names.otherKey === paired.otherKey && names.targetKey === paired.targetKey) {
       return;
     }
+    // v6 `primaryKeyDeleted`: re-added keys stay the primary key that replaced a generated one
+    const composite = this.#formsKey(model, [paired.foreignKey, paired.otherKey as string]);
     if (names.otherKey !== paired.otherKey) {
       registry.removeAttribute(model, paired.otherKey as string);
     }
-    const options = paired.options as BelongsToManyOptions;
-    const through = this.#through(options);
-    this.#addKeys(model, [paired.source, paired.target], names, through, options);
+    this.#reAddKeys(model, paired, names, composite);
     Object.assign(paired, {
       targetKey: names.targetKey,
       otherKey: names.otherKey,
       ...this.#identifiers(paired.source, paired.target, model, names),
     });
+  }
+
+  #reAddKeys(model: Model, paired: Association, names: JunctionNames, composite: boolean): void {
+    const options = paired.options as BelongsToManyOptions;
+    const ends = [paired.source, paired.target] as const;
+    if (composite) {
+      this.#addAttributes(model, ends, names, options, { primaryKey: true, allowNull: false });
+    } else {
+      this.#addKeys(model, ends, names, this.#through(options), options);
+    }
+  }
+
+  // whether an association, not the model, made the keys the primary key
+  #formsKey(model: Model, keys: readonly string[]): boolean {
+    const { definition, input } = registry.state(model);
+    return keys.every(
+      (key) =>
+        definition.primaryKeys.includes(key) &&
+        (input.attributes[key] as { primaryKey?: boolean } | undefined)?.primaryKey !== true,
+    );
   }
 
   // v6 `_injectAttributes`: the keys form the primary key only in place of a generated one,
