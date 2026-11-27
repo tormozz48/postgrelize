@@ -1,11 +1,12 @@
 import { DdlGenerator, type ColumnDefinition } from '../ddl/ddl-generator.ts';
+import { Deferrable } from '../ddl/ddl-types.ts';
 import { SqlLiteral, type TableName } from '../ddl/sql-literal.ts';
 import type { ModelDefinition } from '../model/model-definition.ts';
 import type { QueryOptionsBase } from '../model/runtime.ts';
 import { SqlCompiler } from '../sql/compile.ts';
 import type { ModelTables } from './model-tables.ts';
 import type { QueryInterface } from './query-interface.ts';
-import type { ColumnDescription } from './query-interface-types.ts';
+import type { ColumnDescription, ForeignKeyReference } from './query-interface-types.ts';
 
 const ddl = new DdlGenerator();
 
@@ -55,7 +56,7 @@ export class AlterPlanner {
     const qualified = sqlLiteral.quoteTable(table);
     const described = await this.#queryInterface.describeTable(table, options);
     const columns = this.#tables.storedColumns(definition);
-    const foreignKeys = await this.foreignKeyColumns(table, options);
+    const foreignKeys = await this.#queryInterface.getForeignKeyReferencesForTable(table, options);
     const target: AlterTarget = { table, qualified, columns, described };
     return [
       ...this.#added(target),
@@ -112,19 +113,44 @@ export class AlterPlanner {
       });
   }
 
+  // missing foreign keys are added; like v6, one whose deferrable mode changed is re-created
   #references(
     { qualified, columns, described }: AlterTarget,
-    foreignKeys: ReadonlySet<string>,
+    foreignKeys: readonly ForeignKeyReference[],
     schema: string | undefined,
   ): readonly string[] {
     return columns
-      .filter(
-        (column) =>
-          described[column.field] !== undefined &&
-          column.references !== undefined &&
-          !foreignKeys.has(column.field),
-      )
-      .map((column) => this.#tables.foreignKeySql(qualified, column, schema));
+      .filter((column) => described[column.field] !== undefined && column.references !== undefined)
+      .flatMap((column) => this.#reference(qualified, column, foreignKeys, schema));
+  }
+
+  #reference(
+    qualified: string,
+    column: ColumnDefinition,
+    foreignKeys: readonly ForeignKeyReference[],
+    schema: string | undefined,
+  ): readonly string[] {
+    const existing = foreignKeys.filter((key) => key.columnName === column.field);
+    const stale = existing.filter((key) => this.#deferrableChanged(column, key));
+    if (existing.length > 0 && stale.length === 0) {
+      return [];
+    }
+    const dropped = stale.map(
+      (key) =>
+        `ALTER TABLE ${qualified} DROP CONSTRAINT ${SqlCompiler.quoteIdent(key.constraintName)}`,
+    );
+    return [...dropped, this.#tables.foreignKeySql(qualified, column, schema)];
+  }
+
+  #deferrableChanged(column: ColumnDefinition, key: ForeignKeyReference): boolean {
+    const references = column.references as Readonly<{
+      key?: string;
+      deferrable?: Readonly<{ sql: string }>;
+    }>;
+    return (
+      key.referencedColumnName === (references.key ?? 'id') &&
+      key.deferrable.sql !== (references.deferrable ?? Deferrable.NOT).sql
+    );
   }
 
   #dropped(
