@@ -12,6 +12,7 @@ import {
   InvalidConnectionError,
   TimeoutError,
   UniqueConstraintError,
+  UnknownConstraintError,
   ValidationErrorItem,
   type DriverError,
   type QueryErrorContext,
@@ -75,7 +76,7 @@ export class PgErrorMapper {
       default:
         return PgErrorMapper.#isConnectionFailure(driverError)
           ? this.mapConnectionError(driverError)
-          : new DatabaseError(driverError, context);
+          : this.#databaseError(driverError, context);
     }
   }
 
@@ -102,6 +103,21 @@ export class PgErrorMapper {
     return fields === undefined
       ? new UniqueConstraintError({ ...base, message: error.message })
       : new UniqueConstraintError({ ...base, fields, errors: PgErrorMapper.#uniqueItems(fields) });
+  }
+
+  // like v6, "undefined object" of a statement about a constraint or index has its own class
+  #databaseError(error: DriverError, context: QueryErrorContext): DatabaseError {
+    if (error.code !== '42704' || !/CONSTRAINT|INDEX/i.test(context.sql ?? '')) {
+      return new DatabaseError(error, context);
+    }
+    const constraint = /(?:constraint|index) "(.+?)"/i.exec(error.message)?.[1];
+    const table = /relation "(.+?)"/i.exec(error.message)?.[1];
+    return new UnknownConstraintError({
+      message: 'Unknown constraint error',
+      parent: error,
+      ...(constraint === undefined ? {} : { constraint }),
+      ...(table === undefined ? {} : { table }),
+    });
   }
 
   #constraintOptions(error: DriverError, context: QueryErrorContext) {
