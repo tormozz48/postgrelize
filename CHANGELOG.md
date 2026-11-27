@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `belongsToMany` through a model that declares its own primary key keeps that key and gives the two foreign keys a unique key (`uniqueKey`, `through.unique`) like v6. It added both foreign keys to the primary key, so `instance.update()` of one was silently ignored. A junction model that declares only the foreign keys no longer keeps the automatic `id`, and a later association on a junction foreign key keeps its key. **Behaviour change:** `primaryKeyAttributes`, `findByPk`, `upsert` conflict target and the `sync()` schema of such models change; see the migrating guide. Differential test in `tests/compat/btm-through-declared-pk.test.ts`. ([#290](https://github.com/tormozz48/postgrelize/pull/290))
+
 ## [1.9.16] - 2026-11-27
 
 ### Fixed

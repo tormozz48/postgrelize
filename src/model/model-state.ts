@@ -7,6 +7,7 @@ import {
   type DefinitionOptions,
   type ModelAttributes,
 } from './model-definition.ts';
+import type { AttributeOptions } from './attribute-options.ts';
 import type { InitOptions } from './options.ts';
 import { runtimeKey, type ModelRuntime } from './runtime.ts';
 import { ScopeRegistry } from './scope-registry.ts';
@@ -77,7 +78,7 @@ export class ModelStateFactory {
    * @returns The new state.
    */
   withAssociationAttributes(state: ModelState, attributes: ModelAttributes): ModelState {
-    const extra = { ...state.input.extra, ...attributes };
+    const extra = { ...state.input.extra, ...this.#keepKeys(state.input.extra, attributes) };
     return {
       ...state,
       input: { ...state.input, extra },
@@ -89,6 +90,21 @@ export class ModelStateFactory {
         extra,
       ),
     };
+  }
+
+  // like v6, a later association on the same foreign key does not take away the primary or
+  // unique key an earlier one (belongsToMany) gave it
+  #keepKeys(previous: ModelAttributes, added: ModelAttributes): ModelAttributes {
+    return Object.fromEntries(
+      Object.entries(added).map(([name, input]) => {
+        const { primaryKey, unique } = (previous[name] ?? {}) as AttributeOptions;
+        const kept = {
+          ...(primaryKey === undefined ? {} : { primaryKey }),
+          ...(unique === undefined ? {} : { unique }),
+        };
+        return [name, { ...kept, ...(input as AttributeOptions) }];
+      }),
+    );
   }
 
   /**
