@@ -206,12 +206,21 @@ export class SelectTargets {
       // a bare `literal()` / `fn()` is a raw select item, like v6
       return ctx.toExpr(item);
     }
-    const [source, name] = item as readonly [unknown, string];
+    const [source, name] = SelectTargets.#pair(item);
     const expr =
       typeof source === 'string'
         ? ast.ident(alias, definition.attributes.get(source)?.field ?? source)
         : ctx.toExpr(source);
     return { kind: 'alias', expr, alias: name };
+  }
+
+  static #pair(item: readonly unknown[]): readonly [unknown, string] {
+    if (item.length !== 2) {
+      throw new Error(
+        `${JSON.stringify(item)} is not a valid attribute definition. Please use the following format: ['attribute definition', 'alias']`,
+      );
+    }
+    return item as readonly [unknown, string];
   }
 
   /** `'jsonAttr.a.b'` orders by the jsonb value at that path (numbers sort numerically). */

@@ -1,3 +1,4 @@
+import { QueryError } from '../errors/errors.ts';
 import type { IncludeNode } from '../associations/include.ts';
 import type { IncludeQueryBuilder } from '../associations/include-query-builder.ts';
 import type { SelectNode } from '../sql/ast.ts';
@@ -56,7 +57,34 @@ export class FindQueryBuilder {
       inAsAnyThreshold,
       alias ?? tableAs,
     );
-    return includes.length === 0 ? base : this.#includes.build(definition, base, includes, query);
+    return this.#joined(definition, base, includes, query, alias ?? tableAs);
+  }
+
+  #joined(
+    definition: ModelDefinition,
+    base: SelectNode,
+    includes: readonly IncludeNode[],
+    query: FindOptions,
+    alias: string | undefined,
+  ): SelectNode {
+    return includes.length === 0
+      ? FindQueryBuilder.#selecting(definition, base, alias)
+      : this.#includes.build(definition, base, includes, query);
+  }
+
+  // like v6, a finder has to select something
+  static #selecting(
+    definition: ModelDefinition,
+    select: SelectNode,
+    alias: string | undefined,
+  ): SelectNode {
+    if (select.columns.length > 0) {
+      return select;
+    }
+    const as = alias ?? definition.name;
+    throw new QueryError(
+      `Attempted a SELECT query for model '${definition.name}' as "${as}" without selecting any columns`,
+    );
   }
 
   /**
