@@ -111,7 +111,7 @@ describe('QueryInterface table and enum helpers', () => {
     withSchema(async ({ schema }) => {
       const sequelize = connect(schema);
       await expect(sequelize.getQueryInterface().describeTable('Missing')).rejects.toThrow(
-        /No description found for table Missing/,
+        /No description found for "Missing" table/,
       );
     }));
 

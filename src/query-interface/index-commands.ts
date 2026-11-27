@@ -83,6 +83,9 @@ export class IndexCommands {
     table: TableName,
     options: ConstraintOptions & QueryOptionsBase,
   ): Promise<void> {
+    if (!options.type) {
+      throw new Error('Constraint type must be specified through options.type');
+    }
     await this.#runner.run(ddl.addConstraintSql(table, options), options);
   }
 
