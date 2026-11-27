@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.14] - 2026-11-27
+
 ### Fixed
 
 - `group: [['col']]` groups by the column (the value was bound as a parameter). Differential test in `tests/compat/group-nested-array.test.ts`. ([#260](https://github.com/tormozz48/postgrelize/pull/260))
@@ -604,7 +606,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...HEAD
+[1.9.14]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...v1.9.14
 [1.9.13]: https://github.com/tormozz48/postgrelize/compare/v1.9.12...v1.9.13
 [1.9.12]: https://github.com/tormozz48/postgrelize/compare/v1.9.11...v1.9.12
 [1.9.11]: https://github.com/tormozz48/postgrelize/compare/v1.9.10...v1.9.11
