@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `sync` accepts `Infinity` / `-Infinity` defaults of `DATEONLY`, and an infinite `date` reads back as `Infinity` / `-Infinity`, like v6. **Behaviour change:** it read as the string `'infinity'`. Differential test in `tests/compat/dateonly-infinity.test.ts`. ([#328](https://github.com/tormozz48/postgrelize/pull/328))
+- A `Model.schema()` copy made before the associations are declared sees them and their foreign keys, like v6. Differential test in `tests/compat/schema-copy-associations.test.ts`. ([#331](https://github.com/tormozz48/postgrelize/pull/331))
+- `addColumn` with missing arguments, `addConstraint` without `type`, `renameColumn` of a missing column and `describeTable` of a missing table report the v6 messages. Differential test in `tests/compat/query-interface-errors.test.ts`. ([#332](https://github.com/tormozz48/postgrelize/pull/332))
+
 ## [1.10.2] - 2026-11-28
 
 ### Fixed
