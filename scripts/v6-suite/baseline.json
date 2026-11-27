@@ -19,14 +19,6 @@
       "area": "associations",
       "note": "Not individually analysed (catch-all for remaining tests of the slice files)."
     },
-    "B-attributes-empty": {
-      "cause": "bug",
-      "area": "query",
-      "note": "findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'.",
-      "risk": "wording",
-      "repro": "await U.findAll({attributes:[]})",
-      "test": "Model findAll should throw on an attempt to fetch no attributes"
-    },
     "B-datavalues-key-order": {
       "cause": "bug",
       "area": "instance",
@@ -54,14 +46,6 @@
       "cause": "harness",
       "area": "model",
       "note": "Test uses v6 internals: queryGenerator.quoteIdentifier(s), modelManager.all, instance _options, Model.tableAttributes, _schema, sinon spies on Model.aggregate, mutation of sequelize.options.schema."
-    },
-    "B-invalid-attr-message": {
-      "cause": "bug",
-      "area": "query",
-      "note": "An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '[\"username\"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests.",
-      "risk": "wording",
-      "repro": "await U.findOne({attributes:['id',['username']]})",
-      "test": "Model findOne general / basic function should fail with meaningful error message on invalid attributes definition"
     },
     "B-json-order-injection": {
       "cause": "divergence",
@@ -392,14 +376,6 @@
       "risk": "error",
       "repro": "change references.deferrable of a model attribute; await sync({ alter: true }) // constraint keeps the old mode"
     },
-    "C-raw-errors-option": {
-      "cause": "bug",
-      "area": "raw",
-      "note": "The v6 query option rawErrors is not supported; the test was not reached before.",
-      "test": "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
-      "risk": "error",
-      "repro": "await sequelize.query('SELECT 1 FROM missing', { rawErrors: true }) // rejects with DatabaseError, v6 with the driver error"
-    },
     "D-addindex-expression-fields": {
       "cause": "bug",
       "area": "addindex",
@@ -447,6 +423,14 @@
       "test": "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string",
       "risk": "cosmetic",
       "repro": "new ValidationErrorItem('m', 'FUNCTION', 'p', 'v').getValidatorKey() // 'function.null', v6 ''"
+    },
+    "D-findbypk-out-of-range": {
+      "cause": "bug",
+      "area": "findbypk",
+      "note": "findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads.",
+      "test": "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk",
+      "risk": "error",
+      "repro": "await User.findByPk(4732322332323333232344334354234) // DatabaseError, v6 null"
     }
   },
   "files": {
@@ -1794,11 +1778,9 @@
     },
     "test/integration/model/findAll.test.js": {
       "failing": [
-        "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type"
       ],
       "causes": {
-        "[POSTGRES] Model findAll should throw on an attempt to fetch no attributes": "B-attributes-empty",
         "[POSTGRES] Model findAll special where conditions/smartWhere object should be able to find multiple users with case-insensitive on CITEXT type": "B-harness-citext-extension"
       }
     },
@@ -1807,10 +1789,6 @@
       "causes": {
         "[POSTGRES] Model findAll order injections should not throw on a literal": "B-order-direction-literal"
       }
-    },
-    "test/integration/model/findOne.test.js": {
-      "loadError": true,
-      "cause": "B-invalid-attr-message"
     },
     "test/integration/model/geography.test.js": {
       "failing": [
@@ -2089,7 +2067,6 @@
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries",
-        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested",
         "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged"
       ],
       "causes": {
@@ -2103,8 +2080,7 @@
         "[POSTGRES] Sequelize query rejections reject when binds passed as array and $alpha is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query rejections reject when binds passed with object and numeric $1 is also present": "C-bind-skips-string-literals",
         "[POSTGRES] Sequelize query retry properly bind parameters on extra retries": "C-no-logging-on-failed-query",
-        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined",
-        "[POSTGRES] Sequelize query stacktraces emits raw errors if requested": "C-raw-errors-option"
+        "[POSTGRES] Sequelize query uses properties `query` and `bind` if query is tagged": "C-bind-log-inlined"
       }
     },
     "test/integration/sequelize/truncate.test.js": {
@@ -2184,6 +2160,16 @@
       ],
       "causes": {
         "[POSTGRES] Sequelize Errors API Surface SequelizeValidationErrorItem.getValidatorKey() should return a string": "D-validator-key-empty"
+      }
+    },
+    "test/integration/model/findOne.test.js": {
+      "failing": [
+        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type",
+        "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk"
+      ],
+      "causes": {
+        "[POSTGRES] Model findOne general / basic function should allow case-insensitive find on CITEXT type": "B-harness-citext-extension",
+        "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk": "D-findbypk-out-of-range"
       }
     }
   }

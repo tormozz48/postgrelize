@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 96. Open: 29 (includes causes found while fixing).
+Fixed: 99. Open: 27 (includes causes found while fixing).
 
 ## Fixed
 
@@ -104,15 +104,16 @@ Fixed: 96. Open: 29 (includes causes found while fixing).
 | `C-validation-error-item-api` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
 | `D-config-dialectoptions-missing` | cosmetic | [#307](https://github.com/tormozz48/postgrelize/pull/307) |
 | `C-btm-polymorphic-through-pk` | error | [#309](https://github.com/tormozz48/postgrelize/pull/309) |
+| `C-raw-errors-option` | error | [#302](https://github.com/tormozz48/postgrelize/pull/302) |
+| `B-attributes-empty` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
+| `B-invalid-attr-message` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
 
 ## Not fixed
 
 | cause | risk | note |
 | --- | --- | --- |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
-| `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
-| `B-invalid-attr-message` | wording | An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '["username"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests. |
 | `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
 | `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
@@ -131,10 +132,10 @@ Fixed: 96. Open: 29 (includes causes found while fixing).
 | `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
 | `D-include-invalid-element` | cosmetic | Fixed for findAll (invalid include elements throw v6 message); the two unit tests still fail because they call v6 private Model._conformIncludes, which postgrelize does not expose. |
 | `B-alter-deferrable-not-updated` | error | sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed. |
-| `C-raw-errors-option` | error | The v6 query option rawErrors is not supported; the test was not reached before. |
 | `D-addindex-expression-fields` | error | addIndex does not accept literal() / fn() fields; the file did not load before. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
 | `C-findorcreate-shared-tx` | error | Two concurrent findOrCreate calls in one caller transaction abort it; found while fixing the pool deadlock. |
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
 | `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |
+| `D-findbypk-out-of-range` | error | findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads. |
