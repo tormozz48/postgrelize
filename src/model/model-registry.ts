@@ -19,6 +19,8 @@ const states = new WeakMap<object, ModelState>();
 const selections = new WeakMap<object, readonly ScopeSelector[]>();
 const owners = new WeakMap<object, RuntimeOwner>();
 const origins = new WeakMap<object, object>();
+// state of the original model a schema-bound copy was last brought up to date with
+const followed = new WeakMap<object, ModelState>();
 const accessors = new ModelAccessors();
 const factory = new ModelStateFactory();
 const defineHooks = new DefineHooks();
@@ -64,13 +66,31 @@ export class ModelRegistry {
    */
   state(model: object): ModelState {
     const base = this.#owner(model);
-    const state = base === undefined ? undefined : states.get(base);
+    const stored = base === undefined ? undefined : states.get(base);
+    const state = stored === undefined ? undefined : this.#current(base as object, stored);
     if (state === undefined) {
       throw new Error(NOT_INITIALIZED);
     }
     return state.definition.name === (base as { name: string }).name
       ? state
       : this.#renamed(base as object, state);
+  }
+
+  // a schema-bound copy takes over what its model gained since the copy was last read
+  #current(base: object, state: ModelState): ModelState {
+    const origin = origins.get(base);
+    if (origin === undefined) {
+      return state;
+    }
+    const source = states.get(origin) as ModelState;
+    const seen = followed.get(base);
+    if (seen?.definition === source.definition && seen.associations === source.associations) {
+      return state;
+    }
+    const current = factory.following(state, source);
+    states.set(base, current);
+    followed.set(base, source);
+    return current;
   }
 
   // v6 reads `Model.name` whenever it builds a query (table alias, include aliases), so a class that
@@ -193,6 +213,7 @@ export class ModelRegistry {
   bindSchema(model: object, bound: object, schema: string, delimiter: string | undefined): void {
     states.set(bound, factory.withSchema(this.state(model), schema, delimiter));
     origins.set(bound, this.origin(model));
+    followed.set(bound, states.get(this.origin(model)) as ModelState);
     const owner = owners.get(this.#owner(model) as object);
     if (owner !== undefined) {
       owners.set(bound, owner);
