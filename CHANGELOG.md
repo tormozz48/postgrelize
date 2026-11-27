@@ -38,6 +38,11 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- `sequelize.query` accepts `rawErrors: true` and rejects with the driver error instead of a `DatabaseError`, like v6. Differential test in `tests/compat/raw-errors.test.ts`. ([#302](https://github.com/tormozz48/postgrelize/pull/302))
+- A finder with `attributes: []` throws v6's `QueryError` instead of returning `[]`, and a malformed `attributes` item reports v6's message instead of a `TypeError`. Differential test in `tests/compat/attributes-validation.test.ts`. ([#306](https://github.com/tormozz48/postgrelize/pull/306))
+
 ## [1.9.18] - 2026-11-27
 
 ### Fixed
