@@ -98,6 +98,20 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Releases 1.9.12 to 1.9.16 (2026-11-26 and 2026-11-27, released)
+
+Second batch of v6 suite baseline fixes, merged and released in five groups. Each release: release.yml all jobs green, `npm view postgrelize` showed it as `latest` with provenance, clean install imported in ESM and CJS, bench gate passed.
+
+| Version | Group | Fix PRs | Bookkeeping | Release PR |
+| --- | --- | --- | --- | --- |
+| 1.9.12 | validation, scopes, hooks | #253 #258 #274 | #282 | #283 |
+| 1.9.13 | model (also dev dependency patches, #284) | #250 #251 #252 #255 #256 #269 | #285 | #287 |
+| 1.9.14 | query, connection | #260 #267 #273 #276 | #289 | #291 |
+| 1.9.15 | schema | #254 #259 #264 #265 #266 #268 #270 #271 #275 | #292 | #293 |
+| 1.9.16 | associations (#263 changes the delete action of NOT NULL hasOne/hasMany keys) | #257 #261 #262 #263 #272 | #294 | #295 |
+
+89 of the 116 original causes are fixed; 32 are open, five of them found while fixing (log `.10x/reviews/2026-11-26-baseline-bug-fixing-log.md`). Docs on the 1.9.16 merge commit failed once (`type "citext" does not exist`, test isolation, fix open in #286) and passed on rerun (run 45922128878).
+
 ## Release 1.9.11 (2026-11-26, released)
 
 Fix of a regression released in 1.9.7 to 1.9.10: after `update()` or `save({ fields })` on a versioned model the next `save` threw `OptimisticLockError` (#277). Tag `v1.9.11` on `c6c80e5` (PR #280), release.yml run 45900387216: all jobs green; `npm view postgrelize` shows `1.9.11` (`latest`) with provenance, clean install imports in ESM and CJS; bench gate run 45899137027 passed. Fix PRs #250 to #276 and their bookkeeping PR #278 are open, not released.
