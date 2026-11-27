@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- A `UniqueConstraintError` of a single-column unique key carries the `msg` of its `unique: { msg }` attribute, like v6 (keys over several attributes keep `Validation error` unless each of them declares the `msg`). Differential test in `tests/compat/unique-msg.test.ts`. ([#305](https://github.com/tormozz48/postgrelize/pull/305))
+
 ## [1.9.19] - 2026-11-27
 
 ### Fixed

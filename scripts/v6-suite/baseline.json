@@ -88,14 +88,6 @@
       "area": "upsert",
       "note": "Paranoid model with deletedAt in PK and defaultValue Infinity: postgrelize upsert updates user1 (1 null-address row visible), v6 test expects 2; postgrelize result looks correct, v6 semantics not checked in source."
     },
-    "B-unique-msg-option": {
-      "cause": "bug",
-      "area": "validation",
-      "note": "unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message.",
-      "risk": "wording",
-      "repro": "M=sq.define('m',{u:{type:DataTypes.STRING,unique:{msg:'custom'}}}); await sq.sync(); await M.create({u:'a'}); await M.create({u:'a'}) // e.errors[0].message === 'u must be unique'",
-      "test": "InstanceValidator #update should allow a custom unique constraint error message"
-    },
     "B-unsupported-pool-acquire-hooks": {
       "cause": "unsupported",
       "area": "hooks",
@@ -431,6 +423,14 @@
       "test": "[POSTGRES] Model findOne rejectOnEmpty mode throws error when record not found by findByPk",
       "risk": "error",
       "repro": "await User.findByPk(4732322332323333232344334354234) // DatabaseError, v6 null"
+    },
+    "D-unique-msg-composite": {
+      "cause": "bug",
+      "area": "unique",
+      "note": "A unique key over several attributes does not use the msg declared on one of them: the error message stays Validation error.",
+      "test": "[POSTGRES] Model constructor allows us to customize the error message for unique constraint",
+      "risk": "cosmetic",
+      "repro": "a: { unique: { name: 'k', msg: 'm' } }, b: { unique: 'k' } // duplicate create: message 'Validation error', v6 'm'"
     }
   },
   "files": {
@@ -1664,16 +1664,6 @@
         "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications": "B-unsupported-uuidv1"
       }
     },
-    "test/integration/instance.validations.test.js": {
-      "failing": [
-        "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly"
-      ],
-      "causes": {
-        "[POSTGRES] InstanceValidator #update should allow a custom unique constraint error message": "B-unique-msg-option",
-        "[POSTGRES] InstanceValidator #update should handle multiple unique messages correctly": "B-unique-msg-option"
-      }
-    },
     "test/integration/instance/decrement.test.js": {
       "failing": [],
       "causes": {}
@@ -1728,14 +1718,14 @@
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt"
       ],
       "causes": {
-        "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "B-unique-msg-option",
         "[POSTGRES] Model count options sent to aggregate \"after each\" hook for \"modifies option \"limit\" by setting it to null\"": "B-harness-private-internals",
         "[POSTGRES] Model count options sent to aggregate modifies option \"limit\" by setting it to null": "B-harness-private-internals",
         "[POSTGRES] Model destroy sets deletedAt to the current timestamp if paranoid is true": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not fail with an include": "B-harness-private-internals",
         "[POSTGRES] Model paranoid is true and where is an array should not overwrite a specified deletedAt by setting paranoid: false": "B-harness-private-internals",
         "[POSTGRES] Model update updates the attributes that we select only without updating createdAt": "B-logging-interpolated",
-        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "B-unique-msg-option"
+        "[POSTGRES] Model constructor allows us to customize the error message for unique constraint": "D-unique-msg-composite",
+        "[POSTGRES] Model constructor allows us to map the customized error message with unique constraint name": "D-unique-msg-composite"
       }
     },
     "test/integration/model/attributes/field.test.js": {

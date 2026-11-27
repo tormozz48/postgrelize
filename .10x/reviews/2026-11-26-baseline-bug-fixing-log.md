@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 99. Open: 27 (includes causes found while fixing).
+Fixed: 100. Open: 27 (includes causes found while fixing).
 
 ## Fixed
 
@@ -107,6 +107,7 @@ Fixed: 99. Open: 27 (includes causes found while fixing).
 | `C-raw-errors-option` | error | [#302](https://github.com/tormozz48/postgrelize/pull/302) |
 | `B-attributes-empty` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
 | `B-invalid-attr-message` | wording | [#306](https://github.com/tormozz48/postgrelize/pull/306) |
+| `B-unique-msg-option` | wording | [#305](https://github.com/tormozz48/postgrelize/pull/305) |
 
 ## Not fixed
 
@@ -117,7 +118,6 @@ Fixed: 99. Open: 27 (includes causes found while fixing).
 | `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
 | `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
-| `B-unique-msg-option` | wording | unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message. |
 | `B-virtual-exclude` | cosmetic | findAll({attributes:{exclude:['virtualAttr']}}) still returns the VIRTUAL key (undefined) in get(); v6 omits it. |
 | `C-bind-log-inlined` | cosmetic | Logged SQL for queries with bind has values inlined ("select 1::int") instead of v6 "$1" placeholders. |
 | `C-client-min-messages` | cosmetic | v6 sets client_min_messages=warning by default and supports clientMinMessages / dialectOptions.clientMinMessages (ERROR / IGNORE / false); postgrelize never issues SET client_min_messages (server default notice) and ignores the option. |
@@ -139,3 +139,4 @@ Fixed: 99. Open: 27 (includes causes found while fixing).
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
 | `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |
 | `D-findbypk-out-of-range` | error | findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads. |
+| `D-unique-msg-composite` | cosmetic | A unique key over several attributes does not use the msg declared on one of them: the error message stays Validation error. |
