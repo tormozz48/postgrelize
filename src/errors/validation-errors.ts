@@ -162,11 +162,15 @@ export class ValidationErrorItem {
    * ```
    */
   getValidatorKey(useTypeAsNS = true, separator = '.'): string {
-    const namespace = useTypeAsNS ? this.origin : null;
+    // like v6: only a known origin is a namespace, and an item without a key gives ''
+    const namespace = useTypeAsNS && this.origin && ORIGINS.has(this.origin) ? this.origin : null;
     if (namespace && (typeof separator !== 'string' || separator === '')) {
       throw new Error('Invalid namespace separator given, must be a non-empty string');
     }
-    const key = String(this.validatorKey || this.validatorName);
+    const key = this.validatorKey || this.validatorName;
+    if (typeof key !== 'string' || key === '') {
+      return '';
+    }
     return (namespace ? [namespace, key].join(separator) : key).toLowerCase().trim();
   }
 
