@@ -98,6 +98,17 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Releases 1.9.18 to 1.9.21 (2026-11-27, released)
+
+Third batch of v6 suite baseline fixes, merged and released in four groups. Each release: bench gate green, `release.yml` all jobs green, npm `latest`, ESM and CJS import in a clean directory, attestation present, GitHub Release created. Not checked: npm Provenance badge page, GitHub Packages mirror page.
+
+- 1.9.18 (model): #297, #307, #309 (fix of a 1.9.17 regression of paired `belongsToMany`; join tables created by `sync()` on 1.9.17 keep a one-column primary key). Release PR #310, `release.yml` run 46018389833.
+- 1.9.19 (query): #302, #306. Release PR #312, run 46023915299.
+- 1.9.20 (validation): #305. Release PR #315, run 46030281414.
+- 1.9.21 (schema): #299 (behaviour change), #300 (partial for `Model.schema()` copies), #301, #303. Release PR #317, run 46035661399.
+
+Open: 23 `bug` causes in `scripts/v6-suite/baseline.json`; #313 (composite unique `msg`) is not merged. The shared test PostgreSQL (port 54329) went into recovery several times with a backend `exit code 2`; cause not found.
+
 ## Release 1.9.17 (2026-11-27, released)
 
 `reload()` marks the instance as loaded by a query (#288); `belongsToMany` through a model with its own primary key keeps it (#290, behaviour change). Release PR #298, merge commit `9dbd92d`; bench gate green on `main` (geometric mean -0.2%); `release.yml` run 45987133680 green; npm `latest` 1.9.17, ESM and CJS import in a clean directory, attestation present, GitHub Release created. Not checked: npm Provenance badge page, GitHub Packages mirror page.
