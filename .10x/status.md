@@ -98,6 +98,10 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Release 1.9.17 (2026-11-27, released)
+
+`reload()` marks the instance as loaded by a query (#288); `belongsToMany` through a model with its own primary key keeps it (#290, behaviour change). Release PR #298, merge commit `9dbd92d`; bench gate green on `main` (geometric mean -0.2%); `release.yml` run 45987133680 green; npm `latest` 1.9.17, ESM and CJS import in a clean directory, attestation present, GitHub Release created. Not checked: npm Provenance badge page, GitHub Packages mirror page.
+
 ## Releases 1.9.12 to 1.9.16 (2026-11-26 and 2026-11-27, released)
 
 Second batch of v6 suite baseline fixes, merged and released in five groups. Each release: release.yml all jobs green, `npm view postgrelize` showed it as `latest` with provenance, clean install imported in ESM and CJS, bench gate passed.
