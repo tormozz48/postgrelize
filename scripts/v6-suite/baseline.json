@@ -80,12 +80,6 @@
       "area": "upsert",
       "note": "Paranoid model with deletedAt in PK and defaultValue Infinity: postgrelize upsert updates user1 (1 null-address row visible), v6 test expects 2; postgrelize result looks correct, v6 semantics not checked in source."
     },
-    "B-unsupported-pool-acquire-hooks": {
-      "cause": "unsupported",
-      "area": "hooks",
-      "note": "beforePoolAcquire/afterPoolAcquire hooks are never run.",
-      "ref": "docs/guide/migrating.md (Sequelize instance, Not planned: afterPoolAcquire, beforePoolAcquire)"
-    },
     "B-unsupported-postgis": {
       "cause": "unsupported",
       "area": "datatypes",
@@ -97,18 +91,6 @@
       "area": "datatypes",
       "note": "Custom DataTypes.X.parse / connectionManager.refreshTypeParser / _clearTypeParser not provided (DataTypes are frozen).",
       "ref": "docs/guide/migrating.md (connectionManager: refreshTypeParser not provided); ADR-030"
-    },
-    "B-unsupported-searchpath": {
-      "cause": "unsupported",
-      "area": "query",
-      "note": "The searchPath query/sync option is not implemented; instance.save/update/findAll with searchPath use the default schema.",
-      "ref": "docs/guide/migrating.md (searchPath not implemented, dialectOptions.options search_path)"
-    },
-    "B-unsupported-uuidv1": {
-      "cause": "unsupported",
-      "area": "datatypes",
-      "note": "DataTypes.UUIDV1 is not provided, so a UUIDV1 default yields no value on build.",
-      "ref": "docs/guide/migrating.md (DataTypes Not planned: UUIDV1)"
     },
     "B-virtual-exclude": {
       "cause": "bug",
@@ -1590,12 +1572,6 @@
       "loadError": true,
       "cause": "C-adapter-no-deep-import"
     },
-    "test/integration/hooks/hooks.test.js": {
-      "failing": ["[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks"],
-      "causes": {
-        "[POSTGRES] Hooks Sequelize hooks should run before/afterPoolAcquire hooks": "B-unsupported-pool-acquire-hooks"
-      }
-    },
     "test/integration/include/findAll.test.js": {
       "unstable": true,
       "pass": 34,
@@ -1610,20 +1586,6 @@
       ],
       "causes": {
         "[POSTGRES] Includes with schemas findAll should be possible to extend the on clause with a where option on nested includes": "A-triage"
-      }
-    },
-    "test/integration/instance.test.js": {
-      "failing": [
-        "[POSTGRES] Instance default values uuid should store a string in uuidv1 and uuidv4",
-        "[POSTGRES] Instance default values uuid should store a string of length 36 in uuidv1 and uuidv4",
-        "[POSTGRES] Instance default values uuid should store a valid uuid if the multiple primary key fields used",
-        "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications"
-      ],
-      "causes": {
-        "[POSTGRES] Instance default values uuid should store a string in uuidv1 and uuidv4": "B-unsupported-uuidv1",
-        "[POSTGRES] Instance default values uuid should store a string of length 36 in uuidv1 and uuidv4": "B-unsupported-uuidv1",
-        "[POSTGRES] Instance default values uuid should store a valid uuid if the multiple primary key fields used": "B-unsupported-uuidv1",
-        "[POSTGRES] Instance default values uuid should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications": "B-unsupported-uuidv1"
       }
     },
     "test/integration/instance/decrement.test.js": {
@@ -1807,20 +1769,6 @@
       "pass": 0,
       "failing": [],
       "causes": {}
-    },
-    "test/integration/model/searchPath.test.js": {
-      "failing": [
-        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.count and model.find should be able to insert data into both schemas using instance.save count it and retrieve it via findAll with where",
-        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.findAll should be able to insert data into both schemas using instance.save and retrieve it via findAll",
-        "[POSTGRES] Model SEARCH PATH Edit data via instance.update, retrieve updated instance via model.findAll should be able to update data via instance update in both schemas, and retrieve it via findAll with where",
-        "[POSTGRES] Model SEARCH PATH concurency tests should build and persist instances to 2 schemas concurrently in any order"
-      ],
-      "causes": {
-        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.count and model.find should be able to insert data into both schemas using instance.save count it and retrieve it via findAll with where": "B-unsupported-searchpath",
-        "[POSTGRES] Model SEARCH PATH Add data via instance.save, retrieve via model.findAll should be able to insert data into both schemas using instance.save and retrieve it via findAll": "B-unsupported-searchpath",
-        "[POSTGRES] Model SEARCH PATH Edit data via instance.update, retrieve updated instance via model.findAll should be able to update data via instance update in both schemas, and retrieve it via findAll with where": "B-unsupported-searchpath",
-        "[POSTGRES] Model SEARCH PATH concurency tests should build and persist instances to 2 schemas concurrently in any order": "B-unsupported-searchpath"
-      }
     },
     "test/integration/model/sync.test.js": {
       "unstable": true,

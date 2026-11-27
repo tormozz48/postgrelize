@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- The Sequelize v6 `searchPath` query and instance option works with `dialectOptions.prependSearchPath`: the path is bound, set for the statement and restored afterwards. Statements with a path skip `statementCache`; `findCursor` and `COPY` do not apply it. ([#321](https://github.com/tormozz48/postgrelize/pull/321))
+- `DataTypes.UUIDV1` (also `Sequelize.UUIDV1` and the module export) generates a time-based UUID on the client, with a random node id. ([#322](https://github.com/tormozz48/postgrelize/pull/322))
+- The `beforePoolAcquire` / `afterPoolAcquire` hooks run around every pool acquisition, with the shorthands on the instance; a connection whose `afterPoolAcquire` throws is released. ([#323](https://github.com/tormozz48/postgrelize/pull/323))
+
 ## [1.9.22] - 2026-11-27
 
 ### Fixed
