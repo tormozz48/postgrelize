@@ -98,13 +98,15 @@ export class FunctionDdl {
     optionsArray: readonly string[],
     options: CreateFunctionOptions,
   ): string {
-    this.#require([returnType, language, body]);
+    this.#require([name, returnType, language, body]);
+    // v6 takes `null` options, and `null` or `{}` for the characteristics
+    const given = options ?? {};
     return [
-      this.#head(name, params, options),
+      this.#head(name, params, given),
       ` RETURNS ${guards.typeName(returnType, 'return type')}`,
-      this.#body(body, options.variables ?? []),
+      this.#body(body, this.#variables(given.variables)),
       ` LANGUAGE ${guards.word(language, 'language')}`,
-      ...guards.functionOptions(optionsArray).map((option) => ` ${option}`),
+      ...guards.functionOptions(this.#characteristics(optionsArray)).map((option) => ` ${option}`),
     ].join('');
   }
 
@@ -121,6 +123,9 @@ export class FunctionDdl {
     params: readonly FunctionParam[],
     options: DropFunctionOptions,
   ): string {
+    if (!name) {
+      throw new Error('requires functionName');
+    }
     return `DROP FUNCTION ${options.ifExists === true ? 'IF EXISTS ' : ''}${guards.functionName(name)}(${this.#params(params)}) ${options.cascade === true ? 'CASCADE' : 'RESTRICT'}`;
   }
 
@@ -136,18 +141,38 @@ export class FunctionDdl {
     return `ALTER FUNCTION ${guards.functionName(name)}(${this.#params(params)}) RENAME TO ${guards.word(newName, 'function name')}`;
   }
 
+  #characteristics(given: unknown): readonly string[] {
+    const empty =
+      given === null || (typeof given === 'object' && Object.keys(given as object).length === 0);
+    return empty ? [] : (given as readonly string[]);
+  }
+
+  #variables(variables: unknown): readonly FunctionVariable[] {
+    if (!variables) {
+      return [];
+    }
+    if (!Array.isArray(variables)) {
+      throw new Error('_expandFunctionVariableList: function variables must be an array');
+    }
+    const list = variables as readonly FunctionVariable[];
+    if (list.some((variable) => !variable.name || !variable.type)) {
+      throw new Error('function variable must have a name and type');
+    }
+    return list;
+  }
+
   #params(params: readonly FunctionParam[]): string {
     if (!Array.isArray(params)) {
       throw new Error(
         'function parameters array required, including an empty one for no arguments',
       );
     }
-    return params
+    return (params as readonly FunctionParam[])
       .map((param) =>
         [
           param.direction === undefined ? '' : guards.direction(param.direction),
           param.name === undefined ? '' : guards.word(param.name, 'parameter name'),
-          guards.typeName(param.type, 'parameter type'),
+          guards.typeName(this.#typed(param), 'parameter type'),
         ]
           .filter((part) => part !== '')
           .join(' '),
@@ -155,9 +180,18 @@ export class FunctionDdl {
       .join(', ');
   }
 
-  #require(parts: readonly string[]): void {
-    if (parts.some((part) => part === '')) {
-      throw new Error('createFunction requires functionName, returnType, language and body');
+  #typed(param: FunctionParam): string {
+    if (!param.type) {
+      throw new Error('function or trigger used with a parameter without any type');
+    }
+    return param.type;
+  }
+
+  #require(parts: readonly unknown[]): void {
+    if (parts.some((part) => !part)) {
+      throw new Error(
+        'createFunction missing some parameters. Did you pass functionName, returnType, language and body?',
+      );
     }
   }
 
