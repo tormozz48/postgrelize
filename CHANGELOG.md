@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.9.17] - 2026-11-27
+
 ### Fixed
 
 - `reload()` marks the instance as loaded by a query like v6, so `get()` and `toJSON()` no longer list the virtual `getterMethods` after a reload and a reloaded instance deep-equals the same row from a finder. Differential test in `tests/compat/reload-queried.test.ts`. ([#288](https://github.com/tormozz48/postgrelize/pull/288))
@@ -635,7 +637,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.17...HEAD
+[1.9.17]: https://github.com/tormozz48/postgrelize/compare/v1.9.16...v1.9.17
 [1.9.16]: https://github.com/tormozz48/postgrelize/compare/v1.9.15...v1.9.16
 [1.9.15]: https://github.com/tormozz48/postgrelize/compare/v1.9.14...v1.9.15
 [1.9.14]: https://github.com/tormozz48/postgrelize/compare/v1.9.13...v1.9.14
