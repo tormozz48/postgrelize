@@ -139,6 +139,7 @@ export class SequelizeInternals {
       ...(transaction === undefined && kind === 'read' && options.useMaster !== true
         ? { route: 'read' as const }
         : {}),
+      ...((options as ExecuteOptions).rawErrors === true ? { rawErrors: true } : {}),
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
       ...(options.statementTimeout === undefined
