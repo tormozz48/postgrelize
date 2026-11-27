@@ -48,9 +48,7 @@ describe('compat: findOrCreate with a small pool', () => {
       await runScenario(libraries.sequelize, '', findHookTransactions),
     );
   });
-
-  // TODO(parity): the second insert aborts the caller's transaction; v6 catches it server-side.
-  it.fails('concurrent calls in one caller transaction return the same row', () =>
+  it('concurrent calls in one caller transaction return the same row', () =>
     expectSameResult('', async (lib, sequelize) => {
       const Item = sequelize.define('Item', {
         sku: { type: lib.DataTypes.STRING, unique: true },
@@ -61,6 +59,20 @@ describe('compat: findOrCreate with a small pool', () => {
           [1, 2].map(() => Item.findOrCreate({ where: { sku: 'x' }, transaction })),
         );
         return [results.filter(([, created]) => created).length, await Item.count({ transaction })];
+      });
+    }));
+
+  it('lets a hook of the created row use the caller transaction', () =>
+    expectSameResult('', async (lib, sequelize) => {
+      const Tag = sequelize.define('Tag', { name: lib.DataTypes.STRING });
+      const Item = sequelize.define('Item', { sku: lib.DataTypes.STRING });
+      await sequelize.sync();
+      return sequelize.transaction(async (transaction) => {
+        Item.addHook('afterCreate', async () => {
+          await Tag.findOrCreate({ where: { name: 't' }, transaction });
+        });
+        await Item.findOrCreate({ where: { sku: 'x' }, transaction });
+        return [await Item.count({ transaction }), await Tag.count({ transaction })];
       });
     }));
 });
