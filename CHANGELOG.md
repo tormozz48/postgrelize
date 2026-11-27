@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-27
+
 ### Added
 
 - The Sequelize v6 `searchPath` query and instance option works with `dialectOptions.prependSearchPath`: the path is bound, set for the statement and restored afterwards. Statements with a path skip `statementCache`; `findCursor` and `COPY` do not apply it. ([#321](https://github.com/tormozz48/postgrelize/pull/321))
@@ -679,7 +681,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.9.22...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/tormozz48/postgrelize/compare/v1.9.22...v1.10.0
 [1.9.22]: https://github.com/tormozz48/postgrelize/compare/v1.9.21...v1.9.22
 [1.9.21]: https://github.com/tormozz48/postgrelize/compare/v1.9.20...v1.9.21
 [1.9.20]: https://github.com/tormozz48/postgrelize/compare/v1.9.19...v1.9.20
