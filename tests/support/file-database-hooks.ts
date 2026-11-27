@@ -18,7 +18,8 @@ const admin = async (sql: string): Promise<void> => {
 /** Registers hooks that give the calling test file its own database. */
 export const registerFileDatabase = (): void => {
   // Sequelize v6 reads indexes by table name in every schema, so v6 scenarios of parallel files
-  // must not share a database: each compat file gets its own.
+  // must not share a database: each compat file gets its own. Integration files that create an
+  // extension need one too, because an extension exists once per database.
   beforeAll(async () => {
     await admin(`CREATE DATABASE "${database}"`);
     const url = new URL(inject('databaseUrl'));

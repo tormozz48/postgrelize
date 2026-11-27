@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DataTypes, Op, Sequelize, col, fn, where } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
+import { registerFileDatabase } from '../support/file-database-hooks.ts';
+
+// Extensions are database-wide: a parallel file that creates the same one would break this file.
+registerFileDatabase();
 
 // Backs the PostGIS row of stage S15 in docs/coverage/postgresql-features.ts. The tests skip
 // when the server has no `postgis` extension (the plain PostgreSQL images used by CI).

@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DataTypes, Model, Op, Sequelize, literal } from '../../src/index.ts';
 import { testDatabaseUrl } from '../support/db-url.ts';
 import { withSchema } from '../support/with-schema.ts';
+import { registerFileDatabase } from '../support/file-database-hooks.ts';
+
+// Extensions are database-wide: a parallel file that creates the same one would break this file.
+registerFileDatabase();
 
 // Behaviour where postgrelize intentionally differs from Sequelize v6 (ADR-016).
 const opened: Sequelize[] = [];

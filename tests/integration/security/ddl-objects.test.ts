@@ -7,6 +7,10 @@ import {
   settle,
   withCanary,
 } from '../../support/injection.ts';
+import { registerFileDatabase } from '../../support/file-database-hooks.ts';
+
+// Extensions are database-wide: a parallel file that creates the same one would break this file.
+registerFileDatabase();
 
 const syntaxError = (result: unknown): boolean =>
   (result as { original?: { code?: string } } | undefined)?.original?.code === '42601';
