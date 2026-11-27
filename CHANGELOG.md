@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.10.2] - 2026-11-28
+
 ### Fixed
 
 - `findByPk` with a number the integer primary key cannot hold resolves to `null` (or rejects with `EmptyResultError`), like v6; it rejected with `DatabaseError`. Differential test in `tests/compat/find-by-pk-out-of-range.test.ts`. ([#329](https://github.com/tormozz48/postgrelize/pull/329))
@@ -695,7 +697,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.2...HEAD
+[1.10.2]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/tormozz48/postgrelize/compare/v1.9.22...v1.10.0
 [1.9.22]: https://github.com/tormozz48/postgrelize/compare/v1.9.21...v1.9.22
