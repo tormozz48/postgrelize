@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10, 1.9.12 to 1.9.16, 1.9.18 to 1.9.21).
 
-Fixed: 104. Open: 23 (includes causes found while fixing).
+Fixed: 105. Open: 22 (includes causes found while fixing).
 
 ## Fixed
 
@@ -112,6 +112,7 @@ Fixed: 104. Open: 23 (includes causes found while fixing).
 | `B-sync-schema-option-references` | error | [#300](https://github.com/tormozz48/postgrelize/pull/300) |
 | `B-alter-deferrable-not-updated` | error | [#301](https://github.com/tormozz48/postgrelize/pull/301) |
 | `D-addindex-expression-fields` | error | [#303](https://github.com/tormozz48/postgrelize/pull/303) |
+| `D-unique-msg-composite` | cosmetic | [#313](https://github.com/tormozz48/postgrelize/pull/313) |
 
 ## Not fixed
 
@@ -139,4 +140,3 @@ Fixed: 104. Open: 23 (includes causes found while fixing).
 | `D-dateonly-infinity-default` | error | sync fails for a DATEONLY default of Infinity / -Infinity; reached after sequelize.Sequelize was added. |
 | `D-validator-key-empty` | cosmetic | getValidatorKey() of an item without validatorKey returns 'function.null' where v6 returns ''. |
 | `D-findbypk-out-of-range` | error | findByPk with a number outside the integer range rejects with DatabaseError (bound value), v6 finds nothing; reached after the file loads. |
-| `D-unique-msg-composite` | cosmetic | A unique key over several attributes does not use the msg declared on one of them: the error message stays Validation error. |
