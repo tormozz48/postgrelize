@@ -710,11 +710,6 @@
       "note": "v6 option / mixin / helper type not exported by postgrelize (its option types are plain type aliases, see optionKeys); add on demand"
     },
     {
-      "name": "UUIDV1",
-      "category": "not-planned",
-      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
-    },
-    {
       "name": "VirtualDataType",
       "category": "not-planned",
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"

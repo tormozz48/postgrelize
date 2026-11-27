@@ -27,11 +27,6 @@
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
     },
     {
-      "name": "UUIDV1",
-      "category": "not-planned",
-      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
-    },
-    {
       "name": "db2",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -361,11 +356,6 @@
       "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
     },
     {
-      "name": "UUIDV1",
-      "category": "not-planned",
-      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
-    },
-    {
       "name": "db2",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -426,11 +416,6 @@
       "name": "TableHints",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
-    },
-    {
-      "name": "UUIDV1",
-      "category": "not-planned",
-      "note": "Time-based UUID v1 default generator needs a uuid v1 implementation; use UUIDV4 or a gen_random_uuid() default"
     }
   ]
 }
