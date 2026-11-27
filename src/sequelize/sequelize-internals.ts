@@ -54,6 +54,7 @@ export class SequelizeInternals {
   /** Services provided to models. */
   readonly runtime: ModelRuntime;
   readonly #owner: InternalsOwner;
+  readonly #options: SequelizeOptions;
   readonly #retries: RetryRunner;
   readonly #transactions: TransactionStarter;
   #serverVersion: Promise<number> | undefined;
@@ -65,6 +66,7 @@ export class SequelizeInternals {
    */
   constructor(owner: InternalsOwner, connectionConfig: ConnectionConfig) {
     this.#owner = owner;
+    this.#options = connectionConfig.options;
     this.hooks = HookRegistry.fromOption(connectionConfig.options.hooks);
     this.connections = this.#createConnections(connectionConfig);
     this.#retries = new RetryRunner(connectionConfig.options.retry);
@@ -154,6 +156,7 @@ export class SequelizeInternals {
       ...(transaction === undefined && kind === 'read' && options.useMaster !== true
         ? { route: 'read' as const }
         : {}),
+      ...this.#searchPath(options),
       ...((options as ExecuteOptions).rawErrors === true ? { rawErrors: true } : {}),
       ...(options.logging === undefined ? {} : { logging: options.logging }),
       ...(options.benchmark === undefined ? {} : { benchmark: options.benchmark }),
@@ -161,6 +164,15 @@ export class SequelizeInternals {
         ? {}
         : { statementTimeout: options.statementTimeout }),
     };
+  }
+
+  // like v6, ignored without `dialectOptions.prependSearchPath`
+  #searchPath(options: QueryOptionsBase): { searchPath?: string } {
+    const { dialectOptions, searchPath } = this.#options;
+    const path = options.searchPath || searchPath;
+    return dialectOptions?.prependSearchPath === true && path && path !== 'DEFAULT'
+      ? { searchPath: path }
+      : {};
   }
 
   /**

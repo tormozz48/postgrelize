@@ -40,7 +40,8 @@ Differences to know:
 - `Model#reload(options)` takes the finder options (`include`, `attributes`, `paranoid`, `lock`, `hooks`, ...) and reads the row through `findOne`, so default scopes and `paranoid` apply as in v6: reloading a soft-deleted row needs `paranoid: false`. Associations the instance was built with are not reloaded unless you pass `include`.
 - `findByPk(id, { rejectOnEmpty: true })` resolves to the model (not `M | null`), as `findOne` does.
 - `sequelize.query` accepts a string or a `literal()`, not the v6 `{ query, values }` object form.
-- Option keys that postgrelize does not implement (`searchPath`, `omitNull`, ...) are not in the option types, so the compiler points at them.
+- `searchPath` works as in v6 with `dialectOptions.prependSearchPath`, but is set on the connection for the statement (the value is bound) and restored afterwards, instead of being written before the SQL text. Statements with a path skip `statementCache`; `findCursor` and `COPY` do not apply it.
+- Option keys that postgrelize does not implement (`omitNull`, ...) are not in the option types, so the compiler points at them.
 - `Model.sequelize` and `instance.sequelize` are typed `Sequelize` (not optional, it throws on a model that is not initialized), `WhereAttributeHash` defaults to `any`, attribute `get` / `set` and model-level `validate` functions can be written with a typed `this` and a callback style `next`, and the parameters of hook functions are `any` so an unannotated hook compiles.
 
 ## 3. Check the connection options
@@ -86,7 +87,6 @@ These Sequelize v6 features are not implemented:
 | Feature                                | What to do instead                                                                                    |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Other dialects (MySQL, SQLite, MSSQL…) | postgrelize is PostgreSQL only.                                                                       |
-| `searchPath` query / connection option | Set `search_path` with `dialectOptions: { options: '-c search_path=tenant' }`.                        |
 | Named or shared `ENUM` types           | Each `ENUM` attribute gets its own type, `enum_<table>_<column>`, as v6 does by default.              |
 | `create({ ignoreDuplicates })`         | `create(values, { onConflict: { action: 'nothing' } })` or `bulkCreate([...], { ignoreDuplicates })`. |
 | Sequelize v7 (`@sequelize/core`) API   | Not planned.                                                                                          |
