@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10).
 
-Fixed: 78. Open: 41 (includes causes found while fixing).
+Fixed: 89. Open: 32 (includes causes found while fixing).
 
 ## Fixed
 
@@ -86,26 +86,28 @@ Fixed: 78. Open: 41 (includes causes found while fixing).
 | `C-fk-field-collision` | error | [#268](https://github.com/tormozz48/postgrelize/pull/268) |
 | `C-qi-function-args` | error | [#271](https://github.com/tormozz48/postgrelize/pull/271) |
 | `B-sync-two-models-one-table` | error | [#275](https://github.com/tormozz48/postgrelize/pull/275) |
+| `A-btm-paired-otherkey` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `B-btm-paired-otherkey` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `A-btm-identifier-props` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `A-references-null-crash` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `B-references-null` | error | [#257](https://github.com/tormozz48/postgrelize/pull/257) |
+| `D-assoc-invalid-model-arg` | wording | [#261](https://github.com/tormozz48/postgrelize/pull/261) |
+| `D-assoc-unknown-key-option` | error | [#261](https://github.com/tormozz48/postgrelize/pull/261) |
+| `A-default-alias-redefine` | error | [#262](https://github.com/tormozz48/postgrelize/pull/262) |
+| `B-btm-duplicate-auto-alias` | error | [#262](https://github.com/tormozz48/postgrelize/pull/262) |
+| `A-hasone-hasmany-cascade-default` | error | [#263](https://github.com/tormozz48/postgrelize/pull/263) |
+| `B-btm-count-through-timestamps` | error | [#272](https://github.com/tormozz48/postgrelize/pull/272) |
 
 ## Not fixed
 
 | cause | risk | note |
 | --- | --- | --- |
-| `A-btm-identifier-props` | error | BelongsToMany lacks v6 public properties foreignIdentifier, identifier (and sourceKeyField, foreignIdentifierField). |
-| `A-btm-paired-otherkey` | error | Two paired belongsToMany declaring foreignKey/sourceKey do not take otherKey from the paired association foreignKey; an extra auto-named otherKey column is generated and the real one stays NULL, so add/set fail. |
-| `A-default-alias-redefine` | error | Re-declaring an association with the default alias throws "alias in two separate associations"; v6 only checks explicit aliases and silently replaces the default one. |
-| `A-hasone-hasmany-cascade-default` | error | hasOne/hasMany FK with allowNull:false gets ON DELETE NO ACTION; v6 uses CASCADE (NO ACTION is only the belongsTo default); docs/guide/associations.md states the belongsTo default for all. |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
-| `A-references-null-crash` | error | Attribute with references:null (opt out of FK) crashes sync with "Cannot read properties of null (reading key)". |
 | `B-attributes-empty` | wording | findAll({attributes:[]}) returns [] instead of throwing v6's QueryError 'Attempted a SELECT query ... without selecting any columns'. |
-| `B-btm-count-through-timestamps` | error | instance.countX() on a belongsToMany with a string through selects the auto-created through model's createdAt/updatedAt, failing when the join table has no timestamp columns; v6 selects no through attributes for count. |
-| `B-btm-duplicate-auto-alias` | error | Declaring two belongsToMany to the same target without `as` (different through) throws 'You have used the alias projects in two separate associations'; v6 only checks explicitly given aliases (the second overwrites the first). |
-| `B-btm-paired-otherkey` | error | Two belongsToMany with the same through model and explicit foreignKey on each side are not paired: otherKey is derived from the target name (courseNo) instead of the counterpart's foreignKey (CourseId), so the through table gets extra columns and add() inserts NULL into CourseId. |
 | `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
 | `B-findorcreate-pool-deadlock` | error | 50 concurrent findOrCreate calls hang forever with the default pool (max 5): each takes a pooled connection for its transaction while inner queries wait for another, exhausting the pool. v6 completes. |
 | `B-invalid-attr-message` | wording | An invalid attribute definition (attributes:['id',['username']]) raises a TypeError (reading 'replaceAll') instead of v6's '["username"] is not a valid attribute definition' message; in the v6 test (missing await) it becomes an unhandled rejection that aborts the whole mocha file, masking later tests. |
 | `B-logging-interpolated` | cosmetic | The logging callback receives SQL with values inlined ('43'), whereas v6 logs the statement with $1..$n placeholders; code or tests that inspect the logged text for bind markers fail. |
-| `B-references-null` | error | An attribute with references: null (v6 way to switch the FK off, used by polymorphic belongsToMany through models) crashes sync with TypeError reading 'key'. |
 | `B-schema-clone-include` | error | Model.schema('x') clones do not carry the associations / target identity: include:[{model: Employee.schema('s1'), as:'employees'}] on Restaurant.schema('s1') fails with 'alias does not match the alias(es) defined in your association ()'. |
 | `B-sync-schema-option-references` | error | Model.sync({schema}) / Model.schema(x) with an association FK: the FK references and the association setters/getters look the parent table up in the default schema ('relation UserXYZs does not exist'). |
 | `B-unique-msg-option` | wording | unique: { msg } (and { name, msg }) on an attribute is ignored: UniqueConstraintError carries the default '<field> must be unique' / 'Validation error' text instead of the custom message. |
@@ -122,8 +124,6 @@ Fixed: 78. Open: 41 (includes causes found while fixing).
 | `C-qi-argument-errors` | wording | Argument validation / message differences: renameColumn on missing column, addColumn with too few args, addConstraint without type, describeTable on missing table give raw PG/TypeError or different text instead of v6 messages. |
 | `C-sequelize-instance-sequelize-prop` | cosmetic | Instance property `sequelize.Sequelize` (typed public in v6, the class) is undefined. |
 | `C-validation-error-item-api` | cosmetic | ValidationErrorItem lacks getValidatorKey() and static Origins (typed public in v6). |
-| `D-assoc-invalid-model-arg` | wording | Model.belongsTo()/hasMany()/hasOne() with no/invalid target throw 'Cannot convert undefined or null to object' instead of v6 'X.belongsTo called with something that's not a subclass of Sequelize.Model'. |
-| `D-assoc-unknown-key-option` | error | hasOne/hasMany sourceKey and belongsTo targetKey naming an attribute that does not exist is accepted silently; v6 throws 'Unknown attribute "x" passed as sourceKey/targetKey, define this attribute on model "M" first'. |
 | `D-config-dialectoptions-missing` | cosmetic | sequelize.config lacks dialectOptions (and options like dialectModulePath are ignored), v6 exposes config.dialectOptions. |
 | `D-data-types-string-options` | error | DataTypes.STRING({length:1234}) options-object form throws 'STRING length must be a non-negative integer'; sql/data-types.test.js cannot load. |
 | `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
@@ -132,3 +132,5 @@ Fixed: 78. Open: 41 (includes causes found while fixing).
 | `B-alter-deferrable-not-updated` | error | sync({ alter: true }) does not recreate a foreign key whose deferrable mode changed. |
 | `C-raw-errors-option` | error | The v6 query option rawErrors is not supported; the test was not reached before. |
 | `D-addindex-expression-fields` | error | addIndex does not accept literal() / fn() fields; the file did not load before. |
+| `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
+| `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |

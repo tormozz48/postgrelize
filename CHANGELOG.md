@@ -38,6 +38,14 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Two `belongsToMany` through the same model now take the other side's `foreignKey` as `otherKey` and its `sourceKey` as `targetKey` when these are not given (an extra column was generated and `add` / `set` failed), associations expose v6's `identifier`, `foreignIdentifier`, `foreignIdentifierField`, `sourceKeyField` and `targetKeyField`, and an attribute with `references: null` no longer crashes `sync`. **Behaviour change:** the junction table of such pairs gets different columns. Differential tests in `tests/compat`. ([#257](https://github.com/tormozz48/postgrelize/pull/257))
+- `belongsTo` / `hasOne` / `hasMany` / `belongsToMany` without a model throw v6's "called with something that's not a subclass of Sequelize.Model", and an unknown `sourceKey` / `targetKey` of `belongsTo`, `hasOne` and `hasMany` throws (it was accepted). Differential test in `tests/compat/association-definition-errors.test.ts`. ([#261](https://github.com/tormozz48/postgrelize/pull/261))
+- Declaring an association again under its default alias replaces it instead of throwing `AssociationError`; only a repeated explicit `as` throws. Differential test in `tests/compat/default-alias-redefine.test.ts`. ([#262](https://github.com/tormozz48/postgrelize/pull/262))
+- **Behaviour change, deletes rows:** the foreign key of `hasOne` / `hasMany` that cannot be `NULL` now gets `ON DELETE CASCADE` (it was `NO ACTION`), like Sequelize v6: once `sync` creates such a constraint, deleting a parent row deletes its children. `belongsTo` keeps `NO ACTION`. Pass `onDelete: 'NO ACTION'` to keep the old behaviour. Differential test in `tests/compat/has-fk-delete-action.test.ts`. ([#263](https://github.com/tormozz48/postgrelize/pull/263))
+- `countX` and `hasX` of `belongsToMany` read only the junction keys (they failed when the join table had no timestamp columns). Differential test in `tests/compat/btm-count-without-timestamps.test.ts`. ([#272](https://github.com/tormozz48/postgrelize/pull/272))
+
 ## [1.9.15] - 2026-11-27
 
 ### Fixed
