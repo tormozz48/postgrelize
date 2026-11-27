@@ -38,6 +38,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Fixed
+
+- Regression since 1.9.17: a paired `belongsToMany` (for example a polymorphic pair) on a through model that declares its foreign keys got a primary key of one column, so a second link failed with `UniqueConstraintError`; both keys form the primary key again, like v6. Join tables created by `sync()` on 1.9.17 keep the one-column key: change it by hand. Differential test in `tests/compat/btm-through-declared-pk.test.ts`. ([#309](https://github.com/tormozz48/postgrelize/pull/309))
+- `findOrCreate` runs its find in the same transaction as the create and re-reads a lost race after the rollback, so concurrent calls no longer hang a small pool. Differential test in `tests/compat/find-or-create-pool.test.ts`. ([#297](https://github.com/tormozz48/postgrelize/pull/297))
+- `sequelize.Sequelize`, `modelManager.all` / `findModel`, `ValidationErrorItem#getValidatorKey` / `Origins` and `config.dialectOptions` exist like in v6. Differential test in `tests/compat/missing-members.test.ts`. ([#307](https://github.com/tormozz48/postgrelize/pull/307))
+
 ## [1.9.17] - 2026-11-27
 
 ### Fixed
