@@ -1,3 +1,4 @@
+import { SqlExpression } from '../expressions/expression.ts';
 import type { ConflictTarget, ExprNode, OnConflictNode } from '../sql/ast.ts';
 import { WhereCompiler } from '../where/where.ts';
 import type { AttributeColumns } from './attribute-columns.ts';
@@ -22,11 +23,15 @@ const uniqueIndexKeys = (definition: ModelDefinition, withPartial: boolean): rea
     // like v6, any truthy `unique` (a name string too) makes a unique index
     .filter((index) => Boolean(index.unique) && (withPartial || index.where === undefined))
     .filter((index) =>
-      (index.fields ?? []).every((field) => typeof field === 'string' || field.name !== undefined),
+      (index.fields ?? []).every(
+        (field) =>
+          typeof field === 'string' ||
+          (!(field instanceof SqlExpression) && field.name !== undefined),
+      ),
     )
     .map((index) => ({
       fields: (index.fields ?? []).map((field) =>
-        typeof field === 'string' ? field : (field.name as string),
+        typeof field === 'string' ? field : ((field as { name?: string }).name as string),
       ),
       ...(index.where === undefined ? {} : { where: index.where }),
     }))

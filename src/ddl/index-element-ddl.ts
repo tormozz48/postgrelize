@@ -1,8 +1,15 @@
+import { SqlExpression } from '../expressions/expression.ts';
 import { SqlCompiler } from '../sql/compile.ts';
+import { WhereCompiler } from '../where/where.ts';
 import { DdlGuards } from './ddl-guards.ts';
 import type { IndexField } from './ddl-types.ts';
+import { SqlLiteral } from './sql-literal.ts';
 
 const guards = new DdlGuards();
+
+const identity = new WhereCompiler({ resolve: (field) => ({ field }) });
+
+const sqlLiteral = new SqlLiteral();
 
 /**
  * One element of an index or EXCLUDE constraint: a quoted column or a trusted SQL expression with
@@ -20,6 +27,10 @@ export class IndexElementDdl {
    * @throws Error for an empty expression or an invalid operator class.
    */
   elementSql(field: IndexField, operator: string | undefined): string {
+    if (field instanceof SqlExpression) {
+      // like v6, `literal()`, `fn()` and `col()` are written as they render, without parentheses
+      return `${sqlLiteral.inlineExpr(identity.compile(field))}${this.#operatorClass(operator)}`;
+    }
     if (typeof field === 'string') {
       return `${SqlCompiler.quoteIdent(field)}${this.#operatorClass(operator)}`;
     }
@@ -40,7 +51,7 @@ export class IndexElementDdl {
    * @param field - Field object.
    * @returns Column name, if given.
    */
-  columnName(field: Exclude<IndexField, string>): string | undefined {
+  columnName(field: Exclude<IndexField, string | SqlExpression>): string | undefined {
     return (field as Readonly<{ attribute?: string }>).attribute ?? field.name;
   }
 
