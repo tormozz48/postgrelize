@@ -157,23 +157,28 @@ export class IncludeResolver {
   #node(source: Model, unscoped: IncludeOptions, parent: Position): IncludeNode {
     const association = this.#lookup.resolve(source, unscoped);
     const item = this.#withTargetScope(unscoped, association.target);
+    // a `Model.schema()` copy given as `model` is queried in its schema, like v6
+    const target =
+      item.model !== undefined && registry.isSchemaCopy(item.model)
+        ? item.model
+        : association.target;
     const position = {
       alias: parent.alias === '' ? association.as : `${parent.alias}->${association.as}`,
       path: parent.path === '' ? association.as : `${parent.path}.${association.as}`,
     };
     return {
-      ...this.#base(association, item),
+      ...this.#base(association, target, item),
       ...position,
       through: this.#through(association, item, position),
-      children: this.normalize(association.target, item.include, position.alias, position.path),
+      children: this.normalize(target, item.include, position.alias, position.path),
     };
   }
 
-  #base(association: Association, item: IncludeOptions): BaseNode {
+  #base(association: Association, target: Model, item: IncludeOptions): BaseNode {
     return {
       association,
-      model: association.target,
-      definition: registry.state(association.target).definition,
+      model: target,
+      definition: registry.state(target).definition,
       as: association.as,
       where: item.where,
       on: item.on,

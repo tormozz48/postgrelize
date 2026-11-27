@@ -139,13 +139,21 @@ export abstract class Association<
 
   /**
    * Target model of a read: the `scope` accessor option names scopes to apply instead of the
-   * default scope, or removes it when falsy (Sequelize v6).
+   * default scope, or removes it when falsy, and `schema` binds it to that schema (Sequelize v6).
    *
    * @param options - Accessor options.
    * @returns Target model, scoped accordingly.
    * @internal
    */
   protected scopedTarget(options: AccessorOptions): ModelStatic<T> {
+    const target = this.#scoped(options);
+    const schema = (options as Readonly<{ schema?: string; schemaDelimiter?: string }>).schema;
+    return schema
+      ? target.schema(schema, (options as { schemaDelimiter?: string }).schemaDelimiter)
+      : target;
+  }
+
+  #scoped(options: AccessorOptions): ModelStatic<T> {
     if (!Object.hasOwn(options, 'scope')) {
       return this.target;
     }
