@@ -179,6 +179,10 @@ export class ComparisonCompiler {
   }
 
   #quantifiedOperand(compiler: ExprConverter, left: Operand, items: unknown): ExprNode {
+    // `{ [Op.any]: col('tags') }` is an array column or expression, not a value to bind
+    if (items instanceof SqlExpression) {
+      return compiler.toExpr(items);
+    }
     return isPlainObject(items) && Array.isArray(items[Op.values])
       ? {
           kind: 'values',

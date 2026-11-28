@@ -38,8 +38,16 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-11-28
+
+### Added
+
+- `caseWhen().when(condition, value).else(value)`: `CASE` expressions for `attributes`, `where`, `order`, `group` and `having`. PostgreSQL extension, ADR-039. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
+- `selectDistinct: true` on finders and `Model.subquery`: `SELECT DISTINCT`. The v6 `distinct` option of `count` is unchanged. ADR-039. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
+
 ### Fixed
 
+- `{ [Op.any]: col('tags') }` compares with the array column, like v6; the expression was bound as a value and the query failed. Differential test in `tests/compat/where-any-column.test.ts`. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
 - A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))
 - Like v6, defining `TINYINT`, `SMALLINT`, `INTEGER` or `BIGINT` with a length, `UNSIGNED` or `ZEROFILL` prints a `console.warn` (once per type), because PostgreSQL ignores these options. Differential test in `tests/compat/integer-option-warning.test.ts`. ([#346](https://github.com/tormozz48/postgrelize/pull/346))
 - `getAttributes()` / `rawAttributes` entries carry `Model` and `_modelAttribute`, and `type.constructor` is the `DataTypes` member of the type, like v6. Differential test in `tests/compat/get-attributes-shape.test.ts`. ([#349](https://github.com/tormozz48/postgrelize/pull/349))
@@ -711,7 +719,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/tormozz48/postgrelize/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1

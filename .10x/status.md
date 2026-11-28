@@ -312,3 +312,7 @@ Tag `v1.3.0` on merge commit `afab89f` (PR #129), release.yml run 45052095979: c
 ## Release 1.2.0 (2026-11-22, released)
 - Second v6-parity release for the ddt migration: `retry` option (PR #113, re-landed after #112 went to a feature branch), public `sequelize.connectionManager` with `getConnection` / `releaseConnection` (#111), `pool` counters and `destroyConnection` (#116, ADR-033), Sequelize v6 type API (#114); faster release preflight (#115). Additive plus a type-level default change (`Model` attributes default to `any`), so a minor bump. Release PR `chore/release-1.2.0`; released on the maintainer's go. Bench gate not run.
 - Released: tag `v1.2.0` on merge commit `9e28a02` (PR #117), `release.yml` run 45022786038, all jobs green. First release with the faster preflight (#115): lint, typecheck, docs and the test suites were taken from the CI run on the commit and reported as SKIP, so the whole gate took minutes. Verified: `npm view` (`latest` 1.2.0; the registry showed 1.1.0 for about two minutes after the job went green), clean install, ESM and CJS import (154 exports), `connectionManager.getConnection` present, GitHub Release v1.2.0, mirror published.
+
+## 1.11.0 prepared (2026-11-28, not released)
+
+- `caseWhen()`, `selectDistinct` (ADR-039) and the `Op.any` column fix, for the ddt migration. Version and changelog bumped in the feature PR; tagging needs the maintainer's approval.

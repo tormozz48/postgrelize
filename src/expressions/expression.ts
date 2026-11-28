@@ -1,4 +1,5 @@
 import type { Cast, Col, Fn } from './call-expressions.ts';
+import type { Case } from './case-expression.ts';
 import type { Excluded, Json, Where } from './condition-expressions.ts';
 import type { Literal } from './methods.ts';
 import type { Exists, Subquery } from './query-expressions.ts';
@@ -32,6 +33,8 @@ export interface SqlExpressionVisitor<R> {
   visitOver(expression: Over): R;
   /** Visits a {@link Tuple}. */
   visitTuple(expression: Tuple): R;
+  /** Visits a {@link Case}. */
+  visitCase(expression: Case): R;
 }
 
 // Shared through the global symbol registry so that expressions built by another copy of the

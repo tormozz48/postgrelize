@@ -49,6 +49,7 @@ const CONSTRAINTS = 'tests/integration/constraints-indexes.test.ts';
 const CONSTRAINTS18 = 'tests/integration/constraints-indexes-pg18.test.ts';
 const CTE = 'tests/integration/cte-copy-to.test.ts';
 const CTEX = 'tests/integration/cte-extras.test.ts';
+const CASED = 'tests/integration/case-distinct.test.ts';
 const SETOPS = 'tests/integration/set-ops-from.test.ts';
 const ISSUES = 'tests/integration/sequelize-issues.test.ts';
 const CRUD = 'tests/compat/crud.test.ts';
@@ -78,6 +79,8 @@ export const AREAS: readonly string[] = [SELECT, DML, OPS, TYPES, DDL, SESSION, 
 /** All rows of the matrix. */
 export const POSTGRESQL_FEATURES: readonly FeatureRow[] = [
   // SELECT clauses
+  { area: SELECT, feature: 'SELECT DISTINCT', minPg: '16', status: 'supported', beyondV6: true, example: 'case-distinct.ts#select-distinct', guide: 'advanced-queries#select-distinct', test: t(CASED, 'drops duplicates of a multi-source join in findAll and subquery'), note: '`selectDistinct` find option.' },
+  { area: SELECT, feature: 'CASE expressions', minPg: '16', status: 'supported', beyondV6: true, example: 'case-distinct.ts#case', guide: 'advanced-queries#case', test: t(CASED, 'selects, filters and orders by a numeric rank'), note: '`caseWhen().when().else()`.' },
   { area: SELECT, feature: 'DISTINCT ON', minPg: '16', status: 'supported', beyondV6: true, example: 'advanced-queries.ts#distinct-on', guide: 'advanced-queries#distinct-on', test: t(POWER, 'returns the top post per user with DISTINCT ON'), note: '`distinctOn` find option.' },
   { area: SELECT, feature: 'Window functions (OVER, PARTITION BY)', minPg: '16', status: 'supported', beyondV6: true, example: 'advanced-queries.ts#window', guide: 'advanced-queries#window-functions', test: t(POWER, 'ranks rows with window functions'), note: '`over()` expression; named `WINDOW` clauses and frame clauses are not modelled.' },
   { area: SELECT, feature: 'CTEs and WITH RECURSIVE', minPg: '16', status: 'supported', beyondV6: true, example: 'advanced-queries.ts#recursive-cte', guide: 'advanced-queries#common-table-expressions', test: t(CTE, 'walks a tree with WITH RECURSIVE'), note: '`with` find option.' },

@@ -1,6 +1,6 @@
 import type { LateralKeys } from './lateral-keys-builder.ts';
 import type { TableSampleOptions } from './source-options.ts';
-import type { Col, Fn, Literal } from '../expressions/methods.ts';
+import type { Case, Col, Fn, Literal } from '../expressions/methods.ts';
 import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
 
 /**
@@ -12,7 +12,7 @@ import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
  * const rows = await Post.findAll({ attributes: ['authorId', total], group: ['authorId'] });
  * ```
  */
-export type ProjectionAlias = readonly [string | Literal | Fn | Col, string];
+export type ProjectionAlias = readonly [string | Literal | Fn | Col | Case, string];
 
 /**
  * Selected attributes: a list of names or `[expression, alias]` pairs, or an `{ include, exclude }` spec.
@@ -37,7 +37,7 @@ export type AttributeSpec = Readonly<{
 export type OrderItem = string | unknown | readonly [unknown, string?];
 
 /** `order` option of finders: a single expression or a list of {@link OrderItem}. */
-export type Order = Fn | Col | Literal | OrderItem[];
+export type Order = Fn | Col | Literal | Case | OrderItem[];
 
 /** Model whose rows are locked by `lock.of`. */
 export type LockTarget = Readonly<{
@@ -102,6 +102,15 @@ export type SelectOptions = {
    * @postgrelize
    */
   distinctOn?: readonly unknown[];
+  /**
+   * `SELECT DISTINCT`: drop duplicate result rows, e.g. of a join through `from` or `include`.
+   * The `order` of such a query may only use selected columns or their aliases. It is not the
+   * v6 count option `distinct`. PostgreSQL extension.
+   *
+   * @defaultValue false
+   * @postgrelize
+   */
+  selectDistinct?: boolean;
   /**
    * `FETCH FIRST limit ROWS WITH TIES` instead of `LIMIT`: also returns the rows that tie with the
    * last one on the `order` columns. Needs `limit` and `order`. PostgreSQL extension.

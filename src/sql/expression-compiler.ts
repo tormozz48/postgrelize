@@ -1,6 +1,7 @@
 import type {
   BetweenNode,
   BinaryNode,
+  CaseNode,
   ExprNode,
   FnNode,
   LogicalNode,
@@ -147,6 +148,8 @@ export class ExpressionCompiler extends ChunkBuilder {
         return [...this.expression(node.expr), ` AS ${this.quote(node.alias)}`];
       case 'over':
         return this.#over(node);
+      case 'case':
+        return this.#case(node);
       case 'values':
         return ['VALUES ', ...this.rows(node.rows)];
       default:
@@ -182,6 +185,20 @@ export class ExpressionCompiler extends ChunkBuilder {
       ...this.expression(node.low),
       ' AND ',
       ...this.expression(node.high),
+    ];
+  }
+
+  #case(node: CaseNode): Chunks {
+    return [
+      'CASE',
+      ...node.branches.flatMap((branch) => [
+        ' WHEN ',
+        ...this.expression(branch.when),
+        ' THEN ',
+        ...this.expression(branch.result),
+      ]),
+      ...(node.otherwise === undefined ? [] : [' ELSE ', ...this.expression(node.otherwise)]),
+      ' END',
     ];
   }
 
