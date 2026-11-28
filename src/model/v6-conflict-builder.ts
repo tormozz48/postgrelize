@@ -103,6 +103,7 @@ export class V6ConflictBuilder {
    * @param insertValues - Inserted values.
    * @param updatable - Attributes updated on conflict.
    * @param conflictFields - `conflictFields` option (column names).
+   * @param silent - Do not assign `updatedAt` on conflict.
    * @returns ON CONFLICT node.
    */
   upsert(
@@ -110,8 +111,10 @@ export class V6ConflictBuilder {
     insertValues: Values,
     updatable: readonly string[],
     conflictFields: readonly string[] | undefined,
+    silent: boolean,
   ): OnConflictNode {
-    const update = V6ConflictBuilder.#upsertUpdate(definition, insertValues, updatable);
+    const stamp = silent ? undefined : definition.updatedAt;
+    const update = V6ConflictBuilder.#upsertUpdate(insertValues, updatable, stamp);
     const uniqueKey = V6ConflictBuilder.#upsertKey(definition, update);
     const target =
       conflictFields ?? fieldsOf(definition, uniqueKey?.fields ?? definition.primaryKeys);
@@ -151,15 +154,13 @@ export class V6ConflictBuilder {
   }
 
   static #upsertUpdate(
-    definition: ModelDefinition,
     insertValues: Values,
     updatable: readonly string[],
+    updatedAt: string | undefined,
   ): readonly string[] {
     return [
       ...updatable,
-      ...(definition.updatedAt === undefined || updatable.includes(definition.updatedAt)
-        ? []
-        : [definition.updatedAt]),
+      ...(updatedAt === undefined || updatable.includes(updatedAt) ? [] : [updatedAt]),
     ].filter((name) => name in insertValues);
   }
 

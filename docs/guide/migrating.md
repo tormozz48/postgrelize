@@ -73,6 +73,7 @@ Some Sequelize v6 behaviours are bugs on PostgreSQL. postgrelize fixes them inst
 
 - JSON `where` keys containing `,`, `"` or `\` are matched correctly.
 - `upsert` on a partial unique index uses the index predicate.
+- `silent: true` on `upsert` and on `onConflict` updates keeps `updatedAt` of an existing row; v6 ignores `silent` in `upsert`.
 - `sync({ alter: true })` keeps the sequence of non-key `autoIncrement` columns.
 - `describeTable`, `showAllTables` and `tableExists` default to `current_schema()` instead of `public`, so they respect `search_path`.
 - `findCreateFind` inside a transaction inserts in a savepoint: when another session inserted the row first it returns that row with `created: false`; v6 returns an unsaved instance with `created: true`.

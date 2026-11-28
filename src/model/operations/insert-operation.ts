@@ -41,7 +41,7 @@ export type InsertOperationServices = OperationServices &
     compiler: SqlCompiler;
   }>;
 
-type ConflictOptions = Readonly<{ onConflict?: unknown }>;
+type ConflictOptions = Readonly<{ onConflict?: unknown; silent?: boolean }>;
 
 /**
  * `INSERT ... ON CONFLICT ... RETURNING` writes that return the written rows with `wasInserted`:
@@ -116,7 +116,11 @@ export class InsertOperation extends ModelOperation<InsertOperationServices> {
   #onConflict(definition: ModelDefinition, options: ConflictOptions): OnConflictNode | undefined {
     return options.onConflict === undefined
       ? undefined
-      : this.services.conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>);
+      : this.services.conflicts.build(
+          definition,
+          options.onConflict as OnConflictOptions<unknown>,
+          options.silent === true,
+        );
   }
 
   /**

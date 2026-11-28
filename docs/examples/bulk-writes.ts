@@ -53,6 +53,25 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   );
   // #endregion insert-from
 
+  // #region without-hooks
+  // No bulk, per-row or validation hooks, and updatedAt stays as it is.
+  const quiet = { hooks: false, silent: true } as const;
+  await Stock.update({ qty: 1 }, { ...quiet, where: { sku: 'a' } });
+  await Stock.update(
+    { qty: col('locked.qty') },
+    {
+      ...quiet,
+      where: { sku: col('locked.sku') },
+      from: {
+        locked: Stock.subquery({ attributes: ['sku', 'qty'], lock: 'NO KEY UPDATE' }),
+      },
+      returning: true,
+    },
+  );
+  await Stock.upsert({ sku: 'b', qty: 2 }, quiet);
+  await Stock.destroy({ where: { sku: 'none' }, hooks: false });
+  // #endregion without-hooks
+
   // #region destroy-using
   const removed = await Stock.destroy({
     where: { sku: col('a.sku') },

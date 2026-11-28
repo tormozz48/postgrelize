@@ -115,10 +115,15 @@ export class OnConflictBuilder {
    *
    * @param definition - Model definition.
    * @param options - `onConflict` option.
+   * @param silent - Do not assign `updatedAt` on conflict.
    * @returns ON CONFLICT node.
    * @throws Error for unknown attributes, empty targets or an update without target.
    */
-  build(definition: ModelDefinition, options: OnConflictOptions<unknown>): OnConflictNode {
+  build(
+    definition: ModelDefinition,
+    options: OnConflictOptions<unknown>,
+    silent = false,
+  ): OnConflictNode {
     const target =
       options.target === undefined ? undefined : this.#target(definition, options.target);
     if (options.action === 'nothing') {
@@ -127,7 +132,7 @@ export class OnConflictBuilder {
     if (target === undefined) {
       throw new Error('onConflict: target is required when action is an update');
     }
-    return { target, action: this.#updateAction(definition, options.action) };
+    return { target, action: this.#updateAction(definition, options.action, silent) };
   }
 
   /**
@@ -166,6 +171,7 @@ export class OnConflictBuilder {
    * @param insertValues - Inserted values.
    * @param updatable - Attributes updated on conflict.
    * @param conflictFields - `conflictFields` option (column names).
+   * @param silent - Do not assign `updatedAt` on conflict.
    * @returns ON CONFLICT node.
    */
   v6Upsert(
@@ -173,13 +179,15 @@ export class OnConflictBuilder {
     insertValues: Values,
     updatable: readonly string[],
     conflictFields: readonly string[] | undefined,
+    silent = false,
   ): OnConflictNode {
-    return this.#v6.upsert(definition, insertValues, updatable, conflictFields);
+    return this.#v6.upsert(definition, insertValues, updatable, conflictFields, silent);
   }
 
   #updateAction(
     definition: ModelDefinition,
     action: OnConflictUpdateAction<unknown>,
+    silent: boolean,
   ): OnConflictNode['action'] {
     const ctx = new WhereCompiler({
       ...this.#columns.whereCompiler(definition, definition.name).context,
@@ -187,7 +195,7 @@ export class OnConflictBuilder {
     });
     const set = this.#columns.setItems(
       definition,
-      this.#updateValues(definition, action.update),
+      this.#updateValues(definition, action.update, silent),
       ctx,
     );
     const where = WhereCompiler.isEmpty(action.where) ? undefined : ctx.compile(action.where);
@@ -223,6 +231,7 @@ export class OnConflictBuilder {
   #updateValues(
     definition: ModelDefinition,
     update: OnConflictUpdate<unknown>,
+    silent: boolean,
   ): Readonly<Record<string, unknown>> {
     const entries: readonly (readonly [string, unknown])[] = Array.isArray(update)
       ? update.map((name: string) => [name, excluded(name)] as const)
@@ -233,7 +242,7 @@ export class OnConflictBuilder {
     entries.forEach(([name]) => assertAttribute(definition, name));
     const updatedAt = definition.updatedAt;
     return Object.fromEntries(
-      updatedAt === undefined || entries.some(([name]) => name === updatedAt)
+      silent || updatedAt === undefined || entries.some(([name]) => name === updatedAt)
         ? entries
         : [...entries, [updatedAt, excluded(updatedAt)] as const],
     );

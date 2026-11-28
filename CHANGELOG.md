@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `silent` on `upsert`, `insert`, `insertFrom` and on `create` / `bulkCreate` with `onConflict`: an existing row keeps its `updatedAt` unless the values name it. **Behaviour change:** `silent: true` was ignored by `upsert` and by `onConflict` updates (Sequelize v6 ignores it in `upsert`). ([#356](https://github.com/tormozz48/postgrelize/pull/356))
+
 ### Fixed
 
 - A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))

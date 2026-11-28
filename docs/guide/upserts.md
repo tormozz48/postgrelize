@@ -35,7 +35,7 @@ onConflict: {
 
 <<< @/examples/upserts.ts#increment{ts}
 
-Inside `action.update`, `EXCLUDED` is the proposed row and the model name is the alias of the existing row. Use `excluded('attr')` for a column of the proposed row, `col('Counter.attr')` for the existing one, and `fn` / `literal` for anything else. `updatedAt` is set automatically.
+Inside `action.update`, `EXCLUDED` is the proposed row and the model name is the alias of the existing row. Use `excluded('attr')` for a column of the proposed row, `col('Counter.attr')` for the existing one, and `fn` / `literal` for anything else. `updatedAt` is set automatically; with `silent: true` an existing row keeps its `updatedAt` unless `update` names it (see [writes without hooks or `updatedAt`](./bulk-writes#without-hooks)).
 
 ### Conditional updates <Ext />
 
