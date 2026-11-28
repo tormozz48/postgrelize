@@ -3,6 +3,9 @@ import { AbstractDataType, type DataType } from '../data-types/abstract-data-typ
 import { DataTypes, type DataTypeInput } from '../data-types/data-types.ts';
 import { EnumType } from '../data-types/enum-type.ts';
 import type { AttributeDefinition, AttributeOptions } from './attribute-options.ts';
+import { IntegerOptionWarnings } from './integer-option-warnings.ts';
+
+const integerWarnings = new IntegerOptionWarnings();
 
 /**
  * Normalizes declared attributes (`Model.init` input) into attribute definitions.
@@ -42,6 +45,7 @@ export class AttributeNormalizer {
     if (resolved instanceof EnumType && resolved.values.length === 0) {
       throw new Error('Values for ENUM have not been defined.');
     }
+    integerWarnings.check(resolved);
     return resolved;
   }
 

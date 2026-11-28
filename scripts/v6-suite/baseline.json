@@ -19,14 +19,6 @@
       "area": "associations",
       "note": "Not individually analysed (catch-all for remaining tests of the slice files)."
     },
-    "B-datavalues-key-order": {
-      "cause": "bug",
-      "area": "instance",
-      "note": "dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ.",
-      "risk": "cosmetic",
-      "repro": "Object.keys(U.build({a:'x'}).toJSON()) // ['isUser','id','a'], v6: ['id','a','isUser']",
-      "test": "Instance toJSON build returns a response that can be stringified"
-    },
     "B-harness-aggregate-error-map": {
       "cause": "harness",
       "area": "model",
@@ -176,27 +168,11 @@
       "test": "belongsTo association hooks beforeBelongsToAssociate should trigger",
       "ref": "docs/guide/migrating.md (hooks table, Not planned: Model beforeAssociate/afterAssociate)"
     },
-    "D-define-tinyint-warn": {
-      "cause": "bug",
-      "area": "datatypes",
-      "note": "No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT').",
-      "risk": "cosmetic",
-      "repro": "s.define('A',{age:DataTypes.TINYINT.UNSIGNED}) // no warning",
-      "test": "Model define datatype warnings warn for unsupported INTEGER options"
-    },
     "D-dialectmodule-ignored": {
       "cause": "divergence",
       "area": "config",
       "note": "dialectModule is accepted but ignored (always loads pg); dialectModulePath is not implemented and connectionManager.lib is a v6 internal.",
       "ref": "src/connection/options.ts TSDoc of dialectModule ('postgrelize ignores it and always loads pg'); docs/guide/migrating.md section 3"
-    },
-    "D-getattributes-shape": {
-      "cause": "bug",
-      "area": "model",
-      "note": "getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets.",
-      "risk": "cosmetic",
-      "repro": "M.getAttributes().id.type.constructor.name // 'Function'; .Model undefined",
-      "test": "Model getAttributes should return attributes with getAttributes()"
     },
     "D-harness-assoc-stubs": {
       "cause": "harness",
@@ -526,12 +502,8 @@
       }
     },
     "test/unit/model/define.test.js": {
-      "failing": [
-        "[POSTGRES] Model define datatype warnings warn for unsupported INTEGER options",
-        "[POSTGRES] Model define should allow custom timestamps with underscored: true"
-      ],
+      "failing": ["[POSTGRES] Model define should allow custom timestamps with underscored: true"],
       "causes": {
-        "[POSTGRES] Model define datatype warnings warn for unsupported INTEGER options": "D-define-tinyint-warn",
         "[POSTGRES] Model define should allow custom timestamps with underscored: true": "D-harness-model-internals"
       }
     },
@@ -567,17 +539,6 @@
       "causes": {
         "[POSTGRES] Model method findOrCreate \"after each\" hook for \"should use transaction from cls if available\"": "D-harness-stub-query",
         "[POSTGRES] Model method findOrCreate \"before each\" hook for \"should use transaction from cls if available\"": "D-harness-stub-query"
-      }
-    },
-    "test/unit/model/get-attributes.test.js": {
-      "failing": [
-        "[POSTGRES] Model getAttributes should return attributes with getAttributes()",
-        "[POSTGRES] Model getAttributes will contain timestamps if enabled",
-        "[POSTGRES] Model getAttributes will contain timestamps if enabled"
-      ],
-      "causes": {
-        "[POSTGRES] Model getAttributes should return attributes with getAttributes()": "D-getattributes-shape",
-        "[POSTGRES] Model getAttributes will contain timestamps if enabled": "D-getattributes-shape"
       }
     },
     "test/unit/model/include.test.js": {
@@ -1496,16 +1457,6 @@
     "test/integration/instance/save.test.js": {
       "failing": [],
       "causes": {}
-    },
-    "test/integration/instance/to-json.test.js": {
-      "failing": [
-        "[POSTGRES] Instance toJSON build returns a response that can be stringified",
-        "[POSTGRES] Instance toJSON create returns a response that can be stringified"
-      ],
-      "causes": {
-        "[POSTGRES] Instance toJSON build returns a response that can be stringified": "B-datavalues-key-order",
-        "[POSTGRES] Instance toJSON create returns a response that can be stringified": "B-datavalues-key-order"
-      }
     },
     "test/integration/instance/update.test.js": {
       "failing": [],
