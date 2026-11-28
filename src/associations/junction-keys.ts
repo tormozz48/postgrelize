@@ -10,6 +10,7 @@ import type {
   ForeignKeyOptions,
   ThroughOptions,
 } from './types.ts';
+import { junctionPlurals } from '../model/junction-plurals.ts';
 
 const registry = new ModelRegistry();
 
@@ -46,7 +47,7 @@ export class JunctionKeys {
    */
   resolve(source: Model, target: Model, options: BelongsToManyOptions): TargetKeys {
     const through = this.#through(options);
-    const model = this.#throughModel(source, through.model, this.#modelOptions(through, options));
+    const model = this.#throughModel(source, through.model, options, through, target);
     const paired = this.#paired(source, target, model);
     const own = this.#names(source, target, options);
     const names = paired === undefined ? own : this.#pair(own, options, paired, source, model);
@@ -262,11 +263,28 @@ export class JunctionKeys {
     };
   }
 
-  #throughModel(source: Model, through: string | Model, options: Values): Model {
+  #throughModel(
+    source: Model,
+    through: string | Model,
+    options: BelongsToManyOptions,
+    given: ThroughOptions,
+    target: Model,
+  ): Model {
+    if (typeof through !== 'string') {
+      return through;
+    }
     const { runtime } = registry.state(source);
-    return typeof through === 'string'
-      ? ((runtime.models()[through] as Model | undefined) ??
-          (runtime.defineModel(through, {}, { ...options, tableName: through }) as Model))
-      : through;
+    const existing = runtime.models()[through] as Model | undefined;
+    if (existing !== undefined) {
+      return existing;
+    }
+    const model = this.#define(source, through, this.#modelOptions(given, options));
+    junctionPlurals.set(model, this.#names(source, target, options).name.plural);
+    return model;
+  }
+
+  #define(source: Model, name: string, options: Values): Model {
+    const { runtime } = registry.state(source);
+    return runtime.defineModel(name, {}, { ...options, tableName: name }) as Model;
   }
 }
