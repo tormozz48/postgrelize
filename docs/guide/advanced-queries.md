@@ -143,6 +143,27 @@ For includes, `lateral: true` on a `separate` include with `limit` makes the dat
 
 <<< @/examples/advanced-queries.ts#lateral{ts}
 
+## Queries without a model, and `joins` <Ext />
+
+`sequelize.select(options)` runs a SELECT whose `FROM` is not a model, and `sequelize.subquery(options)` embeds the same SELECT in `exists()`, `Op.in`, `insertFrom`, `from`, `joins` or `with`. `from` takes the entries listed above; the first is the main source and the others are comma-joined. Rows are plain objects, and no scope, paranoid filter or hook applies.
+
+Column names are written as in the database: `'alias.column'` in `attributes`, `order` and `group`, `col('alias.column')` anywhere an expression fits. In `where`, use `'$alias.column$'` or `where(col('alias.column'), …)`; a bare `'a.b'` key is a JSON path, as in finders.
+
+<<< @/examples/source-queries.ts#main-source{ts}
+
+`joins: { alias: { source, type, on } }` works on `select`, `subquery`, `findAll`, `findOne` and `count`. `type` is `'inner'` (default) or `'left'`; without `on` the join is `ON true`. A `{ lateral: subquery }` source gives `JOIN LATERAL`, and the subquery may reference the outer alias.
+
+<<< @/examples/source-queries.ts#joins{ts}
+
+A set-returning function can reference columns to its left. Name its output with `columns`: without it the column of `jsonb_array_elements` is called `value`, not the alias. `jsonb_each` has two columns, `key` and `value`.
+
+<<< @/examples/source-queries.ts#jsonb{ts}
+
+<<< @/examples/source-queries.ts#insert-from{ts}
+
+- `joins` cannot be combined with a joined `include`; `separate` includes work.
+- `on` can reference the main source and earlier joins, not comma-joined `from` entries.
+
 ## `TABLESAMPLE` <Ext />
 
 `sample: { method, percent, seed? }` on `findAll` and `count` reads a random part of the table: `BERNOULLI` samples row by row, `SYSTEM` block by block (faster, clustered). `percent` is from 0 to 100; the same `seed` gives the same sample while the data is unchanged (`REPEATABLE`). The same option works on a `from` entry: `{ model, sample }`.

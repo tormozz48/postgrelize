@@ -67,6 +67,9 @@ export class FindQueryBuilder {
     query: FindOptions,
     alias: string | undefined,
   ): SelectNode {
+    if (query.joins !== undefined && includes.some((node) => !node.separate)) {
+      throw new Error('joins cannot be combined with a joined include');
+    }
     return includes.length === 0
       ? FindQueryBuilder.#selecting(definition, base, alias)
       : this.#includes.build(definition, base, includes, query);

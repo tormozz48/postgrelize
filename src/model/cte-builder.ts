@@ -1,6 +1,7 @@
 import { Subquery, WriteStatement } from '../expressions/methods.ts';
 import type { CteNode, FromItem, QueryNode, SelectNode, WithClause } from '../sql/ast.ts';
-import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
+import type { JoinSourceBuilder, JoinSources, PendingJoin } from './join-source-builder.ts';
+import type { JoinsOption } from './source-options.ts';
 import { ModelDefinition } from './model-definition.ts';
 
 /**
@@ -102,6 +103,12 @@ export type CteFindOptions = Readonly<{
    * @postgrelize
    */
   from?: JoinSources;
+  /**
+   * Relations joined with `INNER` / `LEFT JOIN ... ON`, keyed by alias. Not combinable with a joined
+   * `include`. PostgreSQL extension.
+   * @postgrelize
+   */
+  joins?: JoinsOption;
 }>;
 
 const isDefinition = (value: Subquery | WriteStatement | CteDefinition): value is CteDefinition =>
@@ -176,10 +183,13 @@ export class CteBuilder {
     withClause?: WithClause;
     extraFrom?: readonly FromItem[];
     fromQuery?: QueryNode;
+    pendingJoins?: readonly PendingJoin[];
   }> {
     const withClause = this.withClause(options.with);
     const extraFrom = this.#joins.build(options.from);
+    const pendingJoins = this.#joins.joins(options.joins);
     return {
+      ...(pendingJoins.length === 0 ? {} : { pendingJoins }),
       ...(withClause === undefined ? {} : { withClause }),
       ...(extraFrom.length === 0 ? {} : { extraFrom }),
       ...(options.source instanceof Subquery ? { fromQuery: options.source.build() } : {}),

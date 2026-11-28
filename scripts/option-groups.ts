@@ -25,6 +25,8 @@ export const OPTION_GROUPS: readonly OptionGroup[] = [
       'WindowOptions',
       'JsonTableOptions',
       'JsonTableColumnOptions',
+      'JoinOptions',
+      'SourceQueryOptions',
       'JsonbPathOptions',
       'TsRankOptions',
       'TsHeadlineOptions',

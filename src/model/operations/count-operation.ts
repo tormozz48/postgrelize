@@ -97,6 +97,9 @@ export class CountOperation extends ModelOperation<CountOperationServices> {
   ) {
     const { definition, runtime } = this.services.registry.state(model);
     const { cte, includeQueries, selects } = this.services;
+    if (query.joins !== undefined && includes.length > 0) {
+      throw new Error('joins cannot be combined with a joined include');
+    }
     const countQuery = CountOperation.#countQuery(definition, query, includes.length);
     const counted = selects.count(
       cte.sourceDefinition(definition, query.source),

@@ -5,6 +5,7 @@ import type { ModelDefinition } from './model-definition.ts';
 import { TableSampleBuilder } from './table-sample-builder.ts';
 import { SelectLock } from './select-lock.ts';
 import { SelectAggregates } from './select-aggregates.ts';
+import { JoinClauses } from './join-clauses.ts';
 import type { FindAttributeOptions, SelectOptions } from './select-options.ts';
 import { SelectTargets } from './select-targets.ts';
 
@@ -32,6 +33,7 @@ export class SelectQueryBuilder {
   readonly #aggregates: SelectAggregates;
   readonly #locks = new SelectLock();
   readonly #samples = new TableSampleBuilder();
+  readonly #joinClauses = new JoinClauses();
 
   /**
    * @param columns - Attribute to column mapping.
@@ -162,11 +164,16 @@ export class SelectQueryBuilder {
     const distinctOn = this.#targets.distinctOn(definition, alias, ctx, options.distinctOn);
     return {
       ...(distinctOn.length === 0 ? {} : { distinctOn }),
+      ...this.#joined(ctx, options),
       ...(where === undefined ? {} : { where }),
       ...(group.length === 0 ? {} : { groupBy: group }),
       ...(having === undefined ? {} : { having }),
       ...(lock === undefined ? {} : { lock }),
     };
+  }
+
+  #joined(ctx: WhereCompiler, { pendingJoins }: SelectOptions): Partial<SelectNode> {
+    return pendingJoins === undefined ? {} : { joins: this.#joinClauses.build(pendingJoins, ctx) };
   }
 
   #from(table: TableRef, alias: string, options: SelectOptions): FromItem {

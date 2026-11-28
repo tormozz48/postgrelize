@@ -12,9 +12,12 @@ export { Model } from './model/model.ts';
 export type { NamedHookAdder } from './model/model.ts';
 export type { MergeActionName, MergeResult } from './model/operations/merge-operation.ts';
 export type { JoinSources } from './model/join-source-builder.ts';
+export type { SourceQueryOptions } from './model/source-query-options.ts';
 export type { UpdateStatementOptions, WriteStatementOptions } from './model/statement-builder.ts';
 export type {
   FromSourceOption,
+  JoinOptions,
+  JoinsOption,
   JsonTableColumnOptions,
   JsonTableOptions,
   TableSampleOptions,

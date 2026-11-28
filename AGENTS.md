@@ -253,6 +253,7 @@ Everything lives in `.10x/`:
 | [036](.10x/adrs/036-inlined-raw-query-replacements.md)       | Inline `sequelize.query` `replacements` as escaped literals   | Accepted (narrow exception to 002)                    |
 | [037](.10x/adrs/037-inlined-finder-replacements.md)          | Inline finder `replacements` as escaped literals              | Accepted (extends 036)                                |
 | [038](.10x/adrs/038-inlined-fn-string-arguments.md)          | Inline `fn()` string arguments and `Op.is` values as literals | Accepted (extends 036, 037)                           |
+| [039](.10x/adrs/039-model-less-queries-and-joins.md)         | Model-less queries and `joins` over FROM sources              | Accepted                                              |
 
 ## Git, PRs and releases
 

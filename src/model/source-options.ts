@@ -1,5 +1,6 @@
 import type { Subquery } from '../expressions/methods.ts';
 import type { AnyModel, ModelStatic } from './options.ts';
+import type { WhereOptions } from './where-options.ts';
 
 /**
  * `TABLESAMPLE` of a table. PostgreSQL extension.
@@ -121,3 +122,34 @@ export type FromSourceOption =
       /** Sampling. */
       sample: TableSampleOptions;
     }>;
+
+/**
+ * One entry of `joins`: a source joined with `ON`. PostgreSQL extension.
+ *
+ * @postgrelize
+ * @example
+ * ```ts
+ * const join: JoinOptions = {
+ *   type: 'left',
+ *   source: { lateral: Post.subquery({ where: { authorId: col('User.id') }, limit: 1 }) },
+ * };
+ * ```
+ */
+export type JoinOptions = Readonly<{
+  /** Joined relation: any `from` form (model, relation name, subquery, `function`, `values`, `lateral`, …). */
+  source: FromSourceOption;
+  /**
+   * `INNER JOIN` or `LEFT OUTER JOIN`.
+   * @defaultValue 'inner'
+   */
+  type?: 'inner' | 'left';
+  /**
+   * Join condition in `where` syntax. It may reference the main source and earlier joins, not
+   * comma-joined `from` entries.
+   * @defaultValue `ON true`
+   */
+  on?: WhereOptions;
+}>;
+
+/** `joins` option: joined sources by alias, joined in key order. PostgreSQL extension. */
+export type JoinsOption = Readonly<Record<string, JoinOptions>>;

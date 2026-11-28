@@ -1,3 +1,4 @@
+import type { PendingJoin } from './join-source-builder.ts';
 import type { LateralKeys } from './lateral-keys-builder.ts';
 import type { TableSampleOptions } from './source-options.ts';
 import type { Col, Fn, Literal } from '../expressions/methods.ts';
@@ -121,4 +122,6 @@ export type SelectOptions = {
   withClause?: WithClause;
   /** @internal Resolved extra FROM relations. */
   extraFrom?: readonly FromItem[];
+  /** @internal Resolved `joins`. */
+  pendingJoins?: readonly PendingJoin[];
 };
