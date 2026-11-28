@@ -68,6 +68,25 @@ await holder.rollback();
 // free: every row except ann's; noWait: DatabaseError (could not obtain lock)
 ```
 
+Lock only named tables (needed with an optional `include`):
+
+```ts
+const Entry = sequelize.define('Entry', { memo: DataTypes.TEXT }, { timestamps: false });
+Account.hasMany(Entry, { as: 'entries', foreignKey: 'accountId' });
+await Entry.sync();
+
+const locked = await sequelize.transaction(async (tx) => {
+  // FOR NO KEY UPDATE OF "Account": the outer-joined entries stay unlocked.
+  const accounts = await Account.findAll({
+    include: [{ model: Entry, as: 'entries' }],
+    lock: { level: Transaction.LOCK.NO_KEY_UPDATE, of: 'Account' },
+    skipLocked: true,
+    transaction: tx,
+  });
+  return accounts.length;
+});
+```
+
 ## CLS
 
 ```ts
@@ -117,6 +136,17 @@ const busy = await other.tryAdvisoryLock('jobs:42'); // false: held by `holder`
 const free = await other.tryAdvisoryLock(7); // true: integer keys work too
 await holder.commit(); // transaction-level locks are released on commit / rollback
 await other.rollback();
+```
+
+```ts
+const paired = await sequelize.transaction(async (transaction) => {
+  await transaction.advisoryLock(7, 42); // pg_advisory_xact_lock(7, 42)
+  const shared = await transaction.tryAdvisoryLock(7, 43, { shared: true });
+
+  await transaction.advisoryLock(7, 44, { session: true });
+  const released = await transaction.advisoryUnlock(7, 44);
+  return shared && released;
+});
 ```
 
 Routing connections (v6 `sequelize.connectionManager`): every query, transaction, COPY and `sync` takes its connection from `connectionManager.getConnection(options?)` and returns it through `connectionManager.releaseConnection(connection)`, looked up at call time, so both can be reassigned on the instance (for example to pick a database per request from an `AsyncLocalStorage`):

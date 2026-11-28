@@ -101,6 +101,18 @@ describe('payloads on PostgreSQL-specific surfaces', () => {
         expect(received).toEqual([payload]);
         await sequelize.transaction(async (transaction) => {
           expect(await transaction.tryAdvisoryLock(payload)).toBe(true);
+          await expect(transaction.advisoryLock(payload as never, 1)).rejects.toThrow(TypeError);
+        });
+        const Locked = sequelize.define('Locked', {});
+        await Locked.sync();
+        const locked = await settle(
+          sequelize.transaction((transaction) =>
+            Locked.findAll({ lock: { level: 'UPDATE', of: payload }, transaction }),
+          ),
+        );
+        expect({ payload, syntaxError: syntaxError(locked) }).toEqual({
+          payload,
+          syntaxError: false,
         });
         const setting = await settle(
           sequelize.transaction({ settings: { 'app.value': payload } }, (transaction) =>

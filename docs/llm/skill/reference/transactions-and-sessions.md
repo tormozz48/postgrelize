@@ -14,6 +14,10 @@
 
 <<< @/examples/transactions.ts#locking{ts}
 
+Lock only named tables (needed with an optional `include`):
+
+<<< @/examples/transactions.ts#lock-of{ts}
+
 ## CLS
 
 <<< @/examples/llm-usage.ts#cls{ts}
@@ -25,6 +29,8 @@
 <<< @/examples/sessions.ts#listen-notify{ts}
 
 <<< @/examples/sessions.ts#advisory-locks{ts}
+
+<<< @/examples/sessions.ts#advisory-pair{ts}
 
 Routing connections (v6 `sequelize.connectionManager`): every query, transaction, COPY and `sync` takes its connection from `connectionManager.getConnection(options?)` and returns it through `connectionManager.releaseConnection(connection)`, looked up at call time, so both can be reassigned on the instance (for example to pick a database per request from an `AsyncLocalStorage`):
 

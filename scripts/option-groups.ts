@@ -89,6 +89,7 @@ export const OPTION_GROUPS: readonly OptionGroup[] = [
       'StatementCacheOptions',
       'QueryOptions',
       'TransactionOptions',
+      'AdvisoryLockOptions',
       'GetConnectionOptions',
       'SyncOptions',
       'DropOptions',

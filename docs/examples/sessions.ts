@@ -58,6 +58,20 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   await other.rollback();
   // #endregion advisory-locks
 
+  // #region advisory-pair
+  const paired = await sequelize.transaction(async (transaction) => {
+    await transaction.advisoryLock(7, 42); // pg_advisory_xact_lock(7, 42)
+    const shared = await transaction.tryAdvisoryLock(7, 43, { shared: true });
+
+    await transaction.advisoryLock(7, 44, { session: true });
+    const released = await transaction.advisoryUnlock(7, 44);
+    return shared && released;
+  });
+  // #endregion advisory-pair
+  if (!paired) {
+    throw new Error('two-key advisory locks failed');
+  }
+
   // #region with-advisory-lock
   const order: string[] = [];
   let firstHoldsLock: (() => void) | undefined;

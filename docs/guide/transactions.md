@@ -76,6 +76,25 @@ Anything that is not a namespace (no `bind` or `run`) throws `Must provide CLS n
 
 `noWait` is a PostgreSQL extension; Sequelize v6 has no way to express `NOWAIT`.
 
+### Locking named tables <Ext />
+
+`lock.of` also takes a table alias, or a list of models and aliases, and works with every strength, `noWait`, `skipLocked`, `include` and [`Model.subquery`](/api/classes/Model):
+
+<<< @/examples/transactions.ts#lock-of{ts}
+
+- Aliases are the ones in the SQL: the model name for the main table, the association name for an included one (`lines`), the path for a nested one (`lines->notes`). Each is quoted as one identifier.
+- PostgreSQL refuses a lock on the nullable side of an outer join, so with an optional `include` name the tables to lock, or make the include `required: true`.
+- `separate: true` includes run their own query and are not locked.
+- An empty list throws: without `OF` PostgreSQL would lock every table.
+
+#### Application lock-ordering guards
+
+postgrelize does not check lock order. An application that does so in a `beforeFind` hook receives `options.lock` unchanged, so every `lock.of` query counts by default. `skipOrderGuard: true` lets a caller say that one query must not count; the hook has to honour it:
+
+<<< @/examples/transactions.ts#lock-guard{ts}
+
+`Model.subquery` runs no hooks, so such a guard never sees a lock inside a subquery.
+
 ## Read-only transactions <Ext />
 
 `readOnly: true` makes PostgreSQL reject every write in the transaction. On a [read replica setup](./sessions#read-replicas) the transaction still runs on the writer.
