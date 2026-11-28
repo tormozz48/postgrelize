@@ -107,6 +107,8 @@ Example: `docs/examples/merge-returning.ts` in the repository (`Stock.merge({ so
 
 `Model.subquery(findOptions)` builds an embeddable SELECT (use in `Op.in`, attributes, `exists()`). `with: { name: { query, recursive?, materialized? } }` adds CTEs to finders/`count`; `source: 'cte'` reads from one. Window functions through `over(...)`; `distinctOn`. Recursive CTE example: `docs/examples/advanced-queries.ts` (region `recursive-cte`) in the repository.
 
+FROM that is not a model: `sequelize.select({ from: { ids: { function: 'unnest', args: [cast(list, 'integer[]')], columns: ['id'] } } })`; `sequelize.subquery(...)` is the same SELECT for `insertFrom`, `exists()`, `Op.in`. `joins: { alias: { source, type: 'inner' | 'left', on } }` (finders, `count`, `select`) joins any source; no `on` means `ON true`, `{ lateral: subquery }` gives `JOIN LATERAL`. Address columns with `col('alias.column')`; in `where` use `'$alias.column$'`.
+
 ## COPY, listen/notify, locks
 
 <<< @/examples/copy.ts#copy-from{ts}

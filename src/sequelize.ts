@@ -23,6 +23,7 @@ import { SequelizeHooks } from './sequelize/sequelize-hooks.ts';
 import { SequelizeNotifications } from './sequelize/sequelize-notifications.ts';
 import { SequelizeHelpers } from './sequelize/sequelize-helpers.ts';
 import { SequelizeSchema } from './sequelize/sequelize-schema.ts';
+import { SequelizeSources } from './sequelize/sequelize-sources.ts';
 import { SequelizeTransactions } from './sequelize/sequelize-transactions.ts';
 import type { SequelizeOptions } from './connection/options.ts';
 import { Transaction } from './transaction/transaction.ts';
@@ -51,9 +52,11 @@ export type Options = SequelizeOptions;
 
 const packageVersion = new PackageVersion();
 
-const SequelizeMembers = SequelizeNotifications(
-  SequelizeTransactions(
-    SequelizeSchema(SequelizeHelpers(SequelizeStaticHooks(SequelizeHooks(SequelizeBase)))),
+const SequelizeMembers = SequelizeSources(
+  SequelizeNotifications(
+    SequelizeTransactions(
+      SequelizeSchema(SequelizeHelpers(SequelizeStaticHooks(SequelizeHooks(SequelizeBase)))),
+    ),
   ),
 );
 
