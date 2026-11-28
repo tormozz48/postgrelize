@@ -42,12 +42,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `caseWhen().when(condition, value).else(value)`: `CASE` expressions for `attributes`, `where`, `order`, `group` and `having`. PostgreSQL extension, ADR-039. (PR_LINK)
-- `selectDistinct: true` on finders and `Model.subquery`: `SELECT DISTINCT`. The v6 `distinct` option of `count` is unchanged. ADR-039. (PR_LINK)
+- `caseWhen().when(condition, value).else(value)`: `CASE` expressions for `attributes`, `where`, `order`, `group` and `having`. PostgreSQL extension, ADR-039. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
+- `selectDistinct: true` on finders and `Model.subquery`: `SELECT DISTINCT`. The v6 `distinct` option of `count` is unchanged. ADR-039. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
 
 ### Fixed
 
-- `{ [Op.any]: col('tags') }` compares with the array column, like v6; the expression was bound as a value and the query failed. Differential test in `tests/compat/where-any-column.test.ts`. (PR_LINK)
+- `{ [Op.any]: col('tags') }` compares with the array column, like v6; the expression was bound as a value and the query failed. Differential test in `tests/compat/where-any-column.test.ts`. ([#353](https://github.com/tormozz48/postgrelize/pull/353))
 
 ## [1.10.3] - 2026-11-28
 
