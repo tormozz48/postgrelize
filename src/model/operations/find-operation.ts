@@ -9,6 +9,7 @@ import type { ModelDefinition } from '../model-definition.ts';
 import type { AnyModel, FindOptions, ModelStatic, MutableOptions, Values } from '../options.ts';
 import { FindCursor } from './find-cursor.ts';
 import { FindLookups, type FindOperationServices } from './find-lookups.ts';
+import { GroupedLimit } from './grouped-limit.ts';
 import { VirtualSelection } from './virtual-selection.ts';
 
 export type { FindOperationServices } from './find-lookups.ts';
@@ -35,6 +36,7 @@ const selection = new VirtualSelection();
 export class FindOperation extends FindLookups {
   readonly #cursor: FindCursor;
   readonly #minifier = new AliasMinifier();
+  readonly #grouped = new GroupedLimit();
 
   /**
    * @param services - Collaborators.
@@ -52,18 +54,25 @@ export class FindOperation extends FindLookups {
    * @returns Instances, or plain objects with `raw: true`.
    */
   async findAll<M extends AnyModel>(model: ModelStatic<M>, options: FindOptions): Promise<M[]> {
-    const { definition, runtime } = this.services.registry.state(model);
-    const { finds } = this.services;
     const opts: MutableOptions = { hooks: true, ...this.services.registry.scoped(model, options) };
     await this.#beforeFind(model, opts);
-    const call = this.#call(model, opts);
-    const threshold = runtime.inAsAnyThreshold;
-    const select = finds.build(definition, call.query, call.includes, threshold);
-    const rows = await this.#rows(select, call, runtime.minifyAliases === true);
-    const found = await this.#found(call, rows);
+    const found =
+      opts['groupedLimit'] === undefined
+        ? await this.#read(model, opts)
+        : ((await this.#grouped.rows(model, opts)) as AnyModel[]);
     await this.#afterFind(model, opts, found);
     this.rejectEmpty(model, opts, found);
     return found as M[];
+  }
+
+  async #read(model: ModelStatic<AnyModel>, opts: MutableOptions): Promise<AnyModel[]> {
+    const { runtime } = this.services.registry.state(model);
+    const { finds } = this.services;
+    const call = this.#call(model, opts);
+    const { definition, query, includes } = call;
+    const select = finds.build(definition, query, includes, runtime.inAsAnyThreshold);
+    const rows = await this.#rows(select, call, runtime.minifyAliases === true);
+    return this.#found(call, rows);
   }
 
   // like v6, `findOne` (`plain`) hands the instance, not an array, to the hooks

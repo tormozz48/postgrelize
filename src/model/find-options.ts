@@ -69,6 +69,14 @@ export type FindOptions<T = Values> = QueryOptionsBase &
     hooks?: boolean;
     /** Eager-load associations through JOINs (or separate queries for `separate` includes). */
     include?: IncludeOption;
+    /**
+     * Undocumented v6 option `{ limit, on, values, through? }`: at most `limit` rows for each of
+     * `values`. `on` is a `hasMany` or `belongsToMany` association, or an attribute of the model; for
+     * `belongsToMany` the values are target keys, each row lists its matching junction rows under the
+     * association name and `through.where` filters them. Runs one or more queries per value.
+     * @defaultValue no limit per group
+     */
+    groupedLimit?: unknown;
     /** `false` disables the sub-query used for `limit` combined with multi-row includes. */
     subQuery?: boolean;
     /**
