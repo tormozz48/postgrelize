@@ -115,7 +115,7 @@ export class InstanceLifecycle {
         ([key, value]) => value !== undefined || !(key in instance.dataValues),
       ),
     );
-    InstanceLifecycle.#dropGivenDefaults(instance, defined);
+    this.#dropKeyDefaults(instance, definition, defined);
     state.includes = this.#assign(instance, model, defined, options);
     if (!instance.isNewRecord || options.raw === true) {
       instance._previousDataValues = { ...instance.dataValues };
@@ -186,10 +186,9 @@ export class InstanceLifecycle {
     return instance;
   }
 
-  // like v6, a given value replaces its default and takes its place among the given values, which
-  // keeps the key order of `dataValues` (a set primary key is also read-only afterwards)
-  static #dropGivenDefaults(instance: AnyModel, given: Values): void {
-    Object.keys(given)
+  // like v6, a given primary key replaces its default (a set key is read-only afterwards)
+  #dropKeyDefaults(instance: AnyModel, definition: ModelDefinition, given: Values): void {
+    definition.primaryKeys
       .filter((key) => given[key] !== undefined)
       .forEach((key) => delete (instance.dataValues as Values)[key]);
   }

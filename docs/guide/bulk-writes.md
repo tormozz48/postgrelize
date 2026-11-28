@@ -40,6 +40,12 @@ A `from` value can be a model, a subquery from `Model.subquery()`, or a table / 
 
 It returns the written rows as instances (with `wasInserted`) and accepts [`onConflict`](./upserts#onconflict), so it can upsert from another table. Fill `NOT NULL` timestamps in the subquery, e.g. `attributes: ['sku', [literal('now()'), 'createdAt']]`.
 
+### From arrays, `VALUES` or another relation <Ext /> {#insert-from-relation}
+
+`Model.subquery({ source })` can read from `unnest(...)` or another set-returning function, `VALUES` rows or `JSON_TABLE` instead of the model table. `columns` of the source are named like the attributes:
+
+<<< @/examples/bulk-writes.ts#insert-unnest{ts}
+
 ## Writes without hooks or `updatedAt` <Ext /> {#without-hooks}
 
 Pass `hooks: false` to skip hooks and `silent: true` to leave `updatedAt` as it is. `returning` keeps working.

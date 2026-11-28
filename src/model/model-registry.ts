@@ -281,10 +281,7 @@ export class ModelRegistry {
    * @returns Attribute entries by name.
    */
   rawAttributes(model: object): Record<string, AttributeDefinition> {
-    return raw.of(this.state(model).definition, model) as unknown as Record<
-      string,
-      AttributeDefinition
-    >;
+    return raw.of(this.state(model).definition) as unknown as Record<string, AttributeDefinition>;
   }
 
   /**

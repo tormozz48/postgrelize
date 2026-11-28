@@ -121,3 +121,22 @@ export type FromSourceOption =
       /** Sampling. */
       sample: TableSampleOptions;
     }>;
+
+/**
+ * A relation that is not a table, for the `source` option: `VALUES` rows, a set-returning function or
+ * `JSON_TABLE`. PostgreSQL extension.
+ *
+ * @postgrelize
+ * @example
+ * ```ts
+ * const source: RelationSource = {
+ *   function: 'unnest',
+ *   args: [cast([1, 2], 'integer[]')],
+ *   columns: ['id'],
+ * };
+ * ```
+ */
+export type RelationSource = Extract<
+  FromSourceOption,
+  { values: unknown } | { function: string } | { jsonTable: unknown }
+>;
