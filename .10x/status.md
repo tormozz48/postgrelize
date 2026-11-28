@@ -98,6 +98,16 @@
 - Open: owner to enable GitHub Pages; first release tag needs owner approval.
 - P1 backlog (gap analysis): CTE/DISTINCT ON/LATERAL include, MERGE, UPDATE FROM / DELETE USING, COPY, LISTEN/NOTIFY, cursors, SET LOCAL/RLS, advisory locks, identity/generated columns, RETURNING old/new.
 
+## Releases 1.10.1 to 1.10.3 (2026-11-28, released)
+
+Fourth batch of v6 suite baseline fixes, merged and released in three groups. Each release: bench gate green on `main` against the previous tag, `release.yml` all jobs green, npm `latest`, ESM and CJS import in a clean directory, attestation present, GitHub Release created. Not checked: npm Provenance badge page, GitHub Packages mirror page.
+
+- 1.10.1 (model): #327, #330, #335 (behaviour change: `client_min_messages = warning`). Release PR #337, `release.yml` run 46077767414, bench 0.0%.
+- 1.10.2 (query): #329, #333 (behaviour change: writes are logged with placeholders, before they run), #334. Release PR #339, run 46083295190, bench +1.1%.
+- 1.10.3 (schema): #328 (behaviour change: an infinite `date` reads as a number), #331, #332. Release PR #341, run 46086287304, bench +0.9%.
+
+Open: 8 `bug` causes in `scripts/v6-suite/baseline.json`. The v6 test of infinite `DATEONLY` fails between local midnight and 00:00 UTC (it compares a UTC date with the local one).
+
 ## Release 1.10.0 (2026-11-27, released)
 
 Three Sequelize v6 features that were `unsupported`: `searchPath` (#321), `DataTypes.UUIDV1` (#322), `beforePoolAcquire` / `afterPoolAcquire` (#323). Release PR #325, merge commit `953e915`; bench gate green on `main` against v1.9.22 (geometric mean -0.1%); `release.yml` run 46067491882 green; npm `latest` 1.10.0, attestation present, GitHub Release created. The registry served the metadata before the tarball (about 5 minutes of 404); ESM and CJS import in a clean directory once it was there. Not checked: npm Provenance badge page, GitHub Packages mirror page.
