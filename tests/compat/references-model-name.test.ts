@@ -24,7 +24,7 @@ describe('compat: references of a generated foreign key', () => {
           .then((keys) =>
             (keys as { referencedTableName: string }[])
               .map((key) => key.referencedTableName)
-              .sort(),
+              .toSorted(),
           ),
       ];
     }));
