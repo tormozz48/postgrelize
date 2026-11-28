@@ -292,7 +292,7 @@ Example: `docs/examples/merge-returning.ts` in the repository (`Stock.merge({ so
 
 ## Subqueries, CTEs, windows
 
-`Model.subquery(findOptions)` builds an embeddable SELECT (use in `Op.in`, attributes, `exists()`). `with: { name: { query, recursive?, materialized? } }` adds CTEs to finders/`count`; `source: 'cte'` reads from one. Window functions through `over(...)`; `distinctOn`. Recursive CTE example: `docs/examples/advanced-queries.ts` (region `recursive-cte`) in the repository.
+`Model.subquery(findOptions)` builds an embeddable SELECT (use in `Op.in`, attributes, `exists()`). `with: { name: { query, recursive?, materialized? } }` adds CTEs to finders/`count`; `source: 'cte'` reads from one. Window functions through `over(...)`; aggregate `FILTER (WHERE ...)` through `filter(fn('count', col('*')), { published: true })` in `attributes` / `having` / `order` (condition is a normal `where`; `col('*')`, not the string `'*'`; `COUNT(DISTINCT x)` is `fn('count', fn('distinct', col('x')))`; bigint results are strings; wraps in `over()`); `distinctOn`. Recursive CTE example: `docs/examples/advanced-queries.ts` (region `recursive-cte`) in the repository.
 
 ## COPY, listen/notify, locks
 

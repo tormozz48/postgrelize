@@ -2,6 +2,7 @@ import type {
   BetweenNode,
   BinaryNode,
   ExprNode,
+  FilterNode,
   FnNode,
   LogicalNode,
   OrderNode,
@@ -146,12 +147,19 @@ export class ExpressionCompiler extends ChunkBuilder {
       case 'alias':
         return [...this.expression(node.expr), ` AS ${this.quote(node.alias)}`];
       case 'over':
-        return this.#over(node);
+      case 'filter':
+        return this.#aggregateClause(node);
       case 'values':
         return ['VALUES ', ...this.rows(node.rows)];
       default:
         return this.unexpected(node);
     }
+  }
+
+  #aggregateClause(node: OverNode | FilterNode): Chunks {
+    return node.kind === 'over'
+      ? this.#over(node)
+      : [...this.expression(node.expr), ' FILTER (WHERE ', ...this.expression(node.where), ')'];
   }
 
   #binary(node: BinaryNode): Chunks {

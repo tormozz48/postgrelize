@@ -1,4 +1,4 @@
-import type { Fn } from './call-expressions.ts';
+import type { Filter, Fn } from './call-expressions.ts';
 import { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 import type { Literal } from './methods.ts';
 
@@ -7,7 +7,7 @@ export class Over extends SqlExpression {
   /** @internal */
   static override readonly kind = 'Over';
   /** Window function, e.g. `fn('row_number')`. */
-  readonly fn: Fn | Literal;
+  readonly fn: Fn | Filter | Literal;
   /** `PARTITION BY` attributes or expressions. */
   readonly partitionBy: readonly unknown[];
   /** `ORDER BY` items: attribute, `[attribute, direction]` or expression. */
@@ -18,7 +18,11 @@ export class Over extends SqlExpression {
    * @param partitionBy - `PARTITION BY` items.
    * @param orderBy - `ORDER BY` items.
    */
-  constructor(fn: Fn | Literal, partitionBy: readonly unknown[], orderBy: readonly unknown[]) {
+  constructor(
+    fn: Fn | Filter | Literal,
+    partitionBy: readonly unknown[],
+    orderBy: readonly unknown[],
+  ) {
     super();
     this.fn = fn;
     this.partitionBy = partitionBy;

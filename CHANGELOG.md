@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- `filter(aggregate, where)` writes the aggregate `FILTER (WHERE …)` clause in `attributes`, `having`, `order` and `where(...)`, also inside `over()`. ([#351](https://github.com/tormozz48/postgrelize/pull/351))
+
 ### Fixed
 
 - A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))

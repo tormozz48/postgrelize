@@ -1,10 +1,11 @@
-import { Cast, Col, Fn } from './call-expressions.ts';
+import { Cast, Col, Filter, Fn } from './call-expressions.ts';
 import { Excluded, Json, Where } from './condition-expressions.ts';
 import { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 import { Exists, type Subquery } from './query-expressions.ts';
 import { Over, Tuple } from './row-expressions.ts';
+import type { WhereOptions } from '../model/where-options.ts';
 
-export { Cast, Col, Fn } from './call-expressions.ts';
+export { Cast, Col, Filter, Fn } from './call-expressions.ts';
 export { Excluded, Json, Where } from './condition-expressions.ts';
 export { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 export { Exists, Subquery, WriteStatement, type SetOperationOptions } from './query-expressions.ts';
@@ -179,6 +180,31 @@ export const exists = (subquery: Subquery): Exists => new Exists(subquery, false
 export const notExists = (subquery: Subquery): Exists => new Exists(subquery, true);
 
 /**
+ * Aggregate `FILTER` clause: `aggregate FILTER (WHERE condition)`, so that one query can aggregate
+ * different subsets of the rows. The condition is an ordinary `where`: attribute names resolve to
+ * the queried model, values are bound as parameters, and `col()` / `exists()` correlate it. Wrap in
+ * {@link over} for a window aggregate. PostgreSQL extension.
+ *
+ * Count rows with `fn('count', col('*'))`: the string `'*'` would be written as the literal `'*'`.
+ * PostgreSQL returns `count` and integer `sum` as `bigint`, which reads back as a string.
+ *
+ * @postgrelize
+ * @param aggregate - Aggregate call, e.g. `fn('sum', col('amount'))`.
+ * @param condition - Rows to aggregate.
+ * @returns Expression usable in `attributes`, `having`, `order` and `where(...)`.
+ * @example
+ * ```ts
+ * await Post.findAll({
+ *   attributes: ['userId', [filter(fn('count', col('*')), { published: true }), 'published']],
+ *   group: ['userId'],
+ *   having: where(filter(fn('count', col('*')), { published: true }), Op.gt, 0),
+ * });
+ * ```
+ */
+export const filter = (aggregate: Fn | Literal, condition: WhereOptions): Filter =>
+  new Filter(aggregate, condition);
+
+/**
  * Window definition of {@link over}. PostgreSQL extension.
  *
  * @postgrelize
@@ -199,7 +225,7 @@ export type WindowOptions = Readonly<{
  * PostgreSQL extension.
  *
  * @postgrelize
- * @param windowFunction - Function call, e.g. `fn('rank')`.
+ * @param windowFunction - Function call, e.g. `fn('rank')`, or a {@link filter}ed aggregate.
  * @param window - Partition and order.
  * @returns Expression usable in `attributes` and `order`.
  * @example
@@ -209,7 +235,7 @@ export type WindowOptions = Readonly<{
  * });
  * ```
  */
-export const over = (windowFunction: Fn | Literal, window: WindowOptions = {}): Over =>
+export const over = (windowFunction: Fn | Filter | Literal, window: WindowOptions = {}): Over =>
   new Over(windowFunction, window.partitionBy ?? [], window.orderBy ?? []);
 
 /**
