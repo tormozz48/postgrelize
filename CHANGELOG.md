@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `filter(aggregate, where)` writes the aggregate `FILTER (WHERE …)` clause in `attributes`, `having`, `order` and `where(...)`, also inside `over()`. ([#343](https://github.com/tormozz48/postgrelize/pull/343))
+- `filter(aggregate, where)` writes the aggregate `FILTER (WHERE …)` clause in `attributes`, `having`, `order` and `where(...)`, also inside `over()`. ([#351](https://github.com/tormozz48/postgrelize/pull/351))
 
 ## [1.10.3] - 2026-11-28
 
