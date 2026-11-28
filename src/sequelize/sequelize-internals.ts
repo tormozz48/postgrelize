@@ -250,9 +250,12 @@ export class SequelizeInternals {
       beginTransaction: (transactionOptions) => this.begin(transactionOptions),
       transaction: (run, parent) =>
         this.managed(parent === undefined || parent === null ? {} : { transaction: parent }, run),
-      defaults: {
-        ...options.define,
-        ...(options.typeValidation === true ? { typeValidation: true } : {}),
+      // read on every definition: applications may assign `sequelize.options.define` later, like v6
+      get defaults() {
+        return {
+          ...options.define,
+          ...(options.typeValidation === true ? { typeValidation: true } : {}),
+        };
       },
       inAsAnyThreshold: options.inAsAnyThreshold,
       minifyAliases: options.minifyAliases,
