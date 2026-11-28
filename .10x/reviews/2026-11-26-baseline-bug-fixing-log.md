@@ -2,7 +2,7 @@
 
 Causes of `scripts/v6-suite/baseline.json` marked `bug` (116 after 1.9.5), fixed one by one. The fix PRs are independent of each other and carry no `CHANGELOG.md` or `baseline.json` change; the changelog lines and the baseline shrink went in one PR per release group (1.9.6 to 1.9.10, 1.9.12 to 1.9.16, 1.9.18 to 1.9.21).
 
-Fixed: 118. Open: 8 (includes causes found while fixing).
+Fixed: 121. Open: 5 (includes causes found while fixing).
 
 ## Fixed
 
@@ -126,16 +126,16 @@ Fixed: 118. Open: 8 (includes causes found while fixing).
 | `D-dateonly-infinity-default` | error | [#328](https://github.com/tormozz48/postgrelize/pull/328) |
 | `B-schema-clone-include` | error | [#331](https://github.com/tormozz48/postgrelize/pull/331) |
 | `C-qi-argument-errors` | wording | [#332](https://github.com/tormozz48/postgrelize/pull/332) |
+| `B-datavalues-key-order` | cosmetic | [#344](https://github.com/tormozz48/postgrelize/pull/344) |
+| `D-define-tinyint-warn` | cosmetic | [#346](https://github.com/tormozz48/postgrelize/pull/346) |
+| `D-getattributes-shape` | cosmetic | [#349](https://github.com/tormozz48/postgrelize/pull/349) |
 
 ## Not fixed
 
 | cause | risk | note |
 | --- | --- | --- |
 | `A-references-model-object` | cosmetic | Generated FK attribute has references.model = {tableName} object, v6 has the plain table name string (getTableName()). |
-| `B-datavalues-key-order` | cosmetic | dataValues/toJSON key order differs: attributes with defaults come first ({isUser,id,username,...}) instead of definition order ({id,username,...}); JSON.stringify comparisons differ. |
 | `C-datatypes-abstract` | cosmetic | DataTypes.ABSTRACT export missing (typed in v6), so `instanceof DataTypes.ABSTRACT` throws. |
 | `C-options-define-late` | cosmetic | Mutating sequelize.options.define (global getter/setter methods) after construction has no effect for later define(); postgrelize snapshots it. |
-| `D-define-tinyint-warn` | cosmetic | No console.warn when a postgres model uses TINYINT (unsupported INTEGER variant) as v6 does ('does not support TINYINT'). |
-| `D-getattributes-shape` | cosmetic | getAttributes()/rawAttributes entries keep type as the un-instantiated DataTypes function (type.constructor is Function, instanceof checks fail) and lack Model/_modelAttribute fields that v6 sets. |
 | `D-btm-getter-two-queries` | cosmetic | belongsToMany getter runs two queries (junction, then target) where v6 runs one join, so SQL seen by logging differs |
 | `D-grouped-limit-option` | wrong-result | The undocumented v6 findAll option groupedLimit is not supported and is ignored; these tests were not reached before. |
