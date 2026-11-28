@@ -40,8 +40,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `transaction.advisoryLock(key1, key2)` and `tryAdvisoryLock(key1, key2)` take the `int4` pair lock without hashing; `{ session: true }` takes a session-level lock, released by `advisoryUnlock` or when the outermost transaction ends. One-key locks are unchanged. ADR-039.
-- `lock.of` accepts table aliases and lists (`FOR UPDATE OF "Doc", "lines->notes"`), and `lock.skipOrderGuard` marks a lock for application lock-ordering hooks. ADR-039.
+- `transaction.advisoryLock(key1, key2)` and `tryAdvisoryLock(key1, key2)` take the `int4` pair lock without hashing; `{ session: true }` takes a session-level lock, released by `advisoryUnlock` or when the outermost transaction ends. One-key locks are unchanged. ADR-039. ([#355](https://github.com/tormozz48/postgrelize/pull/355))
+- `lock.of` accepts table aliases and lists (`FOR UPDATE OF "Doc", "lines->notes"`), and `lock.skipOrderGuard` marks a lock for application lock-ordering hooks. ADR-039. ([#355](https://github.com/tormozz48/postgrelize/pull/355))
 
 ## [1.10.3] - 2026-11-28
 
