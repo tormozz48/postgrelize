@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- Ordered aggregates `arrayAgg`, `stringAgg`, `jsonbAgg` (`distinct`, `orderBy`), `arraySlice`, and `rollup`, `cube`, `groupingSets`, `grouping` for finders and `Model.subquery`, with `ExpressionResult` for the value types; PostgreSQL extensions. [ADR-039](https://github.com/tormozz48/postgrelize/blob/main/.10x/adrs/039-aggregate-and-grouping-expressions.md). (PR_LINK)
+- Ordered aggregates `arrayAgg`, `stringAgg`, `jsonbAgg` (`distinct`, `orderBy`), `arraySlice`, and `rollup`, `cube`, `groupingSets`, `grouping` for finders and `Model.subquery`, with `ExpressionResult` for the value types; PostgreSQL extensions. [ADR-039](https://github.com/tormozz48/postgrelize/blob/main/.10x/adrs/039-aggregate-and-grouping-expressions.md). ([#352](https://github.com/tormozz48/postgrelize/pull/352))
 
 ## [1.10.3] - 2026-11-28
 
