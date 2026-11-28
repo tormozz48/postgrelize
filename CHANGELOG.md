@@ -42,8 +42,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `sequelize.select()` and `sequelize.subquery()` run or embed a SELECT without a model, over `unnest`, `generate_series`, jsonb functions, `VALUES`, subqueries and `LATERAL` ([#](), ADR-039).
-- `joins` option (`INNER` / `LEFT JOIN … ON`, `ON true` by default) on `findAll`, `findOne`, `count`, `subquery` and `sequelize.select` ([#](), ADR-039).
+- `sequelize.select()` and `sequelize.subquery()` run or embed a SELECT without a model, over `unnest`, `generate_series`, jsonb functions, `VALUES`, subqueries and `LATERAL` (ADR-039).
+- `joins` option (`INNER` / `LEFT JOIN … ON`, `ON true` by default) on `findAll`, `findOne`, `count`, `subquery` and `sequelize.select` (ADR-039).
 
 ## [1.10.3] - 2026-11-28
 
