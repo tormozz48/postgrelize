@@ -73,6 +73,46 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   // free: every row except ann's; noWait: DatabaseError (could not obtain lock)
   // #endregion locking
 
+  // #region lock-of
+  const Entry = sequelize.define('Entry', { memo: DataTypes.TEXT }, { timestamps: false });
+  Account.hasMany(Entry, { as: 'entries', foreignKey: 'accountId' });
+  await Entry.sync();
+
+  const locked = await sequelize.transaction(async (tx) => {
+    // FOR NO KEY UPDATE OF "Account": the outer-joined entries stay unlocked.
+    const accounts = await Account.findAll({
+      include: [{ model: Entry, as: 'entries' }],
+      lock: { level: Transaction.LOCK.NO_KEY_UPDATE, of: 'Account' },
+      skipLocked: true,
+      transaction: tx,
+    });
+    return accounts.length;
+  });
+  // #endregion lock-of
+  if (locked < 2) {
+    throw new Error('lock.of query returned no rows');
+  }
+
+  // #region lock-guard
+  const rowLocked: string[] = [];
+  Account.addHook('beforeFind', 'lockOrder', ({ lock }) => {
+    if (lock && !(typeof lock === 'object' && lock.skipOrderGuard)) {
+      rowLocked.push('Account');
+    }
+  });
+  await sequelize.transaction(async (tx) => {
+    await Account.findAll({ lock: { level: 'UPDATE', of: 'Account' }, transaction: tx }); // counted
+    await Account.findAll({
+      lock: { level: 'UPDATE', of: 'Account', skipOrderGuard: true }, // not counted
+      transaction: tx,
+    });
+  });
+  // #endregion lock-guard
+  Account.removeHook('beforeFind', 'lockOrder');
+  if (rowLocked.length !== 1) {
+    throw new Error('skipOrderGuard was not seen by the hook');
+  }
+
   // #region read-only
   const readOnly = await sequelize
     .transaction({ readOnly: true }, (tx) =>

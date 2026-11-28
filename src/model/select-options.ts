@@ -45,15 +45,31 @@ export type LockTarget = Readonly<{
   name: string;
 }>;
 
-/** `lock` option of finders: `true` (`FOR UPDATE`), a lock strength, or `{ level, of }`. */
+/**
+ * `lock` option of finders: `true` (`FOR UPDATE`), a lock strength, or
+ * `{ level, of, skipOrderGuard }`.
+ */
 export type LockOption =
   | boolean
   | LockNode['strength']
   | Readonly<{
       /** Lock strength. */
       level: LockNode['strength'];
-      /** Model whose rows are locked (`FOR UPDATE OF`). */
-      of?: LockTarget;
+      /**
+       * Tables whose rows are locked (`FOR UPDATE OF`): a model, a table alias of the query, or a
+       * list of both. The main table's alias is the model name, an included one's is its association
+       * name (`posts`), a nested one's is the path (`posts->comments`). Strings and lists are
+       * PostgreSQL extensions.
+       */
+      of?: LockTarget | string | readonly (LockTarget | string)[];
+      /**
+       * Declares to the application's own lock-ordering hooks (`beforeFind` receives `options.lock`)
+       * that this lock must not count. postgrelize has no such guard and the SQL does not change.
+       * PostgreSQL extension.
+       * @defaultValue false
+       * @postgrelize
+       */
+      skipOrderGuard?: boolean;
     }>;
 
 /**

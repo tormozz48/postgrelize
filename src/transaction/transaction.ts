@@ -8,7 +8,12 @@ import type { LoggingFunction } from '../connection/options.ts';
 import type { RetryOptions, RetryRunner } from '../connection/retry.ts';
 import { transactionScope } from './transaction-runner.ts';
 import type { DeferrableValue } from '../ddl/ddl-types.ts';
-import { AdvisoryLocks, type AdvisoryLockKey } from './advisory-locks.ts';
+import {
+  AdvisoryLocks,
+  type AdvisoryLockArgs,
+  type AdvisoryLockKey,
+  type AdvisoryLockOptions,
+} from './advisory-locks.ts';
 import { TransactionStatements } from './transaction-statements.ts';
 import {
   ISOLATION_LEVELS,
@@ -18,7 +23,7 @@ import {
 } from './transaction-constants.ts';
 
 export { ISOLATION_LEVELS, LOCK, TRANSACTION_TYPES } from './transaction-constants.ts';
-export type { AdvisoryLockKey } from './advisory-locks.ts';
+export type { AdvisoryLockKey, AdvisoryLockOptions } from './advisory-locks.ts';
 export type { IsolationLevel, LockStrength } from './transaction-constants.ts';
 
 /**
@@ -117,6 +122,7 @@ export class Transaction {
   readonly #statements: TransactionStatements;
   readonly #retries: RetryRunner | undefined;
   #client: Client | undefined;
+  #holdsSessionLocks = false;
   #afterCommit: readonly ((transaction: Transaction) => unknown)[] = [];
 
   /**
@@ -240,12 +246,12 @@ export class Transaction {
   }
 
   /**
-   * Takes a transaction-level advisory lock (`pg_advisory_xact_lock`), waiting until it is free.
-   * The lock is released on commit or rollback. PostgreSQL extension.
+   * Takes an advisory lock, waiting until it is free: `pg_advisory_xact_lock`, released on commit or
+   * rollback, unless `session: true`. PostgreSQL extension.
    *
    * @postgrelize
    * @param key - Integer key, or a string hashed with `hashtextextended`.
-   * @param options - `shared: true` for a shared lock.
+   * @param options - `shared`, `session`.
    * @returns Resolves when the lock is held.
    *
    * @example
@@ -256,19 +262,38 @@ export class Transaction {
    * });
    * ```
    */
-  async advisoryLock(
-    key: AdvisoryLockKey,
-    options: Readonly<{ shared?: boolean }> = {},
-  ): Promise<void> {
-    await this.#advisoryLocks.lock(key, options.shared === true);
+  advisoryLock(key: AdvisoryLockKey, options?: AdvisoryLockOptions): Promise<void>;
+  /**
+   * Takes the advisory lock named by two 32-bit integers (`pg_advisory_xact_lock(int4, int4)`),
+   * waiting until it is free. The keys are passed as they are, never hashed. This key space is
+   * separate from the one-key form. PostgreSQL extension.
+   *
+   * @postgrelize
+   * @param key1 - First `int4` key.
+   * @param key2 - Second `int4` key.
+   * @param options - `shared`, `session`.
+   * @returns Resolves when the lock is held.
+   * @throws TypeError when a key is not an `int4` integer.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   await t.advisoryLock(7, 42, { shared: true });
+   * });
+   * ```
+   */
+  advisoryLock(key1: number, key2: number, options?: AdvisoryLockOptions): Promise<void>;
+  async advisoryLock(...args: AdvisoryLockArgs): Promise<void> {
+    this.#trackSessionLock(args);
+    await this.#advisoryLocks.lock(args);
   }
 
   /**
-   * Tries to take a transaction-level advisory lock without waiting. PostgreSQL extension.
+   * Tries to take an advisory lock without waiting. PostgreSQL extension.
    *
    * @postgrelize
    * @param key - Integer key, or a string hashed with `hashtextextended`.
-   * @param options - `shared: true` for a shared lock.
+   * @param options - `shared`, `session`.
    * @returns True when the lock was acquired.
    *
    * @example
@@ -280,11 +305,69 @@ export class Transaction {
    * });
    * ```
    */
-  async tryAdvisoryLock(
-    key: AdvisoryLockKey,
-    options: Readonly<{ shared?: boolean }> = {},
-  ): Promise<boolean> {
-    return this.#advisoryLocks.tryLock(key, options.shared === true);
+  tryAdvisoryLock(key: AdvisoryLockKey, options?: AdvisoryLockOptions): Promise<boolean>;
+  /**
+   * Tries to take the advisory lock of two `int4` keys without waiting. PostgreSQL extension.
+   *
+   * @postgrelize
+   * @param key1 - First `int4` key.
+   * @param key2 - Second `int4` key.
+   * @param options - `shared`, `session`.
+   * @returns True when the lock was acquired.
+   * @throws TypeError when a key is not an `int4` integer.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   const locked = await t.tryAdvisoryLock(7, 42);
+   * });
+   * ```
+   */
+  tryAdvisoryLock(key1: number, key2: number, options?: AdvisoryLockOptions): Promise<boolean>;
+  async tryAdvisoryLock(...args: AdvisoryLockArgs): Promise<boolean> {
+    this.#trackSessionLock(args);
+    return this.#advisoryLocks.tryLock(args);
+  }
+
+  /**
+   * Releases one hold of a session-level advisory lock (`pg_advisory_unlock`) taken with
+   * `session: true`. Transaction-level locks cannot be released early. PostgreSQL extension.
+   *
+   * @postgrelize
+   * @param key - The key the lock was taken with.
+   * @param options - `shared: true` releases a shared hold.
+   * @returns False when this connection did not hold the lock.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   await t.advisoryLock('import', { session: true });
+   *   await t.advisoryUnlock('import');
+   * });
+   * ```
+   */
+  advisoryUnlock(key: AdvisoryLockKey, options?: AdvisoryLockOptions): Promise<boolean>;
+  /**
+   * Releases one hold of a session-level lock of two `int4` keys. PostgreSQL extension.
+   *
+   * @postgrelize
+   * @param key1 - First `int4` key.
+   * @param key2 - Second `int4` key.
+   * @param options - `shared: true` releases a shared hold.
+   * @returns False when this connection did not hold the lock.
+   * @throws TypeError when a key is not an `int4` integer.
+   *
+   * @example
+   * ```ts
+   * await sequelize.transaction(async (t) => {
+   *   await t.advisoryLock(7, 42, { session: true });
+   *   await t.advisoryUnlock(7, 42);
+   * });
+   * ```
+   */
+  advisoryUnlock(key1: number, key2: number, options?: AdvisoryLockOptions): Promise<boolean>;
+  async advisoryUnlock(...args: AdvisoryLockArgs): Promise<boolean> {
+    return this.#advisoryLocks.unlock(args);
   }
 
   /**
@@ -348,12 +431,33 @@ export class Transaction {
     await this.#connections.execute({ text: sql, values: [] }, this.executeOptions());
   }
 
+  // Session locks live on the connection, which the outermost transaction owns.
+  #trackSessionLock(args: AdvisoryLockArgs): void {
+    if (args.some((arg) => typeof arg === 'object' && arg?.session === true)) {
+      this.#root().#holdsSessionLocks = true;
+    }
+  }
+
+  #root(): Transaction {
+    return this.parent === undefined ? this : this.parent.#root();
+  }
+
   async #release(): Promise<void> {
     transactionScope.release(this);
-    const client = this.#client;
-    if (this.parent === undefined && client !== undefined) {
-      this.#client = undefined;
-      await this.#connections.releaseConnection(client);
+    if (this.parent !== undefined || this.#client === undefined) {
+      return;
     }
+    // A pooled connection must not keep session locks; one that cannot drop them is closed.
+    const unlocked = this.#holdsSessionLocks
+      ? await this.#advisoryLocks.unlockAll().then(
+          () => true,
+          () => false,
+        )
+      : true;
+    const client = this.#client;
+    this.#client = undefined;
+    await (unlocked
+      ? this.#connections.releaseConnection(client)
+      : this.#connections.destroyConnection(client));
   }
 }

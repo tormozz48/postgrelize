@@ -1,6 +1,6 @@
 import type { LockNode } from '../sql/ast.ts';
 import { LOCK } from '../transaction/transaction.ts';
-import type { SelectOptions } from './select-options.ts';
+import type { LockOption, SelectOptions } from './select-options.ts';
 
 const LOCK_STRENGTHS: ReadonlySet<string> = new Set(Object.values(LOCK));
 
@@ -9,6 +9,20 @@ const lockStrength = (level: unknown): LockNode['strength'] =>
   typeof level === 'string' && LOCK_STRENGTHS.has(level)
     ? (level as LockNode['strength'])
     : LOCK.UPDATE;
+
+type LockTables = Extract<LockOption, object>['of'];
+
+// An empty OF list would silently lock every table, so it is refused.
+const lockTables = (of: LockTables): Pick<LockNode, 'of'> => {
+  if (of === undefined || of === null) {
+    return {};
+  }
+  const names = [of].flat().map((table) => (typeof table === 'string' ? table : table.name));
+  if (names.length === 0 || names.some((name) => typeof name !== 'string' || name === '')) {
+    throw new Error('lock.of must name at least one model or table alias');
+  }
+  return { of: names };
+};
 
 const lockOf = (options: SelectOptions): LockNode | undefined => {
   if (options.lock === undefined || options.lock === false) {
@@ -26,7 +40,7 @@ const lockOf = (options: SelectOptions): LockNode | undefined => {
         ? { strength: lockStrength(options.lock) }
         : {
             strength: lockStrength(options.lock.level),
-            ...(options.lock.of === undefined ? {} : { of: [options.lock.of.name] }),
+            ...lockTables(options.lock.of),
           };
   return wait === undefined ? base : { ...base, wait };
 };
@@ -38,7 +52,7 @@ export class SelectLock {
    *
    * @param options - Select options.
    * @returns Lock node, or `undefined` without a lock.
-   * @throws Error when `skipLocked` and `noWait` are both set.
+   * @throws Error when `skipLocked` and `noWait` are both set, or `lock.of` names no table.
    */
   of(options: SelectOptions): LockNode | undefined {
     return lockOf(options);

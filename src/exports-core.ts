@@ -152,6 +152,7 @@ export {
 } from './transaction/transaction.ts';
 export type {
   AdvisoryLockKey,
+  AdvisoryLockOptions,
   IsolationLevel,
   LockStrength,
   TransactionOptions,

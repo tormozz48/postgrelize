@@ -233,7 +233,7 @@ try {
 }
 ```
 
-Pass `{ transaction }` to every query that must take part. Nested `sequelize.transaction({ transaction: outer }, fn)` creates a savepoint. Options: `isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ`, `readOnly: true`, `settings: { 'app.user_id': 42 }` (SET LOCAL). Row locks: `lock: true` or `Transaction.LOCK.UPDATE`, `skipLocked`, `noWait`. Hooks after commit: `transaction.afterCommit(fn)`.
+Pass `{ transaction }` to every query that must take part. Nested `sequelize.transaction({ transaction: outer }, fn)` creates a savepoint. Options: `isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ`, `readOnly: true`, `settings: { 'app.user_id': 42 }` (SET LOCAL). Row locks: `lock: true` or `Transaction.LOCK.UPDATE`, `skipLocked`, `noWait`, `lock: { level, of: 'alias' | [Model, 'alias'] }`. Hooks after commit: `transaction.afterCommit(fn)`.
 
 CLS (implicit transaction in callbacks, a **process-wide** switch; `AsyncLocalStorage` by default, or pass a `cls-hooked` style namespace as in v6: `Sequelize.useCLS(namespace)` stores the transaction under `namespace.get('transaction')`, and a nested `sequelize.transaction(fn)` then opens its own transaction like v6 instead of a savepoint):
 
@@ -306,7 +306,7 @@ const fromStream = await Event.copyFrom(readEvents(), { columns: ['kind', 'paylo
 // fromArray === 2, fromStream === 1000; createdAt / updatedAt are filled in
 ```
 
-`Model.copyTo(options)` streams `COPY ... TO STDOUT` (async iterable of Buffer). `await sequelize.listen('channel', (payload) => ...)` returns an `unlisten` function; `sequelize.notify(channel, payload, { transaction })` delivers on commit. `transaction.advisoryLock(key)` / `tryAdvisoryLock(key)` take transaction-level advisory locks; `sequelize.withAdvisoryLock(key, fn)` runs `fn` in a transaction holding the lock.
+`Model.copyTo(options)` streams `COPY ... TO STDOUT` (async iterable of Buffer). `await sequelize.listen('channel', (payload) => ...)` returns an `unlisten` function; `sequelize.notify(channel, payload, { transaction })` delivers on commit. `transaction.advisoryLock(key)` / `tryAdvisoryLock(key)` take transaction-level advisory locks (also `(int4, int4)`, unhashed, and `{ shared, session }` with `advisoryUnlock`); `sequelize.withAdvisoryLock(key, fn)` runs `fn` in a transaction holding the lock.
 
 ## Raw queries
 

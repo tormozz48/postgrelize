@@ -63,6 +63,14 @@ Keys are integers (64-bit, `number` or `bigint`) or strings; a string is hashed 
 - `transaction.tryAdvisoryLock(key)` returns `false` immediately when another session holds the lock.
 - Both take `{ shared: true }` for a shared lock: shared holders do not block each other, only exclusive ones.
 
+### Two-key and session locks
+
+`advisoryLock(key1, key2)` is `pg_advisory_xact_lock(int4, int4)`. Both keys must be 32-bit integers; they are never hashed, so the lock is the same one that raw SQL with those numbers takes. The two-key space is separate from the one-key space.
+
+<<< @/examples/sessions.ts#advisory-pair{ts}
+
+`{ session: true }` takes a session-level lock (`pg_advisory_lock`) on the transaction's connection. A savepoint rollback keeps it and `advisoryUnlock` releases it early (`{ shared: true }` for a shared hold). It never outlives the outermost transaction: postgrelize releases what is left before the connection returns to the pool.
+
 `sequelize.withAdvisoryLock(key, run, options?)` wraps the common case: it starts a transaction, takes the lock, runs the callback and commits. Concurrent callers with the same key run one after another:
 
 <<< @/examples/sessions.ts#with-advisory-lock{ts}
