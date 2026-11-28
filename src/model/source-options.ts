@@ -88,29 +88,7 @@ export type FromSourceOption =
   | ModelStatic<AnyModel>
   | Subquery
   | string
-  | Readonly<{
-      /** `(VALUES …) AS alias(columns)`: bound rows. */
-      values: Readonly<{
-        /** Column names. */
-        columns: readonly string[];
-        /** Rows: one cell per column, bound as parameters. */
-        rows: readonly (readonly unknown[])[];
-      }>;
-    }>
-  | Readonly<{
-      /** Set-returning function (`generate_series`, `unnest`, …), optionally schema-qualified. */
-      function: string;
-      /** Arguments, bound as parameters unless expressions. Wrap values in `cast()` when the type is ambiguous. */
-      args?: readonly unknown[];
-      /** Column aliases. */
-      columns?: readonly string[];
-      /** `WITH ORDINALITY`: name of the row-number column, appended to `columns`. */
-      ordinality?: string;
-    }>
-  | Readonly<{
-      /** `JSON_TABLE(...)`. PostgreSQL 17+. */
-      jsonTable: JsonTableOptions;
-    }>
+  | RelationSource
   | Readonly<{
       /** `LATERAL (subquery)`: may reference relations to its left. */
       lateral: Subquery;
@@ -136,7 +114,27 @@ export type FromSourceOption =
  * };
  * ```
  */
-export type RelationSource = Extract<
-  FromSourceOption,
-  { values: unknown } | { function: string } | { jsonTable: unknown }
->;
+export type RelationSource =
+  | Readonly<{
+      /** `(VALUES …) AS alias(columns)`: bound rows. */
+      values: Readonly<{
+        /** Column names. */
+        columns: readonly string[];
+        /** Rows: one cell per column, bound as parameters. */
+        rows: readonly (readonly unknown[])[];
+      }>;
+    }>
+  | Readonly<{
+      /** Set-returning function (`generate_series`, `unnest`, …), optionally schema-qualified. */
+      function: string;
+      /** Arguments, bound as parameters unless expressions. Wrap values in `cast()` when the type is ambiguous. */
+      args?: readonly unknown[];
+      /** Column aliases. */
+      columns?: readonly string[];
+      /** `WITH ORDINALITY`: name of the row-number column, appended to `columns`. */
+      ordinality?: string;
+    }>
+  | Readonly<{
+      /** `JSON_TABLE(...)`. PostgreSQL 17+. */
+      jsonTable: JsonTableOptions;
+    }>;
