@@ -40,7 +40,7 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ### Added
 
-- `silent` on `upsert`, `insert`, `insertFrom` and on `create` / `bulkCreate` with `onConflict`: an existing row keeps its `updatedAt` unless the values name it. **Behaviour change:** `silent: true` was ignored by `upsert` and by `onConflict` updates (Sequelize v6 ignores it in `upsert`). ([#](<>))
+- `silent` on `upsert`, `insert`, `insertFrom` and on `create` / `bulkCreate` with `onConflict`: an existing row keeps its `updatedAt` unless the values name it. **Behaviour change:** `silent: true` was ignored by `upsert` and by `onConflict` updates (Sequelize v6 ignores it in `upsert`).
 
 ## [1.10.3] - 2026-11-28
 
