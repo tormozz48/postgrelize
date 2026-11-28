@@ -107,6 +107,10 @@ Example: `docs/examples/merge-returning.ts` in the repository (`Stock.merge({ so
 
 `Model.subquery(findOptions)` builds an embeddable SELECT (use in `Op.in`, attributes, `exists()`). `with: { name: { query, recursive?, materialized? } }` adds CTEs to finders/`count`; `source: 'cte'` reads from one. Window functions through `over(...)`; `distinctOn`. Recursive CTE example: `docs/examples/advanced-queries.ts` (region `recursive-cte`) in the repository.
 
+Ordered aggregates `arrayAgg` / `stringAgg` / `jsonbAgg` (`{ distinct, orderBy }`), `arraySlice(expr, from, to)`, and `rollup` / `cube` / `groupingSets` in `group` with `grouping()`; they work in finders and `Model.subquery`. Strings are attribute names. Value types: `ExpressionResult<typeof expr>`. Do not use `literal()` for these.
+
+<<< @/examples/llm-usage.ts#aggregates{ts}
+
 ## COPY, listen/notify, locks
 
 <<< @/examples/copy.ts#copy-from{ts}

@@ -38,6 +38,10 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+### Added
+
+- Ordered aggregates `arrayAgg`, `stringAgg`, `jsonbAgg` (`distinct`, `orderBy`), `arraySlice`, and `rollup`, `cube`, `groupingSets`, `grouping` for finders and `Model.subquery`, with `ExpressionResult` for the value types; PostgreSQL extensions. [ADR-039](https://github.com/tormozz48/postgrelize/blob/main/.10x/adrs/039-aggregate-and-grouping-expressions.md). ([#352](https://github.com/tormozz48/postgrelize/pull/352))
+
 ### Fixed
 
 - A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))

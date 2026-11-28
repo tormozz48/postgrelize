@@ -9,6 +9,14 @@ export type FnNode = Readonly<{
   name: string;
   args: readonly ExprNode[];
   distinct?: boolean;
+  /** `ORDER BY` inside an aggregate call. */
+  orderBy?: readonly OrderNode[];
+}>;
+export type SliceNode = Readonly<{ kind: 'slice'; expr: ExprNode; from?: number; to?: number }>;
+export type GroupingNode = Readonly<{
+  kind: 'grouping';
+  type: 'ROLLUP' | 'CUBE' | 'GROUPING SETS';
+  items: readonly ExprNode[];
 }>;
 export type CastNode = Readonly<{ kind: 'cast'; expr: ExprNode; type: string }>;
 export type BinaryNode = Readonly<{ kind: 'binary'; op: string; left: ExprNode; right: ExprNode }>;
@@ -51,7 +59,9 @@ export type ExprNode =
   | SubqueryNode
   | AliasNode
   | ValuesNode
-  | OverNode;
+  | OverNode
+  | SliceNode
+  | GroupingNode;
 
 export type OrderNode = Readonly<{
   expr: ExprNode;

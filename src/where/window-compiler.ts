@@ -20,25 +20,27 @@ export class WindowCompiler {
     return {
       kind: 'over',
       expr: compiler.toExpr(value.fn),
-      partitionBy: value.partitionBy.map((item) => this.#target(compiler, item)),
-      orderBy: value.orderBy.map((item) => this.#order(compiler, item)),
+      partitionBy: value.partitionBy.map((item) => this.target(compiler, item)),
+      orderBy: value.orderBy.map((item) => this.orderItem(compiler, item)),
     };
   }
 
-  #target(compiler: ExprConverter, item: unknown): ExprNode {
+  /** Attribute name or expression. */
+  target(compiler: ExprConverter, item: unknown): ExprNode {
     return typeof item === 'string'
       ? this.#operands.operand(compiler.context, item).node
       : compiler.toExpr(item);
   }
 
-  #order(compiler: ExprConverter, item: unknown): OrderNode {
+  /** Attribute name, `[attribute, direction]` or expression of an `ORDER BY`. */
+  orderItem(compiler: ExprConverter, item: unknown): OrderNode {
     if (Array.isArray(item)) {
       const [target, direction]: readonly unknown[] = item;
       return {
-        expr: this.#target(compiler, target),
+        expr: this.target(compiler, target),
         ...(direction === undefined ? {} : OrderDirection.parse(direction)),
       };
     }
-    return { expr: this.#target(compiler, item) };
+    return { expr: this.target(compiler, item) };
   }
 }

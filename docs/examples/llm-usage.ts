@@ -3,6 +3,11 @@ import {
   AllowNull,
   Column,
   DataTypes,
+  arrayAgg,
+  arraySlice,
+  grouping,
+  groupingSets,
+  stringAgg,
   DatabaseError,
   ForeignKey,
   HasMany,
@@ -220,6 +225,26 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     { where: { email: 'new@example.com' }, returning: true },
   );
   // #endregion upsert
+
+  // #region aggregates
+  // (array_agg("User"."id" ORDER BY "User"."email" DESC))[1:3]
+  const ids = arraySlice(arrayAgg<number>('id', { orderBy: [['email', 'DESC']] }), 1, 3);
+  const emails = stringAgg('email', ', ', { orderBy: ['email'] }); // also jsonbAgg(); distinct: true
+  const dimensions = ['active']; // may be built at run time
+  const totals = await User.findAll({
+    attributes: [
+      ...dimensions,
+      [grouping(...dimensions), 'level'],
+      [ids, 'ids'],
+      [emails, 'emails'],
+    ],
+    group: [groupingSets([dimensions, []])], // also rollup([...]), cube([...])
+    raw: true,
+  });
+  // #endregion aggregates
+  if (totals.length === 0) {
+    throw new Error('Expected grouped rows');
+  }
 
   // #region errors
   const duplicate = await User.create({ email: 'new@example.com' }).catch(

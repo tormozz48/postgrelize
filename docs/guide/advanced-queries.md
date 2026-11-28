@@ -40,6 +40,20 @@ As PostgreSQL requires, the `order` must start with the `distinctOn` expressions
 
 `orderBy` uses the same format and the same direction allow-list as `order`.
 
+## Ordered aggregates and array slices <Ext />
+
+`arrayAgg`, `stringAgg` and `jsonbAgg` take `{ distinct, orderBy }`, which are written inside the call: `array_agg(DISTINCT x ORDER BY y DESC NULLS LAST)`. `arraySlice(expr, from, to)` adds `(...)[from:to]`. Strings are attribute names (mapped to columns); pass `col`, `fn` or `literal` for anything else. `orderBy` uses the same format and direction allow-list as `order`, and the `stringAgg` separator is written as an escaped literal. With `distinct`, PostgreSQL requires every `orderBy` expression to be an argument of the call.
+
+<<< @/examples/aggregates.ts#ordered{ts}
+
+Finders do not derive row types from `attributes` (as in v6). Each expression carries the type of its value, read with `ExpressionResult<typeof expr>`; the element type is the one you declare (`arrayAgg<number>`) and is not checked against the database. The driver returns `bigint` and `numeric` array elements as strings, and arrays of enum types as one string.
+
+## `ROLLUP`, `CUBE` and `GROUPING SETS` <Ext />
+
+`rollup(items)`, `cube(items)` and `groupingSets(sets)` are `group` items, and `grouping(...items)` is the `GROUPING()` function for `attributes`, `having` and `order`. Each takes plain arrays, so the list can be built at run time. A nested list is one parenthesized group; `[]` in `groupingSets` is the grand total. An empty list of items or sets throws. They work in finders and `Model.subquery()`.
+
+<<< @/examples/aggregates.ts#grouping-sets{ts}
+
 ## Row comparison and keyset pagination <Ext />
 
 `tuple(...)` builds a row value `(a, b)`. Combined with `where(left, operator, right)`, it expresses keyset ("seek") pagination, which stays fast on deep pages where `OFFSET` does not:
