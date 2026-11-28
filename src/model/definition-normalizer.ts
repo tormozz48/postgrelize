@@ -46,7 +46,7 @@ export class DefinitionNormalizer {
   ) {
     this.#attributes = declared;
     this.#associationAttributes = associationAttributes;
-    this.#options = { timestamps: true, ...defaults, ...options };
+    this.#options = merger.options({ timestamps: true, ...defaults }, options);
     this.#name = this.#options.modelName ?? className;
     this.#underscored = this.#options.underscored === true;
     this.#tableName =

@@ -3,6 +3,8 @@ import type { AttributeOptions, ModelAttributes } from './attribute-options.ts';
 
 type Plain = Readonly<Record<string, unknown>>;
 
+type Values = Readonly<Record<string, unknown>>;
+
 /**
  * Merges the foreign key attributes of associations into attributes the model declares itself,
  * like Sequelize v6 `mergeDefaults`: declared values win, missing ones (`references`, `onDelete`,
@@ -48,5 +50,17 @@ export class AttributeMerger {
       value !== null &&
       Object.getPrototypeOf(value) === Object.prototype
     );
+  }
+
+  // like v6, the method maps of `define` defaults and of the model are merged entry by entry
+  options<T extends object>(defaults: object, options: T): T {
+    const maps = ['getterMethods', 'setterMethods', 'validate'] as const;
+    const merged = maps.flatMap((key) => {
+      const [given, own] = [defaults, options].map((source) => (source as Values)[key]);
+      return given === undefined || own === undefined
+        ? []
+        : [[key, { ...(given as object), ...(own as object) }] as const];
+    });
+    return { ...defaults, ...options, ...Object.fromEntries(merged) } as T;
   }
 }
