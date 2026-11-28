@@ -17,6 +17,7 @@ export type {
   FromSourceOption,
   JsonTableColumnOptions,
   JsonTableOptions,
+  RelationSource,
   TableSampleOptions,
 } from './model/source-options.ts';
 export type {

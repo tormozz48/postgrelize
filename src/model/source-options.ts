@@ -88,6 +88,33 @@ export type FromSourceOption =
   | ModelStatic<AnyModel>
   | Subquery
   | string
+  | RelationSource
+  | Readonly<{
+      /** `LATERAL (subquery)`: may reference relations to its left. */
+      lateral: Subquery;
+    }>
+  | Readonly<{
+      /** Table of the model read with `TABLESAMPLE`. */
+      model: ModelStatic<AnyModel>;
+      /** Sampling. */
+      sample: TableSampleOptions;
+    }>;
+
+/**
+ * A relation that is not a table, for the `source` option: `VALUES` rows, a set-returning function or
+ * `JSON_TABLE`. PostgreSQL extension.
+ *
+ * @postgrelize
+ * @example
+ * ```ts
+ * const source: RelationSource = {
+ *   function: 'unnest',
+ *   args: [cast([1, 2], 'integer[]')],
+ *   columns: ['id'],
+ * };
+ * ```
+ */
+export type RelationSource =
   | Readonly<{
       /** `(VALUES …) AS alias(columns)`: bound rows. */
       values: Readonly<{
@@ -110,14 +137,4 @@ export type FromSourceOption =
   | Readonly<{
       /** `JSON_TABLE(...)`. PostgreSQL 17+. */
       jsonTable: JsonTableOptions;
-    }>
-  | Readonly<{
-      /** `LATERAL (subquery)`: may reference relations to its left. */
-      lateral: Subquery;
-    }>
-  | Readonly<{
-      /** Table of the model read with `TABLESAMPLE`. */
-      model: ModelStatic<AnyModel>;
-      /** Sampling. */
-      sample: TableSampleOptions;
     }>;

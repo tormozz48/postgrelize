@@ -38,8 +38,11 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-11-28
+
 ### Added
 
+- `source` takes a set-returning function, `VALUES` rows or `JSON_TABLE` (type `RelationSource`), so `insertFrom` can insert from `unnest` of bound arrays without reading the model table. ([#358](https://github.com/tormozz48/postgrelize/pull/358))
 - `silent` on `upsert`, `insert`, `insertFrom` and on `create` / `bulkCreate` with `onConflict`: an existing row keeps its `updatedAt` unless the values name it. **Behaviour change:** `silent: true` was ignored by `upsert` and by `onConflict` updates (Sequelize v6 ignores it in `upsert`). ([#356](https://github.com/tormozz48/postgrelize/pull/356))
 
 ### Fixed
@@ -715,7 +718,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/tormozz48/postgrelize/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1

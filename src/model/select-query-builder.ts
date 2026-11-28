@@ -173,6 +173,9 @@ export class SelectQueryBuilder {
     if (options.fromQuery !== undefined) {
       return { subquery: options.fromQuery, alias };
     }
+    if (options.fromRelation !== undefined) {
+      return { ...options.fromRelation, alias } as FromItem;
+    }
     return options.sample === undefined
       ? table
       : { ...table, sample: this.#samples.build(options.sample) };

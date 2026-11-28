@@ -95,6 +95,8 @@ Both need `recursive`. The added columns are not model attributes: select them w
 
 `source` also accepts a subquery: the finder then reads model rows from `(… UNION …) AS "User"`, and its own `order`, `limit` and `offset` apply to the combined result. Select all attributes in the operands for that (no `attributes` option), because the finder selects every attribute of the model.
 
+`source` takes a relation too: `{ function, args, columns }`, `{ values }` or `{ jsonTable }`, aliased with the model name (see [inserting from arrays](./bulk-writes#insert-from-relation)). A paranoid model needs `paranoid: false` when the relation has no `deletedAt`.
+
 ## `FETCH FIRST … WITH TIES` <Ext />
 
 `withTies: true` with `limit` and `order` returns the first `limit` rows plus every row that ties with the last one on the `order` columns (`FETCH FIRST $1 ROWS WITH TIES`). PostgreSQL rejects it without `ORDER BY`; postgrelize throws `withTies requires a limit` when `limit` is missing.

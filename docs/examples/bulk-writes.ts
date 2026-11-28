@@ -1,4 +1,4 @@
-import { DataTypes, Op, col, literal, type Sequelize } from 'postgrelize';
+import { DataTypes, Op, cast, col, fn, literal, type Sequelize } from 'postgrelize';
 
 export const run = async (sequelize: Sequelize): Promise<void> => {
   // #region models
@@ -52,6 +52,28 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
     { columns: ['sku', 'qty'] },
   );
   // #endregion insert-from
+
+  // #region insert-unnest
+  // INSERT ... SELECT FROM unnest($1::text[], $2::integer[]): the model table is not read.
+  const received = await Stock.insertFrom(
+    Stock.subquery({
+      source: {
+        function: 'unnest',
+        args: [cast(['a', 'b'], 'text[]'), cast([1, 2], 'integer[]')],
+        columns: ['sku', 'qty'],
+      },
+      attributes: ['sku', 'qty', [fn('now'), 'createdAt'], [fn('now'), 'updatedAt']],
+    }),
+    {
+      columns: ['sku', 'qty', 'createdAt', 'updatedAt'],
+      onConflict: { target: ['sku'], action: { update: ['qty'] } },
+      silent: true, // rows that already exist keep their updatedAt
+    },
+  );
+  // #endregion insert-unnest
+  if (received.length !== 2 || received.some((row) => row.wasInserted)) {
+    throw new Error('insert-unnest example: unexpected result');
+  }
 
   // #region without-hooks
   // No bulk, per-row or validation hooks, and updatedAt stays as it is.

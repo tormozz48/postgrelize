@@ -45,6 +45,29 @@ describe('payloads in set operations and WITH TIES', () => {
 
 type Row = Record<string, unknown>;
 
+describe('payloads in source relations', () => {
+  it('function arguments and VALUES cells stay bound; names stay quoted', () =>
+    withCanary(async ({ sequelize }) => {
+      const Note = await defineNote(sequelize);
+      for (const payload of PAYLOADS) {
+        const unnest = {
+          function: 'unnest',
+          args: [cast([payload], 'text[]')],
+          columns: ['body'],
+        };
+        const values = { values: { columns: ['body'], rows: [[cast(payload, 'text')]] } };
+        for (const source of [unnest, values]) {
+          const rows = await Note.findAll({ attributes: ['body'], source, raw: true });
+          expect((rows as unknown as Row[]).map((row) => row['body'])).toEqual([payload]);
+        }
+        const outcome = await settle(
+          Note.findAll({ attributes: ['body'], source: { function: payload, columns: ['body'] } }),
+        );
+        expect((outcome as { original?: { code?: string } }).original?.code).toBe('42883');
+      }
+    }));
+});
+
 describe('payloads in FROM sources', () => {
   it('VALUES cells and function arguments stay bound', () =>
     withCanary(async ({ sequelize }) => {
