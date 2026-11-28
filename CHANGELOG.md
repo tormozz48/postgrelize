@@ -38,6 +38,8 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.10.4] - 2026-11-28
+
 ### Fixed
 
 - A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))
@@ -711,7 +713,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.4...HEAD
+[1.10.4]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...v1.10.4
 [1.10.3]: https://github.com/tormozz48/postgrelize/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1
