@@ -1,4 +1,5 @@
 import { AbstractDataType } from './abstract-data-type.ts';
+import { typeClasses } from './type-classes.ts';
 
 /** Type key → the key of the v6 class it extends. */
 const PARENT_KEYS: Readonly<Record<string, string>> = Object.freeze({
@@ -27,6 +28,14 @@ export class DataTypeIdentity {
 
   mark(factory: object, key: string): void {
     this.#bare.add(factory);
+    // the first factory of a key is its v6 class
+    if (!typeClasses.has(key)) {
+      typeClasses.set(key, factory);
+    }
+    Object.defineProperties(factory, {
+      constructor: { value: typeClasses.get(key) },
+      name: { value: key },
+    });
     Object.defineProperties(factory, {
       [Symbol.hasInstance]: { value: (value: unknown): boolean => this.#is(value, key) },
       // v6 classes stringify to their key, so types work as object keys
