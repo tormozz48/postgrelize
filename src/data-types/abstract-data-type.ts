@@ -1,3 +1,5 @@
+import { typeClasses } from './type-classes.ts';
+
 /**
  * Description of a column type: its SQL type and conversions between JavaScript values and the
  * values sent to / received from PostgreSQL.
@@ -45,6 +47,14 @@ export abstract class AbstractDataType implements DataType {
   constructor(key: string, sqlType: string) {
     this.key = key;
     this.sqlType = sqlType;
+    AbstractDataType.#linkClass(this);
+  }
+
+  static #linkClass(type: AbstractDataType): void {
+    const own = Object.getPrototypeOf(type).constructor as unknown;
+    Object.defineProperty(type, 'constructor', {
+      get: (): unknown => typeClasses.get(type.key) ?? own,
+    });
   }
 
   /**
@@ -60,6 +70,7 @@ export abstract class AbstractDataType implements DataType {
       options: merged,
       sqlType,
     }) as this;
+    AbstractDataType.#linkClass(copy);
     return Object.freeze(copy);
   }
 
