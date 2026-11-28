@@ -189,6 +189,10 @@ export class InstanceLifecycle {
   // like v6, a given value replaces its default and takes its place among the given values, which
   // keeps the key order of `dataValues` (a set primary key is also read-only afterwards)
   static #dropGivenDefaults(instance: AnyModel, given: Values): void {
+    // a row read from the database has no defaults, and this is the hot path of every finder
+    if (!instance.isNewRecord) {
+      return;
+    }
     Object.keys(given)
       .filter((key) => given[key] !== undefined)
       .forEach((key) => delete (instance.dataValues as Values)[key]);
