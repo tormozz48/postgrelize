@@ -40,6 +40,29 @@ A `from` value can be a model, a subquery from `Model.subquery()`, or a table / 
 
 It returns the written rows as instances (with `wasInserted`) and accepts [`onConflict`](./upserts#onconflict), so it can upsert from another table. Fill `NOT NULL` timestamps in the subquery, e.g. `attributes: ['sku', [literal('now()'), 'createdAt']]`.
 
+### From arrays, `VALUES` or another relation <Ext /> {#insert-from-relation}
+
+`Model.subquery({ source })` can read from `unnest(...)` or another set-returning function, `VALUES` rows or `JSON_TABLE` instead of the model table. `columns` of the source are named like the attributes:
+
+<<< @/examples/bulk-writes.ts#insert-unnest{ts}
+
+## Writes without hooks or `updatedAt` <Ext /> {#without-hooks}
+
+Pass `hooks: false` to skip hooks and `silent: true` to leave `updatedAt` as it is. `returning` keeps working.
+
+<<< @/examples/bulk-writes.ts#without-hooks{ts}
+
+| Write                                                        | No hooks       | `updatedAt`                                                                      |
+| ------------------------------------------------------------ | -------------- | -------------------------------------------------------------------------------- |
+| `update` (also with `from`)                                  | `hooks: false` | `silent: true` keeps it                                                          |
+| `upsert`; `insert`, `create`, `bulkCreate` with `onConflict` | `hooks: false` | `silent: true` keeps it on existing rows; new rows get it                        |
+| `insertFrom`                                                 | runs none      | `silent: true` keeps it on existing rows; new rows get only the listed `columns` |
+| `bulkCreate` with `updateOnDuplicate`                        | `hooks: false` | changes only the listed attributes when `silent: true`                           |
+| `destroy`                                                    | `hooks: false` | not written, also by a paranoid soft delete                                      |
+| `updateStatement`, `deleteStatement`, `insertStatement`      | run none       | `updateStatement` takes `silent: true`                                           |
+
+Do not combine `hooks: false` with `individualHooks: true`: the per-row hooks of `individualHooks` still run, as in v6.
+
 ## `MERGE` <Ext />
 
 `Model.merge` runs `MERGE INTO ... USING ...` (PostgreSQL 15+): one statement that updates, deletes or inserts depending on whether each source row matches a target row. The source is an array of plain objects (sent as a `VALUES` list with bound parameters) or a subquery:

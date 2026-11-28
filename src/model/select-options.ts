@@ -117,6 +117,8 @@ export type SelectOptions = {
   lateralKeys?: LateralKeys;
   /** @internal Resolved `source` subquery: rows come from it instead of the model table. */
   fromQuery?: QueryNode;
+  /** @internal Resolved `source` relation (`unnest(...)`, `VALUES`, `JSON_TABLE`). */
+  fromRelation?: FromItem;
   /** @internal Resolved `WITH` clause. */
   withClause?: WithClause;
   /** @internal Resolved extra FROM relations. */

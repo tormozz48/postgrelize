@@ -2,6 +2,7 @@ import { Subquery, WriteStatement } from '../expressions/methods.ts';
 import type { CteNode, FromItem, QueryNode, SelectNode, WithClause } from '../sql/ast.ts';
 import type { JoinSourceBuilder, JoinSources } from './join-source-builder.ts';
 import { ModelDefinition } from './model-definition.ts';
+import type { RelationSource } from './source-options.ts';
 
 /**
  * Common table expression of the `with` option. PostgreSQL extension.
@@ -91,12 +92,13 @@ export type CteFindOptions = Readonly<{
    */
   with?: WithOption;
   /**
-   * Read model rows from this relation instead of the model table: a CTE or table name, or a
-   * subquery such as a set operation (`a.union(b)`), aliased with the model name. Columns are
-   * named like the attributes. PostgreSQL extension.
+   * Read model rows from this relation instead of the model table: a CTE or table name, a
+   * subquery such as a set operation (`a.union(b)`), or a {@link RelationSource} such as
+   * `unnest(...)`, aliased with the model name. Columns are named like the attributes; a paranoid
+   * model needs `paranoid: false` when the relation has no `deletedAt`. PostgreSQL extension.
    * @postgrelize
    */
-  source?: string | Subquery;
+  source?: string | Subquery | RelationSource;
   /**
    * Extra relations (`FROM "Model", "alias"`), keyed by alias; correlate them in `where`. PostgreSQL extension.
    * @postgrelize
@@ -146,10 +148,7 @@ export class CteBuilder {
    * @param source - `source` option.
    * @returns The definition itself without `source`.
    */
-  sourceDefinition(
-    definition: ModelDefinition,
-    source: string | Subquery | undefined,
-  ): ModelDefinition {
+  sourceDefinition(definition: ModelDefinition, source: CteFindOptions['source']): ModelDefinition {
     return source === undefined
       ? definition
       : new ModelDefinition({
@@ -176,14 +175,24 @@ export class CteBuilder {
     withClause?: WithClause;
     extraFrom?: readonly FromItem[];
     fromQuery?: QueryNode;
+    fromRelation?: FromItem;
   }> {
     const withClause = this.withClause(options.with);
     const extraFrom = this.#joins.build(options.from);
     return {
       ...(withClause === undefined ? {} : { withClause }),
       ...(extraFrom.length === 0 ? {} : { extraFrom }),
-      ...(options.source instanceof Subquery ? { fromQuery: options.source.build() } : {}),
+      ...this.#sourceItem(options.source),
     };
+  }
+
+  #sourceItem(source: CteFindOptions['source']) {
+    if (source === undefined || typeof source === 'string') {
+      return {};
+    }
+    return source instanceof Subquery
+      ? { fromQuery: source.build() }
+      : { fromRelation: this.#joins.build({ source })[0] as FromItem };
   }
 
   /**

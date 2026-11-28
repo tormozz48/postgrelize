@@ -98,7 +98,7 @@ export class CreateOperation extends ModelOperation<CreateOperationServices> {
     return inserter.withConflict(
       model,
       [values.pick(row, fields)],
-      conflicts.build(definition, onConflict),
+      conflicts.build(definition, onConflict, silent),
       options,
     );
   }
