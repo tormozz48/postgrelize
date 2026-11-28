@@ -187,6 +187,8 @@ const uuidV1 = new UuidV1();
  * ```
  */
 export const DataTypes = {
+  /** Base of every data type: `type instanceof DataTypes.ABSTRACT` is true for all of them. */
+  ABSTRACT: plain(new ScalarType('ABSTRACT', 'ABSTRACT')),
   /** `VARCHAR(length)`, default length 255; `BINARY` is `BYTEA`. */
   STRING: characters(StringType),
   /** `CHAR(length)`, default length 255; `BINARY` is `BYTEA`. */

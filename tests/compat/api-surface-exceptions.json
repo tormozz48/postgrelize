@@ -2,11 +2,6 @@
   "$comment": "v6 public names that postgrelize lacks. May only shrink (see tests/unit/api-surface.test.ts). Categories: not-planned, other-dialect, internal, tracked-in-issue.",
   "Sequelize": [
     {
-      "name": "ABSTRACT",
-      "category": "not-planned",
-      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
-    },
-    {
       "name": "AsyncQueueError",
       "category": "internal",
       "note": "v6 internal or self reference, not part of the documented API"
@@ -341,11 +336,6 @@
   ],
   "DataTypes": [
     {
-      "name": "ABSTRACT",
-      "category": "not-planned",
-      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
-    },
-    {
       "name": "db2",
       "category": "other-dialect",
       "note": "MySQL / other dialect only; postgrelize is PostgreSQL only"
@@ -387,11 +377,6 @@
     }
   ],
   "exports": [
-    {
-      "name": "ABSTRACT",
-      "category": "not-planned",
-      "note": "DataTypes.ABSTRACT is the v6 base class of data types; postgrelize data types have no public base class"
-    },
     {
       "name": "AsyncQueueError",
       "category": "internal",

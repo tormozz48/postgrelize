@@ -97,6 +97,8 @@ export class Sequelize extends SequelizeMembers {
   static readonly Utils = Utils;
 
   // Sequelize v6 static aliases of the DataTypes and the error classes.
+  /** Alias of `DataTypes.ABSTRACT`. */
+  static readonly ABSTRACT = DataTypes.ABSTRACT;
   /** Alias of `DataTypes.ARRAY`. */
   static readonly ARRAY = DataTypes.ARRAY;
   /** Alias of `DataTypes.BIGINT`. */

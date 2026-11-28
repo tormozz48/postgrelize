@@ -4,6 +4,8 @@ import { DataTypes } from './data-types/data-types.ts';
 /** The `validator` (validator.js) library used by the built-in validators, e.g. `Validator.isEmail(value)` (Sequelize v6 `Validator`). */
 export const Validator = validator;
 export { DataTypes };
+/** Alias of `DataTypes.ABSTRACT` (Sequelize v6 module export). */
+export const ABSTRACT = DataTypes.ABSTRACT;
 /** Alias of `DataTypes.ARRAY` (Sequelize v6 module export). */
 export const ARRAY = DataTypes.ARRAY;
 /** Alias of `DataTypes.BIGINT` (Sequelize v6 module export). */
