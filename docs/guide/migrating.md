@@ -99,28 +99,23 @@ Hooks are accepted for every v6 hook name, but model lifecycle hooks, `beforeCon
 postgrelize is checked against the public API of Sequelize v6.37 (`Sequelize`, `Model`, `QueryInterface`, `Transaction`, `DataTypes` and the exports): a test fails when a v6 name is missing and not listed here. The list below is generated from `tests/compat/api-surface-exceptions.json` and only shrinks.
 
 <!-- api-differences:start -->
-
-| Surface                | Status              | Names                                                                                                                                                                        |
-| ---------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Sequelize` statics    | Not planned         | `ABSTRACT`                                                                                                                                                                   |
-| `Sequelize` statics    | Other dialects only | `IndexHints`, `TableHints`, `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                  |
-| `Sequelize` statics    | v6 internals        | `AsyncQueueError`, `Sequelize`, `default`                                                                                                                                    |
-| `Sequelize` instance   | Not planned         | `afterAssociate`, `afterDefine`, `afterDisconnect`, `afterInit`, `afterQuery`, `beforeAssociate`, `beforeDefine`, `beforeDisconnect`, `beforeInit`, `beforeQuery`            |
-| `Sequelize` instance   | Other dialects only | `set`                                                                                                                                                                        |
-| `Sequelize` instance   | v6 internals        | `dialect`, `normalizeAttribute`, `normalizeDataType`                                                                                                                         |
-| `Model` statics        | Not planned         | `afterAssociate`, `afterBulkSync`, `afterQuery`, `beforeAssociate`, `beforeBulkSync`, `beforeQuery`                                                                          |
-| `Model` statics        | v6 internals        | `Mixin`, `default`, `queryGenerator`, `warnOnInvalidOptions`                                                                                                                 |
-| `Model` instance       | Not planned         | `addHook`, `hasHook`, `hasHooks`, `removeHook`, `runHooks`, `setValidators`                                                                                                  |
-| `Transaction` statics  | v6 internals        | `Transaction`, `default`                                                                                                                                                     |
-| `Transaction` instance | v6 internals        | `cleanup`, `forceCleanup`, `prepareEnvironment`, `setDeferrable`                                                                                                             |
-| `QueryInterface`       | Not planned         | `commitTransaction`, `decrement`, `delete`, `increment`, `insert`, `rawSelect`, `rollbackTransaction`, `select`, `setIsolationLevel`, `startTransaction`, `update`, `upsert` |
-| `QueryInterface`       | v6 internals        | `ensureEnums`, `normalizeAttribute`, `pgListEnums`                                                                                                                           |
-| `DataTypes`            | Not planned         | `ABSTRACT`                                                                                                                                                                   |
-| `DataTypes`            | Other dialects only | `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite`                                                                                              |
-| Module exports         | Not planned         | `ABSTRACT`                                                                                                                                                                   |
-| Module exports         | Other dialects only | `IndexHints`, `TableHints`                                                                                                                                                   |
-| Module exports         | v6 internals        | `AsyncQueueError`                                                                                                                                                            |
-
+| Surface | Status | Names |
+| --- | --- | --- |
+| `Sequelize` statics | Other dialects only | `IndexHints`, `TableHints`, `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite` |
+| `Sequelize` statics | v6 internals | `AsyncQueueError`, `Sequelize`, `default` |
+| `Sequelize` instance | Not planned | `afterAssociate`, `afterDefine`, `afterDisconnect`, `afterInit`, `afterQuery`, `beforeAssociate`, `beforeDefine`, `beforeDisconnect`, `beforeInit`, `beforeQuery` |
+| `Sequelize` instance | Other dialects only | `set` |
+| `Sequelize` instance | v6 internals | `dialect`, `normalizeAttribute`, `normalizeDataType` |
+| `Model` statics | Not planned | `afterAssociate`, `afterBulkSync`, `afterQuery`, `beforeAssociate`, `beforeBulkSync`, `beforeQuery` |
+| `Model` statics | v6 internals | `Mixin`, `default`, `queryGenerator`, `warnOnInvalidOptions` |
+| `Model` instance | Not planned | `addHook`, `hasHook`, `hasHooks`, `removeHook`, `runHooks`, `setValidators` |
+| `Transaction` statics | v6 internals | `Transaction`, `default` |
+| `Transaction` instance | v6 internals | `cleanup`, `forceCleanup`, `prepareEnvironment`, `setDeferrable` |
+| `QueryInterface` | Not planned | `commitTransaction`, `decrement`, `delete`, `increment`, `insert`, `rawSelect`, `rollbackTransaction`, `select`, `setIsolationLevel`, `startTransaction`, `update`, `upsert` |
+| `QueryInterface` | v6 internals | `ensureEnums`, `normalizeAttribute`, `pgListEnums` |
+| `DataTypes` | Other dialects only | `db2`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`, `snowflake`, `sqlite` |
+| Module exports | Other dialects only | `IndexHints`, `TableHints` |
+| Module exports | v6 internals | `AsyncQueueError` |
 <!-- api-differences:end -->
 
 ## Using the PostgreSQL extensions

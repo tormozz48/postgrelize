@@ -25,11 +25,6 @@
   },
   "typeNames": [
     {
-      "name": "ABSTRACT",
-      "category": "not-planned",
-      "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"
-    },
-    {
       "name": "AbstractDataType",
       "category": "not-planned",
       "note": "v6 declaration interface of a DataTypes member; postgrelize exposes DataType / DataTypeInput and the DataTypes factories instead"

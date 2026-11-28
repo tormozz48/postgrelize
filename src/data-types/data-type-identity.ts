@@ -38,6 +38,10 @@ export class DataTypeIdentity {
     if (!(value instanceof AbstractDataType) && !this.#bare.has(value as object)) {
       return false;
     }
+    // every data type extends the v6 `ABSTRACT` class
+    if (key === 'ABSTRACT') {
+      return true;
+    }
     let current: string | undefined = (value as Readonly<{ key: string }>).key;
     while (current !== undefined && current !== key) {
       current = PARENT_KEYS[current];
