@@ -32,6 +32,11 @@ export type OverNode = Readonly<{
   partitionBy: readonly ExprNode[];
   orderBy: readonly OrderNode[];
 }>;
+export type CaseNode = Readonly<{
+  kind: 'case';
+  branches: readonly Readonly<{ when: ExprNode; result: ExprNode }>[];
+  otherwise?: ExprNode;
+}>;
 export type ValuesNode = Readonly<{ kind: 'values'; rows: readonly (readonly ExprNode[])[] }>;
 
 export type ExprNode =
@@ -51,6 +56,7 @@ export type ExprNode =
   | SubqueryNode
   | AliasNode
   | ValuesNode
+  | CaseNode
   | OverNode;
 
 export type OrderNode = Readonly<{

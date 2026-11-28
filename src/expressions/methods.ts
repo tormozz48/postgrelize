@@ -5,6 +5,7 @@ import { Exists, type Subquery } from './query-expressions.ts';
 import { Over, Tuple } from './row-expressions.ts';
 
 export { Cast, Col, Fn } from './call-expressions.ts';
+export { Case, caseWhen, type CaseBranch, type CaseElse } from './case-expression.ts';
 export { Excluded, Json, Where } from './condition-expressions.ts';
 export { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
 export { Exists, Subquery, WriteStatement, type SetOperationOptions } from './query-expressions.ts';

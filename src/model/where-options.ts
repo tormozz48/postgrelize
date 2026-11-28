@@ -1,4 +1,5 @@
 import type {
+  Case,
   Cast,
   Col,
   Excluded,
@@ -14,7 +15,7 @@ import type { Op } from '../expressions/op.ts';
 import type { AllowArray } from './types.ts';
 
 /** Expressions accepted in place of a value (`Excluded` only inside `onConflict`). */
-export type SqlValue = Literal | Fn | Col | Cast | Excluded | Subquery | Tuple;
+export type SqlValue = Literal | Fn | Col | Cast | Excluded | Subquery | Tuple | Case;
 
 // Like v6 `StaticValues`: a plain string, number, boolean, bigint, Date or Buffer compares with any column.
 type Serializable = string | number | bigint | boolean | Date | Buffer;

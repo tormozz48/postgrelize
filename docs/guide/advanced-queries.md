@@ -32,6 +32,29 @@ A subquery can reference the outer query with `col('User.id')` (a correlated sub
 
 As PostgreSQL requires, the `order` must start with the `distinctOn` expressions.
 
+## `SELECT DISTINCT` <Ext />
+
+`selectDistinct: true` on finders and `Model.subquery` removes duplicate result rows, for example of a join through `from` or `include`:
+
+<<< @/examples/case-distinct.ts#select-distinct{ts}
+
+- It is not the v6 option `distinct`, which belongs to `count` and `findAndCountAll` and keeps its meaning.
+- PostgreSQL only allows `ORDER BY` expressions that are in the select list. Order an expression with bound values by its alias (`order: [[col('rank'), 'ASC']]`); the same applies to `group`.
+- Includes select the primary keys of the included models, so rows stay distinct per joined row unless the include has `attributes: []`.
+- `count` and `findAndCountAll` do not apply it: use `count({ distinct: true, col })`.
+
+## `CASE` <Ext />
+
+`caseWhen().when(condition, value).else(value)` builds a searched `CASE` expression for `attributes`, `where`, `order`, `group` and `having`. A condition is anything `where` accepts. Without `else` the result is `NULL`.
+
+<<< @/examples/case-distinct.ts#case{ts}
+
+Values are bound parameters. Numbers, bigints, booleans and dates are cast, so `10` sorts after `2`; strings take the type PostgreSQL infers.
+
+`order` takes any expression with a direction, without `literal()`:
+
+<<< @/examples/case-distinct.ts#computed-order{ts}
+
 ## Window functions <Ext />
 
 `over(fn, { partitionBy, orderBy })` adds an `OVER (...)` clause to a function call. Use it in `attributes` (and, through a subquery or CTE, in filters):
@@ -46,6 +69,10 @@ As PostgreSQL requires, the `order` must start with the `distinctOn` expressions
 
 <<< @/examples/advanced-queries.ts#keyset{ts}
 
+`Op.isDistinctFrom` and `Op.isNotDistinctFrom` also compare rows, treating `NULL` as a value:
+
+<<< @/examples/case-distinct.ts#row-distinct{ts}
+
 Back the comparison with an index on the same columns in the same order, e.g. `indexes: [{ fields: ['rank', 'id'] }]`.
 
 ## Common table expressions <Ext />
@@ -59,6 +86,12 @@ The `with` option adds `WITH` clauses to `findAll`, `findOne`, `count`, aggregat
 - `recursive` makes the clause `WITH RECURSIVE` and is joined to `query` with `UNION ALL` (`unionAll: false` for `UNION`).
 - Inside the recursive part, `from: { tree: 'tree' }` adds the CTE as an extra relation, so `col('tree.id')` can reference it.
 - `materialized: true` / `false` adds `MATERIALIZED` / `NOT MATERIALIZED`.
+
+A recursive part can follow an array column:
+
+<<< @/examples/case-distinct.ts#array-walk{ts}
+
+A CTE is also a join target (`from: { alias: '<cte name>' }`, an inner join through `where`) and a source for `exists()` (`Model.subquery({ source: '<cte name>', as: 'alias', ... })`).
 
 CTEs can also be used as filters:
 
@@ -164,5 +197,5 @@ For exporting rows as text, [`copyTo`](./bulk-writes#export-with-copyto) is fast
 ## API reference
 
 - [`Model`](/api/classes/Model) — `subquery`, `findEach`
-- [`exists`](/api/functions/exists), [`notExists`](/api/functions/notExists), [`over`](/api/functions/over), [`tuple`](/api/functions/tuple), [`where`](/api/variables/where)
+- [`exists`](/api/functions/exists), [`notExists`](/api/functions/notExists), [`caseWhen`](/api/functions/caseWhen), [`over`](/api/functions/over), [`tuple`](/api/functions/tuple), [`where`](/api/variables/where)
 - [`CteDefinition`](/api/type-aliases/CteDefinition), [`CteFindOptions`](/api/type-aliases/CteFindOptions), [`WindowOptions`](/api/type-aliases/WindowOptions)

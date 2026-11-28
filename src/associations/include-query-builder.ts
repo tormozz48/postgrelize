@@ -103,7 +103,9 @@ export class IncludeQueryBuilder {
   }
 
   #innerSelect(parts: Parts): SelectNode {
-    const { definition, alias, base, joined, order } = parts;
+    const { definition, alias, joined, order } = parts;
+    // DISTINCT applies to the joined rows, so the outer SELECT carries it
+    const { distinct: _distinct, ...base } = parts.base;
     const filters = joined
       .filter((node) => node.required || (node.association.isMultiAssociation && hasRequired(node)))
       .map((node) => this.#subQuery.existsFilter(definition, alias, node));
@@ -143,6 +145,7 @@ export class IncludeQueryBuilder {
     const outer = exposedDefinition(parts.definition);
     return {
       kind: 'select',
+      ...(base.distinct === true ? { distinct: true } : {}),
       columns: [
         ...this.#mainColumns(parts),
         ...joined.flatMap((node) => this.#columns.columns(node)),

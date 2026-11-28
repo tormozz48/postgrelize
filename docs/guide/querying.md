@@ -26,6 +26,7 @@ PostgreSQL additions and fixes (<Ext /> marks what v6 does not have):
 - <Ext /> `Op.isDistinctFrom` / `Op.isNotDistinctFrom` compare with `IS [NOT] DISTINCT FROM`, which treats `NULL` as a value.
 - `Op.hasKey`, `Op.hasAnyKeys`, `Op.hasAllKeys` map to the jsonb `?`, `?|` and `?&` operators; they also work on nested JSON paths.
 - <Ext /> `{ [Op.any]: [1, 3] }` is shorthand for `= ANY($1)` with one array parameter.
+- `{ [Op.any]: col('tags') }` compares with the elements of an array column, as in v6.
 - `IN` lists with 100 or more values are sent as `= ANY($1)` with a single array parameter instead of one parameter per value. Change the threshold with the `inAsAnyThreshold` constructor option.
 
 <<< @/examples/querying.ts#any-list{ts}

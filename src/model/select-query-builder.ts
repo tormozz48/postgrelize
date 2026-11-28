@@ -162,6 +162,7 @@ export class SelectQueryBuilder {
     const distinctOn = this.#targets.distinctOn(definition, alias, ctx, options.distinctOn);
     return {
       ...(distinctOn.length === 0 ? {} : { distinctOn }),
+      ...(options.selectDistinct === true ? { distinct: true } : {}),
       ...(where === undefined ? {} : { where }),
       ...(group.length === 0 ? {} : { groupBy: group }),
       ...(having === undefined ? {} : { having }),

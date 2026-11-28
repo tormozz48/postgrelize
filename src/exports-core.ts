@@ -114,6 +114,7 @@ export {
   trigramWordSimilarity,
 } from './expressions/trigram-helpers.ts';
 export {
+  caseWhen,
   cast,
   col,
   excluded,
@@ -127,6 +128,9 @@ export {
   where,
 } from './expressions/methods.ts';
 export type {
+  Case,
+  CaseBranch,
+  CaseElse,
   Cast,
   Col,
   Excluded,

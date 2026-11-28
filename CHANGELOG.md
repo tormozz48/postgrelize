@@ -38,6 +38,17 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-11-28
+
+### Added
+
+- `caseWhen().when(condition, value).else(value)`: `CASE` expressions for `attributes`, `where`, `order`, `group` and `having`. PostgreSQL extension, ADR-039. (PR_LINK)
+- `selectDistinct: true` on finders and `Model.subquery`: `SELECT DISTINCT`. The v6 `distinct` option of `count` is unchanged. ADR-039. (PR_LINK)
+
+### Fixed
+
+- `{ [Op.any]: col('tags') }` compares with the array column, like v6; the expression was bound as a value and the query failed. Differential test in `tests/compat/where-any-column.test.ts`. (PR_LINK)
+
 ## [1.10.3] - 2026-11-28
 
 ### Fixed
@@ -705,7 +716,8 @@ First release: a PostgreSQL-only, Sequelize v6 drop-in ORM written in TypeScript
 - Associations and eager loading with `include` (M4, ADR-009). [#5](https://github.com/tormozz48/postgrelize/pull/5)
 - `QueryInterface`, `sync` / `drop` and constraints (M5, ADR-010). [#6](https://github.com/tormozz48/postgrelize/pull/6)
 
-[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...HEAD
+[Unreleased]: https://github.com/tormozz48/postgrelize/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/tormozz48/postgrelize/compare/v1.10.3...v1.11.0
 [1.10.3]: https://github.com/tormozz48/postgrelize/compare/v1.10.2...v1.10.3
 [1.10.2]: https://github.com/tormozz48/postgrelize/compare/v1.10.1...v1.10.2
 [1.10.1]: https://github.com/tormozz48/postgrelize/compare/v1.10.0...v1.10.1

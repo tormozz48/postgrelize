@@ -1,6 +1,7 @@
 import { SqlAst, type ExprNode } from '../sql/ast.ts';
 import {
   SqlExpression,
+  type Case,
   type Cast,
   type Col,
   type Excluded,
@@ -15,6 +16,7 @@ import {
   type Where,
 } from '../expressions/methods.ts';
 import { Op } from '../expressions/op.ts';
+import { CaseCompiler } from './case-compiler.ts';
 import { ComparisonCompiler } from './comparison-compiler.ts';
 import { ConditionCompiler } from './condition-compiler.ts';
 import { OperandResolver } from './operand-resolver.ts';
@@ -49,6 +51,7 @@ const splitConditions = (value: unknown): readonly unknown[] =>
 const operands = new OperandResolver();
 const conditions = new ConditionCompiler(new ComparisonCompiler());
 const windows = new WindowCompiler(operands);
+const cases = new CaseCompiler();
 
 /**
  * Compiles Sequelize v6 `where` / `having` values and expression builders into AST nodes.
@@ -206,6 +209,11 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
   /** @internal */
   visitOver(value: Over): ExprNode {
     return windows.over(this, value);
+  }
+
+  /** @internal */
+  visitCase(value: Case): ExprNode {
+    return cases.case(this, value);
   }
 
   /** @internal */

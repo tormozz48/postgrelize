@@ -33,6 +33,7 @@
 
 Everything below is new in postgrelize; Sequelize v6 behaviour never changes. Each area links to its guide page and a runnable example. The full list, with PostgreSQL versions, is on the [extensions page](https://tormozz48.github.io/postgrelize/extensions/).
 
+- `CASE` expressions (`caseWhen().when(...).else(...)`) and `SELECT DISTINCT` (`selectDistinct`) without `literal()`
 - **Upserts and RETURNING**: `onConflict` with any target, expression updates, `WHERE`, `DO NOTHING`; `Model.insert()` with `wasInserted`; `returningOld` (PostgreSQL 18). [Guide](https://tormozz48.github.io/postgrelize/guide/upserts) · [upserts](docs/examples/upserts.ts) · [returning-old](docs/examples/returning-old.ts)
 - **Bulk writes and COPY**: `bulkCreate({ unnest: true })`, `MERGE`, `UPDATE ... FROM`, `DELETE ... USING`, `INSERT ... SELECT`, `COPY FROM` / `COPY TO` streaming. [Guide](https://tormozz48.github.io/postgrelize/guide/bulk-writes) · [bulk-writes](docs/examples/bulk-writes.ts) · [merge-returning](docs/examples/merge-returning.ts) · [copy](docs/examples/copy.ts)
 - **Advanced queries**: CTEs and `WITH RECURSIVE`, set operations, `LATERAL`, subqueries, `DISTINCT ON`, window functions, keyset pagination, `TABLESAMPLE`, `JSON_TABLE`, operator and full-text search helpers, server-side cursors. [Guide](https://tormozz48.github.io/postgrelize/guide/advanced-queries) · [advanced-queries](docs/examples/advanced-queries.ts) · [operator-helpers](docs/examples/operator-helpers.ts) · [json-table](docs/examples/json-table.ts)
