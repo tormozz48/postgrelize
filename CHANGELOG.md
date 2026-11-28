@@ -43,6 +43,12 @@ Entries link the pull request and, for roadmap work, the stage name and the ADR 
 - `transaction.advisoryLock(key1, key2)` and `tryAdvisoryLock(key1, key2)` take the `int4` pair lock without hashing; `{ session: true }` takes a session-level lock, released by `advisoryUnlock` or when the outermost transaction ends. One-key locks are unchanged. ADR-039. ([#355](https://github.com/tormozz48/postgrelize/pull/355))
 - `lock.of` accepts table aliases and lists (`FOR UPDATE OF "Doc", "lines->notes"`), and `lock.skipOrderGuard` marks a lock for application lock-ordering hooks. ADR-039. ([#355](https://github.com/tormozz48/postgrelize/pull/355))
 
+### Fixed
+
+- A value given to `build` / `create` takes its own place in `dataValues` instead of the position of the attribute default it replaces, so `toJSON()` has the key order of v6. Differential test in `tests/compat/data-values-order.test.ts`. ([#344](https://github.com/tormozz48/postgrelize/pull/344))
+- Like v6, defining `TINYINT`, `SMALLINT`, `INTEGER` or `BIGINT` with a length, `UNSIGNED` or `ZEROFILL` prints a `console.warn` (once per type), because PostgreSQL ignores these options. Differential test in `tests/compat/integer-option-warning.test.ts`. ([#346](https://github.com/tormozz48/postgrelize/pull/346))
+- `getAttributes()` / `rawAttributes` entries carry `Model` and `_modelAttribute`, and `type.constructor` is the `DataTypes` member of the type, like v6. Differential test in `tests/compat/get-attributes-shape.test.ts`. ([#349](https://github.com/tormozz48/postgrelize/pull/349))
+
 ## [1.10.3] - 2026-11-28
 
 ### Fixed

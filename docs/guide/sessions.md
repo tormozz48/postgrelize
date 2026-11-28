@@ -63,7 +63,7 @@ Keys are integers (64-bit, `number` or `bigint`) or strings; a string is hashed 
 - `transaction.tryAdvisoryLock(key)` returns `false` immediately when another session holds the lock.
 - Both take `{ shared: true }` for a shared lock: shared holders do not block each other, only exclusive ones.
 
-### Two-key and session locks
+### Two-key and session locks <Ext />
 
 `advisoryLock(key1, key2)` is `pg_advisory_xact_lock(int4, int4)`. Both keys must be 32-bit integers; they are never hashed, so the lock is the same one that raw SQL with those numbers takes. The two-key space is separate from the one-key space.
 
