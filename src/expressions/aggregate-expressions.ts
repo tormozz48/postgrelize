@@ -36,7 +36,12 @@ export type AggregateCallOptions = Readonly<{
  * const row: { ids: ExpressionResult<typeof ids> } = { ids: [1, 2] };
  * ```
  */
-export type ExpressionResult<E> = E extends { readonly resultType?: infer R } ? R : never;
+export type ExpressionResult<E> = E extends {
+  /** Phantom type of the value; never set at run time. */
+  readonly resultType?: infer R;
+}
+  ? R
+  : never;
 
 /**
  * Aggregate call with `DISTINCT` / `ORDER BY` inside it, or `GROUPING(...)`. Strings among the
