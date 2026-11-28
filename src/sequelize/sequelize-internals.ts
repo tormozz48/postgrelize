@@ -244,6 +244,7 @@ export class SequelizeInternals {
   }
 
   #createRuntime(options: SequelizeOptions): ModelRuntime {
+    const typeChecks = options.typeValidation === true ? { typeValidation: true } : {};
     return {
       ...this.#queryRuntime(),
       ...this.#modelRuntime(),
@@ -252,10 +253,7 @@ export class SequelizeInternals {
         this.managed(parent === undefined || parent === null ? {} : { transaction: parent }, run),
       // read on every definition: applications may assign `sequelize.options.define` later, like v6
       get defaults() {
-        return {
-          ...options.define,
-          ...(options.typeValidation === true ? { typeValidation: true } : {}),
-        };
+        return { ...options.define, ...typeChecks };
       },
       inAsAnyThreshold: options.inAsAnyThreshold,
       minifyAliases: options.minifyAliases,
