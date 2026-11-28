@@ -40,6 +40,14 @@ As PostgreSQL requires, the `order` must start with the `distinctOn` expressions
 
 `orderBy` uses the same format and the same direction allow-list as `order`.
 
+## Aggregate `FILTER` <Ext />
+
+`filter(aggregate, where)` writes `aggregate FILTER (WHERE …)`, so one query can count or sum different subsets of the rows. Use it in `attributes`, `having`, `order` and `where(...)`; wrap it in `over()` for a window aggregate. Supported by every PostgreSQL version postgrelize supports.
+
+The condition is an ordinary `where`: attribute names resolve to the queried model, values are bound, `Op.*`, `col()` and `exists()` work. Write `COUNT(*)` as `fn('count', col('*'))` and `COUNT(DISTINCT x)` as `fn('count', fn('distinct', col('x')))`. `count` and integer `sum` are `bigint`, which reads back as a string.
+
+<<< @/examples/advanced-queries.ts#filter{ts}
+
 ## Row comparison and keyset pagination <Ext />
 
 `tuple(...)` builds a row value `(a, b)`. Combined with `where(left, operator, right)`, it expresses keyset ("seek") pagination, which stays fast on deep pages where `OFFSET` does not:
@@ -164,5 +172,5 @@ For exporting rows as text, [`copyTo`](./bulk-writes#export-with-copyto) is fast
 ## API reference
 
 - [`Model`](/api/classes/Model) — `subquery`, `findEach`
-- [`exists`](/api/functions/exists), [`notExists`](/api/functions/notExists), [`over`](/api/functions/over), [`tuple`](/api/functions/tuple), [`where`](/api/variables/where)
+- [`exists`](/api/functions/exists), [`filter`](/api/functions/filter), [`notExists`](/api/functions/notExists), [`over`](/api/functions/over), [`tuple`](/api/functions/tuple), [`where`](/api/variables/where)
 - [`CteDefinition`](/api/type-aliases/CteDefinition), [`CteFindOptions`](/api/type-aliases/CteFindOptions), [`WindowOptions`](/api/type-aliases/WindowOptions)

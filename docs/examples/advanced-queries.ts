@@ -4,6 +4,7 @@ import {
   cast,
   col,
   exists,
+  filter,
   fn,
   notExists,
   over,
@@ -106,6 +107,28 @@ export const run = async (sequelize: Sequelize): Promise<void> => {
   });
   // ranked: a1 → '1', a2 → '2', b1 → '2', b2 → '1'
   // #endregion window
+
+  // #region filter
+  const publishedCount = filter(fn('count', col('*')), { published: true });
+  const perUser = await Post.findAll({
+    attributes: [
+      'UserId',
+      [publishedCount, 'published'],
+      [filter(fn('sum', col('rank')), { rank: { [Op.gt]: 1 } }), 'highRank'],
+    ],
+    group: ['UserId'],
+    having: where(publishedCount, Op.gt, 0),
+    order: [['UserId', 'ASC']],
+    raw: true,
+  });
+  // perUser: user 1 → published '1', highRank '3'; user 2 → published '2', highRank '7'
+  // #endregion filter
+  const filtered = JSON.stringify(perUser);
+  const expectedFilter =
+    '[{"UserId":1,"published":"1","highRank":"3"},{"UserId":2,"published":"2","highRank":"7"}]';
+  if (filtered !== expectedFilter) {
+    throw new Error(`filter: ${filtered}`);
+  }
 
   // #region keyset
   const nextPage = await Post.findAll({

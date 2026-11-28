@@ -5,6 +5,7 @@ import {
   type Col,
   type Excluded,
   type Exists,
+  type Filter,
   type Fn,
   type Json,
   type Literal,
@@ -196,6 +197,11 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
       op: value.negated ? 'NOT EXISTS' : 'EXISTS',
       expr: { kind: 'subquery', query: value.subquery.build() },
     };
+  }
+
+  /** @internal */
+  visitFilter(value: Filter): ExprNode {
+    return { kind: 'filter', expr: this.toExpr(value.aggregate), where: this.compile(value.where) };
   }
 
   /** @internal */

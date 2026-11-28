@@ -1,6 +1,6 @@
 import type { LateralKeys } from './lateral-keys-builder.ts';
 import type { TableSampleOptions } from './source-options.ts';
-import type { Col, Fn, Literal } from '../expressions/methods.ts';
+import type { Col, Filter, Fn, Literal } from '../expressions/methods.ts';
 import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
 
 /**
@@ -12,7 +12,7 @@ import type { FromItem, LockNode, QueryNode, WithClause } from '../sql/ast.ts';
  * const rows = await Post.findAll({ attributes: ['authorId', total], group: ['authorId'] });
  * ```
  */
-export type ProjectionAlias = readonly [string | Literal | Fn | Col, string];
+export type ProjectionAlias = readonly [string | Literal | Fn | Col | Filter, string];
 
 /**
  * Selected attributes: a list of names or `[expression, alias]` pairs, or an `{ include, exclude }` spec.

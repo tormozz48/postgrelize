@@ -1,4 +1,4 @@
-import type { Cast, Col, Fn } from './call-expressions.ts';
+import type { Cast, Col, Filter, Fn } from './call-expressions.ts';
 import type { Excluded, Json, Where } from './condition-expressions.ts';
 import type { Literal } from './methods.ts';
 import type { Exists, Subquery } from './query-expressions.ts';
@@ -30,6 +30,8 @@ export interface SqlExpressionVisitor<R> {
   visitExists(expression: Exists): R;
   /** Visits a {@link Over}. */
   visitOver(expression: Over): R;
+  /** Visits a {@link Filter}. */
+  visitFilter(expression: Filter): R;
   /** Visits a {@link Tuple}. */
   visitTuple(expression: Tuple): R;
 }

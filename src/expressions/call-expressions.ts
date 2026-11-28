@@ -1,4 +1,6 @@
+import type { WhereOptions } from '../model/where-options.ts';
 import { SqlExpression, type SqlExpressionVisitor } from './expression.ts';
+import type { Literal } from './methods.ts';
 
 const FUNCTION_NAME = /^[A-Za-z_][\w$]*(?:\.[A-Za-z_][\w$]*)?$/;
 
@@ -101,5 +103,31 @@ export class Cast extends SqlExpression {
   /** @internal */
   accept<R>(visitor: SqlExpressionVisitor<R>): R {
     return visitor.visitCast(this);
+  }
+}
+
+/** Aggregate restricted to the rows that match a condition, `aggregate FILTER (WHERE ...)`. Created by {@link filter}. */
+export class Filter extends SqlExpression {
+  /** @internal */
+  static override readonly kind = 'Filter';
+  /** Aggregate call, e.g. `fn('count', col('*'))`. */
+  readonly aggregate: Fn | Literal;
+  /** Condition a row must match to be aggregated. */
+  readonly where: WhereOptions;
+
+  /**
+   * @param aggregate - Aggregate call.
+   * @param where - Condition.
+   */
+  constructor(aggregate: Fn | Literal, where: WhereOptions) {
+    super();
+    this.aggregate = aggregate;
+    this.where = where;
+    Object.freeze(this);
+  }
+
+  /** @internal */
+  accept<R>(visitor: SqlExpressionVisitor<R>): R {
+    return visitor.visitFilter(this);
   }
 }
