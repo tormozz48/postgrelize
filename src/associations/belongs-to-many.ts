@@ -2,17 +2,28 @@ import type { AnyModel, CountOptions, ModelStatic, Values } from '../model/optio
 import { ModelRegistry } from '../model/model-registry.ts';
 import { Association, type AccessorOptions } from './association.ts';
 import { AssociationKeys } from './association-keys.ts';
+import { JunctionInclude } from './junction-include.ts';
 import { JunctionKeys } from './junction-keys.ts';
-import type { AssociationThrough, BelongsToManyOptions } from './types.ts';
+import type {
+  Association as AssociationShape,
+  AssociationThrough,
+  BelongsToManyOptions,
+} from './types.ts';
 
 const registry = new ModelRegistry();
 
 type Model = ModelStatic<AnyModel>;
 type Instance = AnyModel;
-type JoinOptions = Readonly<{ joinTableAttributes?: readonly string[] }>;
+type GetOptions = AccessorOptions &
+  Readonly<{
+    include?: unknown;
+    joinTableAttributes?: readonly string[];
+    through?: Readonly<{ where?: unknown }>;
+  }>;
 type LinkOptions = AccessorOptions & Readonly<{ through?: Values }>;
 
 const junctionKeys = new JunctionKeys(new AssociationKeys());
+const junctionInclude = new JunctionInclude();
 
 /**
  * `source.belongsToMany(target, { through })` (Sequelize v6 `BelongsToMany`): both foreign keys
@@ -48,47 +59,23 @@ export class BelongsToMany<
 
   /**
    * Loads the associated instances, each with its junction row under the junction model name
-   * (`getXs`).
+   * (`getXs`). Like v6, one query joins the junction.
    *
    * @param instance - Source instance.
    * @param options - Find options.
    * @returns Associated instances.
    */
   async get(instance: Instance, options: AccessorOptions = {}): Promise<Instance[]> {
-    const joined = await this.#links(instance, options);
-    const byKey = new Map(joined.map((link) => [link.get(this.#linkKey), link]));
-    const rows = (await this.scopedTarget(options).findAll({
-      ...options,
-      where: this.andWhere(options.where, this.scope, { [this.targetKey]: [...byKey.keys()] }),
+    const { through, include, joinTableAttributes: _attributes, ...rest } = options as GetOptions;
+    const linked = this.andWhere(through?.where, this.#own(instance));
+    return (await this.scopedTarget(options).findAll({
+      ...rest,
+      where: this.andWhere(options.where, this.scope),
+      include: [
+        junctionInclude.entry(this as unknown as AssociationShape, linked, options as Values),
+        ...[include ?? []].flat(),
+      ],
     } as never)) as Instance[];
-    const attributes = (options as JoinOptions).joinTableAttributes;
-    rows.forEach((row) => {
-      const link = byKey.get(this.#rowKey(row, options));
-      this.#attach(row, link as Instance, attributes, options.raw === true);
-    });
-    return rows;
-  }
-
-  #rowKey(row: Instance, options: AccessorOptions): unknown {
-    return options.raw === true
-      ? (row as unknown as Values)[this.targetKey]
-      : row.get(this.targetKey);
-  }
-
-  #attach(
-    row: Instance,
-    link: Instance,
-    attributes: readonly string[] | undefined,
-    raw: boolean,
-  ): void {
-    const names = attributes ?? Object.keys(link.dataValues as Values);
-    if (raw) {
-      names.forEach((name) => {
-        (row as unknown as Values)[`${this.#junctionName}.${name}`] = link.get(name);
-      });
-    } else if (attributes === undefined || names.length > 0) {
-      (row.dataValues as Values)[this.#junctionName] = link;
-    }
   }
 
   /**
