@@ -143,13 +143,12 @@ export class AssociationKeys {
     if (spec.constraints === false) {
       return {};
     }
-    const definition = registry.state(spec.model).definition;
+    const { definition } = registry.state(spec.model);
+    const { tableName, schema } = definition;
     return {
       references: {
-        model: {
-          tableName: definition.tableName,
-          ...(definition.schema === undefined ? {} : { schema: definition.schema }),
-        },
+        // like v6 `getTableName()`: the plain name without a schema
+        model: schema === undefined ? tableName : { tableName, schema },
         key: definition.attributes.get(spec.key)?.field ?? spec.key,
       },
       onDelete: spec.onDelete ?? defaults.onDelete,
