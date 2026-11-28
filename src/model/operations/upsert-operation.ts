@@ -99,18 +99,23 @@ export class UpsertOperation extends ModelOperation<UpsertOperationServices> {
   }
 
   #statement(call: UpsertCall) {
-    const { definition, options, updatable } = call;
+    const { definition, options } = call;
     const { columns, conflicts, inserts } = this.services;
     const insertValues = this.#insertValues(call);
-    const onConflict =
-      options.onConflict === undefined
-        ? conflicts.v6Upsert(definition, insertValues, updatable, options.conflictFields)
-        : conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>);
+    const onConflict = this.#conflict(call, insertValues);
     return inserts.build(definition, [insertValues], {
       onConflict,
       ...(options.overriding === undefined ? {} : { overriding: options.overriding }),
       returning: [...columns.returningAll(definition), conflicts.insertedFlagColumn()],
     });
+  }
+
+  #conflict({ definition, options, updatable }: UpsertCall, insertValues: Values) {
+    const { conflicts } = this.services;
+    const silent = options.silent === true;
+    return options.onConflict === undefined
+      ? conflicts.v6Upsert(definition, insertValues, updatable, options.conflictFields, silent)
+      : conflicts.build(definition, options.onConflict as OnConflictOptions<unknown>, silent);
   }
 
   #insertValues({ definition, instance, values, now }: UpsertCall): Values {

@@ -230,4 +230,5 @@ export const EXTRA_FEATURES: readonly ExtraFeature[] = [
   { feature: 'Public decorators and sequelize.addModels', test: t('tests/unit/decorators/coverage-decorators.test.ts', 'merges @Table hooks with @BeforeCreate methods and keeps both callable'), example: 'decorators.ts#use', guide: 'decorators#defining-models' },
   { feature: 'Standard Schema validation (validationSchema)', test: t('tests/integration/lifecycle.test.ts', 'validates attributes with zod and reports issues as ValidationErrorItems'), example: 'hooks-validation.ts#standard-schema', guide: 'hooks-validation#standard-schema' },
   { feature: 'Model.insert() with wasInserted per row', test: t(CONFLICT, 'increments with an expression and reports inserted/updated rows'), example: 'upserts.ts#increment', guide: 'upserts#expression-updates-and-wasinserted' },
+  { feature: 'silent on ON CONFLICT updates', test: t('tests/integration/silent-conflict.test.ts', 'still stamps a new row and an updatedAt that the caller names'), example: 'bulk-writes.ts#without-hooks', guide: 'bulk-writes#without-hooks' },
 ];

@@ -169,7 +169,11 @@ export class BulkCreateOperation extends ModelOperation<BulkCreateOperationServi
     const rows = this.#rows(call);
     if (options.onConflict !== undefined) {
       const onConflict = options.onConflict as OnConflictOptions<unknown>;
-      const conflict = this.services.conflicts.build(definition, onConflict);
+      const conflict = this.services.conflicts.build(
+        definition,
+        onConflict,
+        options.silent === true,
+      );
       return this.services.inserter.withConflict(model, rows, conflict, options);
     }
     return this.#insertRows(call, rows);

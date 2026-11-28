@@ -95,6 +95,13 @@ export type UpsertOptions<T = Values> = SaveOptions<T> & {
    * @postgrelize
    */
   overriding?: 'system' | 'user';
+  /**
+   * Keep `updatedAt` of a row that already exists: `DO UPDATE` does not assign it unless the values
+   * (or `onConflict.action.update`) name it. A new row still gets it. Sequelize v6 ignores `silent` here.
+   * @defaultValue false
+   * @postgrelize
+   */
+  silent?: boolean;
 };
 
 /**
@@ -119,6 +126,9 @@ export type InsertOptions<T = Values> = QueryOptionsBase & {
   fields?: readonly (keyof T & string)[];
   /** Advanced `ON CONFLICT` handling. */
   onConflict?: OnConflictOptions<T>;
+  /** Keep `updatedAt` of rows updated by `onConflict`, unless the update names it.
+   * @defaultValue false */
+  silent?: boolean;
   /** Run `beforeBulkCreate` / `afterBulkCreate` hooks.
    * @defaultValue true */
   hooks?: boolean;
@@ -154,6 +164,9 @@ export type InsertFromOptions<T = Values> = QueryOptionsBase &
     columns: readonly (keyof T & string)[];
     /** Advanced `ON CONFLICT` handling. */
     onConflict?: OnConflictOptions<T>;
+    /** Keep `updatedAt` of rows updated by `onConflict`, unless the update names it.
+     * @defaultValue false */
+    silent?: boolean;
     /** Return the pre-statement row values as `instance.oldValues`. PostgreSQL 18+. */
     returningOld?: boolean;
   }>;
