@@ -22,6 +22,11 @@ import {
   AllowNull,
   Column,
   DataTypes,
+  arrayAgg,
+  arraySlice,
+  grouping,
+  groupingSets,
+  stringAgg,
   DatabaseError,
   ForeignKey,
   HasMany,
@@ -293,6 +298,25 @@ Example: `docs/examples/merge-returning.ts` in the repository (`Stock.merge({ so
 ## Subqueries, CTEs, windows
 
 `Model.subquery(findOptions)` builds an embeddable SELECT (use in `Op.in`, attributes, `exists()`). `with: { name: { query, recursive?, materialized? } }` adds CTEs to finders/`count`; `source: 'cte'` reads from one. Window functions through `over(...)`; `distinctOn`. Recursive CTE example: `docs/examples/advanced-queries.ts` (region `recursive-cte`) in the repository.
+
+Ordered aggregates `arrayAgg` / `stringAgg` / `jsonbAgg` (`{ distinct, orderBy }`), `arraySlice(expr, from, to)`, and `rollup` / `cube` / `groupingSets` in `group` with `grouping()`; they work in finders and `Model.subquery`. Strings are attribute names. Value types: `ExpressionResult<typeof expr>`. Do not use `literal()` for these.
+
+```ts
+// (array_agg("User"."id" ORDER BY "User"."email" DESC))[1:3]
+const ids = arraySlice(arrayAgg<number>('id', { orderBy: [['email', 'DESC']] }), 1, 3);
+const emails = stringAgg('email', ', ', { orderBy: ['email'] }); // also jsonbAgg(); distinct: true
+const dimensions = ['active']; // may be built at run time
+const totals = await User.findAll({
+  attributes: [
+    ...dimensions,
+    [grouping(...dimensions), 'level'],
+    [ids, 'ids'],
+    [emails, 'emails'],
+  ],
+  group: [groupingSets([dimensions, []])], // also rollup([...]), cube([...])
+  raw: true,
+});
+```
 
 ## COPY, listen/notify, locks
 

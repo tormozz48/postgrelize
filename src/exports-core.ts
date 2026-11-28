@@ -95,6 +95,23 @@ export { and, or } from './expressions/logic.ts';
 export { useInflection } from './model/inflector.ts';
 export type { Inflection } from './model/inflector.ts';
 export type { OpSymbol } from './expressions/op.ts';
+export {
+  arrayAgg,
+  arraySlice,
+  cube,
+  grouping,
+  groupingSets,
+  jsonbAgg,
+  rollup,
+  stringAgg,
+} from './expressions/aggregate-helpers.ts';
+export type {
+  Aggregate,
+  AggregateCallOptions,
+  ArraySlice,
+  ExpressionResult,
+  GroupingClause,
+} from './expressions/aggregate-expressions.ts';
 export { jsonbPath } from './expressions/jsonpath-helpers.ts';
 export type { JsonbPathKind, JsonbPathOptions } from './expressions/jsonpath-helpers.ts';
 export {

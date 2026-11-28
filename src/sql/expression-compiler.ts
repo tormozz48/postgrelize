@@ -7,6 +7,7 @@ import type {
   OrderNode,
   OverNode,
   QueryNode,
+  SliceNode,
 } from './ast.ts';
 import { ChunkBuilder, type Chunks } from './sql-chunks.ts';
 
@@ -147,6 +148,10 @@ export class ExpressionCompiler extends ChunkBuilder {
         return [...this.expression(node.expr), ` AS ${this.quote(node.alias)}`];
       case 'over':
         return this.#over(node);
+      case 'slice':
+        return this.#slice(node);
+      case 'grouping':
+        return [`${node.type} (`, ...this.exprList(node.items), ')'];
       case 'values':
         return ['VALUES ', ...this.rows(node.rows)];
       default:
@@ -171,8 +176,13 @@ export class ExpressionCompiler extends ChunkBuilder {
       `${node.name}(`,
       ...(node.distinct === true ? ['DISTINCT '] : []),
       ...this.exprList(node.args),
+      ...(node.orderBy === undefined ? [] : [' ORDER BY ', ...this.orderList(node.orderBy)]),
       ')',
     ];
+  }
+
+  #slice(node: SliceNode): Chunks {
+    return [...this.wrap(this.expression(node.expr)), `[${node.from ?? ''}:${node.to ?? ''}]`];
   }
 
   #between(node: BetweenNode): Chunks {

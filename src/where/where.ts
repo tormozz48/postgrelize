@@ -14,7 +14,13 @@ import {
   type Tuple,
   type Where,
 } from '../expressions/methods.ts';
+import type {
+  Aggregate,
+  ArraySlice,
+  GroupingClause,
+} from '../expressions/aggregate-expressions.ts';
 import { Op } from '../expressions/op.ts';
+import { AggregateCompiler } from './aggregate-compiler.ts';
 import { ComparisonCompiler } from './comparison-compiler.ts';
 import { ConditionCompiler } from './condition-compiler.ts';
 import { OperandResolver } from './operand-resolver.ts';
@@ -49,6 +55,7 @@ const splitConditions = (value: unknown): readonly unknown[] =>
 const operands = new OperandResolver();
 const conditions = new ConditionCompiler(new ComparisonCompiler());
 const windows = new WindowCompiler(operands);
+const aggregates = new AggregateCompiler(windows);
 
 /**
  * Compiles Sequelize v6 `where` / `having` values and expression builders into AST nodes.
@@ -206,6 +213,21 @@ export class WhereCompiler implements SqlExpressionVisitor<ExprNode> {
   /** @internal */
   visitOver(value: Over): ExprNode {
     return windows.over(this, value);
+  }
+
+  /** @internal */
+  visitAggregate(value: Aggregate): ExprNode {
+    return aggregates.aggregate(this, value);
+  }
+
+  /** @internal */
+  visitArraySlice(value: ArraySlice): ExprNode {
+    return aggregates.slice(this, value);
+  }
+
+  /** @internal */
+  visitGroupingClause(value: GroupingClause): ExprNode {
+    return aggregates.clause(this, value);
   }
 
   /** @internal */

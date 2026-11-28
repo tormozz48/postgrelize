@@ -23,6 +23,7 @@ export const OPTION_GROUPS: readonly OptionGroup[] = [
       'TableSampleOptions',
       'SetOperationOptions',
       'WindowOptions',
+      'AggregateCallOptions',
       'JsonTableOptions',
       'JsonTableColumnOptions',
       'JsonbPathOptions',

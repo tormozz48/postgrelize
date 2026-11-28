@@ -1,3 +1,4 @@
+import type { Aggregate, ArraySlice, GroupingClause } from './aggregate-expressions.ts';
 import type { Cast, Col, Fn } from './call-expressions.ts';
 import type { Excluded, Json, Where } from './condition-expressions.ts';
 import type { Literal } from './methods.ts';
@@ -32,6 +33,12 @@ export interface SqlExpressionVisitor<R> {
   visitOver(expression: Over): R;
   /** Visits a {@link Tuple}. */
   visitTuple(expression: Tuple): R;
+  /** Visits a {@link Aggregate}. */
+  visitAggregate(expression: Aggregate): R;
+  /** Visits a {@link ArraySlice}. */
+  visitArraySlice(expression: ArraySlice): R;
+  /** Visits a {@link GroupingClause}. */
+  visitGroupingClause(expression: GroupingClause): R;
 }
 
 // Shared through the global symbol registry so that expressions built by another copy of the
